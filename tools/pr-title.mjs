@@ -15,7 +15,10 @@ export function decorateTitle(title) {
   if (!type || !Object.hasOwn(gitmoji, type)) {
     throw new Error('Use a conventional title: type(scope)?: subject, with a supported type.');
   }
-  return prefix ? title : `${gitmoji[type].shortcode} ${title}`;
+  const { shortcode, emoji } = gitmoji[type];
+  // A prefix for the title's own type stays as written; any other prefix is
+  // stale (the type changed after decoration) and is replaced.
+  return prefix === shortcode || prefix === emoji ? title : `${shortcode} ${subject}`;
 }
 
 export function updateTitle(event, run = spawnSync) {

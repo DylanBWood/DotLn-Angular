@@ -87,3 +87,21 @@ test('invalid identity or a failed current-title lookup cannot trigger an edit',
   assert.throws(() => updateTitle(event, run), /Unable to read/);
   assert.equal(calls, 1);
 });
+
+test('a prefix that no longer matches the title type is replaced', () => {
+  assert.equal(decorateTitle(':sparkles: fix: correct the title'), ':bug: fix: correct the title');
+  assert.equal(decorateTitle('✨ fix: correct the title'), ':bug: fix: correct the title');
+  assert.equal(decorateTitle(':bug: fix: correct the title'), ':bug: fix: correct the title');
+  assert.equal(decorateTitle('🐛 fix: correct the title'), '🐛 fix: correct the title');
+});
+
+test('a rerun replaces the prefix of a decorated title whose type changed', () => {
+  const calls = [];
+  const changed = updateTitle(event, (command, args) => {
+    calls.push(args);
+    return { status: 0, stdout: JSON.stringify({ title: ':sparkles: fix: newer title' }) };
+  });
+  assert.equal(changed, true);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].at(-1), ':bug: fix: newer title');
+});
