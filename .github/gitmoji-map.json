@@ -1,0 +1,13 @@
+{
+  "feat": { "shortcode": ":sparkles:", "emoji": "✨" },
+  "fix": { "shortcode": ":bug:", "emoji": "🐛" },
+  "docs": { "shortcode": ":memo:", "emoji": "📝" },
+  "refactor": { "shortcode": ":recycle:", "emoji": "♻️" },
+  "test": { "shortcode": ":white_check_mark:", "emoji": "✅" },
+  "chore": { "shortcode": ":wrench:", "emoji": "🔧" },
+  "ci": { "shortcode": ":construction_worker:", "emoji": "👷" },
+  "build": { "shortcode": ":package:", "emoji": "📦" },
+  "perf": { "shortcode": ":zap:", "emoji": "⚡" },
+  "style": { "shortcode": ":lipstick:", "emoji": "💄" },
+  "revert": { "shortcode": ":rewind:", "emoji": "⏪" }
+}
