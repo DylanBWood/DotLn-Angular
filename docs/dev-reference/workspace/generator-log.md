@@ -17,18 +17,6 @@ Append one entry before each generator invocation, then append its observed resu
 
 ## Installed generator help
 
-## Foundation libraries — 2026-10-20
-
-Read both installed Nx 23.3.0 library and secondary-entry-point generator helps.
-The non-buildable library runner is `vitest-analog`; the secondary generator
-requires a library `package.json` to derive its import name.
-
-| Date       | Nx     | Command                                                                                                                                                                                                              | Result                                                    |
-| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library libs/shared/core --name=core --importPath=@dotln-angular/core --tags=scope:shared,type:core --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false` | Scheduled; daemon and isolated plugin processes disabled. |
-
-## Scaffold help record
-
 Read `npx nx generate @nx/angular:application --help`,
 `npx nx generate @nx/angular:library --help` and
 `npx nx generate @nx/playwright:configuration --help` at 23.3.0 on 2026-10-18.
@@ -41,22 +29,24 @@ reported briefly surviving Nx plugin workers; the workers were gone on the next
 process check. Subsequent help and generation probes used
 `NX_ISOLATE_PLUGINS=false`. These probes created no projects.
 
-Core library generation exited 0 and installed the Nx-selected AnalogJS runner.
+Read `npx nx generate @nx/angular:library --help` and
+`npx nx generate @nx/angular:library-secondary-entry-point --help` at 23.3.0 on
+2026-10-20. The non-buildable library runner is `vitest-analog`; the
+secondary-entry-point generator reads a library `package.json` to derive the
+entry point's import name.
 
-- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library libs/shared/utils --name=utils --importPath=@dotln-angular/utils --tags=scope:shared,type:util --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`.
-  Result: exit 0.
+## Foundation libraries — 2026-10-20
 
-- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library libs/shared/i18n --name=i18n --importPath=@dotln-angular/i18n --tags=scope:shared,type:i18n --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`.
-  Result: exit 0.
+Each command ran in the target worktree with `NX_DAEMON=false NX_ISOLATE_PLUGINS=false`.
 
-- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=core --name=testing --skipModule --skipFormat --interactive=false`.
-  Result: exit 0.
-
-- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=utils --name=testing --skipModule --skipFormat --interactive=false`.
-  Result: exit 0.
-
-- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=i18n --name=testing --skipModule --skipFormat --interactive=false`.
-  Result: exit 0.
+| Date       | Nx     | Command                                                                                                                                                                                                                 | Result                                                                                 |
+| ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library libs/shared/core --name=core --importPath=@dotln-angular/core --tags=scope:shared,type:core --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`    | Exit 0; created `core` and installed the Nx-selected AnalogJS runner.                  |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library libs/shared/utils --name=utils --importPath=@dotln-angular/utils --tags=scope:shared,type:util --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false` | Exit 0; created `utils`.                                                               |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library libs/shared/i18n --name=i18n --importPath=@dotln-angular/i18n --tags=scope:shared,type:i18n --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`    | Exit 0; created `i18n`.                                                                |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library-secondary-entry-point --library=core --name=testing --skipModule --skipFormat --interactive=false`                                                                                        | Exit 0; created the `testing` entry point of `core` (`@dotln-angular/core/testing`).   |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library-secondary-entry-point --library=utils --name=testing --skipModule --skipFormat --interactive=false`                                                                                       | Exit 0; created the `testing` entry point of `utils` (`@dotln-angular/utils/testing`). |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library-secondary-entry-point --library=i18n --name=testing --skipModule --skipFormat --interactive=false`                                                                                        | Exit 0; created the `testing` entry point of `i18n` (`@dotln-angular/i18n/testing`).   |
 
 ## Foundation wiring and cache evidence — 2026-10-20
 
@@ -82,8 +72,12 @@ the main checkout. A bounded normalizer comparison returned:
 
 The selected tracked configuration disables the additional Angular disk cache
 and retains Nx task caching at `.nx/cache`. It avoids a machine-specific
-absolute path at the cost of Angular's additional incremental cache.
-No registration argv change is needed.
+absolute path at the cost of Angular's additional incremental disk cache and
+of the dev server's Vite dependency prebundling: `@angular/build`'s dev-server
+options enable prebundling only while that cache is enabled, so every
+`nx serve` and the e2e dev server print that prebundling will not be used
+because caching is disabled. Weigh the absolute-path alternative at that whole
+cost. No registration argv change is needed.
 
 The main checkout's `.angular` directory was absent before uncached local
 and production builds and absent afterward. Both builds exited 0.
