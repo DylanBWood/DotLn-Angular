@@ -1,4 +1,7 @@
 import { Route } from '@angular/router';
-import { Home } from './home';
+import { BasePaths } from '@dotln-angular/core';
 
-export const appRoutes: Route[] = [{ path: '', pathMatch: 'full', component: Home }];
+export const appRoutes: Route[] = [
+  { path: '', pathMatch: 'full', redirectTo: BasePaths.Home },
+  { path: BasePaths.Home, loadComponent: () => import('./home').then(({ Home }) => Home) },
+];

@@ -17,6 +17,18 @@ Append one entry before each generator invocation, then append its observed resu
 
 ## Installed generator help
 
+## Foundation libraries — 2026-10-20
+
+Read both installed Nx 23.3.0 library and secondary-entry-point generator helps.
+The non-buildable library runner is `vitest-analog`; the secondary generator
+requires a library `package.json` to derive its import name.
+
+| Date       | Nx     | Command                                                                                                                                                                                                              | Result                                                    |
+| ---------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 2026-10-20 | 23.3.0 | `npx nx g @nx/angular:library libs/shared/core --name=core --importPath=@dotln-angular/core --tags=scope:shared,type:core --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false` | Scheduled; daemon and isolated plugin processes disabled. |
+
+## Scaffold help record
+
 Read `npx nx generate @nx/angular:application --help`,
 `npx nx generate @nx/angular:library --help` and
 `npx nx generate @nx/playwright:configuration --help` at 23.3.0 on 2026-10-18.
@@ -28,3 +40,54 @@ The application help process exited successfully but the resource wrapper
 reported briefly surviving Nx plugin workers; the workers were gone on the next
 process check. Subsequent help and generation probes used
 `NX_ISOLATE_PLUGINS=false`. These probes created no projects.
+
+Core library generation exited 0 and installed the Nx-selected AnalogJS runner.
+
+- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library libs/shared/utils --name=utils --importPath=@dotln-angular/utils --tags=scope:shared,type:util --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`.
+  Result: exit 0.
+
+- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library libs/shared/i18n --name=i18n --importPath=@dotln-angular/i18n --tags=scope:shared,type:i18n --style=scss --unitTestRunner=vitest-analog --skipModule --skipFormat --interactive=false`.
+  Result: exit 0.
+
+- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=core --name=testing --skipModule --skipFormat --interactive=false`.
+  Result: exit 0.
+
+- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=utils --name=testing --skipModule --skipFormat --interactive=false`.
+  Result: exit 0.
+
+- 2026-10-20, Nx 23.3.0: scheduled `npx nx g @nx/angular:library-secondary-entry-point --library=i18n --name=testing --skipModule --skipFormat --interactive=false`.
+  Result: exit 0.
+
+## Foundation wiring and cache evidence — 2026-10-20
+
+The secondary-entry generator reads each library's package name, so each
+non-buildable library now has a private `package.json` with its import name.
+The three generated `testing` entry points compile and lint through public
+aliases; no sibling-library fallback was needed.
+
+The generated AnalogJS 2.6 dependency chain introduced audit findings.
+Both `@analogjs/vite-plugin-angular` and `@analogjs/vitest-angular` were pinned
+to the compatible 2.9.1 repair. The generated Vitest workspace form was replaced
+with the installed Vitest 4 `projects` configuration.
+
+Read `node_modules/@angular/build/src/utils/normalize-cache.js` at Angular
+22.2.3. Its relative cache path follows a worktree's common Git directory to
+the main checkout. A bounded normalizer comparison returned:
+
+| Configuration              | Angular cache enabled | Cache base inside worktree | Local path inside worktree |
+| -------------------------- | --------------------- | -------------------------- | -------------------------- |
+| Relative default           | true                  | false                      | true                       |
+| Absolute worktree path     | true                  | true                       | true                       |
+| `cli.cache.enabled: false` | false                 | false, unused              | true                       |
+
+The selected tracked configuration disables the additional Angular disk cache
+and retains Nx task caching at `.nx/cache`. It avoids a machine-specific
+absolute path at the cost of Angular's additional incremental cache.
+No registration argv change is needed.
+
+The main checkout's `.angular` directory was absent before uncached local
+and production builds and absent afterward. Both builds exited 0.
+`find . -path ./node_modules -prune -o -type d -name cache -print`
+returned only `./.nx/cache`. The local build followed `cp .env.example .env`
+and `npm run env:prime`; Git ignored both local environment files, and the
+session removed the two files it generated after the build checks.

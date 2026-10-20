@@ -56,3 +56,6 @@ test-results/
 .env
 .env.*
 !.env.example
+apps/dotln/src/environments/environment.local.ts
+vitest.config.*.timestamp*
+.vitest

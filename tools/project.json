@@ -1,0 +1,25 @@
+{
+  "name": "tools",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "parallel": false,
+        "commands": [
+          "npm run check:templates",
+          "npm run check:tokens",
+          "npm run check:kits",
+          "npm run i18n:check",
+          "npm run typecheck:foundations",
+          "npm run lint:fixtures",
+          "npm run test:tooling"
+        ]
+      }
+    }
+  }
+}

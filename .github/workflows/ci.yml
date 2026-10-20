@@ -37,4 +37,8 @@ jobs:
       - run: npm run test:tooling
       - run: npm run typecheck:e2e
       - run: npm run boards
+      - run: npm run check:templates
+      - run: npm run check:tokens
+      - run: npm run check:kits
+      - run: npm run i18n:check
       - run: npx nx affected -t lint test build e2e

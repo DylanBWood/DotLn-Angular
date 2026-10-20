@@ -25,6 +25,12 @@
       },
       "configurations": {
         "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/dotln/src/environments/environment.ts",
+              "with": "apps/dotln/src/environments/environment.prod.ts"
+            }
+          ],
           "budgets": [
             {
               "type": "initial",
@@ -43,6 +49,17 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "local": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/dotln/src/environments/environment.ts",
+              "with": "apps/dotln/src/environments/environment.local.ts"
+            }
+          ]
         }
       }
     },
@@ -50,12 +67,19 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "defaultConfiguration": "development",
+      "options": {
+        "proxyConfig": "apps/dotln/proxy.conf.json"
+      },
       "configurations": {
         "production": {
           "buildTarget": "dotln:build:production"
         },
         "development": {
           "buildTarget": "dotln:build:development"
+        },
+        "local": {
+          "buildTarget": "dotln:build:local",
+          "proxyConfig": ".nx/dotln/proxy.conf.json"
         }
       }
     },
