@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import test from 'node:test';
 import { parseTemplate } from '@angular/compiler';
 import ts from 'typescript';
@@ -10,7 +10,8 @@ import { checkSpecKits } from './scripts/check-spec-kits.mjs';
 import { checkTemplateLiterals } from './scripts/check-template-literals.mjs';
 import { checkTokenNames } from './scripts/check-token-names.mjs';
 import { environmentFromValues, primeEnvironment } from './scripts/prime-environment.mjs';
-import { inspectTemplate, translocoTemplate } from './scripts/templates.mjs';
+import { workspaceRoot } from './scripts/source-files.mjs';
+import { inspectTemplate, templates, translocoTemplate } from './scripts/templates.mjs';
 
 const fixture = (name) => resolve(import.meta.dirname, 'lint-fixtures', name);
 
@@ -36,6 +37,37 @@ test('template inspection covers multiline text, interpolation literals and acce
   assert.equal(inspect('<input aria-label="Untranslated">').findings.length, 1);
   assert.equal(inspect('<input [attr.aria-label]="\'home.title\' | t">').findings.length, 0);
   assert.equal(inspect('<h1>{{ dynamicText }}</h1>').findings.length, 1);
+});
+
+test('template discovery inspects component templates and leaves standalone HTML alone', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'dotln-template-discovery-'));
+  try {
+    writeFileSync(
+      join(scratch, 'index.html'),
+      '<!doctype html><html><head><title>DotLn</title></head></html>\n',
+    );
+    writeFileSync(join(scratch, 'page.html'), '<p>Untranslated page text</p>\n');
+    writeFileSync(
+      join(scratch, 'page.ts'),
+      `import { Component } from '@angular/core';
+      @Component({ selector: 'shared-page', templateUrl: './page.html' })
+      export class Page {}
+      `,
+    );
+    assert.deepEqual(
+      templates([scratch]).map((template) => template.id),
+      [relative(workspaceRoot, join(scratch, 'page.html'))],
+    );
+    assert.equal(checkTemplateLiterals([scratch]).length, 1);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+  const hostPage = 'apps/dotln/src/index.html';
+  assert.equal(
+    templates(['apps/dotln/src']).some((template) => template.id === hostPage),
+    false,
+  );
+  assert.match(readFileSync(resolve(workspaceRoot, hostPage), 'utf8'), /<title>\S[^<]*<\/title>/);
 });
 
 test('the pipe adapter changes AST pipe names, leaving literal key contents intact', () => {
@@ -217,10 +249,17 @@ test('priming writes typed local configuration and an isolated proxy, honoring n
 test('the real Transloco find command observes house-pipe missing and extra keys without modifying translations', () => {
   const scratch = mkdtempSync(join(tmpdir(), 'dotln-i18n-fixture-'));
   try {
-    const source = join(scratch, 'home.html');
+    const source = join(scratch, 'home.ts');
     const translations = join(scratch, 'i18n');
     mkdirSync(translations);
-    writeFileSync(source, `<h1>{{ 'home.title' | t }}</h1>`);
+    writeFileSync(
+      source,
+      [
+        "import { Component } from '@angular/core';",
+        "@Component({ selector: 'shared-home', template: `<h1>{{ 'home.title' | t }}</h1>` })",
+        'export class Home {}',
+      ].join('\n'),
+    );
     const run = (catalog) => {
       const bytes = JSON.stringify(catalog);
       writeFileSync(join(translations, 'en.json'), bytes);

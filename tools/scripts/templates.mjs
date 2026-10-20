@@ -26,11 +26,11 @@ export function templates(paths) {
     if (parsed.errors?.length) throw new Error(`${id}:${line}: invalid Angular template`);
     result.set(id, { id, text, line, nodes: parsed.nodes });
   };
+  // A template is what a component declares: its inline `template` or the file
+  // its `templateUrl` names. A standalone .html file, such as the host page
+  // apps/dotln/src/index.html, is not an Angular template and is left alone.
   for (const path of sourceFiles(paths)) {
-    if (path.endsWith('.html')) {
-      add(relative(workspaceRoot, path), readFileSync(path, 'utf8'));
-      continue;
-    }
+    if (path.endsWith('.html')) continue;
     const source = readSource(path);
     const isComponent = importedNames(source, '@angular/core', 'Component');
     visitTs(source, (node) => {
