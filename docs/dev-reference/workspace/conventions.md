@@ -35,8 +35,8 @@ Shared libraries belong under `libs/shared/` and import as
 `data-access` and `auth`. Features belong under `libs/features/` as `<feature>`,
 `<feature>-data-access` and, when shared, `<feature>-models`. App-scoped libraries
 belong under `libs/<app>/` and import as `@dotln-angular/<app>/<name>`.
-Test kits import as `@dotln-angular/<lib>/testing`. Until libraries are generated,
-`tsconfig.base.json` has an empty `paths` map.
+Test kits import as `@dotln-angular/<lib>/testing`. `tsconfig.base.json` maps the
+three foundation libraries and their testing entry points.
 
 Every project has a scope and a type. Scopes are `scope:shared` and `scope:dotln`
 for the first app; types are `app`, `feature`, `ui`, `data-access`, `state`,
@@ -72,6 +72,38 @@ template and styles inline while small, extracting them when they grow. PrimeNG
 will be introduced behind wrappers in a later feature change; the scaffold has
 no vendor UI dependency.
 
+## 7. Functional first
+
+Import `R` and `RA` from `@dotln-angular/utils`. Keep upstream runtime behavior
+and correct faulty TypeScript declarations in the house adapters. Each used
+function has an attributed upstream spec; compiler assertions establish the
+intended composition types. Keep functions pure, templates declarative and
+state in signals. See [the foundation reference](../architecture/foundation.md).
+
+## 9. Internationalization
+
+Use Transloco through the house `t` pipe for template strings and the house
+`translateSignal` export in class code. Keep translation files under
+`apps/dotln/public/i18n/`. Run `npm run i18n:check` for missing and extra keys.
+Typed translation keys remain a later feature.
+
+## 10. Dependency injection
+
+Compose explicit `provide*()` functions. Tokens are `PascalCaseToken` with
+literal `dotln-angular.<scope>.<lib>.<name>` descriptions. Keep the root-factory
+exception limited to `AppBasePathToken` pending the operator's ruling.
+Each injectable and token has an exported `provide<Name>TestKit()` in its
+library's `testing` entry point, and TestBed setups spread those providers.
+
+Core adapts application configuration to independent shared i18n through
+`provideDotlnI18n()`; shared i18n exposes `provideI18n()` and does not import core.
+
+## 11. Routing
+
+Declare `BasePaths` and feature path enums in core; load feature routes lazily.
+Build navigation with `buildRoute()`, keeping path and query parameters separate.
+Use `AppBasePathToken`, derived from `<base href>`, for sub-path-aware assets.
+
 ## 12. Component conventions
 
 Order decorator members as `selector`, `changeDetection`, `template` or
@@ -104,7 +136,7 @@ must satisfy both its scope constraint and its type constraint.
 | `ui`          | `util`, `i18n`, `models`                          |
 | `auth`        | `data-access`, `events`, `models`, `core`, `util` |
 | `events`      | `models`, `util`                                  |
-| `core`        | `util`, `models`                                  |
+| `core`        | `util`, `models`, `i18n`                          |
 | `i18n`        | `util`, `models`                                  |
 | `util`        | `util`                                            |
 | `models`      | None                                              |
@@ -113,6 +145,8 @@ Shared projects import only shared projects. DotLn-scoped projects may import
 shared or DotLn-scoped projects. Add another scope's row before adding its
 projects. `npm run lint:fixtures` proves the rule rejects a forbidden dependency;
 the deliberately invalid file stays outside ordinary application linting.
+Core's i18n integration is the added dependency; the reverse direction remains
+forbidden.
 
 ## 19. Documentation
 

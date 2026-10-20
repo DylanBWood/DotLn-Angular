@@ -2,6 +2,8 @@
 
 - Use Node 26 and npm. Run `npm ci` before checks.
 - Read `docs/dev-reference/workspace/conventions.md` before changing architecture.
+- Read `docs/ai-reference/foundation-rules.md` when changing core, utilities,
+  translations, providers or test kits.
 - Generate every project with the installed Nx generator. Read its `--help`.
 - Append the command, Nx version, created projects and result to
   `docs/dev-reference/workspace/generator-log.md`.

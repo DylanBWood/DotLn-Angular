@@ -14,7 +14,14 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "strict": true,
-    "paths": {}
+    "paths": {
+      "@dotln-angular/core": ["./libs/shared/core/src/index.ts"],
+      "@dotln-angular/utils": ["./libs/shared/utils/src/index.ts"],
+      "@dotln-angular/i18n": ["./libs/shared/i18n/src/index.ts"],
+      "@dotln-angular/core/testing": ["./libs/shared/core/testing/src/index.ts"],
+      "@dotln-angular/utils/testing": ["./libs/shared/utils/testing/src/index.ts"],
+      "@dotln-angular/i18n/testing": ["./libs/shared/i18n/testing/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

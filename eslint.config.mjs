@@ -1,11 +1,20 @@
 import nx from '@nx/eslint-plugin';
 import angular from 'angular-eslint';
+import tokenNames from './tools/lint-rules/token-names.mjs';
 
 export default [
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
-  { ignores: ['**/dist', '**/out-tsc', '**/.nx/**', 'tools/lint-fixtures/**'] },
+  {
+    ignores: [
+      '**/dist',
+      '**/out-tsc',
+      '**/.nx/**',
+      'tools/lint-fixtures/**',
+      '**/vitest.config.*.timestamp*',
+    ],
+  },
   {
     files: ['**/*.{ts,tsx,cts,mts,js,jsx,cjs,mjs}'],
     rules: {
@@ -59,7 +68,10 @@ export default [
               ],
             },
             { sourceTag: 'type:events', onlyDependOnLibsWithTags: ['type:models', 'type:util'] },
-            { sourceTag: 'type:core', onlyDependOnLibsWithTags: ['type:util', 'type:models'] },
+            {
+              sourceTag: 'type:core',
+              onlyDependOnLibsWithTags: ['type:util', 'type:models', 'type:i18n'],
+            },
             { sourceTag: 'type:i18n', onlyDependOnLibsWithTags: ['type:util', 'type:models'] },
             { sourceTag: 'type:util', onlyDependOnLibsWithTags: ['type:util'] },
             { sourceTag: 'type:models', onlyDependOnLibsWithTags: [] },
@@ -70,8 +82,12 @@ export default [
   },
   {
     files: ['**/*.ts'],
-    plugins: { '@angular-eslint': angular.tsPlugin },
+    plugins: {
+      '@angular-eslint': angular.tsPlugin,
+      dotln: { rules: { 'token-names': tokenNames } },
+    },
     rules: {
+      'dotln/token-names': 'error',
       'no-restricted-syntax': [
         'error',
         {
@@ -81,6 +97,18 @@ export default [
       ],
       '@angular-eslint/prefer-signals': 'error',
       '@angular-eslint/prefer-output-readonly': 'error',
+    },
+  },
+  {
+    files: ['apps/**/*.ts', 'libs/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/prefer-readonly': 'error',
     },
   },
 ];

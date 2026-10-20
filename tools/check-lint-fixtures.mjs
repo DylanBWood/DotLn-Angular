@@ -58,6 +58,13 @@ try {
     },
   });
   write('eslint.config.mjs', readFileSync(join(root, 'eslint.config.mjs'), 'utf8'));
+  for (const dependency of [
+    'tools/lint-rules/token-names.mjs',
+    'tools/scripts/check-token-names.mjs',
+    'tools/scripts/source-files.mjs',
+  ]) {
+    write(dependency, readFileSync(join(root, dependency), 'utf8'));
+  }
   for (const [name, directory, type] of [
     ['fixture-models', 'tools/lint-fixtures', 'models'],
     ['fixture-control', 'tools/lint-control', 'util'],
@@ -74,6 +81,32 @@ try {
   write(invalid, source);
   write(valid, source);
   write('tools/lint-target/index.ts', 'export const value = 1;\n');
+  const foundationFixtures = [
+    ['tools/lint-fixtures/private-keyword.ts', 'no-restricted-syntax', 1],
+    ['tools/lint-fixtures/bad-token.ts', 'dotln/token-names', 1],
+    ['tools/lint-fixtures/aliased-tokens.ts', 'dotln/token-names', 2],
+  ];
+  for (const [fixture] of foundationFixtures) {
+    write(fixture, readFileSync(join(root, fixture), 'utf8'));
+  }
+  write(
+    'tools/lint-control/good-token.ts',
+    readFileSync(join(root, foundationFixtures[1][0]), 'utf8').replace(
+      'wrong.namespace',
+      'dotln-angular.shared.core.fixture',
+    ),
+  );
+  write(
+    'tools/lint-control/good-aliased-tokens.ts',
+    readFileSync(join(root, foundationFixtures[2][0]), 'utf8').replaceAll(
+      'wrong.namespace',
+      'dotln-angular.shared.core.fixture',
+    ),
+  );
+  write(
+    'tools/lint-control/hash-private.ts',
+    'export class HashPrivate { readonly #value = 1; read() { return this.#value; } }\n',
+  );
 
   const graph = run('nx', 'nx', ['graph', '--file=.nx/graph.json']);
   assert.equal(graph.status, 0, graph.stdout + graph.stderr);
@@ -93,6 +126,32 @@ try {
   console.log(
     `PASS ${invalid}: models → util refused by @nx/enforce-module-boundaries; util → util allowed.`,
   );
+  const foundation = run('eslint', 'eslint', [
+    '--no-ignore',
+    '--format=json',
+    ...foundationFixtures.map(([fixture]) => fixture),
+    'tools/lint-control/good-token.ts',
+    'tools/lint-control/good-aliased-tokens.ts',
+    'tools/lint-control/hash-private.ts',
+  ]);
+  assert.equal(foundation.status, 1, foundation.stdout + foundation.stderr);
+  const checked = JSON.parse(foundation.stdout);
+  for (const [fixture, rule, count] of foundationFixtures) {
+    const result = checked.find((row) => row.filePath === join(scratch, fixture));
+    assert.equal(result?.errorCount, count, foundation.stdout);
+    assert.ok(
+      result.messages.every((message) => message.ruleId === rule),
+      foundation.stdout,
+    );
+    console.log(`PASS ${fixture}: expected ${rule} rejection (${count}).`);
+  }
+  for (const name of ['good-token.ts', 'good-aliased-tokens.ts', 'hash-private.ts']) {
+    assert.deepEqual(
+      checked.find((row) => row.filePath === join(scratch, 'tools/lint-control', name))?.messages,
+      [],
+      foundation.stdout,
+    );
+  }
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }

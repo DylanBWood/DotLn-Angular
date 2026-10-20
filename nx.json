@@ -3,8 +3,14 @@
   "analytics": false,
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
-    "production": ["default", "!{projectRoot}/.eslintrc.json", "!{projectRoot}/eslint.config.mjs"],
-    "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json"]
+    "production": [
+      "default",
+      "!{projectRoot}/.eslintrc.json",
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json"
+    ],
+    "sharedGlobals": ["{workspaceRoot}/tsconfig.base.json", "{workspaceRoot}/nx.json"]
   },
   "targetDefaults": {
     "@angular/build:application": {
@@ -20,10 +26,16 @@
         "{workspaceRoot}/.eslintrc.json",
         "{workspaceRoot}/.eslintignore",
         "{workspaceRoot}/eslint.config.mjs",
-        "{workspaceRoot}/tools/eslint-rules/**/*"
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        "{workspaceRoot}/tools/lint-rules/**/*",
+        "{workspaceRoot}/tools/scripts/**/*"
       ]
     },
     "@angular/build:unit-test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
+    },
+    "@nx/vitest:test": {
       "cache": true,
       "inputs": ["default", "^production"]
     }
@@ -57,11 +69,16 @@
       "changeDetection": "OnPush"
     },
     "@nx/angular:library": {
-      "style": "scss",
+      "linter": "eslint",
       "unitTestRunner": "vitest-analog",
-      "linter": "eslint"
+      "style": "scss"
     }
   },
   "cacheDirectory": ".nx/cache",
-  "useDaemonProcess": true
+  "useDaemonProcess": true,
+  "cli": {
+    "cache": {
+      "enabled": false
+    }
+  }
 }
