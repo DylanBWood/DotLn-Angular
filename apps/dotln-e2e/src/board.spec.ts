@@ -29,29 +29,42 @@ test('renders five panels, selects Actors first and preserves cell label, value 
   expect(errors).toEqual([]);
 });
 
-test('keyboard reaches main through the skip link and navigates tabs with arrows, Home and End', async ({
+test('keyboard reaches main through the skip link without a reload and navigates tabs with arrows, Home and End', async ({
   page,
 }) => {
   await page.goto('/board');
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+  const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+  await expect(skipLink).toBeFocused();
+  // Start from a panel other than the initial one, in a document marked as this load.
+  await page.getByRole('tab', { name: 'Work', exact: true }).click();
+  await page.evaluate(() => {
+    document.documentElement.dataset['load'] = 'first';
+  });
+  await skipLink.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('tab', { name: 'Actors', exact: true })).toBeFocused();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Builds', exact: true })).toHaveAttribute(
+  await expect(page).toHaveURL(/\/board$/);
+  expect(await page.evaluate(() => document.documentElement.dataset['load'])).toBe('first');
+  await expect(page.getByRole('tab', { name: 'Work', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
-  await expect(page.getByRole('tab', { name: 'Builds', exact: true })).toBeFocused();
-  await page.keyboard.press('End');
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('tab', { name: 'Work', exact: true })).toBeFocused();
+  await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Blueprint', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
+  await expect(page.getByRole('tab', { name: 'Blueprint', exact: true })).toBeFocused();
   await page.keyboard.press('Home');
   await expect(page.getByRole('tab', { name: 'Actors', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: 'Blueprint', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
