@@ -1,5 +1,32 @@
+@use '../../../libs/shared/ui/src/styles/tokens';
+@use '../../../libs/shared/ui/src/lib/wrappers/overlay';
+
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2');
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  color-scheme: light;
+  background: var(--dotln-canvas);
+  color: var(--dotln-ink);
+  font-family: var(--dotln-font);
+  line-height: 1.5;
+}
 body {
   margin: 0;
-  padding: 2rem;
-  font-family: system-ui, sans-serif;
+}
+a {
+  color: var(--dotln-accent);
+  text-underline-offset: 0.2em;
+}
+button,
+input {
+  font: inherit;
 }

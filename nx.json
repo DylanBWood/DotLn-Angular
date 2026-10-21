@@ -80,5 +80,6 @@
     "cache": {
       "enabled": false
     }
-  }
+  },
+  "parallel": 1
 }

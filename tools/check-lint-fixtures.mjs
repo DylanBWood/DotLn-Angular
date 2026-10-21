@@ -60,6 +60,7 @@ try {
   write('eslint.config.mjs', readFileSync(join(root, 'eslint.config.mjs'), 'utf8'));
   for (const dependency of [
     'tools/lint-rules/token-names.mjs',
+    'tools/lint-rules/inline-template-newlines.mjs',
     'tools/scripts/check-token-names.mjs',
     'tools/scripts/source-files.mjs',
   ]) {

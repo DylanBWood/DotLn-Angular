@@ -37,6 +37,18 @@ test('template inspection covers multiline text, interpolation literals and acce
   assert.equal(inspect('<input aria-label="Untranslated">').findings.length, 1);
   assert.equal(inspect('<input [attr.aria-label]="\'home.title\' | t">').findings.length, 0);
   assert.equal(inspect('<h1>{{ dynamicText }}</h1>').findings.length, 1);
+  assert.equal(inspect('<h1 translate="no">{{ source.title }}</h1>').findings.length, 0);
+  assert.equal(
+    inspect('<div translate="no"><span>{{ source.value }}</span></div><p>{{ hostLabel }}</p>')
+      .findings.length,
+    1,
+  );
+  assert.equal(inspect('<h1 translate="no">Untranslated host text</h1>').findings.length, 1);
+  assert.equal(inspect(`<h1 translate="no">{{ 'Literal host text' }}</h1>`).findings.length, 1);
+  assert.equal(
+    inspect(`<h1 translate="no">{{ source.value || 'Fallback literal' }}</h1>`).findings.length,
+    1,
+  );
 });
 
 test('template discovery inspects component templates and leaves standalone HTML alone', () => {

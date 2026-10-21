@@ -3,6 +3,7 @@ import { dirname, relative, resolve } from 'node:path';
 import {
   BindingPipe,
   Interpolation,
+  LiteralPrimitive,
   RecursiveAstVisitor,
   TmplAstRecursiveVisitor,
   parseTemplate,
@@ -90,6 +91,17 @@ export function inspectTemplate(template) {
     }
   }
   const expressions = new Expressions();
+  let sourceData = false;
+  const isSourceExpression = (expression) => {
+    let hasLiteral = false;
+    class Literals extends RecursiveAstVisitor {
+      visitLiteralPrimitive(node) {
+        if (node instanceof LiteralPrimitive) hasLiteral = true;
+      }
+    }
+    expression.visit(new Literals());
+    return sourceData && !hasLiteral;
+  };
   function inspectTextExpression(node) {
     const ast = node.value.ast ?? node.value;
     ast.visit(expressions);
@@ -97,15 +109,28 @@ export function inspectTemplate(template) {
       if (ast.strings.some((text) => text.trim()))
         report(node, 'literal text outside a t interpolation');
       for (const expression of ast.expressions) {
-        if (!(expression instanceof BindingPipe) || expression.name !== 't') {
+        if (
+          (!(expression instanceof BindingPipe) || expression.name !== 't') &&
+          !isSourceExpression(expression)
+        ) {
           report(node, 'rendered text must pass through the t pipe');
         }
       }
-    } else if (!(ast instanceof BindingPipe) || ast.name !== 't') {
+    } else if ((!(ast instanceof BindingPipe) || ast.name !== 't') && !isSourceExpression(ast)) {
       report(node, 'rendered text must pass through the t pipe');
     }
   }
   class Visitor extends TmplAstRecursiveVisitor {
+    visitElement(node) {
+      const parent = sourceData;
+      sourceData =
+        parent ||
+        node.attributes.some(
+          (attribute) => attribute.name === 'translate' && attribute.value === 'no',
+        );
+      super.visitElement(node);
+      sourceData = parent;
+    }
     visitText(node) {
       if (node.value.trim()) report(node, 'literal template text');
     }

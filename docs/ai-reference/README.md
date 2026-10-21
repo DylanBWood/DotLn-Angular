@@ -23,3 +23,5 @@
 - Leave `docs/dotln/` record movement to the launchpad's final-review route.
 - Write conventional commit subjects. Leave GitHub title decoration to the workflow.
 - Keep branch publication, merges and repository settings within explicit authority.
+
+See [the component taxonomy and rules](component-rules.md) for the UI, shell and board.

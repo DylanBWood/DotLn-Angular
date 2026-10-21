@@ -1,5 +1,37 @@
 {
-  "home": {
-    "title": "DotLn"
+  "shell": {
+    "brand": "DotLn",
+    "edition": "The recorded console",
+    "board": "Board",
+    "navigation": "Primary navigation",
+    "skipToMain": "Skip to main content",
+    "footer": "Evidence first. Read only.",
+    "recordedOn": "Snapshot \u00b7 21 October 2026"
+  },
+  "board": {
+    "eyebrow": "Workspace / Overview",
+    "title": "The actor board",
+    "description": "People, builds and the evidence behind their work.",
+    "panels": "Board panels",
+    "sources": "Sources & evidence",
+    "sourceCounts": "{{available}} available \u00b7 {{unavailable}} unavailable",
+    "inspectSources": "Inspect recorded sources",
+    "inspectEvidence": "Inspect evidence records",
+    "noRows": "No rows recorded in this section.",
+    "noExplanation": "No explanation was supplied by the source.",
+    "targetUnavailable": "(target unavailable)",
+    "noValue": "No value recorded",
+    "emptyList": "Empty list",
+    "unsupportedVersion": "This board is unavailable because its version is unsupported: {{version}}."
+  },
+  "ui": {
+    "status": {
+      "known": "Known",
+      "unknown": "Unknown",
+      "unavailable": "Unavailable"
+    },
+    "close": "Close",
+    "loading": "Loading",
+    "unavailableExplanation": "This information could not be read."
   }
 }

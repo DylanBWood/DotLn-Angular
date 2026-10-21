@@ -1,8 +1,9 @@
 // Copyright (c) 2013-2025 Scott Sauyet and Michael Hurley — MIT.
 // ported from https://github.com/ramda/ramda/blob/v0.32.0/test/pipe.js
 import { expectTypeOf } from 'vitest';
-import { R, RA } from '../../public_api';
+
 import { provideUtilsTestKit } from '../../../testing/src';
+import { R, RA } from '../../public_api';
 
 describe('R.pipe through the house namespace', () => {
   it('composes from left to right and preserves curried collection types', () => {

@@ -10,8 +10,12 @@ strict TypeScript and zoneless change detection. Use signals for state and the
 signal-based input, output and query APIs. Use RxJS for streams and convert at the
 boundary with `toSignal` or `toObservable`. Angular's current style guide and
 rendering performance take precedence. File names follow Angular's 2025 style:
-`app.ts`, `home.ts`, without a `.component` suffix. TypeScript remains on `~6.0.3`
+`app.ts`, `board-page.ts`, without a `.component` suffix. TypeScript remains on `~6.0.3`
 and Vitest on 4.x for Angular 22 compatibility.
+
+Angular build 22.2.3 pins a vulnerable Vite patch. The direct Vite pin and a
+parent-scoped override select 8.3.3; remove that override when the parent selects
+a fixed patch and checks pass.
 
 Nx 23.3.0 pins Undici 7.29.0. A parent-version-scoped npm override selects
 Undici 7.29.1 for its published security fixes. Recheck the override when Nx
@@ -36,12 +40,12 @@ Shared libraries belong under `libs/shared/` and import as
 `<feature>-data-access` and, when shared, `<feature>-models`. App-scoped libraries
 belong under `libs/<app>/` and import as `@dotln-angular/<app>/<name>`.
 Test kits import as `@dotln-angular/<lib>/testing`. `tsconfig.base.json` maps the
-three foundation libraries and their testing entry points.
+shared, app-scoped and feature libraries and their testing entry points.
 
 Every project has a scope and a type. Scopes are `scope:shared` and `scope:dotln`
 for the first app; types are `app`, `feature`, `ui`, `data-access`, `state`,
 `events`, `core`, `util`, `i18n`, `auth` and `models`, prefixed with `type:`.
-The shell is tagged `scope:dotln` and `type:app`.
+The shell layout library is tagged `scope:dotln` and `type:ui`; the application is `type:app`.
 
 ## 4. Barrels
 
@@ -68,9 +72,9 @@ transpilation alone does not check TypeScript configuration or type errors.
 ## 6. Style
 
 Use Sass (`.scss`) and CSS custom properties for design tokens. Keep a component's
-template and styles inline while small, extracting them when they grow. PrimeNG
-will be introduced behind wrappers in a later feature change; the scaffold has
-no vendor UI dependency.
+template and styles inline while small, extracting them when they grow. The house `ui` library owns component APIs, markup, styles and tests. Angular
+Aria and CDK supply behavior behind wrappers; no vendor component library is used.
+The default plain skin is a token layer under `:root` and `[data-skin='plain']`.
 
 ## 7. Functional first
 
@@ -85,7 +89,9 @@ state in signals. See [the foundation reference](../architecture/foundation.md).
 Use Transloco through the house `t` pipe for template strings and the house
 `translateSignal` export in class code. Keep translation files under
 `apps/dotln/public/i18n/`. Run `npm run i18n:check` for missing and extra keys.
-Typed translation keys remain a later feature.
+Typed translation keys remain a later feature. Source-provided board titles,
+labels, questions and values are data under `translate="no"`. The template check
+still refuses literal host text inside that marker and requires `t` for framing.
 
 ## 10. Dependency injection
 
@@ -108,9 +114,9 @@ Use `AppBasePathToken`, derived from `<base href>`, for sub-path-aware assets.
 
 Order decorator members as `selector`, `changeDetection`, `template` or
 `templateUrl`, `styles` or `styleUrl`, nonempty `providers`, then `imports`.
-Use OnPush. The shell and placeholder use prefix `dotln`; new libraries declare
-their own selector prefix from the house allow list (`shared`, `app`, `dotln`,
-`dotln-angular`, or the feature name). Prefer ECMAScript `#private` and mark
+Use OnPush and host metadata. Shared UI and shell use `dotln`; the board uses
+`board`. Keep inline templates on their own lines after the opening and before
+the closing backtick. Selector prefixes remain provisional for operator review. Prefer ECMAScript `#private` and mark
 unreassigned members `readonly`.
 
 ## 13. Lint and TypeScript
@@ -121,6 +127,20 @@ argument or variable with `_`. TypeScript `private` members are refused in favor
 of `#private`. Prefer signal APIs and readonly outputs. A lint or compiler
 suppression is an exceptional, documented choice, never the fix for a failing
 check. Prettier uses single quotes and a 100-column print width.
+Typed lint overrides use an absolute workspace `basePath` so nested project
+configs still enforce readonly members. Imports have three autofixed groups:
+packages, house aliases, then relatives with the furthest parent first.
+Helper aliases belong in each library's `types.ts`, exported when public;
+promote a reused helper to `utils`. `npm run check:shared-types` refuses names
+declared in multiple files under `libs/shared`.
+
+## 14. Behavior boundaries
+
+Import `@angular/aria` and `@angular/cdk` only under `wrappers/` or the shared UI
+provider setup. Fragments, templates, composites and layouts receive inputs and
+projection instead of injection. Mappers understand value shapes, never stores.
+See [component taxonomy](../architecture/component-taxonomy.md) for the seven
+roles and [component rules](../../ai-reference/component-rules.md) for R1–R7.
 
 ## 15. Dependency constraints
 
@@ -148,6 +168,15 @@ the deliberately invalid file stays outside ordinary application linting.
 Core's i18n integration is the added dependency; the reverse direction remains
 forbidden.
 
+## 18. Accessibility and visual quality
+
+Use semantic landmarks, a working skip link, visible focus, native keyboard
+behavior, and text equivalents for states and emoji. Target WCAG 2.2 AA with axe
+checks and real keyboard tests. Honor reduced motion and animate only transitions.
+Use fluid lists rather than fixed-width dense tables. Review screenshot baselines
+for spacing, typography, clipping and interaction detail; see
+[Storybook and visual review](storybook.md).
+
 ## 19. Documentation
 
 Maintain `docs/dev-reference/` for people and `docs/ai-reference/` for coding
@@ -170,3 +199,5 @@ Fix an encountered defect in the same change or board it visibly with a skipped
 failing test and `// BOARDED: <follow-up>`, or a visible "not implemented" surface.
 Record the follow-up and its reopening condition in the order. CI prints the
 board count. Do not conceal failed checks with a suppression or passing stub.
+
+Prettier preserves embedded template bytes in TypeScript (`embeddedLanguageFormatting: off`); otherwise it collapses short Angular templates and conflicts with rule 12. ESLint enforces the surrounding newlines, and Angular template lint and compilation still check their contents.

@@ -20,8 +20,16 @@
       "@dotln-angular/i18n": ["./libs/shared/i18n/src/index.ts"],
       "@dotln-angular/core/testing": ["./libs/shared/core/testing/src/index.ts"],
       "@dotln-angular/utils/testing": ["./libs/shared/utils/testing/src/index.ts"],
-      "@dotln-angular/i18n/testing": ["./libs/shared/i18n/testing/src/index.ts"]
-    }
+      "@dotln-angular/i18n/testing": ["./libs/shared/i18n/testing/src/index.ts"],
+      "@dotln-angular/ui": ["./libs/shared/ui/src/index.ts"],
+      "@dotln-angular/models": ["./libs/shared/models/src/index.ts"],
+      "@dotln-angular/dotln/shell": ["./libs/dotln/shell/src/index.ts"],
+      "@dotln-angular/board": ["./libs/features/board/src/index.ts"],
+      "@dotln-angular/ui/testing": ["./libs/shared/ui/testing/src/index.ts"],
+      "@dotln-angular/board/testing": ["./libs/features/board/testing/src/index.ts"]
+    },
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
   },
   "exclude": ["node_modules", "tmp"]
 }

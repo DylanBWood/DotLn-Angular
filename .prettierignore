@@ -17,3 +17,6 @@ CLAUDE.local.md
 
 # DotLn files its order records here with the bytes it recorded.
 docs/dotln/
+
+# Preserve the exact bytes of the pinned upstream contract.
+libs/features/board/src/testing/fixtures/uifa-board-v1.schema.json

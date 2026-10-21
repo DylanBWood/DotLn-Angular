@@ -17,7 +17,10 @@
           "npm run i18n:check",
           "npm run typecheck:foundations",
           "npm run lint:fixtures",
-          "npm run test:tooling"
+          "npm run test:tooling",
+          "npm run lint:components",
+          "npm run check:shared-types",
+          "npm run check:fixtures"
         ]
       }
     }

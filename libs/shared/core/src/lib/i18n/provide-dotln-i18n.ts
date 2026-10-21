@@ -1,5 +1,7 @@
 import { inject } from '@angular/core';
+
 import { provideI18n } from '@dotln-angular/i18n';
+
 import { EnvironmentConfigToken } from '../environment/environment-config';
 import { AppBasePathToken } from '../paths/app-base-path';
 

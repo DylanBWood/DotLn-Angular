@@ -1,6 +1,7 @@
 // Copyright (c) 2013-2025 Scott Sauyet and Michael Hurley — MIT.
 // ported from https://github.com/ramda/ramda/blob/v0.32.0/test/map.js
 import { expectTypeOf } from 'vitest';
+
 import { R } from '../../public_api';
 
 describe('R.map through the house namespace', () => {
