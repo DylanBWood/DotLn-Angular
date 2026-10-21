@@ -1,7 +1,9 @@
 import { TestBed } from '@angular/core/testing';
+import { TRANSLOCO_CONFIG } from '@jsverse/transloco';
+
 import { I18nConfigToken } from '@dotln-angular/i18n';
 import { provideUtilsTestKit } from '@dotln-angular/utils/testing';
-import { TRANSLOCO_CONFIG } from '@jsverse/transloco';
+
 import {
   provideAppBasePathTokenTestKit,
   provideDotlnCoreTestKit,
@@ -11,8 +13,8 @@ import {
   AppBasePathToken,
   BasePaths,
   buildRoute,
+  ChildPaths,
   EnvironmentConfigToken,
-  HomePaths,
   provideDotlnI18n,
 } from '../public_api';
 
@@ -65,16 +67,16 @@ describe('core providers and canonical routes', () => {
   it('preserves path parameters and query values separately', () => {
     const { words } = provideUtilsTestKit();
     const query = { page: 2, enabled: false, tags: ['a', 'b'] };
-    const result = buildRoute(BasePaths.Home, {
-      child: HomePaths.Root,
+    const result = buildRoute(BasePaths.Board, {
+      child: ChildPaths.Root,
       path: [words[2], 0, 'a/b'],
       query,
     });
     expect(result).toEqual({
-      commands: ['/', 'home', 'settings', 0, 'a/b'],
+      commands: ['/', 'board', 'settings', 0, 'a/b'],
       queryParams: query,
     });
     expect(result.queryParams).not.toBe(query);
-    expect(buildRoute(BasePaths.Home).commands).toEqual(['/', 'home']);
+    expect(buildRoute(BasePaths.Board).commands).toEqual(['/', 'board']);
   });
 });

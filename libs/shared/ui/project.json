@@ -1,0 +1,63 @@
+{
+  "name": "ui",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/ui/src",
+  "prefix": "dotln",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:ui"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/shared/ui"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "storybook": {
+      "executor": "@storybook/angular-vite:start-storybook",
+      "continuous": true,
+      "options": {
+        "configDir": ".storybook",
+        "tsConfig": ".storybook/tsconfig.json",
+        "host": "127.0.0.1",
+        "port": 6006,
+        "open": false,
+        "ci": true,
+        "zoneless": true
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular-vite:build-storybook",
+      "cache": true,
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "configDir": ".storybook",
+        "tsConfig": ".storybook/tsconfig.json",
+        "outputDir": "dist/storybook/ui",
+        "zoneless": true
+      },
+      "inputs": [
+        "{workspaceRoot}/libs/**/*",
+        "{workspaceRoot}/.storybook/**/*",
+        "{workspaceRoot}/apps/dotln/public/i18n/**/*",
+        "{workspaceRoot}/apps/dotln/src/styles.scss",
+        "{workspaceRoot}/tsconfig.base.json",
+        "{workspaceRoot}/package-lock.json"
+      ]
+    },
+    "serve-storybook": {
+      "executor": "@nx/web:file-server",
+      "continuous": true,
+      "options": {
+        "staticFilePath": "dist/storybook/ui",
+        "host": "127.0.0.1",
+        "port": 6006,
+        "spa": false,
+        "watch": false
+      }
+    }
+  }
+}

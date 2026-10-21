@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dotln:uifa-board-v1",
+  "title": "UIFA actor board v1",
+  "description": "Read-only, lossy facts with record-level provenance. IDs and links are local to this snapshot. Hash axes retain their recorded contract kinds; known empty arrays mean no entries recorded.",
+  "type": "object",
+  "required": [
+    "viewModelVersion",
+    "fidelity",
+    "panels",
+    "roleAnswers",
+    "sources",
+    "evidence"
+  ],
+  "properties": {
+    "viewModelVersion": {
+      "const": "uifa-board-v1"
+    },
+    "fidelity": {
+      "const": "lossy-read-only"
+    },
+    "panels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/panel"
+      },
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "roleAnswers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/answer"
+      },
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "cell": {
+      "type": "object",
+      "required": [
+        "key",
+        "label",
+        "status",
+        "value",
+        "explanation",
+        "evidence"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "status": {
+          "enum": ["known", "unknown", "unavailable"]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "type": ["string", "number", "boolean"]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": ["string", "number", "boolean"]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "explanation": {
+          "type": ["string", "null"]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^evidence-[1-9][0-9]*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "known"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": ["string", "number", "boolean"]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": ["string", "number", "boolean"]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "null"
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "link": {
+      "type": "object",
+      "required": ["label", "target"],
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "row": {
+      "type": "object",
+      "required": ["id", "title", "cells", "links"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cell"
+          },
+          "minItems": 1
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "title", "status", "explanation", "rows"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "enum": ["available", "unavailable"]
+        },
+        "explanation": {
+          "type": ["string", "null"]
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/row"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "panel": {
+      "type": "object",
+      "required": ["id", "title", "roles", "question", "sections"],
+      "properties": {
+        "id": {
+          "enum": ["actors", "builds", "mechanisms", "work", "blueprint"]
+        },
+        "title": {
+          "type": "string"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "product-lead",
+              "showrunner",
+              "engineer",
+              "tester",
+              "devops"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "answer": {
+      "type": "object",
+      "required": ["role", "question", "target", "cell", "source"],
+      "properties": {
+        "role": {
+          "enum": ["product-lead", "showrunner", "engineer", "tester", "devops"]
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cell": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["ref", "status", "explanation"],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": ["available", "unavailable"]
+        },
+        "explanation": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["id", "source", "record"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^evidence-[1-9][0-9]*$"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "record": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

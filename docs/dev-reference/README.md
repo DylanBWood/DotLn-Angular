@@ -75,3 +75,5 @@ Read [the conventions](workspace/conventions.md) before changing shared
 configuration. Append every project-generating command and its result to
 [the generator log](workspace/generator-log.md). Use the installed generator's
 `--help` before choosing options.
+
+See [the component taxonomy and rules](architecture/component-taxonomy.md) for the UI, shell and board.

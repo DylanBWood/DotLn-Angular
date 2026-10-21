@@ -1,7 +1,8 @@
 // Copyright 2017-2019 Vladimír Gorej and the Ramda Adjunct contributors — BSD-3-Clause.
 // ported from https://github.com/char0n/ramda-adjunct/blob/v6.1.0/test/isNonEmptyString.js
-import { expectTypeOf } from 'vitest';
 import { isNonEmptyString as upstreamIsNonEmptyString } from 'ramda-adjunct';
+import { expectTypeOf } from 'vitest';
+
 import { R, RA } from '../../public_api';
 
 describe('RA.isNonEmptyString through the house namespace', () => {

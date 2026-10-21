@@ -1,6 +1,30 @@
 import nx from '@nx/eslint-plugin';
 import angular from 'angular-eslint';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import inlineTemplateNewlines from './tools/lint-rules/inline-template-newlines.mjs';
 import tokenNames from './tools/lint-rules/token-names.mjs';
+
+const privateSyntax = {
+  selector: '[accessibility="private"]',
+  message: 'Use ECMAScript #private members instead of TypeScript private.',
+};
+const domainImports = [
+  '@dotln-angular/*-data-access',
+  '@dotln-angular/state',
+  '@dotln-angular/state/**',
+];
+const behaviorImports = ['@angular/aria', '@angular/aria/**', '@angular/cdk', '@angular/cdk/**'];
+const restrictions = (groups) => [
+  'error',
+  {
+    patterns: [
+      {
+        group: groups,
+        message: 'Import is outside this component role; compose through inputs and outputs.',
+      },
+    ],
+  },
+];
 
 export default [
   ...nx.configs['flat/base'],
@@ -84,10 +108,20 @@ export default [
     files: ['**/*.ts'],
     plugins: {
       '@angular-eslint': angular.tsPlugin,
-      dotln: { rules: { 'token-names': tokenNames } },
+      dotln: {
+        rules: { 'token-names': tokenNames, 'inline-template-newlines': inlineTemplateNewlines },
+      },
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
       'dotln/token-names': 'error',
+      'dotln/inline-template-newlines': 'error',
+      '@angular-eslint/prefer-on-push-component-change-detection': 'error',
+      '@angular-eslint/prefer-host-metadata-property': 'error',
+      'simple-import-sort/imports': [
+        'error',
+        { groups: [['^\\u0000', '^node:', '^@?\\w'], ['^@dotln-angular/'], ['^\\.']] },
+      ],
       'no-restricted-syntax': [
         'error',
         {
@@ -100,6 +134,7 @@ export default [
     },
   },
   {
+    basePath: import.meta.dirname,
     files: ['apps/**/*.ts', 'libs/**/*.ts'],
     languageOptions: {
       parserOptions: {
@@ -110,5 +145,42 @@ export default [
     rules: {
       '@typescript-eslint/prefer-readonly': 'error',
     },
+  },
+
+  {
+    basePath: import.meta.dirname,
+    files: ['apps/**/*.ts', 'libs/**/*.ts'],
+    ignores: ['**/wrappers/**', 'libs/shared/ui/src/lib/provide-dotln-ui.ts'],
+    rules: { 'no-restricted-imports': restrictions(behaviorImports) },
+  },
+  {
+    files: ['**/{fragments,templates,composites,layouts}/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        privateSyntax,
+        {
+          selector: 'CallExpression[callee.name="inject"]',
+          message: 'Presentational components receive inputs; they do not inject.',
+        },
+        {
+          selector: 'MethodDefinition[kind="constructor"] > FunctionExpression[params.length>0]',
+          message: 'Presentational components must not use constructor injection.',
+        },
+      ],
+      'no-restricted-imports': restrictions([
+        ...domainImports,
+        '@angular/router',
+        ...behaviorImports,
+      ]),
+    },
+  },
+  {
+    files: ['**/wrappers/**/*.ts'],
+    rules: { 'no-restricted-imports': restrictions([...domainImports, '@angular/router']) },
+  },
+  {
+    files: ['**/mappers/**/*.ts'],
+    rules: { 'no-restricted-imports': restrictions([...domainImports, ...behaviorImports]) },
   },
 ];

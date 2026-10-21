@@ -1,0 +1,834 @@
+{
+  "viewModelVersion": "uifa-board-v1",
+  "fidelity": "lossy-read-only",
+  "panels": [
+    {
+      "id": "actors",
+      "title": "Actors",
+      "roles": ["showrunner", "engineer", "tester"],
+      "question": "Who is recorded, what are they equipped to do, and what evidence shows their work?",
+      "sections": [
+        {
+          "id": "actors-6a09cb413decd84a",
+          "title": "WO-009 demonstration (recorded fixture)",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "actors-d388bf69a2138223",
+          "title": "Self-hosted audit",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "actors-b9a9504826d64362",
+          "title": "Self-hosted verifier",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "control-actors",
+          "title": "People and recorded workflow actors",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "actor-definitions",
+          "title": "Saved actor definitions",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "receipts-6a09cb413decd84a",
+          "title": "Audit receipts — WO-009 demonstration (recorded fixture)",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "receipts-d388bf69a2138223",
+          "title": "Audit receipts — Self-hosted audit",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "receipts-b9a9504826d64362",
+          "title": "Audit receipts — Self-hosted verifier",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": "builds",
+      "title": "Builds",
+      "roles": ["engineer"],
+      "question": "Does this composition express the behavior I mean, and what does it cost?",
+      "sections": [
+        {
+          "id": "saved-builds",
+          "title": "Saved builds",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "recorded-builds-6a09cb413decd84a",
+          "title": "Recorded builds — WO-009 demonstration (recorded fixture)",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "recorded-builds-d388bf69a2138223",
+          "title": "Recorded builds — Self-hosted audit",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "recorded-builds-b9a9504826d64362",
+          "title": "Recorded builds — Self-hosted verifier",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": "mechanisms",
+      "title": "Mechanisms",
+      "roles": ["tester", "engineer", "devops"],
+      "question": "In this situation, does the equipped behavior do the right thing?",
+      "sections": [
+        {
+          "id": "compiled-mechanisms",
+          "title": "Compiled mechanisms",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "matrices-6a09cb413decd84a",
+          "title": "Acceptance evidence — WO-009 demonstration (recorded fixture)",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "matrices-d388bf69a2138223",
+          "title": "Acceptance evidence — Self-hosted audit",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "matrices-b9a9504826d64362",
+          "title": "Acceptance evidence — Self-hosted verifier",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": "work",
+      "title": "Work",
+      "roles": ["showrunner", "devops"],
+      "question": "What is active, what is blocked, what closed, and what did the release contain?",
+      "sections": [
+        {
+          "id": "orders",
+          "title": "Orders and legal actions",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "worktrees",
+          "title": "Worktree Beacon observations",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "releases",
+          "title": "Published releases",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "work-order-index",
+          "title": "Work-order evidence index",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "work-order-history",
+          "title": "Work-order history index",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "usage",
+          "title": "Recorded actor usage",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        }
+      ]
+    },
+    {
+      "id": "blueprint",
+      "title": "Blueprint",
+      "roles": ["product-lead", "devops"],
+      "question": "Is this still the thing we mean?",
+      "sections": [
+        {
+          "id": "refutation-verdicts",
+          "title": "Latest plan-refutation verdicts",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "capabilities",
+          "title": "Capability evidence",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "publication",
+          "title": "Publication status",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        },
+        {
+          "id": "roadmap",
+          "title": "Pending roadmap rungs",
+          "status": "unavailable",
+          "explanation": "This recorded fixture deliberately makes every section unavailable.",
+          "rows": []
+        }
+      ]
+    }
+  ],
+  "roleAnswers": [
+    {
+      "role": "product-lead",
+      "question": "Is this still the thing we mean?",
+      "target": "refutation-verdicts",
+      "cell": "verdict + reason; latest-refutation.holdStatus",
+      "source": "docs/product/13-uifa-roles.md#the-five-roles"
+    },
+    {
+      "role": "showrunner",
+      "question": "What is active, what is blocked, what closed, and what did the release contain?",
+      "target": "orders",
+      "cell": "phase + blockers + dependencyCheck + legalNextActions; releases.workOrders",
+      "source": "docs/product/13-uifa-roles.md#the-five-roles"
+    },
+    {
+      "role": "engineer",
+      "question": "Does this composition express the behavior I mean, and what does it cost?",
+      "target": "saved-builds",
+      "cell": "tooltip + semanticHash + hashAgreement",
+      "source": "docs/product/13-uifa-roles.md#the-five-roles"
+    },
+    {
+      "role": "tester",
+      "question": "In this situation, does the equipped behavior do the right thing?",
+      "target": "compiled-mechanisms",
+      "cell": "desiredBehavior + fixture.incidentsPrevented + lastActivation; acceptance matrix status and evidence",
+      "source": "docs/product/13-uifa-roles.md#the-five-roles"
+    },
+    {
+      "role": "devops",
+      "question": "Which repeated step can become a checked mechanism next?",
+      "target": "compiled-mechanisms",
+      "cell": "boundary + rung + nextMaturity; capabilities.Next smallest promotable increment",
+      "source": "docs/product/13-uifa-roles.md#the-five-roles"
+    }
+  ],
+  "sources": [
+    {
+      "ref": "skeleton:loadout-exports",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "packages/skeleton/src/loadouts/feedback.ts",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/evidence/current.json#feedback",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "packages/console/fixtures/wo009.events.jsonl#worker-status",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "packages/console/fixtures/wo009.events.jsonl#audit-projections",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "store:wo009-demo",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/evidence/current.json#feedback#worker-status",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/evidence/current.json#feedback#audit-projections",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "store:selfhost-audit",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "store:selfhost-verifier",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "control:canonical-segments",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/work-orders/README.md",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/work-orders/HISTORY.md",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "resume:status--json",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "worktree:constellation",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "release:list",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "resume:usage--json",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/planning/capability-table.md",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/publication/audience-status-index.md",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/product/06-roadmap.md",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    },
+    {
+      "ref": "docs/planning/refutations/",
+      "status": "unavailable",
+      "explanation": "This recorded fixture deliberately makes every source unavailable."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence-1",
+      "source": "packages/skeleton/src/reactor.ts#loadout",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-2",
+      "source": "packages/skeleton/src/loadouts/contributor.ts#contributorLoadout",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-3",
+      "source": "packages/skeleton/src/loadouts/contributor.ts#contributorLoadoutBeforeMissionCheck",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-4",
+      "source": "packages/skeleton/src/loadouts/entropy-reducer.ts#entropyReducerLoadout",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-5",
+      "source": "packages/skeleton/src/loadouts/mission-check.ts#missionCheckLoadout",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-6",
+      "source": "packages/skeleton/src/loadouts/plan-refuter.ts#planRefuterLoadout",
+      "record": "loadout + explicit inspection environment"
+    },
+    {
+      "id": "evidence-7",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:anti-oscillation@2"
+    },
+    {
+      "id": "evidence-8",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:anti-oscillation; fixtures:anti-oscillation"
+    },
+    {
+      "id": "evidence-9",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:bounded-boy-scout-cleanup@2"
+    },
+    {
+      "id": "evidence-10",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:bounded-boy-scout-cleanup; fixtures:bounded-boy-scout-cleanup"
+    },
+    {
+      "id": "evidence-11",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:concurrent-work-requires-worktrees@2"
+    },
+    {
+      "id": "evidence-12",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:concurrent-work-requires-worktrees; fixtures:concurrent-work-requires-worktrees"
+    },
+    {
+      "id": "evidence-13",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:correctness-over-sycophancy@2"
+    },
+    {
+      "id": "evidence-14",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:correctness-over-sycophancy; fixtures:correctness-over-sycophancy"
+    },
+    {
+      "id": "evidence-15",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:fail-conservative-correction@2"
+    },
+    {
+      "id": "evidence-16",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:fail-conservative-correction; fixtures:fail-conservative-correction"
+    },
+    {
+      "id": "evidence-17",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:no-attribution@2"
+    },
+    {
+      "id": "evidence-18",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:no-attribution; fixtures:no-attribution"
+    },
+    {
+      "id": "evidence-19",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:no-lint-type-disables-as-fixes@1"
+    },
+    {
+      "id": "evidence-20",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:no-lint-type-disables-as-fixes; fixtures:no-lint-type-disables-as-fixes"
+    },
+    {
+      "id": "evidence-21",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:no-partial-completion@2"
+    },
+    {
+      "id": "evidence-22",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:no-partial-completion; fixtures:no-partial-completion"
+    },
+    {
+      "id": "evidence-23",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:read-your-own-output@2"
+    },
+    {
+      "id": "evidence-24",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:read-your-own-output; fixtures:read-your-own-output"
+    },
+    {
+      "id": "evidence-25",
+      "source": "packages/skeleton/src/loadouts/feedback.ts",
+      "record": "unit:verify-app-before-done@2"
+    },
+    {
+      "id": "evidence-26",
+      "source": "docs/evidence/current.json#feedback",
+      "record": "maturity:verify-app-before-done; fixtures:verify-app-before-done"
+    },
+    {
+      "id": "evidence-27",
+      "source": "docs/work-orders/README.md",
+      "record": "line:23 (WO-006)"
+    },
+    {
+      "id": "evidence-28",
+      "source": "docs/work-orders/README.md",
+      "record": "link:WO-006-component-taxonomy-shell-home.md"
+    },
+    {
+      "id": "evidence-29",
+      "source": "docs/work-orders/README.md",
+      "record": "line:43 (WO-007)"
+    },
+    {
+      "id": "evidence-30",
+      "source": "docs/work-orders/README.md",
+      "record": "link:WO-007-events-stores-data-access.md"
+    },
+    {
+      "id": "evidence-31",
+      "source": "docs/work-orders/README.md",
+      "record": "line:61 (WO-008)"
+    },
+    {
+      "id": "evidence-32",
+      "source": "docs/work-orders/README.md",
+      "record": "link:WO-008-authentication-and-permissions.md"
+    },
+    {
+      "id": "evidence-33",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:9 (WO-001)"
+    },
+    {
+      "id": "evidence-34",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-001/VER-001.md"
+    },
+    {
+      "id": "evidence-35",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-001/FINAL-001.md"
+    },
+    {
+      "id": "evidence-36",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-001-environment-truth.md"
+    },
+    {
+      "id": "evidence-37",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:27 (WO-003)"
+    },
+    {
+      "id": "evidence-38",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-003/VER-002.md"
+    },
+    {
+      "id": "evidence-39",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-003/FINAL-001.md"
+    },
+    {
+      "id": "evidence-40",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-003-register-dotln-angular.md"
+    },
+    {
+      "id": "evidence-41",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:46 (WO-004)"
+    },
+    {
+      "id": "evidence-42",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-004-scaffold-dotln-angular-workspace.md"
+    },
+    {
+      "id": "evidence-43",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:71 (WO-005)"
+    },
+    {
+      "id": "evidence-44",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-005-foundation-libraries.md"
+    },
+    {
+      "id": "evidence-45",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:95 (WO-009)"
+    },
+    {
+      "id": "evidence-46",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-009/VER-001.md"
+    },
+    {
+      "id": "evidence-47",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-009/FINAL-001.md"
+    },
+    {
+      "id": "evidence-48",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-009-release-display-name.md"
+    },
+    {
+      "id": "evidence-49",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:113 (WO-010)"
+    },
+    {
+      "id": "evidence-50",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-010/VER-001.md"
+    },
+    {
+      "id": "evidence-51",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-010/FINAL-001.md"
+    },
+    {
+      "id": "evidence-52",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-010-protect-main-both-repositories.md"
+    },
+    {
+      "id": "evidence-53",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:131 (WO-011)"
+    },
+    {
+      "id": "evidence-54",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-011/VER-001.md"
+    },
+    {
+      "id": "evidence-55",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-011/FINAL-001.md"
+    },
+    {
+      "id": "evidence-56",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-011-starter-v0.85.0-registration.md"
+    },
+    {
+      "id": "evidence-57",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "line:149 (WO-012)"
+    },
+    {
+      "id": "evidence-58",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/verifications/WO-012/VER-001.md"
+    },
+    {
+      "id": "evidence-59",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:../../docs/final-reviews/WO-012/FINAL-001.md"
+    },
+    {
+      "id": "evidence-60",
+      "source": "docs/work-orders/HISTORY.md",
+      "record": "link:WO-012-starter-v0.88.0-registration.md"
+    },
+    {
+      "id": "evidence-61",
+      "source": "worktree:constellation",
+      "record": "line:1"
+    },
+    {
+      "id": "evidence-62",
+      "source": "worktree:constellation",
+      "record": "line:2"
+    },
+    {
+      "id": "evidence-63",
+      "source": "worktree:constellation",
+      "record": "line:3"
+    },
+    {
+      "id": "evidence-64",
+      "source": "release:list",
+      "record": "line:2 (v0.1.0)"
+    },
+    {
+      "id": "evidence-65",
+      "source": "release:list",
+      "record": "line:3 (v0.2.0)"
+    },
+    {
+      "id": "evidence-66",
+      "source": "release:list",
+      "record": "line:4 (v0.3.0)"
+    },
+    {
+      "id": "evidence-67",
+      "source": "release:list",
+      "record": "line:5 (v0.3.1)"
+    },
+    {
+      "id": "evidence-68",
+      "source": "release:list",
+      "record": "line:6 (v0.3.2)"
+    },
+    {
+      "id": "evidence-69",
+      "source": "release:list",
+      "record": "line:7 (v0.3.3)"
+    },
+    {
+      "id": "evidence-70",
+      "source": "resume:usage--json",
+      "record": "totals"
+    },
+    {
+      "id": "evidence-71",
+      "source": "resume:usage--json",
+      "record": "byActor:0"
+    },
+    {
+      "id": "evidence-72",
+      "source": "resume:usage--json",
+      "record": "byActor:1"
+    },
+    {
+      "id": "evidence-73",
+      "source": "resume:usage--json",
+      "record": "byActor:2"
+    },
+    {
+      "id": "evidence-74",
+      "source": "resume:usage--json",
+      "record": "byActor:3"
+    },
+    {
+      "id": "evidence-75",
+      "source": "resume:usage--json",
+      "record": "byActor:4"
+    },
+    {
+      "id": "evidence-76",
+      "source": "resume:usage--json",
+      "record": "byActor:5"
+    },
+    {
+      "id": "evidence-77",
+      "source": "resume:usage--json",
+      "record": "byActor:6"
+    },
+    {
+      "id": "evidence-78",
+      "source": "resume:usage--json",
+      "record": "byActor:7"
+    },
+    {
+      "id": "evidence-79",
+      "source": "resume:usage--json",
+      "record": "byActor:8"
+    },
+    {
+      "id": "evidence-80",
+      "source": "resume:usage--json",
+      "record": "byActor:9"
+    },
+    {
+      "id": "evidence-81",
+      "source": "resume:usage--json",
+      "record": "byActor:10"
+    },
+    {
+      "id": "evidence-82",
+      "source": "resume:usage--json",
+      "record": "byActor:11"
+    },
+    {
+      "id": "evidence-83",
+      "source": "resume:usage--json",
+      "record": "byActor:12"
+    },
+    {
+      "id": "evidence-84",
+      "source": "resume:usage--json",
+      "record": "byActor:13"
+    },
+    {
+      "id": "evidence-85",
+      "source": "resume:usage--json",
+      "record": "byActor:14"
+    },
+    {
+      "id": "evidence-86",
+      "source": "resume:usage--json",
+      "record": "byActor:15"
+    },
+    {
+      "id": "evidence-87",
+      "source": "resume:usage--json",
+      "record": "byActor:16"
+    },
+    {
+      "id": "evidence-88",
+      "source": "docs/planning/refutations/2026-10-21-planning-fc1c0ec6bba3073a-005.json",
+      "record": "planVerdict + holdReasons (immutable recorded result)"
+    },
+    {
+      "id": "evidence-89",
+      "source": "docs/planning/refutations/2026-10-21-planning-fc1c0ec6bba3073a-005.json",
+      "record": "orders:WO-012"
+    },
+    {
+      "id": "evidence-90",
+      "source": "docs/planning/refutations/2026-10-21-planning-fc1c0ec6bba3073a-005.json",
+      "record": "orders:WO-006"
+    },
+    {
+      "id": "evidence-91",
+      "source": "docs/planning/refutations/2026-10-21-planning-fc1c0ec6bba3073a-005.json",
+      "record": "orders:WO-007"
+    },
+    {
+      "id": "evidence-92",
+      "source": "docs/planning/refutations/2026-10-21-planning-fc1c0ec6bba3073a-005.json",
+      "record": "orders:WO-008"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "dotln-shell",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/dotln/shell/src",
+  "prefix": "dotln",
+  "projectType": "library",
+  "tags": ["scope:dotln", "type:ui"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/dotln/shell"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

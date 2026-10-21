@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { TranslocoMissingHandler } from '@jsverse/transloco';
+
 import { I18nConfigToken } from './i18n-config';
 
 @Injectable()

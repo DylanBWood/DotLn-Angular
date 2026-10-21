@@ -2,6 +2,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
+
 import {
   provideI18nConfigTokenTestKit,
   provideMissingTranslationHandlerTestKit,
@@ -18,7 +19,9 @@ import {
 @Component({
   selector: 'shared-translation-test',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<h1>{{ 'home.title' | t }}</h1>`,
+  template: `
+    <h1>{{ 'home.title' | t }}</h1>
+  `,
   imports: [TPipe],
 })
 class TranslationTest {}

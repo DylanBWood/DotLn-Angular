@@ -1,7 +1,8 @@
 // Copyright (c) 2013-2025 Scott Sauyet and Michael Hurley — MIT.
 // ported from https://github.com/ramda/ramda/blob/v0.32.0/test/filter.js
-import { expectTypeOf } from 'vitest';
 import { filter as upstreamFilter, into } from 'ramda';
+import { expectTypeOf } from 'vitest';
+
 import { R } from '../../public_api';
 
 describe('R.filter through the house namespace', () => {

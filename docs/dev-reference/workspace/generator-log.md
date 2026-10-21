@@ -85,3 +85,37 @@ and production builds and absent afterward. Both builds exited 0.
 returned only `./.nx/cache`. The local build followed `cp .env.example .env`
 and `npm run env:prime`; Git ignored both local environment files, and the
 session removed the two files it generated after the build checks.
+
+## Component libraries — 2026-10-21
+
+Nx 23.3.0; generator help read from the installed package. All commands run with `NX_DAEMON=false NX_ISOLATE_PLUGINS=false`; the daemon was stopped first. `--skipPackageJson` preserves the already validated Angular and AnalogJS versions.
+
+Planned invocation: `npx nx g @nx/angular:library libs/shared/ui --name=ui --importPath=@dotln-angular/ui --tags=scope:shared,type:ui --prefix=dotln --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+
+Result: ui generated successfully (exit 0).
+
+Planned invocation: `npx nx g @nx/angular:library libs/shared/models --name=models --importPath=@dotln-angular/models --tags=scope:shared,type:models --prefix=dotln --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+
+Result: models generator exited 0.
+
+Planned invocation: `npx nx g @nx/angular:library libs/dotln/shell --name=dotln-shell --importPath=@dotln-angular/dotln/shell --tags=scope:dotln,type:ui --prefix=dotln --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+
+Result: dotln-shell generator exited 0.
+
+## Recorded actor board — 2026-10-21
+
+Captured with `node packages/console/dist/src/cli.js board --json` from the launchpad order worktree. The raw output stayed in process memory; `scrubBoard` replaced its root with `<launchpad>` before writing either fixture. `unavailableBoard` derived the unavailable fixture. The source is a recorded snapshot, not live state.
+
+Schema: platform commit `a54f8d6520ed54d05e5209455c67541562716404`, `packages/console/uifa-board-v1.schema.json`; SHA-256 `7d20e785c718b4b601f45a9c351461955666ea16d49f17ae6d8fde0676629cd3`. The schema bytes are kept exact and excluded only from formatting.
+
+Planned invocation: `npx nx g @nx/angular:library libs/features/board --name=board --importPath=@dotln-angular/board --tags=scope:dotln,type:feature --prefix=board --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+
+Result: board generator exited 0. The generated placeholder was replaced by the approved board roles.
+
+Planned invocation: `npx nx g @nx/angular:library-secondary-entry-point --library=ui --name=testing --skipModule --skipFormat --interactive=false`.
+
+Result: ui/testing generator exited 0.
+
+Planned invocation: `npx nx g @nx/angular:library-secondary-entry-point --library=board --name=testing --skipModule --skipFormat --interactive=false`.
+
+Result: board/testing generator exited 0.

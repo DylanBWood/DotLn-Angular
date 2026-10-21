@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["./*.ts", "../libs/**/*.ts"],
+  "exclude": ["../libs/**/*.spec.ts", "../libs/**/test-setup.ts"]
+}

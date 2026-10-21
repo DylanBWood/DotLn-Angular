@@ -5,6 +5,7 @@ import {
   TRANSLOCO_CONFIG,
   translocoConfig,
 } from '@jsverse/transloco';
+
 import { I18nConfig, I18nConfigToken } from './i18n-config';
 import { MissingTranslationHandler } from './missing-translation-handler';
 import { TranslocoHttpLoader } from './transloco-http-loader';

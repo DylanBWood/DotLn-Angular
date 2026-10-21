@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import ts from 'typescript';
 import {
@@ -50,11 +50,14 @@ function kitImports(source) {
     if (!ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) continue;
     const specifier = node.moduleSpecifier.text;
     const match = /^@dotln-angular\/([^/]+)\/testing$/.exec(specifier);
-    const entry = match
-      ? resolve(workspaceRoot, 'libs/shared', match[1], 'testing/src/index.ts')
-      : specifier.startsWith('.') && specifier.includes('testing')
-        ? resolveSource(source.fileName, specifier)
-        : undefined;
+    const paths = JSON.parse(readFileSync(resolve(workspaceRoot, 'tsconfig.base.json'), 'utf8'))
+      .compilerOptions.paths;
+    const entry =
+      match && paths[specifier]?.[0]
+        ? resolve(workspaceRoot, paths[specifier][0])
+        : specifier.startsWith('.') && specifier.includes('testing')
+          ? resolveSource(source.fileName, specifier)
+          : undefined;
     const exports = exportedFunctions(entry);
     const bindings = node.importClause?.namedBindings;
     if (bindings && ts.isNamedImports(bindings)) {
@@ -68,7 +71,7 @@ function kitImports(source) {
   return names;
 }
 
-export function checkSpecKits(paths = ['libs/shared']) {
+export function checkSpecKits(paths = ['libs']) {
   const findings = [];
   const files = sourceFiles(paths).filter((path) => path.endsWith('.ts'));
   // Bind local declarations without loading the dependency graph. Symbols
@@ -80,9 +83,11 @@ export function checkSpecKits(paths = ['libs/shared']) {
     const isToken = importedNames(source, '@angular/core', 'InjectionToken');
     const isInjectable = importedNames(source, '@angular/core', 'Injectable');
     const isTestBed = importedNames(source, '@angular/core/testing', 'TestBed');
-    const library = /^libs\/shared\/([^/]+)\//.exec(relative(workspaceRoot, path));
+    const library = /^(libs\/(?:shared|features|dotln)\/[^/]+)\//.exec(
+      relative(workspaceRoot, path),
+    );
     const exportedKits = library
-      ? exportedFunctions(resolve(workspaceRoot, 'libs/shared', library[1], 'testing/src/index.ts'))
+      ? exportedFunctions(resolve(workspaceRoot, library[1], 'testing/src/index.ts'))
       : new Set();
     const importedKits = kitImports(source);
     function kitSpread(node) {

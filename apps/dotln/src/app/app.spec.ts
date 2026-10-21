@@ -1,17 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+
 import { provideDotlnCoreTestKit } from '@dotln-angular/core/testing';
 import { provideDotlnI18nTestKit } from '@dotln-angular/i18n/testing';
+
+import en from '../../public/i18n/en.json';
 import { App } from './app';
 import { appRoutes } from './app.routes';
 
 describe('App', () => {
-  it('renders the home route through the shell outlet', async () => {
+  it('renders the board route through the shell outlet', async () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
         ...provideDotlnCoreTestKit().providers,
-        ...provideDotlnI18nTestKit().providers,
+        ...provideDotlnI18nTestKit({ langs: { en } }).providers,
         provideRouter(appRoutes),
       ],
     }).compileComponents();
@@ -20,7 +23,7 @@ describe('App', () => {
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('router-outlet')).not.toBeNull();
-    expect(element.querySelector('h1')?.textContent).toBe('DotLn');
-    expect(TestBed.inject(Router).url).toBe('/home');
+    expect(element.querySelector('h1')?.textContent).toBe('The actor board');
+    expect(TestBed.inject(Router).url).toBe('/board');
   });
 });
