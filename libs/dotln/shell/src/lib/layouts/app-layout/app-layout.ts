@@ -10,9 +10,9 @@ import { TPipe } from '@dotln-angular/i18n';
     <header>
       <ng-content select="[header]" />
     </header>
-    <nav [attr.aria-label]="'shell.navigation' | t">
+    <div class="navigation">
       <ng-content select="[nav]" />
-    </nav>
+    </div>
     <ng-content select="[notices]" />
     <main id="main-content" tabindex="-1" #main>
       <ng-content select="[main]" />

@@ -27,3 +27,5 @@
 See [the component taxonomy and rules](component-rules.md) for the UI, shell and board.
 
 Read [state rules](state-rules.md) for typed events, stores, HTTP, persistence and mocks.
+
+Read [sub-app rules](sub-app-rules.md) before adding a route or menu entry.

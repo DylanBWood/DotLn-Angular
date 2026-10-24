@@ -10,6 +10,8 @@ for (const library of [
   'shared/ui',
   'dotln/shell',
   'features/board',
+  'features/scene',
+  'features/machinery',
   'shared/events',
   'shared/data-access',
   'shared/state',

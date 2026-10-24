@@ -8,4 +8,13 @@ export const appRoutes: Routes = [
     path: BasePaths.Board,
     loadChildren: () => import('@dotln-angular/board').then(({ boardRoutes }) => boardRoutes),
   },
+  {
+    path: BasePaths.Scene,
+    loadChildren: () => import('@dotln-angular/scene').then(({ sceneRoutes }) => sceneRoutes),
+  },
+  {
+    path: BasePaths.Machinery,
+    loadChildren: () =>
+      import('@dotln-angular/machinery').then(({ machineryRoutes }) => machineryRoutes),
+  },
 ];

@@ -2,7 +2,12 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { BasePaths, buildRoute } from '@dotln-angular/core';
-import { DotlnAppLayout, ShellNotices } from '@dotln-angular/dotln/shell';
+import {
+  DotlnAppLayout,
+  DotlnSubAppMenu,
+  DotlnSubAppMenuGroup,
+  ShellNotices,
+} from '@dotln-angular/dotln/shell';
 import { TPipe } from '@dotln-angular/i18n';
 
 @Component({
@@ -14,9 +19,32 @@ import { TPipe } from '@dotln-angular/i18n';
         <span class="brand-mark" aria-hidden="true"></span>{{ 'shell.brand' | t }}
       </div>
       <span header class="edition">{{ 'shell.edition' | t }}</span>
-      <a nav [routerLink]="board.commands" routerLinkActive="active" ariaCurrentWhenActive="page">{{
-        'shell.board' | t
-      }}</a>
+      <dotln-sub-app-menu nav>
+        <dotln-sub-app-menu-group>
+          <span menu-heading>{{ 'shell.menu.scene' | t }}</span>
+          <li menu-item>
+            <a [routerLink]="scene.commands" routerLinkActive="active" ariaCurrentWhenActive="page">
+              {{ 'shell.menu.scene' | t }}
+            </a>
+          </li>
+        </dotln-sub-app-menu-group>
+        <dotln-sub-app-menu-group>
+          <span menu-heading>{{ 'shell.menu.machinery' | t }}</span>
+          <li menu-item>
+            <a [routerLink]="board.commands" routerLinkActive="active" ariaCurrentWhenActive="page">
+              {{ 'shell.board' | t }}
+            </a>
+          </li>
+          <li menu-item>
+            <a [routerLink]="machinery.commands" routerLinkActive="active" ariaCurrentWhenActive="page">
+              {{ 'shell.menu.machinery' | t }}
+            </a>
+          </li>
+        </dotln-sub-app-menu-group>
+        <dotln-sub-app-menu-group [emptyMessage]="'shell.menu.toolsEmpty' | t">
+          <span menu-heading>{{ 'shell.menu.tools' | t }}</span>
+        </dotln-sub-app-menu-group>
+      </dotln-sub-app-menu>
       <dotln-shell-notices notices />
       <router-outlet main />
       <span footer>{{ 'shell.footer' | t }}</span>
@@ -24,8 +52,19 @@ import { TPipe } from '@dotln-angular/i18n';
     </dotln-app-layout>
   `,
   styleUrl: './app.scss',
-  imports: [DotlnAppLayout, ShellNotices, TPipe, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    DotlnAppLayout,
+    DotlnSubAppMenu,
+    DotlnSubAppMenuGroup,
+    ShellNotices,
+    TPipe,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+  ],
 })
 export class App {
   readonly board = buildRoute(BasePaths.Board);
+  readonly scene = buildRoute(BasePaths.Scene);
+  readonly machinery = buildRoute(BasePaths.Machinery);
 }

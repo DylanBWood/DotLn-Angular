@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import { TPipe } from '@dotln-angular/i18n';
 import { provideDotlnI18nTestKit } from '@dotln-angular/i18n/testing';
 
 import { DotlnAppLayout } from './app-layout';
@@ -11,12 +12,14 @@ import { DotlnAppLayout } from './app-layout';
   template: `
     <dotln-app-layout>
       <span header></span>
-      <a nav href="#main-content" translate="no">{{ heading }}</a>
+      <nav nav [attr.aria-label]="'shell.navigation' | t">
+        <a href="#main-content" translate="no">{{ heading }}</a>
+      </nav>
       <h1 main translate="no">{{ heading }}</h1>
       <span footer></span>
     </dotln-app-layout>
   `,
-  imports: [DotlnAppLayout],
+  imports: [DotlnAppLayout, TPipe],
 })
 class ShellHost {
   readonly heading = 'Workspace';

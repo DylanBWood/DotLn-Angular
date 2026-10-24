@@ -19,6 +19,13 @@ import {
 } from '../public_api';
 
 describe('core providers and canonical routes', () => {
+  it.each([
+    [BasePaths.Scene, 'scene'],
+    [BasePaths.Machinery, 'machinery'],
+  ] as const)('builds the %s sub-app route', (base, segment) => {
+    expect(buildRoute(base).commands).toEqual(['/', segment]);
+  });
+
   it('provides the typed environment without a root default', () => {
     TestBed.configureTestingModule({
       providers: [...provideEnvironmentConfigTokenTestKit({ mocks: false }).providers],

@@ -40,7 +40,11 @@
       "@dotln-angular/board-data-access/testing/handlers": [
         "./libs/features/board-data-access/testing/src/handlers.ts"
       ],
-      "@dotln-angular/testing-network": ["./vitest-network-setup.mjs"]
+      "@dotln-angular/testing-network": ["./vitest-network-setup.mjs"],
+      "@dotln-angular/scene": ["./libs/features/scene/src/index.ts"],
+      "@dotln-angular/machinery": ["./libs/features/machinery/src/index.ts"],
+      "@dotln-angular/scene/testing": ["./libs/features/scene/testing/src/index.ts"],
+      "@dotln-angular/machinery/testing": ["./libs/features/machinery/testing/src/index.ts"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true

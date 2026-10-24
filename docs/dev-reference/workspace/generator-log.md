@@ -139,3 +139,32 @@ All four library commands exited 0. Removed only their generated example compone
 The four secondary-entry-point attempts refused absent library package manifests. Added private local manifests (the established board/core pattern) and reran the same commands.
 
 All four secondary-entry-point reruns exited 0. The shell now hosts orchestration and is type:feature; shared data-access is additionally tagged layer:shared-data-access, the only data-access dependency admitted to feature data-access.
+
+## Sub-app routes, 2026-10-24
+
+Nx 23.3.0; Node 26. Dependency installation succeeded and the daemon was stopped.
+The installed library and secondary-entry-point help were read before generation.
+Each invocation below runs with `NX_DAEMON=false NX_ISOLATE_PLUGINS=false`.
+
+- Planned: `npx nx g @nx/angular:library libs/features/scene --name=scene --importPath=@dotln-angular/scene --tags=scope:dotln,type:feature --prefix=scene --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library libs/features/machinery --name=machinery --importPath=@dotln-angular/machinery --tags=scope:dotln,type:feature --prefix=machinery --style=scss --unitTestRunner=vitest-analog --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=scene --name=testing --skipModule --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=machinery --name=testing --skipModule --skipFormat --interactive=false`.
+
+Private library package manifests supply the names required by the secondary-entry
+generator. Testing entry points belong to their parent projects; their aliases
+are checked in `tsconfig.base.json`, not counted as separate Nx projects.
+
+Both library attempts exited 1 before writing: the Nx 23.3.0 test generator
+rejects installed Vitest 5 because its peer-range check expects at most 4.
+The workspace already runs Vitest 5 with AnalogJS 2.9.1 and MSW 3. Preserve that
+validated dependency set: generate the projects without a runner, then apply
+the existing board library's AnalogJS/Vitest configuration to the new libraries.
+
+- Planned fallback: `npx nx g @nx/angular:library libs/features/scene --name=scene --importPath=@dotln-angular/scene --tags=scope:dotln,type:feature --prefix=scene --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned fallback: `npx nx g @nx/angular:library libs/features/machinery --name=machinery --importPath=@dotln-angular/machinery --tags=scope:dotln,type:feature --prefix=machinery --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+
+The two fallback library generators and both testing entry-point generators exited 0.
+The starter components were replaced with the arriving containers. The existing
+AnalogJS runner, two-worker limit, strict compiler configurations and testing
+barrels were applied; no dependency or lockfile change was needed.
