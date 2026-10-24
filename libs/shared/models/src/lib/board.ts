@@ -79,3 +79,14 @@ export interface BoardDocument {
   readonly sources: readonly Source[];
   readonly evidence: readonly Evidence[];
 }
+
+export type BoardResponse = Omit<BoardDocument, 'viewModelVersion'> & {
+  readonly viewModelVersion: string;
+};
+
+export function isPanelId(value: unknown): value is PanelId {
+  return (
+    typeof value === 'string' &&
+    ['actors', 'builds', 'mechanisms', 'work', 'blueprint'].includes(value)
+  );
+}

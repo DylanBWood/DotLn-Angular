@@ -10,6 +10,10 @@ for (const library of [
   'shared/ui',
   'dotln/shell',
   'features/board',
+  'shared/events',
+  'shared/data-access',
+  'shared/state',
+  'features/board-data-access',
 ]) {
   for (const kind of library === 'shared/models' ? ['lib'] : ['lib', 'spec']) {
     const config = `libs/${library}/tsconfig.${kind}.json`;

@@ -208,17 +208,18 @@ test('filter curries an omitted collection and rejects an explicit undefined col
 test('environment priming parses false, rejects invalid settings and keeps values out of diagnostics', () => {
   const parsed = environmentFromValues({
     DOTLN_MOCKS: 'false',
-    DOTLN_FEATURE_FLAGS: '{"preview":true}',
+    DOTLN_FEATURE_FLAGS: '{"sourcesFooter":false}',
     DOTLN_I18N_AVAILABLE_LANGS: 'en,fr,en',
   });
   assert.equal(parsed.environment.mocks, false);
-  assert.deepEqual(parsed.environment.featureFlags, { preview: true });
+  assert.deepEqual(parsed.environment.featureFlags, { sourcesFooter: false });
   assert.deepEqual(parsed.environment.i18n.availableLangs, ['en', 'fr']);
   assert.equal(environmentFromValues({ DOTLN_PRODUCTION: 'true' }).environment.mocks, false);
   for (const invalid of [
     { DOTLN_MOCKS: 'sensitive-invalid-value' },
     { DOTLN_PRODUCTION: 'true', DOTLN_MOCKS: 'true' },
-    { DOTLN_FEATURE_FLAGS: '{"preview":"yes"}' },
+    { DOTLN_FEATURE_FLAGS: '{"sourcesFooter":"yes"}' },
+    { DOTLN_FEATURE_FLAGS: '{"preview":true}' },
     { DOTLN_I18N_DEFAULT_LANG: 'fr' },
     { DOTLN_API_PROXY_TARGET: 'file:///tmp/fixture' },
     { DOTLN_API_BASE_URL: 'javascript:void(0)' },
@@ -243,6 +244,7 @@ test('priming writes typed local configuration and an isolated proxy, honoring n
     const outputs = primeEnvironment(scratch, { DOTLN_MOCKS: 'false', UNRELATED: 'ignored' });
     assert.deepEqual(outputs, [
       'apps/dotln/src/environments/environment.local.ts',
+      'apps/dotln/src/environments/public-config.local.ts',
       '.nx/dotln/proxy.conf.json',
     ]);
     const generated = readFileSync(join(scratch, outputs[0]), 'utf8');
@@ -250,7 +252,7 @@ test('priming writes typed local configuration and an isolated proxy, honoring n
     assert.match(generated, /"mocks": false/);
     assert.equal(generated.includes('UNRELATED'), false);
     assert.equal(
-      JSON.parse(readFileSync(join(scratch, outputs[1]), 'utf8'))['/api'].target,
+      JSON.parse(readFileSync(join(scratch, outputs[2]), 'utf8'))['/api'].target,
       'http://127.0.0.1:3030/',
     );
   } finally {

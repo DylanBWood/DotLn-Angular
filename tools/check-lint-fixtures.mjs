@@ -54,7 +54,11 @@ try {
   write('tsconfig.base.json', {
     compilerOptions: {
       baseUrl: '.',
-      paths: { '@dotln-angular/fixture-util': ['tools/lint-target/index.ts'] },
+      paths: {
+        '@dotln-angular/fixture-util': ['tools/lint-target/index.ts'],
+        '@dotln-angular/fixture-shared-data': ['tools/lint-shared-data/index.ts'],
+        '@dotln-angular/fixture-peer-data': ['tools/lint-peer-data/index.ts'],
+      },
     },
   });
   write('eslint.config.mjs', readFileSync(join(root, 'eslint.config.mjs'), 'utf8'));
@@ -70,18 +74,35 @@ try {
     ['fixture-models', 'tools/lint-fixtures', 'models'],
     ['fixture-control', 'tools/lint-control', 'util'],
     ['fixture-util', 'tools/lint-target', 'util'],
+    ['fixture-data', 'tools/lint-data', 'data-access'],
+    ['fixture-peer-data', 'tools/lint-peer-data', 'data-access'],
+    ['fixture-shared-data', 'tools/lint-shared-data', 'data-access'],
   ]) {
     write(`${directory}/project.json`, {
       name,
       root: directory,
       projectType: 'library',
-      tags: ['scope:shared', `type:${type}`],
+      tags: [
+        'scope:shared',
+        `type:${type}`,
+        ...(name === 'fixture-shared-data' ? ['layer:shared-data-access'] : []),
+      ],
     });
   }
   const source = readFileSync(join(root, invalid), 'utf8');
   write(invalid, source);
   write(valid, source);
   write('tools/lint-target/index.ts', 'export const value = 1;\n');
+  write('tools/lint-peer-data/index.ts', 'export const value = 1;\n');
+  write('tools/lint-shared-data/index.ts', 'export const value = 1;\n');
+  write(
+    'tools/lint-data/allowed.ts',
+    "export { value } from '@dotln-angular/fixture-shared-data';\n",
+  );
+  write(
+    'tools/lint-data/refused.ts',
+    "export { value } from '@dotln-angular/fixture-peer-data';\n",
+  );
   const foundationFixtures = [
     ['tools/lint-fixtures/private-keyword.ts', 'no-restricted-syntax', 1],
     ['tools/lint-fixtures/bad-token.ts', 'dotln/token-names', 1],
@@ -126,6 +147,20 @@ try {
   assert.deepEqual(control?.messages, [], lint.stdout);
   console.log(
     `PASS ${invalid}: models → util refused by @nx/enforce-module-boundaries; util → util allowed.`,
+  );
+  const dataBoundary = run('eslint', 'eslint', [
+    '--format=json',
+    'tools/lint-data/allowed.ts',
+    'tools/lint-data/refused.ts',
+  ]);
+  assert.equal(dataBoundary.status, 1, dataBoundary.stdout + dataBoundary.stderr);
+  const dataResults = JSON.parse(dataBoundary.stdout);
+  assert.deepEqual(dataResults.find((row) => row.filePath.endsWith('/allowed.ts'))?.messages, []);
+  const refused = dataResults.find((row) => row.filePath.endsWith('/refused.ts'));
+  assert.equal(refused?.errorCount, 1, dataBoundary.stdout);
+  assert.equal(refused.messages[0].ruleId, '@nx/enforce-module-boundaries', dataBoundary.stdout);
+  console.log(
+    'PASS feature data access → shared helpers allowed; feature data access → peer refused.',
   );
   const foundation = run('eslint', 'eslint', [
     '--no-ignore',

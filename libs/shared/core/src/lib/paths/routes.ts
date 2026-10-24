@@ -1,3 +1,4 @@
+import type { RouteQueryParams } from '@dotln-angular/models';
 import { R, RA } from '@dotln-angular/utils';
 
 export enum BasePaths {
@@ -8,10 +9,7 @@ export enum ChildPaths {
   Root = '',
 }
 
-export type RouteQueryValue = string | number | boolean | null | undefined;
-export type RouteQueryParams = Readonly<
-  Record<string, RouteQueryValue | readonly RouteQueryValue[]>
->;
+export type { RouteQueryValue, RouteQueryParams } from '@dotln-angular/models';
 
 export interface RouteParameters {
   readonly child?: ChildPaths;

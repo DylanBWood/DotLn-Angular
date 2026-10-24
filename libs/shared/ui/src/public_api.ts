@@ -22,3 +22,5 @@ export type {
   PageHeaderStatus,
   TabItem,
 } from './lib/types';
+
+export { DotlnToast } from './lib/wrappers/toast/toast';

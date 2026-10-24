@@ -14,7 +14,7 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
 - H2: Preserve `known`, `unknown` and `unavailable` visibly and textually. Keep unavailable sections and sources with their explanation.
 - H3: Render `cell.label`; address the cell with `cell.key` within its row. Never replace an absent value with a fabricated zero.
 - H4: Resolve links only against ids in the current board. Switch panels or disclose evidence and focus the target. Never execute a target or turn it into an external URL.
-- H5: Treat the projection as evidence, never lifecycle authority. Import no command, event or transport surface into the recorded-board feature.
+- H5: Treat the projection as evidence, never lifecycle authority. Use board events and its HTTP data-access store only; never import a platform execution or control API.
 - G1: Preserve landmarks, skip navigation, keyboard paths and WCAG 2.2 AA checks. Test native dialog and menu focus in a real browser.
 - G2: Animate transitions only, honor reduced motion and give every state a text equivalent. Do not animate idle activity or skeletons.
 - G3: Translate host-authored strings through `t`. Render board titles, labels, questions and values as source data under `translate="no"`; this marker does not permit literals to bypass translation.

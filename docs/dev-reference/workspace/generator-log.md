@@ -119,3 +119,23 @@ Result: ui/testing generator exited 0.
 Planned invocation: `npx nx g @nx/angular:library-secondary-entry-point --library=board --name=testing --skipModule --skipFormat --interactive=false`.
 
 Result: board/testing generator exited 0.
+
+## 2026-10-24 — events and state
+
+Nx 23.3.0, Angular 22.2.3, Node 26.9.0. Read generator help; stopped the daemon. Each command below runs with `NX_DAEMON=false NX_ISOLATE_PLUGINS=false` through the bounded probe wrapper.
+
+- Planned: `npx nx g @nx/angular:library libs/shared/events --name=events --importPath=@dotln-angular/events --tags=scope:shared,type:events --skipModule --unitTestRunner=vitest-analog --linter=eslint --skipPackageJson --skipFormat`.
+- Planned: `npx nx g @nx/angular:library libs/shared/data-access --name=data-access --importPath=@dotln-angular/data-access --tags=scope:shared,type:data-access --skipModule --unitTestRunner=vitest-analog --linter=eslint --skipPackageJson --skipFormat`.
+- Planned: `npx nx g @nx/angular:library libs/shared/state --name=state --importPath=@dotln-angular/state --tags=scope:shared,type:state --skipModule --unitTestRunner=vitest-analog --linter=eslint --skipPackageJson --skipFormat`.
+- Planned: `npx nx g @nx/angular:library libs/features/board-data-access --name=board-data-access --importPath=@dotln-angular/board-data-access --tags=scope:dotln,type:data-access --skipModule --unitTestRunner=vitest-analog --linter=eslint --skipPackageJson --skipFormat`.
+
+All four library commands exited 0. Removed only their generated example components; kept AnalogJS test wiring. Generator deprecations name Nx 24; the installed Nx 23 executor contracts remain in use.
+
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=data-access --name=testing --skipModule --skipFormat`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=state --name=testing --skipModule --skipFormat`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=board-data-access --name=testing --skipModule --skipFormat`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=dotln-shell --name=testing --skipModule --skipFormat`.
+
+The four secondary-entry-point attempts refused absent library package manifests. Added private local manifests (the established board/core pattern) and reran the same commands.
+
+All four secondary-entry-point reruns exited 0. The shell now hosts orchestration and is type:feature; shared data-access is additionally tagged layer:shared-data-access, the only data-access dependency admitted to feature data-access.

@@ -9,7 +9,7 @@
   `docs/dev-reference/workspace/generator-log.md`.
 - Keep `apps/dotln` slim. Keep the shell standalone, zoneless and OnPush.
 - Use signal APIs, `readonly` members and ECMAScript `#private`.
-- Keep TypeScript on `~6.0.3` for Angular 22 and Vitest on the scaffold's selected 4.x line.
+- Keep TypeScript on `~6.0.3` for Angular 22 and Vitest with UI and coverage aligned at 5.0.5 for MSW 3 peer compatibility.
 - Preserve `.nx/cache` as the worktree-local cache. Set `NX_DAEMON=false` for gates.
 - Tag each project with one `scope:*` and one `type:*`; obey root ESLint constraints.
 - Add library aliases under `@dotln-angular/`. Avoid self-alias imports.
@@ -25,3 +25,5 @@
 - Keep branch publication, merges and repository settings within explicit authority.
 
 See [the component taxonomy and rules](component-rules.md) for the UI, shell and board.
+
+Read [state rules](state-rules.md) for typed events, stores, HTTP, persistence and mocks.

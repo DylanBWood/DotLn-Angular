@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Translation, TranslocoLoader } from '@jsverse/transloco';
@@ -7,6 +8,7 @@ import { I18nConfigToken } from './i18n-config';
 @Injectable()
 export class TranslocoHttpLoader implements TranslocoLoader {
   readonly #http = inject(HttpClient);
+  readonly #document = inject(DOCUMENT);
   readonly #config = inject(I18nConfigToken);
 
   getTranslation(lang: string) {
@@ -14,6 +16,8 @@ export class TranslocoHttpLoader implements TranslocoLoader {
       throw new Error('The requested translation language is not configured.');
     }
     const base = this.#config.basePath.replace(/\/?$/, '/');
-    return this.#http.get<Translation>(`${base}i18n/${encodeURIComponent(lang)}.json`);
+    return this.#http.get<Translation>(
+      new URL(`${base}i18n/${encodeURIComponent(lang)}.json`, this.#document.baseURI).href,
+    );
   }
 }

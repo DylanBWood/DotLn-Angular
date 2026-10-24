@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+.sources-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.sources-heading p {
+  color: var(--dotln-muted);
+  font-size: 0.8rem;
+}
+details {
+  margin-block-start: 1rem;
+}
+summary {
+  cursor: pointer;
+  color: var(--dotln-accent);
+  font-size: 0.85rem;
+  padding-block: 0.4rem;
+}
+summary:focus-visible,
+li:focus {
+  outline: var(--dotln-focus);
+  outline-offset: 4px;
+}
+.source-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+li {
+  padding: 1rem;
+  background: var(--dotln-surface);
+  border: 1px solid var(--dotln-border);
+  border-radius: var(--dotln-radius);
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.source-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+li p {
+  color: var(--dotln-muted);
+  line-height: 1.5;
+}

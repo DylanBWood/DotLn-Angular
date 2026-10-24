@@ -3,6 +3,10 @@
   "printWidth": 100,
   "overrides": [
     {
+      "files": "libs/**/*.html",
+      "options": { "parser": "angular" }
+    },
+    {
       "files": "**/*.ts",
       "options": {
         "embeddedLanguageFormatting": "off"

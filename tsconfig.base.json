@@ -26,7 +26,21 @@
       "@dotln-angular/dotln/shell": ["./libs/dotln/shell/src/index.ts"],
       "@dotln-angular/board": ["./libs/features/board/src/index.ts"],
       "@dotln-angular/ui/testing": ["./libs/shared/ui/testing/src/index.ts"],
-      "@dotln-angular/board/testing": ["./libs/features/board/testing/src/index.ts"]
+      "@dotln-angular/board/testing": ["./libs/features/board/testing/src/index.ts"],
+      "@dotln-angular/events": ["./libs/shared/events/src/index.ts"],
+      "@dotln-angular/data-access": ["./libs/shared/data-access/src/index.ts"],
+      "@dotln-angular/state": ["./libs/shared/state/src/index.ts"],
+      "@dotln-angular/board-data-access": ["./libs/features/board-data-access/src/index.ts"],
+      "@dotln-angular/data-access/testing": ["./libs/shared/data-access/testing/src/index.ts"],
+      "@dotln-angular/state/testing": ["./libs/shared/state/testing/src/index.ts"],
+      "@dotln-angular/board-data-access/testing": [
+        "./libs/features/board-data-access/testing/src/index.ts"
+      ],
+      "@dotln-angular/dotln/shell/testing": ["./libs/dotln/shell/testing/src/index.ts"],
+      "@dotln-angular/board-data-access/testing/handlers": [
+        "./libs/features/board-data-access/testing/src/handlers.ts"
+      ],
+      "@dotln-angular/testing-network": ["./vitest-network-setup.mjs"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true

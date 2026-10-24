@@ -5,7 +5,10 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import { assertScrubbed } from './scrub-board-fixture.mjs';
 import { isMain, workspaceRoot } from './source-files.mjs';
 
-export const fixtureDirectory = resolve(workspaceRoot, 'libs/features/board/src/testing/fixtures');
+export const fixtureDirectory = resolve(
+  workspaceRoot,
+  'libs/features/board-data-access/testing/fixtures',
+);
 export const schemaSha256 = '7d20e785c718b4b601f45a9c351461955666ea16d49f17ae6d8fde0676629cd3';
 
 export function boardValidator() {

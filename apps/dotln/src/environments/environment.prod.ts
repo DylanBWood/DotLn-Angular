@@ -1,10 +1,14 @@
 import { EnvironmentConfig } from '@dotln-angular/core';
 
+import { publicConfig } from './public-config';
+
 export const environment: EnvironmentConfig = {
   production: true,
-  apiBaseUrl: '/api',
+  apiBaseUrl: publicConfig.apiBaseUrl,
   mocks: false,
-  featureFlags: {},
+  featureFlags: publicConfig.featureFlags,
+  featureFlagOverrides: false,
+  requestTimeoutMs: 10000,
   i18n: { defaultLang: 'en', availableLangs: ['en'] },
   auth: null,
 };

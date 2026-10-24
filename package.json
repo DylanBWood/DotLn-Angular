@@ -22,10 +22,15 @@
     "typecheck:foundations": "node tools/scripts/check-foundation-types.mjs",
     "lint:components": "node tools/scripts/check-component-order.mjs",
     "check:shared-types": "node tools/scripts/check-shared-types.mjs",
-    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs"
+    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs",
+    "msw:init": "msw init apps/dotln/public --save",
+    "build:configured": "nx build dotln --configuration=configured --skip-nx-cache",
+    "lint:hygiene": "node tools/scripts/check-event-hygiene.mjs",
+    "check:scripts": "node tools/scripts/check-script-reference.mjs"
   },
   "private": true,
   "dependencies": {
+    "@angular-architects/ngrx-toolkit": "22.0.0",
     "@angular/aria": "22.2.3",
     "@angular/cdk": "22.2.3",
     "@angular/common": "~22.2.3",
@@ -36,6 +41,7 @@
     "@angular/router": "~22.2.3",
     "@fontsource-variable/inter": "5.3.0",
     "@jsverse/transloco": "8.4.0",
+    "@ngrx/signals": "22.0.1",
     "ramda": "0.32.0",
     "ramda-adjunct": "6.1.0",
     "rxjs": "~7.8.0"
@@ -71,8 +77,8 @@
     "@types/node": "26.6.2",
     "@types/ramda": "0.32.0",
     "@typescript-eslint/utils": "8.71.2",
-    "@vitest/coverage-v8": "^4.0.0",
-    "@vitest/ui": "^4.0.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/ui": "5.0.5",
     "ajv": "8.20.0",
     "angular-eslint": "22.6.0",
     "dotenv": "18.0.8",
@@ -81,6 +87,7 @@
     "eslint-plugin-playwright": "2.12.1",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "jsdom": "30.1.3",
+    "msw": "3.0.3",
     "nx": "23.3.0",
     "prettier": "3.9.10",
     "sass-embedded": "1.105.2",
@@ -89,17 +96,22 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "8.71.2",
     "vite": "8.3.3",
-    "vitest": "~4.1.12"
+    "vitest": "5.0.5"
   },
   "engines": {
     "node": ">=26.0.0 <27"
   },
   "overrides": {
     "nx@23.3.0": {
-      "undici": "7.29.1"
+      "undici": "7.30.1"
     },
     "@angular/build@~22.2.3": {
       "vite": "8.3.3"
     }
+  },
+  "msw": {
+    "workerDirectory": [
+      "apps/dotln/public"
+    ]
   }
 }
