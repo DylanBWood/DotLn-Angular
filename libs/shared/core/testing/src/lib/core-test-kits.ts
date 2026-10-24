@@ -14,11 +14,14 @@ export function provideEnvironmentConfigTokenTestKit(overrides: Partial<Environm
     production: false,
     apiBaseUrl: '/api',
     mocks: true,
-    featureFlags: {},
+    featureFlags: { sourcesFooter: true },
+    featureFlagOverrides: true,
+    requestTimeoutMs: 10000,
     i18n: { defaultLang: 'en', availableLangs: ['en'] },
     auth: null,
     ...overrides,
   };
+
   return { config, providers: provideEnvironmentConfig(config) };
 }
 
@@ -31,6 +34,7 @@ export function provideAppBasePathTokenTestKit(doc: Document = document) {
 
 export function provideDotlnCoreTestKit(overrides: Partial<EnvironmentConfig> = {}) {
   const environment = provideEnvironmentConfigTokenTestKit(overrides);
+
   return {
     config: environment.config,
     providers: [

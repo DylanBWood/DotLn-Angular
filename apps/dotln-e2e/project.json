@@ -10,10 +10,6 @@
         {
           "target": "build-storybook",
           "projects": ["ui"]
-        },
-        {
-          "target": "build",
-          "projects": ["dotln"]
         }
       ]
     },
@@ -24,10 +20,6 @@
         {
           "target": "build-storybook",
           "projects": ["ui"]
-        },
-        {
-          "target": "build",
-          "projects": ["dotln"]
         }
       ],
       "options": {

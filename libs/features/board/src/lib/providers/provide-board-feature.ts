@@ -1,8 +1,7 @@
-import recordedBoard from '../../testing/fixtures/launchpad-board-2026-10-21.json';
-import { BoardFacade } from '../facades/board.facade';
-import { BoardFixtureToken } from '../models/board-fixture-token';
-import type { BoardInput } from '../models/board-view-model';
+import { provideBoardDataAccess } from '@dotln-angular/board-data-access';
 
-export function provideBoardFeature(document: BoardInput = recordedBoard as BoardInput) {
-  return [{ provide: BoardFixtureToken, useValue: document }, BoardFacade];
+import { BoardFacade } from '../facades/board.facade';
+
+export function provideBoardFeature() {
+  return [...provideBoardDataAccess(), BoardFacade];
 }

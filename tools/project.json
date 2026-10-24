@@ -20,7 +20,9 @@
           "npm run test:tooling",
           "npm run lint:components",
           "npm run check:shared-types",
-          "npm run check:fixtures"
+          "npm run check:fixtures",
+          "npm run lint:hygiene",
+          "npm run check:scripts"
         ]
       }
     }

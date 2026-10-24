@@ -43,7 +43,9 @@ describe('shared i18n', () => {
     let translation: unknown;
     loader.getTranslation('en').subscribe((value) => (translation = value));
     const prefix = basePath === '/' ? '/' : '/console/';
-    http.expectOne(`${prefix}i18n/en.json`).flush({ home: { title: 'Example' } });
+    http
+      .expectOne(new URL(`${prefix}i18n/en.json`, document.baseURI).href)
+      .flush({ home: { title: 'Example' } });
     expect(translation).toEqual({ home: { title: 'Example' } });
     expect(() => loader.getTranslation('../unconfigured')).toThrow('not configured');
     http.verify();

@@ -11,14 +11,14 @@ signal-based input, output and query APIs. Use RxJS for streams and convert at t
 boundary with `toSignal` or `toObservable`. Angular's current style guide and
 rendering performance take precedence. File names follow Angular's 2025 style:
 `app.ts`, `board-page.ts`, without a `.component` suffix. TypeScript remains on `~6.0.3`
-and Vitest on 4.x for Angular 22 compatibility.
+and Vitest with UI and coverage aligned at 5.0.5; installed Angular, Nx and AnalogJS admit this version, and MSW 3 requires its updated mocker peer.
 
 Angular build 22.2.3 pins a vulnerable Vite patch. The direct Vite pin and a
 parent-scoped override select 8.3.3; remove that override when the parent selects
 a fixed patch and checks pass.
 
 Nx 23.3.0 pins Undici 7.29.0. A parent-version-scoped npm override selects
-Undici 7.29.1 for its published security fixes. Recheck the override when Nx
+Undici 7.30.1 for its published security fixes. Recheck the override when Nx
 changes; remove it once Nx itself selects a fixed version and the audit and
 workspace checks pass. Keep Nx packages aligned and preserve peer checks.
 
@@ -45,7 +45,7 @@ shared, app-scoped and feature libraries and their testing entry points.
 Every project has a scope and a type. Scopes are `scope:shared` and `scope:dotln`
 for the first app; types are `app`, `feature`, `ui`, `data-access`, `state`,
 `events`, `core`, `util`, `i18n`, `auth` and `models`, prefixed with `type:`.
-The shell layout library is tagged `scope:dotln` and `type:ui`; the application is `type:app`.
+The shell library is tagged `scope:dotln` and `type:feature` because it now hosts a facade and notices container; the application is `type:app`.
 
 ## 4. Barrels
 
@@ -60,10 +60,8 @@ The application uses `vitest-angular`, Angular's and Nx's standard Vitest wiring
 switch it to AnalogJS only after recording a failure in that route. New
 non-buildable libraries use Nx's documented `vitest-analog` default. Use one
 Playwright project per app and add axe checks on key
-pages as features arrive. HTTP-bearing features will use MSW in development and
-tests. Nearly every injectable should expose a `provide<Name>TestKit()` in its
-library's `testing` entry point. This scaffold has no injectable business service
-or HTTP feature and does not install MSW.
+pages as features arrive. HTTP-bearing features use MSW 3 in development and tests. Nearly every injectable should expose a `provide<Name>TestKit()` in its
+library's `testing` entry point. The board is the first HTTP-backed feature.
 
 Playwright's `.mts` configuration uses NodeNext module resolution and Node 26
 types. Run `npm run typecheck:e2e` as well as the browser test: Playwright's
@@ -83,6 +81,11 @@ and correct faulty TypeScript declarations in the house adapters. Each used
 function has an attributed upstream spec; compiler assertions establish the
 intended composition types. Keep functions pure, templates declarative and
 state in signals. See [the foundation reference](../architecture/foundation.md).
+
+## 8. State and events
+
+Use NgRx SignalStore with the Events plugin, explicit providers, toolkit call state
+and the command trinity. See [state rules](../../ai-reference/state-rules.md).
 
 ## 9. Internationalization
 
@@ -117,7 +120,7 @@ Order decorator members as `selector`, `changeDetection`, `template` or
 Use OnPush and host metadata. Shared UI and shell use `dotln`; the board uses
 `board`. Keep inline templates on their own lines after the opening and before
 the closing backtick. Selector prefixes remain provisional for operator review. Prefer ECMAScript `#private` and mark
-unreassigned members `readonly`.
+unreassigned members `readonly`. Put one projected element on each line. Extract a template or style section above 40 lines.
 
 ## 13. Lint and TypeScript
 
@@ -147,19 +150,19 @@ roles and [component rules](../../ai-reference/component-rules.md) for R1–R7.
 The root `@nx/enforce-module-boundaries` rule enforces every row below. A project
 must satisfy both its scope constraint and its type constraint.
 
-| Source type   | Allowed target types                              |
-| ------------- | ------------------------------------------------- |
-| `app`         | All types                                         |
-| `feature`     | All except `app` and `feature`                    |
-| `data-access` | `events`, `models`, `core`, `util`                |
-| `state`       | `events`, `models`, `core`, `util`                |
-| `ui`          | `util`, `i18n`, `models`                          |
-| `auth`        | `data-access`, `events`, `models`, `core`, `util` |
-| `events`      | `models`, `util`                                  |
-| `core`        | `util`, `models`, `i18n`                          |
-| `i18n`        | `util`, `models`                                  |
-| `util`        | `util`                                            |
-| `models`      | None                                              |
+| Source type   | Allowed target types                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| `app`         | All types                                                             |
+| `feature`     | All except `app` and `feature`                                        |
+| `data-access` | `events`, `models`, `core`, `util`, shared data-access infrastructure |
+| `state`       | `events`, `models`, `core`, `util`                                    |
+| `ui`          | `util`, `i18n`, `models`                                              |
+| `auth`        | `data-access`, `events`, `models`, `core`, `util`                     |
+| `events`      | `models`, `util`                                                      |
+| `core`        | `util`, `models`, `i18n`                                              |
+| `i18n`        | `util`, `models`                                                      |
+| `util`        | `util`                                                                |
+| `models`      | None                                                                  |
 
 Shared projects import only shared projects. DotLn-scoped projects may import
 shared or DotLn-scoped projects. Add another scope's row before adding its
@@ -167,6 +170,12 @@ projects. `npm run lint:fixtures` proves the rule rejects a forbidden dependency
 the deliberately invalid file stays outside ordinary application linting.
 Core's i18n integration is the added dependency; the reverse direction remains
 forbidden.
+
+## 16. Action hygiene
+
+Use the [state-rule flow table](../../ai-reference/state-rules.md). No same-tier
+mapping except an action's own success/failure outcomes. `lint:hygiene` inspects
+all non-spec source consumers and reports the exception count.
 
 ## 18. Accessibility and visual quality
 

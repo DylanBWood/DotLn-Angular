@@ -62,3 +62,5 @@ vitest.config.*.timestamp*
 
 # Private launchpad probe diagnostics are local to this worktree.
 /docs/control/local/
+
+apps/dotln/src/environments/public-config.local.ts

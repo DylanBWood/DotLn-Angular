@@ -19,4 +19,7 @@ CLAUDE.local.md
 docs/dotln/
 
 # Preserve the exact bytes of the pinned upstream contract.
-libs/features/board/src/testing/fixtures/uifa-board-v1.schema.json
+libs/features/board-data-access/testing/fixtures/uifa-board-v1.schema.json
+
+# MSW owns the worker bytes.
+apps/dotln/public/mockServiceWorker.js

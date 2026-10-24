@@ -5,8 +5,8 @@ import ts from 'typescript';
 
 import { readSource, sourceFiles, visitTs } from './scripts/source-files.mjs';
 
-test('the recorded board imports no command transport or execution API', () => {
-  const forbidden = /(?:node:|child_process|http|data-access|commands|dispatch|events|state)/i;
+test('the board imports no process or platform control API', () => {
+  const forbidden = /(?:node:|child_process|platform-control|commands)/i;
   for (const path of sourceFiles(['libs/features/board/src/lib']).filter(
     (path) => !path.endsWith('.spec.ts'),
   )) {

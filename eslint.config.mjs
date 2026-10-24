@@ -71,7 +71,13 @@ export default [
             },
             {
               sourceTag: 'type:data-access',
-              onlyDependOnLibsWithTags: ['type:events', 'type:models', 'type:core', 'type:util'],
+              onlyDependOnLibsWithTags: [
+                'layer:shared-data-access',
+                'type:events',
+                'type:models',
+                'type:core',
+                'type:util',
+              ],
             },
             {
               sourceTag: 'type:state',

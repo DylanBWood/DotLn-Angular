@@ -21,7 +21,10 @@
             "input": "apps/dotln/public"
           }
         ],
-        "styles": ["apps/dotln/src/styles.scss"]
+        "styles": ["apps/dotln/src/styles.scss"],
+        "define": {
+          "DOTLN_MOCKS_ENABLED": "true"
+        }
       },
       "configurations": {
         "production": {
@@ -43,7 +46,17 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "assets": [
+            {
+              "glob": "**/*",
+              "input": "apps/dotln/public",
+              "ignore": ["mockServiceWorker.js"]
+            }
+          ],
+          "define": {
+            "DOTLN_MOCKS_ENABLED": "false"
+          }
         },
         "development": {
           "optimization": false,
@@ -60,6 +73,63 @@
               "with": "apps/dotln/src/environments/environment.local.ts"
             }
           ]
+        },
+        "mocked": {
+          "optimization": true,
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/dotln/src/environments/environment.ts",
+              "with": "apps/dotln/src/environments/environment.mocked.ts"
+            }
+          ],
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ]
+        },
+        "configured": {
+          "fileReplacements": [
+            {
+              "replace": "apps/dotln/src/environments/environment.ts",
+              "with": "apps/dotln/src/environments/environment.prod.ts"
+            },
+            {
+              "replace": "apps/dotln/src/environments/public-config.ts",
+              "with": "apps/dotln/src/environments/public-config.local.ts"
+            }
+          ],
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all",
+          "assets": [
+            {
+              "glob": "**/*",
+              "input": "apps/dotln/public",
+              "ignore": ["mockServiceWorker.js"]
+            }
+          ],
+          "define": {
+            "DOTLN_MOCKS_ENABLED": "false"
+          }
         }
       }
     },
@@ -80,6 +150,9 @@
         "local": {
           "buildTarget": "dotln:build:local",
           "proxyConfig": ".nx/dotln/proxy.conf.json"
+        },
+        "mocked": {
+          "buildTarget": "dotln:build:mocked"
         }
       }
     },
@@ -89,14 +162,15 @@
     "test": {
       "executor": "@angular/build:unit-test",
       "options": {
-        "watch": false
+        "watch": false,
+        "setupFiles": ["apps/dotln/src/test-setup.ts"]
       }
     },
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "dotln:build",
+        "buildTarget": "dotln:build:mocked",
         "port": 4200,
         "staticFilePath": "dist/apps/dotln/browser",
         "spa": true

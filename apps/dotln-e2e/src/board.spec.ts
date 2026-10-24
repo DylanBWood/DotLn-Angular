@@ -33,6 +33,7 @@ test('keyboard reaches main through the skip link without a reload and navigates
   page,
 }) => {
   await page.goto('/board');
+  await expect(page.getByRole('tab')).toHaveCount(5);
   await page.keyboard.press('Tab');
   const skipLink = page.getByRole('link', { name: 'Skip to main content' });
   await expect(skipLink).toBeFocused();
@@ -75,7 +76,9 @@ test('local links select a hidden panel or disclose evidence and move focus to t
 }) => {
   await page.goto('/board');
   const link = page.getByRole('link', { name: 'Inspect saved build', exact: true }).first();
-  const target = decodeURIComponent((await link.getAttribute('href'))?.slice(1) ?? '');
+  const target = decodeURIComponent(
+    new URL((await link.getAttribute('href')) ?? '', 'http://localhost').hash.slice(1),
+  );
   await link.click();
   await expect(page.getByRole('tab', { name: 'Builds', exact: true })).toHaveAttribute(
     'aria-selected',
@@ -85,7 +88,7 @@ test('local links select a hidden panel or disclose evidence and move focus to t
   await page.getByRole('link', { name: 'evidence-1', exact: true }).first().click();
   await expect(page.locator('#evidence-1')).toBeVisible();
   await expect(page.locator('#evidence-1')).toBeFocused();
-  await expect(page).toHaveURL(/\/board$/);
+  await expect(page).toHaveURL(/\/board#evidence-1$/);
 });
 
 for (const panel of ['Actors', 'Builds', 'Mechanisms', 'Work', 'Blueprint']) {
@@ -122,3 +125,73 @@ for (const width of [360, 768, 1440]) {
     }
   });
 }
+
+test('failure from the MSW route shows unavailable and a dismissible shell notice', async ({
+  page,
+}) => {
+  await page.setExtraHTTPHeaders({ 'x-dotln-test-scenario': 'refusal' });
+  await page.goto('/board');
+  await expect(page.locator('dotln-empty-state')).toContainText('The board is unavailable');
+  await expect(page.locator('dotln-toast')).toContainText('A request failed');
+  await page.getByRole('button', { name: 'Dismiss', exact: true }).click();
+  await expect(page.locator('dotln-toast')).toHaveCount(0);
+  await page.setExtraHTTPHeaders({});
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByRole('tab')).toHaveCount(5);
+});
+
+test('query flag hides the sources footer and navigation preserves its query', async ({ page }) => {
+  await page.goto('/board?ff=sourcesFooter:off');
+  await expect(page.getByRole('tab')).toHaveCount(5);
+  await expect(page.locator('[sources-footer]')).toBeHidden();
+  await page.getByRole('link', { name: 'Inspect saved build', exact: true }).first().click();
+  await expect(page).toHaveURL(/\/board\?ff=sourcesFooter:off#/);
+  await expect(page.getByRole('tab', { name: 'Builds', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('link', { name: 'evidence-1', exact: true }).first().click();
+  await expect(page.locator('[sources-footer]')).toBeVisible();
+  await expect(page.locator('#evidence-1')).toBeFocused();
+});
+
+test('a copied anchor opens the canonical route, selects its panel and focuses its target', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/board');
+  const link = page.getByRole('link', { name: 'Inspect saved build', exact: true }).first();
+  const href = await link.getAttribute('href');
+  expect(href).toMatch(/^\/board#/);
+  const direct = await context.newPage();
+  await direct.goto(href ?? '/board');
+  await expect(direct.getByRole('tab', { name: 'Builds', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const target = decodeURIComponent(new URL(href ?? '', 'http://localhost').hash.slice(1));
+  await expect(direct.locator(`[id="${target}"]`)).toBeFocused();
+  await direct.getByRole('tab', { name: 'Work', exact: true }).click();
+  await expect(direct.getByRole('tab', { name: 'Work', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(direct).toHaveURL(/\/board$/);
+  await direct.reload();
+  await expect(direct.getByRole('tab', { name: 'Work', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await direct.close();
+});
+
+test('selection survives a reload on the same origin', async ({ page }) => {
+  await page.goto('/board');
+  await page.getByRole('tab', { name: 'Work', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'Work', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['dotln-angular.board']);
+});

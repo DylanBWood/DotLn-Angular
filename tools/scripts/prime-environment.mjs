@@ -8,6 +8,8 @@ const keys = [
   'DOTLN_API_BASE_URL',
   'DOTLN_MOCKS',
   'DOTLN_FEATURE_FLAGS',
+  'DOTLN_FEATURE_FLAG_OVERRIDES',
+  'DOTLN_REQUEST_TIMEOUT_MS',
   'DOTLN_I18N_DEFAULT_LANG',
   'DOTLN_I18N_AVAILABLE_LANGS',
   'DOTLN_AUTH',
@@ -42,10 +44,18 @@ export function environmentFromValues(values) {
     featureFlags === null ||
     Array.isArray(featureFlags) ||
     typeof featureFlags !== 'object' ||
-    Object.values(featureFlags).some((value) => typeof value !== 'boolean')
+    Object.entries(featureFlags).some(
+      ([key, value]) => key !== 'sourcesFooter' || typeof value !== 'boolean',
+    )
   ) {
-    throw new Error('DOTLN_FEATURE_FLAGS must be an object of boolean flags.');
+    throw new Error('DOTLN_FEATURE_FLAGS accepts only the boolean sourcesFooter flag.');
   }
+  const featureFlagOverrides = boolean(values, 'DOTLN_FEATURE_FLAG_OVERRIDES', !production);
+  if (production && featureFlagOverrides)
+    throw new Error('Production configuration cannot enable flag overrides.');
+  const requestTimeoutMs = Number(values.DOTLN_REQUEST_TIMEOUT_MS ?? 10000);
+  if (!Number.isFinite(requestTimeoutMs) || requestTimeoutMs <= 0)
+    throw new Error('DOTLN_REQUEST_TIMEOUT_MS must be positive.');
   const defaultLang = values.DOTLN_I18N_DEFAULT_LANG ?? 'en';
   const availableLangs = [
     ...new Set((values.DOTLN_I18N_AVAILABLE_LANGS ?? 'en').split(',').map((lang) => lang.trim())),
@@ -90,7 +100,9 @@ export function environmentFromValues(values) {
       production,
       apiBaseUrl,
       mocks,
-      featureFlags,
+      featureFlags: { sourcesFooter: true, ...featureFlags },
+      featureFlagOverrides,
+      requestTimeoutMs,
       i18n: { defaultLang, availableLangs },
       auth: json(values, 'DOTLN_AUTH', null),
     },
@@ -113,6 +125,10 @@ export function primeEnvironment(root, processValues = process.env) {
     [
       'apps/dotln/src/environments/environment.local.ts',
       `// Generated public client configuration; do not commit.\nimport type { EnvironmentConfig } from '@dotln-angular/core';\n\nexport const environment = ${JSON.stringify(environment, null, 2)} satisfies EnvironmentConfig;\n`,
+    ],
+    [
+      'apps/dotln/src/environments/public-config.local.ts',
+      `// Generated public client settings; do not commit.\nexport const publicConfig = ${JSON.stringify({ apiBaseUrl: environment.apiBaseUrl, featureFlags: environment.featureFlags }, null, 2)};\n`,
     ],
     ['.nx/dotln/proxy.conf.json', `${JSON.stringify(proxy, null, 2)}\n`],
   ];

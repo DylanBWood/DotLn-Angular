@@ -6,7 +6,9 @@
     "navigation": "Primary navigation",
     "skipToMain": "Skip to main content",
     "footer": "Evidence first. Read only.",
-    "recordedOn": "Snapshot \u00b7 21 October 2026"
+    "recordedOn": "Snapshot \u00b7 21 October 2026",
+    "requestFailed": "A request failed ({{kind}}).",
+    "applicationFailed": "An unexpected application error occurred."
   },
   "board": {
     "eyebrow": "Workspace / Overview",
@@ -22,7 +24,9 @@
     "targetUnavailable": "(target unavailable)",
     "noValue": "No value recorded",
     "emptyList": "Empty list",
-    "unsupportedVersion": "This board is unavailable because its version is unsupported: {{version}}."
+    "unsupportedVersion": "This board is unavailable because its version is unsupported: {{version}}.",
+    "loadFailed": "The board is unavailable. Could not load {{url}}.",
+    "retry": "Try again"
   },
   "ui": {
     "status": {
@@ -32,6 +36,7 @@
     },
     "close": "Close",
     "loading": "Loading",
-    "unavailableExplanation": "This information could not be read."
+    "unavailableExplanation": "This information could not be read.",
+    "dismiss": "Dismiss"
   }
 }
