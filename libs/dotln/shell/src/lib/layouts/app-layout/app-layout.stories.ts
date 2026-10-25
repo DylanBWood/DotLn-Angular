@@ -11,7 +11,15 @@ export default meta;
 export const Default: StoryObj<DotlnAppLayout> = {
   render: () => ({
     props: { brand: 'DotLn', page: 'Board', footer: 'Evidence first. Read only.' },
-    template:
-      '<dotln-app-layout><strong header>{{ brand }}</strong><a nav href="#main-content">{{ page }}</a><h1 main>{{ page }}</h1><span footer>{{ footer }}</span></dotln-app-layout>',
+    template: `
+      <dotln-app-layout>
+        <strong header>{{ brand }}</strong>
+        <nav nav aria-label="Primary navigation">
+          <a href="#main-content">{{ page }}</a>
+        </nav>
+        <h1 main>{{ page }}</h1>
+        <span footer>{{ footer }}</span>
+      </dotln-app-layout>
+    `,
   }),
 };

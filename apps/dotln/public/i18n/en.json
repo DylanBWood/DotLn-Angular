@@ -6,9 +6,15 @@
     "navigation": "Primary navigation",
     "skipToMain": "Skip to main content",
     "footer": "Evidence first. Read only.",
-    "recordedOn": "Snapshot \u00b7 21 October 2026",
+    "recordedOn": "Snapshot · 21 October 2026",
     "requestFailed": "A request failed ({{kind}}).",
-    "applicationFailed": "An unexpected application error occurred."
+    "applicationFailed": "An unexpected application error occurred.",
+    "menu": {
+      "scene": "Scene",
+      "machinery": "Machinery",
+      "tools": "Tools",
+      "toolsEmpty": "No tools yet."
+    }
   },
   "board": {
     "eyebrow": "Workspace / Overview",
@@ -16,7 +22,7 @@
     "description": "People, builds and the evidence behind their work.",
     "panels": "Board panels",
     "sources": "Sources & evidence",
-    "sourceCounts": "{{available}} available \u00b7 {{unavailable}} unavailable",
+    "sourceCounts": "{{available}} available · {{unavailable}} unavailable",
     "inspectSources": "Inspect recorded sources",
     "inspectEvidence": "Inspect evidence records",
     "noRows": "No rows recorded in this section.",
@@ -38,5 +44,19 @@
     "loading": "Loading",
     "unavailableExplanation": "This information could not be read.",
     "dismiss": "Dismiss"
+  },
+  "scene": {
+    "arriving": {
+      "title": "Scene",
+      "description": "The game-AI authoring scene arrives with WO-015.",
+      "backToBoard": "Back to the actor board"
+    }
+  },
+  "machinery": {
+    "arriving": {
+      "title": "Machinery",
+      "description": "The view of DotLn’s machinery arrives with WO-016.",
+      "backToBoard": "Back to the actor board"
+    }
   }
 }

@@ -210,3 +210,17 @@ Record the follow-up and its reopening condition in the order. CI prints the
 board count. Do not conceal failed checks with a suppression or passing stub.
 
 Prettier preserves embedded template bytes in TypeScript (`embeddedLanguageFormatting: off`); otherwise it collapses short Angular templates and conflicts with rule 12. ESLint enforces the surrounding newlines, and Angular template lint and compilation still check their contents.
+
+## 22. Sub-apps
+
+Keep one app with sub-apps behind the shell menu. A sub-app is a lazy feature
+library under `libs/features/<sub-app>`, tagged `scope:dotln,type:feature`, importing
+as `@dotln-angular/<sub-app>` and exporting only its routes. A menu group can link
+several sub-apps. Feature data access lives in `<sub-app>-data-access`; reusable
+engines, models, readers and clocks live under `libs/shared/`. `libs/dotln/` stays
+the shell's. The shell owns menu presentation; the app owns router links.
+
+Every new idea lands here as a toy first. The app writes no control record and
+does not reach the platform; graduation is a GitHub issue on `DylanBWood/DotLn`.
+Read [sub-app architecture](../architecture/sub-apps.md) for the addition steps
+and [session rules](../../ai-reference/sub-app-rules.md) for the checklist.

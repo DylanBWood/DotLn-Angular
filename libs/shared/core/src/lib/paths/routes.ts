@@ -3,6 +3,8 @@ import { R, RA } from '@dotln-angular/utils';
 
 export enum BasePaths {
   Board = 'board',
+  Scene = 'scene',
+  Machinery = 'machinery',
 }
 
 export enum ChildPaths {

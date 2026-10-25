@@ -77,3 +77,6 @@ configuration. Append every project-generating command and its result to
 `--help` before choosing options.
 
 See [the component taxonomy and rules](architecture/component-taxonomy.md) for the UI, shell and board.
+
+Read [sub-app architecture](architecture/sub-apps.md) for the Scene, Machinery and
+Tools groups and the convention for adding a lazy feature to the one app.
