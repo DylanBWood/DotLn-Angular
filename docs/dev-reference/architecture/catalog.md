@@ -62,7 +62,8 @@ source-line coverage, provenance digests, unique ids and computed counts.
 `npm run check:fixtures` includes this complete check after the board fixtures.
 `npm run catalog:report` prints all count dimensions and each work's examples.
 
-The check scans only `libs/shared/catalog/src/data/`. A later order's new source
+The check scans only `libs/shared/catalog/src/data/`, ignoring hidden files such
+as the Finder's `.DS_Store`. A later order's new source
 map lives under its own directory and check; it does not silently enlarge this
 recorded eleven-map inventory. Adding a work requires a source/provenance decision,
 its own classification and review, an explicit loader entry and corresponding

@@ -124,6 +124,8 @@ test('a merge validates all incoming checkpoints before replacing a destination 
     assert.throws(() => mergeCheckpoints(input, output), /schema/);
     assert.equal(readFileSync(join(output, 'tools-aifg-a.json'), 'utf8'), before);
     assert.equal(readCheckpoints(output, true).length, 1);
+    writeFileSync(join(output, '.DS_Store'), '');
+    assert.equal(readCheckpoints(output, true).length, 1);
     writeFileSync(join(output, 'unexpected.jsonl'), '{}\n');
     assert.throws(() => readCheckpoints(output, true), /Unexpected catalog data file/);
   } finally {

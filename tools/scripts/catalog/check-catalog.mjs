@@ -175,7 +175,8 @@ export function checkCheckpoint(checkpoint) {
 }
 
 export function readCheckpoints(directory = dataDirectory, partial = false) {
-  const names = readdirSync(directory);
+  // Hidden files such as the Finder's .DS_Store are not catalog data.
+  const names = readdirSync(directory).filter((name) => !name.startsWith('.'));
   const expected = Object.keys(batches).map((batch) => `tools-${batch}.json`);
   fail(
     names.every((name) => name === 'catalog-summary.json' || expected.includes(name)),
