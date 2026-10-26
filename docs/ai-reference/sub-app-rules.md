@@ -10,7 +10,7 @@
   architecture document together. Use `ChildPaths` for a sub-app's child routes.
 - Keep the menu in shell templates and router links in the app. Project groups,
   headings and `<li menu-item>` entries. Translate the empty message for an empty
-  group. Tools has no route until a utility supplies one.
+  group. Tools exposes its utility list and the catalog browser.
 - Preserve a single navigation landmark, native link keyboard behavior, current
   page indication, the skip link and responsive wrapping.
 - Put feature-specific transport in `<sub-app>-data-access`; put shared engines,
@@ -24,5 +24,9 @@
 - Run `npx nx format:check`, `npx nx run-many -t lint test build`,
   `npm run lint:fixtures`, `npm run lint:components`, `npm run lint:hygiene`,
   `npm run check:fixtures`, `npm run i18n:check` and `npx nx e2e dotln-e2e`.
+- Run `npm run check:bundle` when changing production code or import boundaries.
+  Attribute initial growth against the base and follow the performance-budget
+  process before handoff; a warning requires engineering judgment, not automatic
+  acceptance or routine operator escalation.
 
 Read [the architecture and addition steps](../dev-reference/architecture/sub-apps.md).

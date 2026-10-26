@@ -7,6 +7,8 @@
     "lint": "nx run-many -t lint",
     "test": "nx run-many -t test",
     "build": "nx run-many -t build",
+    "check:bundle": "nx build dotln --configuration=production --stats-json && node tools/scripts/check-bundle.mjs",
+    "perf:sample": "npm run check:bundle && node tools/scripts/sample-performance.mjs",
     "e2e": "nx run-many -t e2e",
     "format": "nx format:write --all",
     "format:check": "nx format:check",
@@ -22,11 +24,13 @@
     "typecheck:foundations": "node tools/scripts/check-foundation-types.mjs",
     "lint:components": "node tools/scripts/check-component-order.mjs",
     "check:shared-types": "node tools/scripts/check-shared-types.mjs",
-    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs",
+    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs && npm run catalog:check",
     "msw:init": "msw init apps/dotln/public --save",
     "build:configured": "nx build dotln --configuration=configured --skip-nx-cache",
     "lint:hygiene": "node tools/scripts/check-event-hygiene.mjs",
-    "check:scripts": "node tools/scripts/check-script-reference.mjs"
+    "check:scripts": "node tools/scripts/check-script-reference.mjs",
+    "catalog:check": "node tools/scripts/catalog/check-catalog.mjs",
+    "catalog:report": "node tools/scripts/catalog/report.mjs"
   },
   "private": true,
   "dependencies": {

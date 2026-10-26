@@ -22,6 +22,7 @@ describe('core providers and canonical routes', () => {
   it.each([
     [BasePaths.Scene, 'scene'],
     [BasePaths.Machinery, 'machinery'],
+    [BasePaths.Tools, 'tools'],
   ] as const)('builds the %s sub-app route', (base, segment) => {
     expect(buildRoute(base).commands).toEqual(['/', segment]);
   });
@@ -86,4 +87,12 @@ describe('core providers and canonical routes', () => {
     expect(result.queryParams).not.toBe(query);
     expect(buildRoute(BasePaths.Board).commands).toEqual(['/', 'board']);
   });
+});
+
+it('builds the catalog child from route enums', () => {
+  expect(buildRoute(BasePaths.Tools, { child: ChildPaths.Catalog }).commands).toEqual([
+    '/',
+    'tools',
+    'catalog',
+  ]);
 });

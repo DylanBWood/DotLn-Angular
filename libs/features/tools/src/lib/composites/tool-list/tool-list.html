@@ -1,0 +1,46 @@
+<ul [attr.aria-label]="'tools.list.label' | t">
+  @for (tool of tools(); track tool.id) {
+    <li
+      [attr.data-tool-id]="tool.id"
+      [attr.data-work]="tool.work"
+      [attr.data-status]="tool.status"
+      [attr.data-transform]="tool.status === 'typed' ? tool.faces.transform.kind : null"
+    >
+      <button
+        type="button"
+        [attr.aria-pressed]="selectedId() === tool.id"
+        (click)="selected.emit(tool.id)"
+        translate="no"
+      >
+        {{ tool.title }}
+      </button>
+      <dl>
+        <div>
+          <dt>{{ 'tools.list.id' | t }}</dt>
+          <dd translate="no">{{ tool.id }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'tools.list.work' | t }}</dt>
+          <dd translate="no">{{ tool.work }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'tools.list.kind' | t }}</dt>
+          <dd translate="no">{{ tool.kind }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'tools.faces.transform' | t }}</dt>
+          <dd translate="no">
+            @if (tool.status === 'typed') {
+              {{ tool.faces.transform.kind }}
+            } @else if (tool.status === 'untyped') {
+              <span>{{ 'tools.status.untyped' | t }}</span>
+              <p class="reason">{{ tool.faces.transform.reason }}</p>
+            } @else {
+              <span>{{ 'tools.status.background' | t }}</span>
+            }
+          </dd>
+        </div>
+      </dl>
+    </li>
+  }
+</ul>

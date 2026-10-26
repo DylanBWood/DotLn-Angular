@@ -124,7 +124,7 @@ TestBed.configureTestingModule({
 ```
 
 Same-library specs import the relative testing entry point; consumers use the
-public alias. `tools:lint` runs template, token and kit checks, translation
+public alias. `workspace-tools:lint` runs template, token and kit checks, translation
 extraction, foundation type checks, negative lint fixtures and tooling tests.
 CI also calls the three structural checks explicitly. The checks parse syntax
 trees; tests cover multiline templates, nested token generics, aliases, missing

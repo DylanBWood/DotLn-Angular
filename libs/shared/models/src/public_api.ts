@@ -26,3 +26,26 @@ export type {
 } from './lib/app-state';
 export type { BoardResponse } from './lib/board';
 export { isPanelId } from './lib/board';
+export { sceneTypeIds, toolKinds, toolStatuses, TransformKind, workSlugs } from './lib/toolbox';
+export type {
+  CatalogCheckpoint,
+  CatalogFilters,
+  CatalogMap,
+  DotLnRole,
+  MetricId,
+  ParamSpec,
+  SceneTypeId,
+  SelectionTarget,
+  Tool,
+  ToolBase,
+  ToolFaces,
+  ToolId,
+  ToolKind,
+  ToolMap,
+  ToolProvenance,
+  ToolRowType,
+  ToolStatus,
+  TypedTransform,
+  UntypedTransform,
+  WorkSlug,
+} from './lib/toolbox';

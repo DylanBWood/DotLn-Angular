@@ -9,7 +9,6 @@ export { DotlnUnavailable } from './lib/templates/unavailable/unavailable';
 export { DotlnTabs } from './lib/wrappers/tabs/tabs';
 export { DotlnTabList } from './lib/wrappers/tabs/tab-list';
 export { DotlnTabPanel } from './lib/wrappers/tabs/tab-panel';
-export { DotlnMenu } from './lib/wrappers/menu/menu';
 export { DotlnDialog } from './lib/wrappers/dialog/dialog';
 export { DotlnPageHeader } from './lib/composites/page-header/page-header';
 export { DotlnKeyValueList } from './lib/composites/key-value-list/key-value-list';

@@ -3,7 +3,16 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "apps/dotln-e2e/src",
-  "implicitDependencies": ["dotln", "ui", "board", "dotln-shell", "scene", "machinery"],
+  "implicitDependencies": [
+    "dotln",
+    "ui",
+    "board",
+    "dotln-shell",
+    "scene",
+    "machinery",
+    "catalog",
+    "tools"
+  ],
   "targets": {
     "e2e": {
       "dependsOn": [

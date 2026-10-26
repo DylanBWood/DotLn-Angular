@@ -1,5 +1,6 @@
 // Copyright 2017-2019 Vladimír Gorej and the Ramda Adjunct contributors — BSD-3-Clause.
 // ported from https://github.com/char0n/ramda-adjunct/blob/v6.1.0/test/isNonEmptyString.js
+import { __ } from 'ramda';
 import { isNonEmptyString as upstreamIsNonEmptyString } from 'ramda-adjunct';
 import { expectTypeOf } from 'vitest';
 
@@ -28,26 +29,23 @@ describe('RA.isNonEmptyString through the house namespace', () => {
   );
 
   it('supports the upstream placeholder call', () => {
-    expect(RA.isNonEmptyString(R.__)('home')).toBe(true);
-    expect(RA.isNonEmptyString(R.__)('')).toBe(false);
+    expect(RA.isNonEmptyString(__)('home')).toBe(true);
+    expect(RA.isNonEmptyString(__)('')).toBe(false);
     expect(RA.isNonEmptyString()('home')).toBe(true);
     expect(RA.isNonEmptyString).toBe(upstreamIsNonEmptyString);
   });
 
   it('does not narrow unknown placeholders to strings', () => {
-    const value: unknown = R.__;
+    const value: unknown = __;
     const result = RA.isNonEmptyString(value);
     expectTypeOf(result).toEqualTypeOf<boolean | typeof RA.isNonEmptyString>();
     if (result) {
       expectTypeOf(value).toEqualTypeOf<unknown>();
     }
     expect(typeof result).toBe('function');
-    const retained = R.filter((item: unknown) => Boolean(RA.isNonEmptyString(item)))([
-      R.__,
-      'home',
-    ]);
+    const retained = R.filter((item: unknown) => Boolean(RA.isNonEmptyString(item)))([__, 'home']);
     expectTypeOf(retained).toEqualTypeOf<unknown[]>();
-    expect(retained).toEqual([R.__, 'home']);
+    expect(retained).toEqual([__, 'home']);
   });
 
   it('narrows the true branch without excluding empty strings from the false branch', () => {

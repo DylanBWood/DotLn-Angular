@@ -16,6 +16,13 @@
   contract rather than changing assertions to accept an incorrect declaration.
   Port one attributed upstream spec for each newly used function and update
   `public_api.ts`'s used-function list. Run the compiler as well as Vitest.
+  Export only functions used by application code; do not re-export either whole
+  upstream namespace. Keep runtime and type assertions on the curated surface.
+  Prefer Ramda when currying or composition makes the operation clearer; replacing
+  an isolated native map/filter call alone is not an improvement.
+  Use Ramda Adjunct predicates such as `RA.isNonEmptyString` for their established
+  validation behavior rather than duplicate manual checks. This preference is
+  independent of whether a collection operation benefits from a pipeline.
 - Use `| t` for template text and `translateSignal` from the house i18n entry
   point in class code. Add keys to `apps/dotln/public/i18n/en.json`.
 - Export `provide<Name>TestKit()` for each injectable and token through its
@@ -27,7 +34,7 @@
   underscore opt-out for intentionally unused variables.
 - Run `check:templates`, `check:tokens`, `check:kits`, `i18n:check`,
   `typecheck:foundations` and `lint:fixtures` with the ordinary workspace checks.
-  `tools:lint` carries these into every registered gate.
+  `workspace-tools:lint` carries these into every registered gate.
 - Keep Nx task cache under `.nx/cache` and Angular's additional disk cache
   disabled until a portable worktree-local setting is available. Never put an
   absolute machine path in tracked configuration.

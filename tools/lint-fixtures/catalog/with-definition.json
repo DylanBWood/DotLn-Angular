@@ -1,0 +1,29 @@
+{
+  "schema": "tool-v0",
+  "batch": "aifg-a",
+  "maps": [
+    {
+      "file": "ai-for-games-3e-part-a.jsonl",
+      "rows": 1,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "tools": [
+    {
+      "id": "aifg-a:1",
+      "work": "aifg",
+      "title": "Example",
+      "rowType": "concept",
+      "kind": "background",
+      "status": "background",
+      "classifiedBy": "classifier-aifg-a",
+      "provenance": "map",
+      "map": {
+        "file": "ai-for-games-3e-part-a.jsonl",
+        "line": 1,
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "definition": "This field is forbidden."
+    }
+  ]
+}
