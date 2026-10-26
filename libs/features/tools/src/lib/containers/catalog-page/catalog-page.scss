@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+h1 {
+  margin-block: 1.25rem 0.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+.description {
+  color: var(--dotln-muted);
+  max-inline-size: 65ch;
+  margin-block-end: 1.5rem;
+}
+a {
+  color: var(--dotln-accent);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 1rem;
+  padding-block: 1rem;
+  border-block: 1px solid var(--dotln-border);
+}
+button {
+  border: 1px solid var(--dotln-border-strong);
+  border-radius: var(--dotln-radius);
+  padding: 0.7rem 1rem;
+  font: inherit;
+  background: var(--dotln-surface);
+  color: var(--dotln-ink);
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+button:focus-visible,
+a:focus-visible,
+aside:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}
+.catalog {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(15rem, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+aside {
+  padding: 1.25rem;
+  background: var(--dotln-surface);
+  border: 1px solid var(--dotln-border);
+  border-radius: var(--dotln-radius);
+}
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 1.5rem;
+}
+@media (max-width: 900px) {
+  .catalog {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  aside {
+    grid-row: 1;
+  }
+}

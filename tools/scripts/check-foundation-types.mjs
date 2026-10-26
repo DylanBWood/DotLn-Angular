@@ -7,6 +7,8 @@ for (const library of [
   'shared/utils',
   'shared/i18n',
   'shared/models',
+  'shared/catalog',
+  'features/tools',
   'shared/ui',
   'dotln/shell',
   'features/board',
@@ -17,7 +19,7 @@ for (const library of [
   'shared/state',
   'features/board-data-access',
 ]) {
-  for (const kind of library === 'shared/models' ? ['lib'] : ['lib', 'spec']) {
+  for (const kind of ['lib', 'spec']) {
     const config = `libs/${library}/tsconfig.${kind}.json`;
     const result = spawnSync(
       process.execPath,

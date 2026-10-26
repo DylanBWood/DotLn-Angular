@@ -10,6 +10,7 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
 - R5: Put every component under its declared role directory. Location selects its lint constraints.
 - R6: Concentrate behavioral tests on facades, mappers and wrappers. Use DOM assertions for presentation contracts and browser tests for real keyboard/focus behavior.
 - R7: Fix an encountered defect within scope or record a concrete follow-up and reopening condition; never hide it with a suppression or a passing stub.
+- R8: Import `DotlnMenu` through `@dotln-angular/ui/menu`. Keep route-only behavior and its providers off the eager UI barrel; the component imports its own overlay providers. Run `npm run check:bundle` and the browser loading regression when changing these boundaries.
 - H1: Check `viewModelVersion` before rendering panels. Show unavailable and the supplied version when unsupported.
 - H2: Preserve `known`, `unknown` and `unavailable` visibly and textually. Keep unavailable sections and sources with their explanation.
 - H3: Render `cell.label`; address the cell with `cell.key` within its row. Never replace an absent value with a fabricated zero.

@@ -5,10 +5,12 @@ export enum BasePaths {
   Board = 'board',
   Scene = 'scene',
   Machinery = 'machinery',
+  Tools = 'tools',
 }
 
 export enum ChildPaths {
   Root = '',
+  Catalog = 'catalog',
 }
 
 export type { RouteQueryValue, RouteQueryParams } from '@dotln-angular/models';

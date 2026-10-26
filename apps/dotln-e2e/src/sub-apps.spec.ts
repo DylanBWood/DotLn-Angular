@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-test('the root keeps the actor board and the menu groups its three links with an empty Tools group', async ({
+test('the root keeps the actor board and the menu groups its four links including the catalog', async ({
   page,
 }) => {
   await page.goto('/');
@@ -10,8 +10,8 @@ test('the root keeps the actor board and the menu groups its three links with an
   await expect(page.getByRole('navigation')).toHaveCount(1);
   await expect(menu.getByRole('heading')).toHaveText(['Scene', 'Machinery', 'Tools']);
   await expect(menu.getByRole('list')).toHaveCount(3);
-  await expect(menu.getByRole('link')).toHaveText(['Scene', 'Board', 'Machinery']);
-  await expect(menu.getByText('No tools yet.', { exact: true })).toBeVisible();
+  await expect(menu.getByRole('link')).toHaveText(['Scene', 'Board', 'Machinery', 'Catalog']);
+  await expect(menu.getByText('No tools yet.', { exact: true })).toHaveCount(0);
   await expect(menu.getByRole('link', { name: 'Board', exact: true })).toHaveAttribute(
     'aria-current',
     'page',
@@ -22,14 +22,16 @@ test('the root keeps the actor board and the menu groups its three links with an
 test('keyboard reaches every menu link and activates the sub-app routes', async ({ page }) => {
   await page.goto('/board');
   const menu = page.getByRole('navigation', { name: 'Primary navigation' });
-  await expect(menu.getByRole('link')).toHaveCount(3);
+  await expect(menu.getByRole('link')).toHaveCount(4);
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
-  for (const name of ['Scene', 'Board', 'Machinery']) {
+  for (const name of ['Scene', 'Board', 'Machinery', 'Catalog']) {
     await page.keyboard.press('Tab');
     await expect(menu.getByRole('link', { name, exact: true })).toBeFocused();
   }
   await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/tools\/catalog$/);
+  await menu.getByRole('link', { name: 'Machinery', exact: true }).click();
   await expect(page).toHaveURL(/\/machinery$/);
   await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toHaveText('Machinery');
   await expect(menu.getByRole('link', { name: 'Machinery', exact: true })).toHaveAttribute(

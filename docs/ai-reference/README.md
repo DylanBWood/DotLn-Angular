@@ -29,3 +29,10 @@ See [the component taxonomy and rules](component-rules.md) for the UI, shell and
 Read [state rules](state-rules.md) for typed events, stores, HTTP, persistence and mocks.
 
 Read [sub-app rules](sub-app-rules.md) before adding a route or menu entry.
+
+Read [catalog rules](catalog-rules.md) before changing tool data, transforms,
+classifier checkpoints, loading or the Tools catalog browser.
+
+Read [performance policy](../dev-reference/architecture/performance.md) when a
+change affects code placement, loading, rendering or interactions. Attribute
+growth and compare credible alternatives before handing work to review.

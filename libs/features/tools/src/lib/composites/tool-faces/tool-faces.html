@@ -1,0 +1,68 @@
+@let item = tool();
+<h2 translate="no">{{ item.title }}</h2>
+<p translate="no">{{ item.id }}</p>
+@if (item.faces; as faces) {
+  <dl>
+    <dt>{{ 'tools.faces.scene' | t }}</dt>
+    <dd>
+      <ul>
+        @for (scene of faces.scene; track scene) {
+          <li translate="no">{{ scene }}</li>
+        }
+      </ul>
+    </dd>
+    <dt>{{ 'tools.faces.selection' | t }}</dt>
+    <dd translate="no">
+      <span class="value">{{ faces.selection.target }}</span>
+      <span class="value">{{ 'tools.faces.minimum' | t: { count: faces.selection.min } }}</span>
+      <span>{{
+        'tools.faces.maximum' | t: { count: faces.selection.max ?? ('tools.faces.unbounded' | t) }
+      }}</span>
+    </dd>
+    <dt>{{ 'tools.faces.transform' | t }}</dt>
+    <dd translate="no">
+      @if (item.status === 'typed') {
+        {{ item.faces.transform.kind }}
+        <ul>
+          @for (param of item.faces.transform.params; track param.name) {
+            <li class="parameter">
+              <span>{{ param.name }}</span>
+              <span>{{ param.default }}</span>
+              <span>{{ param.unit }}</span>
+              <span>{{ 'tools.faces.range' | t: { min: param.min, max: param.max } }}</span>
+            </li>
+          }
+        </ul>
+      } @else if (item.status === 'untyped') {
+        {{ item.faces.transform.reason }}
+      }
+    </dd>
+    <dt>{{ 'tools.faces.observable' | t }}</dt>
+    <dd>
+      <ul>
+        @for (value of faces.observable; track value) {
+          <li translate="no">{{ value }}</li>
+        }
+      </ul>
+    </dd>
+    <dt>{{ 'tools.faces.metrics' | t }}</dt>
+    <dd>
+      <ul>
+        @for (metric of faces.toyMetric; track metric) {
+          <li translate="no">{{ metric }}</li>
+        }
+      </ul>
+    </dd>
+  </dl>
+} @else {
+  <p>{{ 'tools.faces.none' | t }}</p>
+}
+@if (item.analog; as analog) {
+  <h3>{{ 'tools.faces.analog' | t }}</h3>
+  <ul>
+    @for (role of analog.roles; track role) {
+      <li translate="no">{{ role }}</li>
+    }
+  </ul>
+  <p translate="no">{{ analog.clause }}</p>
+}

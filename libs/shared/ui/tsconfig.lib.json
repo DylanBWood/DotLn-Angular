@@ -7,7 +7,7 @@
     "inlineSources": true,
     "types": []
   },
-  "include": ["src/**/*.ts", "testing/src/**/*.ts"],
+  "include": ["src/**/*.ts", "testing/src/**/*.ts", "menu/src/**/*.ts", "menu/testing/src/**/*.ts"],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
@@ -29,6 +29,22 @@
     "testing/src/**/*.test.js",
     "testing/src/**/*.spec.js",
     "testing/src/**/*.test.jsx",
-    "testing/src/**/*.spec.jsx"
+    "testing/src/**/*.spec.jsx",
+    "menu/src/**/*.spec.ts",
+    "menu/src/**/*.test.ts",
+    "menu/src/**/*.test.tsx",
+    "menu/src/**/*.spec.tsx",
+    "menu/src/**/*.test.js",
+    "menu/src/**/*.spec.js",
+    "menu/src/**/*.test.jsx",
+    "menu/src/**/*.spec.jsx",
+    "menu/testing/src/**/*.spec.ts",
+    "menu/testing/src/**/*.test.ts",
+    "menu/testing/src/**/*.test.tsx",
+    "menu/testing/src/**/*.spec.tsx",
+    "menu/testing/src/**/*.test.js",
+    "menu/testing/src/**/*.spec.js",
+    "menu/testing/src/**/*.test.jsx",
+    "menu/testing/src/**/*.spec.jsx"
   ]
 }

@@ -47,3 +47,16 @@ helper types live once per library in `types.ts`, with explicit public exports;
 promote a helper to `utils` if a second library needs it.
 
 The local component catalog is described in [Storybook and visual review](../workspace/storybook.md).
+
+## Loading behavior
+
+The menu is exposed through `@dotln-angular/ui/menu`, independently of the root
+UI barrel. Its Aria and CDK overlay code arrives with the route that uses it.
+`provideDotlnUi()` installs global accessibility behavior; the menu's own
+`OverlayModule` import supplies overlay providers to its standalone injector.
+Do not re-export that entry point from the eagerly imported root barrel.
+
+`npm run check:bundle` builds optimized production code and walks static output
+imports. It rejects catalog/menu code in the initial graph and a menu deferred
+past its Tools route. Its package attribution helps explain size changes; it
+does not treat bundle bytes as a user-experience measurement.

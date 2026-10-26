@@ -1,6 +1,6 @@
 // Copyright (c) 2013-2025 Scott Sauyet and Michael Hurley — MIT.
 // ported from https://github.com/ramda/ramda/blob/v0.32.0/test/filter.js
-import { filter as upstreamFilter, into } from 'ramda';
+import { __, filter as upstreamFilter, into } from 'ramda';
 import { expectTypeOf } from 'vitest';
 
 import { R } from '../../public_api';
@@ -32,7 +32,7 @@ describe('R.filter through the house namespace', () => {
     expect(result).toEqual({ first: 1 });
     expect(R.filter(positive, input)).toEqual(result);
     expect(R.filter(positive, {})).toEqual({});
-    const placeholderResult = R.filter(R.__, input)(positive);
+    const placeholderResult = R.filter(__, input)(positive);
     expectTypeOf(placeholderResult).toEqualTypeOf<Partial<typeof input>>();
     expect(placeholderResult).toEqual(result);
   });
@@ -65,12 +65,12 @@ describe('R.filter through the house namespace', () => {
     expectTypeOf(result).toEqualTypeOf<Map<string, number>>();
     expect(result).toEqual(new Map([['first', 1]]));
     expect(R.filter(positive)(input)).toEqual(result);
-    const placeholderResult = R.filter(R.__, input)(positive);
+    const placeholderResult = R.filter(__, input)(positive);
     expectTypeOf(placeholderResult).toEqualTypeOf<Map<string, number>>();
     expect(placeholderResult).toEqual(result);
-    expect(R.filter(R.__, [1, 0, -1])(positive)).toEqual([1]);
-    expect(R.filter(positive, R.__)([1, 0, -1])).toEqual([1]);
-    expect(R.filter(R.__, R.__)(positive)([1, 0, -1])).toEqual([1]);
+    expect(R.filter(__, [1, 0, -1])(positive)).toEqual([1]);
+    expect(R.filter(positive, __)([1, 0, -1])).toEqual([1]);
+    expect(R.filter(__, __)(positive)([1, 0, -1])).toEqual([1]);
   });
 
   it('retains custom dispatch, fantasy-land dispatch and transducer behavior', () => {
@@ -82,9 +82,9 @@ describe('R.filter through the house namespace', () => {
       }),
     };
     expect(R.filter(positive, dispatch)).toBe(true);
-    expect(R.filter(R.__, dispatch)(positive)).toBe(true);
+    expect(R.filter(__, dispatch)(positive)).toBe(true);
     expect(R.filter(positive, fantasy)).toEqual({ isNothing: true });
-    expect(R.filter(R.__, fantasy)(positive)).toEqual({ isNothing: true });
+    expect(R.filter(__, fantasy)(positive)).toEqual({ isNothing: true });
     expect(into([], R.filter(positive), [1, 0, -1])).toEqual([1]);
     expect(R.filter).toBe(upstreamFilter);
   });

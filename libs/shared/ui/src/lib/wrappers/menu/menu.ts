@@ -1,6 +1,15 @@
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 
 import type { MenuOption } from '../../types';
 
@@ -20,7 +29,13 @@ import type { MenuOption } from '../../types';
     </button>
     <ng-template
       [cdkConnectedOverlayOpen]="trigger.expanded()"
-      [cdkConnectedOverlay]="{ origin, usePopover: 'inline' }"
+      [cdkConnectedOverlay]="{
+        origin,
+        usePopover: 'inline',
+        flexibleDimensions: true,
+        push: true,
+        viewportMargin: 8,
+      }"
       [cdkConnectedOverlayPositions]="positions"
       cdkAttachPopoverAsChild
     >
@@ -64,6 +79,10 @@ import type { MenuOption } from '../../types';
     }
     .menu {
       display: grid;
+      max-block-size: min(24rem, 50dvh);
+      max-inline-size: calc(100dvw - 1rem);
+      overflow: auto;
+      overscroll-behavior: contain;
       gap: 0.25rem;
       padding: 0.4rem;
       border: 1px solid var(--dotln-border-strong);
@@ -74,6 +93,7 @@ import type { MenuOption } from '../../types';
     .menu button {
       border: 0;
       text-align: start;
+      overflow-wrap: anywhere;
     }
     .menu button:focus,
     .menu button:hover {
@@ -89,13 +109,66 @@ import type { MenuOption } from '../../types';
   imports: [Menu, MenuContent, MenuItem, MenuTrigger, OverlayModule],
 })
 export class DotlnMenu {
+  #keyboardNavigation = false;
+  #pointer: { x: number; y: number } | undefined;
   readonly label = input.required<string>();
   readonly options = input.required<readonly MenuOption[]>();
   readonly selected = output<string>();
   readonly menu = viewChild<Menu<string>>('menu');
   readonly positions: ConnectedPosition[] = [
     { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 6 },
+    { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -6 },
+    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top', offsetY: 6 },
+    { originX: 'end', originY: 'top', overlayX: 'end', overlayY: 'bottom', offsetY: -6 },
   ];
+
+  constructor() {
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const document = host.ownerDocument;
+    const keyboard = () => {
+      this.#keyboardNavigation = true;
+    };
+    const moved = (event: MouseEvent) =>
+      this.#pointer !== undefined &&
+      (Math.trunc(event.clientX) !== this.#pointer.x ||
+        Math.trunc(event.clientY) !== this.#pointer.y);
+    // Compatibility MouseEvent coordinates are integers; PointerEvent keeps fractions.
+    const position = (event: MouseEvent) => ({
+      x: Math.trunc(event.clientX),
+      y: Math.trunc(event.clientY),
+    });
+    const pointerMove = (event: PointerEvent) => {
+      if (moved(event)) this.#keyboardNavigation = false;
+      this.#pointer = position(event);
+    };
+    const pointerDown = (event: PointerEvent) => {
+      this.#keyboardNavigation = false;
+      this.#pointer = position(event);
+    };
+    const mouseOver = (event: MouseEvent) => {
+      // Scrolling can move an option under a stationary pointer. Keep that
+      // boundary event from replacing Aria's keyboard-active item. A displaced
+      // pointer may enter before pointermove arrives, so allow that first hover.
+      if (
+        this.#keyboardNavigation &&
+        !moved(event) &&
+        event.target instanceof Element &&
+        event.target.closest('[role="menu"]')
+      ) {
+        event.stopImmediatePropagation();
+      }
+    };
+    host.addEventListener('keydown', keyboard, true);
+    host.addEventListener('mouseover', mouseOver, true);
+    document.addEventListener('pointermove', pointerMove, true);
+    document.addEventListener('pointerdown', pointerDown, true);
+    inject(DestroyRef).onDestroy(() => {
+      host.removeEventListener('keydown', keyboard, true);
+      host.removeEventListener('mouseover', mouseOver, true);
+      document.removeEventListener('pointermove', pointerMove, true);
+      document.removeEventListener('pointerdown', pointerDown, true);
+    });
+  }
 
   choose(value: string | undefined) {
     if (value !== undefined) this.selected.emit(value);

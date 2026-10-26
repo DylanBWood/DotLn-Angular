@@ -1,6 +1,7 @@
 import type { Routes } from '@angular/router';
 
 import { BasePaths } from '@dotln-angular/core';
+import { NotFoundPage } from '@dotln-angular/dotln/shell';
 
 export const appRoutes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: BasePaths.Board },
@@ -16,5 +17,13 @@ export const appRoutes: Routes = [
     path: BasePaths.Machinery,
     loadChildren: () =>
       import('@dotln-angular/machinery').then(({ machineryRoutes }) => machineryRoutes),
+  },
+  {
+    path: BasePaths.Tools,
+    loadChildren: () => import('@dotln-angular/tools').then(({ toolsRoutes }) => toolsRoutes),
+  },
+  {
+    path: '**',
+    component: NotFoundPage,
   },
 ];

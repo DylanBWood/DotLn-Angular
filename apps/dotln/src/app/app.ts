@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-import { BasePaths, buildRoute } from '@dotln-angular/core';
+import { BasePaths, buildRoute, ChildPaths } from '@dotln-angular/core';
 import {
   DotlnAppLayout,
   DotlnSubAppMenu,
@@ -43,6 +43,11 @@ import { TPipe } from '@dotln-angular/i18n';
         </dotln-sub-app-menu-group>
         <dotln-sub-app-menu-group [emptyMessage]="'shell.menu.toolsEmpty' | t">
           <span menu-heading>{{ 'shell.menu.tools' | t }}</span>
+          <li menu-item>
+            <a [routerLink]="catalog.commands" routerLinkActive="active" ariaCurrentWhenActive="page">
+              {{ 'tools.catalog.title' | t }}
+            </a>
+          </li>
         </dotln-sub-app-menu-group>
       </dotln-sub-app-menu>
       <dotln-shell-notices notices />
@@ -67,4 +72,5 @@ export class App {
   readonly board = buildRoute(BasePaths.Board);
   readonly scene = buildRoute(BasePaths.Scene);
   readonly machinery = buildRoute(BasePaths.Machinery);
+  readonly catalog = buildRoute(BasePaths.Tools, { child: ChildPaths.Catalog });
 }

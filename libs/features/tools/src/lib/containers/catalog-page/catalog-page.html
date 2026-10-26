@@ -1,0 +1,61 @@
+@let vm = facade.vm();
+<a [routerLink]="home.commands">{{ 'tools.catalog.back' | t }}</a>
+<h1>{{ 'tools.catalog.title' | t }}</h1>
+<p class="description">{{ 'tools.catalog.description' | t }}</p>
+<div class="filters" [attr.aria-label]="'tools.filters.label' | t" role="group">
+  @for (filter of filters(); track filter.key) {
+    <dotln-filter-menu
+      [label]="filter.label"
+      [options]="filter.options"
+      [value]="vm.filters[filter.key]"
+      [allLabel]="'tools.filters.all' | t"
+      (selected)="facade.filter(filter.key, $event)"
+    />
+  }
+  <button type="button" (click)="facade.reset()">{{ 'tools.filters.reset' | t }}</button>
+</div>
+@if (vm.loading) {
+  <p role="status">{{ 'tools.catalog.loading' | t }}</p>
+} @else if (vm.failed) {
+  <p role="alert">{{ 'tools.catalog.failed' | t }}</p>
+  <button type="button" (click)="facade.retry()">{{ 'tools.catalog.retry' | t }}</button>
+} @else {
+  <p role="status" data-testid="catalog-count" [attr.data-count]="vm.total">
+    {{ 'tools.catalog.count' | t: { count: vm.total, total: vm.catalogTotal } }}
+  </p>
+  <div class="catalog">
+    <section [attr.aria-label]="'tools.list.label' | t">
+      @if (vm.total) {
+        <tools-tool-list
+          #list
+          [tools]="vm.rows"
+          [selectedId]="vm.selected?.id ?? null"
+          (selected)="select($event)"
+        />
+        <div class="pagination" role="group" [attr.aria-label]="'tools.pagination.label' | t">
+          <button type="button" [disabled]="vm.page === 0" (click)="facade.page(vm.page - 1)">
+            {{ 'tools.pagination.previous' | t }}
+          </button>
+          <span>{{ 'tools.pagination.page' | t: { page: vm.page + 1, pages: vm.pages } }}</span>
+          <button
+            type="button"
+            [disabled]="vm.page + 1 >= vm.pages"
+            (click)="facade.page(vm.page + 1)"
+          >
+            {{ 'tools.pagination.next' | t }}
+          </button>
+        </div>
+      } @else {
+        <p>{{ 'tools.catalog.empty' | t }}</p>
+      }
+    </section>
+    <aside #details [attr.aria-label]="'tools.faces.label' | t" tabindex="-1">
+      @if (vm.selected; as tool) {
+        <button type="button" (click)="backToList()">{{ 'tools.faces.backToList' | t }}</button>
+        <tools-tool-faces [tool]="tool" />
+      } @else {
+        <p>{{ 'tools.faces.select' | t }}</p>
+      }
+    </aside>
+  </div>
+}

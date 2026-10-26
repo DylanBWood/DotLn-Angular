@@ -1,0 +1,61 @@
+{
+  "tools": {
+    "home": {
+      "title": "Tools",
+      "description": "Utilities for exploring and authoring toy behaviors.",
+      "openCatalog": "Browse the catalog"
+    },
+    "catalog": {
+      "title": "Catalog",
+      "description": "Explore concepts, toy operations and practical metaphors for the app and how we work. Execution status describes the current transform contract.",
+      "back": "All tools",
+      "loading": "Loading the catalog…",
+      "failed": "The catalog could not be loaded. Try again.",
+      "retry": "Try again",
+      "count": "{{count}} of {{total}} tools",
+      "empty": "No tools match these filters."
+    },
+    "filters": {
+      "label": "Catalog filters",
+      "work": "Work",
+      "kind": "Kind",
+      "scene": "Scene type",
+      "transform": "Transform kind",
+      "status": "Status",
+      "all": "All",
+      "reset": "Reset filters"
+    },
+    "list": {
+      "label": "Catalog tools",
+      "id": "Id",
+      "work": "Work",
+      "kind": "Kind"
+    },
+    "status": {
+      "untyped": "Untyped",
+      "background": "No executable transform"
+    },
+    "faces": {
+      "label": "Tool details",
+      "select": "Select a tool to inspect its five faces.",
+      "scene": "Scene",
+      "selection": "Selection",
+      "transform": "Transform",
+      "observable": "Observable",
+      "metrics": "Toy metrics",
+      "minimum": "Min {{count}}",
+      "maximum": "Max {{count}}",
+      "unbounded": "unbounded",
+      "range": "({{min}} to {{max}})",
+      "none": "This concept has no executable faces.",
+      "analog": "Practical application",
+      "backToList": "Back to selected tool"
+    },
+    "pagination": {
+      "label": "Catalog pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} of {{pages}}"
+    }
+  }
+}

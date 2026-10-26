@@ -168,3 +168,31 @@ The two fallback library generators and both testing entry-point generators exit
 The starter components were replaced with the arriving containers. The existing
 AnalogJS runner, two-worker limit, strict compiler configurations and testing
 barrels were applied; no dependency or lockfile change was needed.
+
+## Toolbox catalog and browser, 2026-10-25
+
+Nx 23.3.0. The current official Angular generator reference was fetched through
+Context7 (`https://nx.dev/docs/technologies/angular/generators`). Use the existing
+`unitTestRunner=none` route and then the established AnalogJS configuration:
+the preceding sub-app generation already demonstrated the installed generator's
+Vitest 5 peer mismatch. The existing utility project is renamed `workspace-tools`
+so the feature can own `tools`; its commands and gate coverage are unchanged.
+Each command runs with `NX_DAEMON=false NX_ISOLATE_PLUGINS=false`.
+
+- Planned: `npx nx daemon --stop`.
+- Planned: `npx nx g @nx/angular:library libs/shared/catalog --name=catalog --importPath=@dotln-angular/catalog --tags=scope:shared,type:data-access --prefix=dotln --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library libs/features/tools --name=tools --importPath=@dotln-angular/tools --tags=scope:dotln,type:feature --prefix=tools --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=catalog --name=testing --skipModule --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=tools --name=testing --skipModule --skipFormat --interactive=false`.
+
+All four library and testing-entry generators exited 0. Their placeholder components were replaced; the existing AnalogJS wiring and private manifests are retained. No dependency version changed.
+
+## Menu loading boundary, 2026-10-26
+
+Nx 23.3.0. Ran the established secondary-entry generator form with
+`NX_DAEMON=false NX_ISOLATE_PLUGINS=false`:
+`npx nx g @nx/angular:library-secondary-entry-point --library=ui --name=menu --skipModule --skipFormat --interactive=false`.
+Exit 0: it created the menu entry point, registered the alias and expanded the
+UI compiler includes. Replaced its placeholder with the house one-line index
+and explicit public API for `DotlnMenu` and `MenuOption`. No new project,
+dependency or module is introduced.

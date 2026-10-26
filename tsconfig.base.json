@@ -44,7 +44,12 @@
       "@dotln-angular/scene": ["./libs/features/scene/src/index.ts"],
       "@dotln-angular/machinery": ["./libs/features/machinery/src/index.ts"],
       "@dotln-angular/scene/testing": ["./libs/features/scene/testing/src/index.ts"],
-      "@dotln-angular/machinery/testing": ["./libs/features/machinery/testing/src/index.ts"]
+      "@dotln-angular/machinery/testing": ["./libs/features/machinery/testing/src/index.ts"],
+      "@dotln-angular/catalog": ["./libs/shared/catalog/src/index.ts"],
+      "@dotln-angular/tools": ["./libs/features/tools/src/index.ts"],
+      "@dotln-angular/catalog/testing": ["./libs/shared/catalog/testing/src/index.ts"],
+      "@dotln-angular/tools/testing": ["./libs/features/tools/testing/src/index.ts"],
+      "@dotln-angular/ui/menu": ["./libs/shared/ui/menu/src/index.ts"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true

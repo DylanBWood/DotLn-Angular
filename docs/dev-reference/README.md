@@ -2,11 +2,12 @@
 
 DotLn-Angular is an integrated Nx workspace demonstrating the operator's Angular
 conventions. It contains a slim, standalone, zoneless `dotln` application, its
-Playwright project and three shared foundation libraries under `libs/shared/`:
+Playwright project and shared foundation libraries under `libs/shared/`:
 `core` (typed environment, injection tokens, canonical routes, provider
 composition), `utils` (the `R` and `RA` namespaces) and `i18n` (Transloco with
-the house `t` pipe). The translated home heading is the temporary feature
-boundary.
+the house `t` pipe). The shell groups the actor board, Scene, Machinery and the
+Tools catalog. Feature logic lives in libraries; the app composes providers,
+navigation and lazy routes.
 
 ## Quick start
 
@@ -18,8 +19,9 @@ npx playwright install --with-deps chromium
 npx nx serve dotln
 ```
 
-Open the URL printed by Nx. The home page renders **DotLn**. Default development
-needs no environment file, API, account or mocking service. For public local
+Open the URL printed by Nx. The root opens **The actor board**, using the app's
+mocked HTTP API; Tools opens the bundled catalog. Default development needs no
+environment file, external API or account. For public local
 settings, `cp .env.example .env && npm run env:prime` writes the ignored local
 environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 
@@ -30,10 +32,10 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 | `apps/dotln/src/main.ts`           | Standalone bootstrap                                                 |
 | `apps/dotln/src/app/app.config.ts` | `provideDotlnCore()` and `provideDotlnI18n()` composition            |
 | `apps/dotln/src/app/app.ts`        | Router outlet shell                                                  |
-| `apps/dotln/src/app/app.routes.ts` | Root redirect and lazy home route built from `BasePaths`             |
+| `apps/dotln/src/app/app.routes.ts` | Root redirect, lazy sub-app routes and the not-found fallback        |
 | `apps/dotln/src/environments`      | Development and production environments; local one is generated      |
 | `apps/dotln/public/i18n`           | Translation catalogs (`en.json`)                                     |
-| `apps/dotln-e2e`                   | Chromium smoke test                                                  |
+| `apps/dotln-e2e`                   | Chromium behavior, accessibility, responsive and visual tests        |
 | `libs/shared/core`                 | Environment, tokens, routes, providers; `testing` entry point        |
 | `libs/shared/utils`                | `R` and `RA` with house declarations and upstream-derived specs      |
 | `libs/shared/i18n`                 | Transloco loading, missing keys, `TPipe`; `testing` entry point      |
@@ -46,7 +48,10 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 
 [The foundation reference](architecture/foundation.md) describes the three
 libraries, the environment and proxy, the test-kit convention and the checks
-that enforce them. Feature libraries join under `libs/` in later changes.
+that enforce them. Feature libraries live under `libs/features/`.
+
+[Performance policy](architecture/performance.md) describes bundle placement,
+repeatable browser sampling, budget calibration and routine overrun diagnosis.
 
 ## Checks
 
@@ -80,3 +85,10 @@ See [the component taxonomy and rules](architecture/component-taxonomy.md) for t
 
 Read [sub-app architecture](architecture/sub-apps.md) for the Scene, Machinery and
 Tools groups and the convention for adding a lazy feature to the one app.
+
+Read [catalog architecture](architecture/catalog.md) for the schema, source
+allow-list, checkpoint pipeline, lazy loader and Tools catalog browser.
+
+Read [concept mapping](architecture/concept-mapping.md) for the UIFA engineer's
+workshop purpose, applications across domains, diagnostic system traps, and the
+RxJS modelling exercise that guides continued mining.

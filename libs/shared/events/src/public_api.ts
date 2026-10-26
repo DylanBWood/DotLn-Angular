@@ -4,3 +4,5 @@ export { errorEvents } from './lib/app/error-events';
 export { navigationEvents } from './lib/navigation/navigation-events';
 export { boardHttpEvents } from './lib/data-access/board-http-events';
 export { boardPageEvents } from './lib/ui/board-page-events';
+export { catalogPageEvents } from './lib/ui/catalog-page-events';
+export { catalogEvents } from './lib/data-access/catalog-events';

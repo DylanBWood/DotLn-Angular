@@ -224,3 +224,13 @@ Every new idea lands here as a toy first. The app writes no control record and
 does not reach the platform; graduation is a GitHub issue on `DylanBWood/DotLn`.
 Read [sub-app architecture](../architecture/sub-apps.md) for the addition steps
 and [session rules](../../ai-reference/sub-app-rules.md) for the checklist.
+
+## 23. Catalog data
+
+The catalog carries ids, short titles and generic terms under the `tool-v0`
+allow-list. Definitions, relations and hooks remain in intake; no quarantine
+file is opened. Keep map ids and digests stable, preserve uncertain candidates
+as untyped, and grow the transform enum only by a recorded decision. Use the
+checkpoint classifier/checker/synthesizer/critic procedure, the complete catalog
+check and the injectable lazy-loader seam. See [catalog architecture](../architecture/catalog.md)
+and [catalog rules](../../ai-reference/catalog-rules.md).
