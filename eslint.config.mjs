@@ -10,6 +10,7 @@ const privateSyntax = {
 };
 const domainImports = [
   '@dotln-angular/*-data-access',
+  '@dotln-angular/catalog',
   '@dotln-angular/state',
   '@dotln-angular/state/**',
 ];

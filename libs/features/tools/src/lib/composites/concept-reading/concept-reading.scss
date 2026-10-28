@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+article {
+  max-inline-size: 68ch;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+.place {
+  color: var(--dotln-muted);
+  font-size: 0.72rem;
+  line-height: 1.7;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+h2 {
+  font-family: var(--dotln-font-reading);
+  font-weight: 500;
+  font-size: var(--dotln-reading-title-size, clamp(2.15rem, 3.6vw, 3.75rem));
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  margin-block: 1rem 1.8rem;
+  text-wrap: balance;
+}
+.definition {
+  font-family: var(--dotln-font-reading);
+  font-size: var(--dotln-reading-body-size, clamp(1.2rem, 1.5vw, 1.4rem));
+  line-height: 1.5;
+}
+p {
+  line-height: 1.8;
+}
+h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 650;
+  margin-block-end: 0.5rem;
+}
+a {
+  color: var(--dotln-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+a:focus-visible,
+summary:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}
+.source {
+  color: var(--dotln-muted);
+  font-size: 0.78rem;
+  margin-block: 1rem 2rem;
+}
+summary {
+  cursor: pointer;
+}
+.source-note {
+  font-size: 0.8rem;
+  border-inline-start: 2px solid var(--dotln-border-strong);
+  padding-inline-start: 0.8rem;
+}
+.relations {
+  padding-block: 1.25rem;
+  border-block: 1px solid var(--dotln-border);
+}
+.unresolved {
+  color: var(--dotln-muted);
+  font-size: 0.75rem;
+}
+.hook {
+  margin-block: 2rem;
+}
+.hook p {
+  margin-block: 0.4rem;
+}
+.application {
+  margin-block-start: 2.5rem;
+}
+.parameters {
+  font-size: 0.82rem;
+  color: var(--dotln-muted);
+}
+.parameters span + span {
+  margin-inline-start: 0.2em;
+}
+.parameters .parameter {
+  display: block;
+}
+// Each parameter line starts flush, and the separator follows its range directly. These
+// must outrank the value-to-range spacing above, so they repeat its sibling selector.
+.parameters span + span.parameter,
+.parameters span + span.parameter-separator {
+  margin-inline-start: 0;
+}
+.scene-note {
+  font-size: 0.82rem;
+  color: var(--dotln-accent);
+  margin-block-start: 2rem;
+}

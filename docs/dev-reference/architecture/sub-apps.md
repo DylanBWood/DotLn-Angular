@@ -9,11 +9,11 @@ or more features. They are separate concepts: Machinery contains both its own
 arriving page and the existing actor board. A later feature can join a group
 without creating another group or moving the board's URL.
 
-| Menu group | Current routes             | Current content                               |
-| ---------- | -------------------------- | --------------------------------------------- |
-| Scene      | `/scene`                   | Arriving page for the game-AI authoring scene |
-| Machinery  | `/board`, `/machinery`     | Actor board and the machinery arriving page   |
-| Tools      | `/tools`, `/tools/catalog` | Utility list and the toolbox catalog browser  |
+| Menu group | Current routes             | Current content                                     |
+| ---------- | -------------------------- | --------------------------------------------------- |
+| Scene      | `/scene`                   | Arriving page for the game-AI authoring scene       |
+| Machinery  | `/board`, `/machinery`     | Actor board and the machinery arriving page         |
+| Tools      | `/tools`, `/tools/catalog` | Works, last reading and the catalog reading surface |
 
 The root continues to redirect to `/board`. Unknown paths reach a translated
 not-found page in the main region, with a board link. Each arriving page identifies the

@@ -69,6 +69,8 @@ export function analyzeBundle({ outputs }) {
       (source) =>
         inputs[source] > 0 &&
         (source === menuSource ||
+          /node_modules\/@angular\/aria\/.*\/?_?menu(?:[./-])/.test(source) ||
+          /node_modules\/@angular\/cdk\/.*\/?_?overlay(?:[./-])/.test(source) ||
           source.startsWith(catalogSource) ||
           source.startsWith(toolsSource)),
     ),

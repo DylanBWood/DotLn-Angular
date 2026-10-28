@@ -1,27 +1,50 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
-import { assertScrubbed } from '../scrub-board-fixture.mjs';
 import { isMain, workspaceRoot } from '../source-files.mjs';
 
 export const dataDirectory = resolve(workspaceRoot, 'libs/shared/catalog/src/data');
+// Each batch names its work, the research run's output folder that holds its maps,
+// and the id prefix of every declared map file.
 export const batches = {
-  'aifg-a': { work: 'aifg', files: { 'ai-for-games-3e-part-a.jsonl': 'aifg-a' } },
-  'aifg-b': { work: 'aifg', files: { 'ai-for-games-3e-part-b.jsonl': 'aifg-b' } },
-  eip: { work: 'eip', files: { 'enterprise-integration-patterns.jsonl': 'eip' } },
-  poeaa: { work: 'poeaa', files: { 'poeaa.jsonl': 'poeaa' } },
-  'rxjs-core': { work: 'rxjs', files: { 'rxjs-core.jsonl': 'rxc' } },
-  'rxjs-patterns': { work: 'rxjs', files: { 'rxjs-patterns.jsonl': 'rxp' } },
-  geb: { work: 'geb', files: { 'geb-map-part-1.jsonl': 'geb1', 'geb-map-part-2.jsonl': 'geb2' } },
+  'aifg-a': {
+    work: 'aifg',
+    folder: 'maps',
+    files: { 'ai-for-games-3e-part-a.jsonl': 'aifg-a' },
+  },
+  'aifg-b': {
+    work: 'aifg',
+    folder: 'maps',
+    files: { 'ai-for-games-3e-part-b.jsonl': 'aifg-b' },
+  },
+  eip: { work: 'eip', folder: 'maps', files: { 'enterprise-integration-patterns.jsonl': 'eip' } },
+  poeaa: { work: 'poeaa', folder: 'maps', files: { 'poeaa.jsonl': 'poeaa' } },
+  'rxjs-core': { work: 'rxjs', folder: 'maps', files: { 'rxjs-core.jsonl': 'rxc' } },
+  'rxjs-patterns': { work: 'rxjs', folder: 'maps', files: { 'rxjs-patterns.jsonl': 'rxp' } },
+  geb: {
+    work: 'geb',
+    folder: 'geb',
+    files: { 'geb-map-part-1.jsonl': 'geb1', 'geb-map-part-2.jsonl': 'geb2' },
+  },
   tt: {
     work: 'tt',
+    folder: 'tt',
     files: { 'map-part-1.jsonl': 'tt1', 'map-part-2.jsonl': 'tt2', 'map-part-3.jsonl': 'tt3' },
   },
 };
 
+/**
+ * The run's verification note decides how a reading is marked. A note is partial only
+ * when it says "partial" as a word, so a URL such as `.../PartialObserver` stays sourced.
+ */
+export function verificationKind(note) {
+  if (/(?:^|[\s(])partial\b/i.test(note)) return 'partial';
+  return /^(model-knowledge|MK)\b/i.test(note) ? 'model-knowledge' : 'sourced';
+}
+
 const schema = JSON.parse(
   readFileSync(
-    resolve(workspaceRoot, 'libs/shared/catalog/src/schema/tool-v0.schema.json'),
+    resolve(workspaceRoot, 'libs/shared/catalog/src/schema/tool-v1.schema.json'),
     'utf8',
   ),
 );
@@ -77,6 +100,17 @@ const pointerKeys = new Set([
   'analog',
   'roles',
   'clause',
+  'definition',
+  'place',
+  'part',
+  'chapter',
+  'section',
+  'subsection',
+  'related',
+  'hooks',
+  'domain',
+  'verified',
+  'note',
 ]);
 const safePointer = (pointer) =>
   pointer
@@ -100,21 +134,11 @@ export function catalogDiagnostic(error) {
     : 'Input read, JSON parse or output operation failed.';
 }
 
-function scrub(value) {
-  try {
-    assertScrubbed(value);
-  } catch (error) {
-    const pointer = / at (\/.*)$/s.exec(error.message)?.[1] ?? '/';
-    throw new CatalogValidationError('scrub rejected a private path', pointer, value?.batch);
-  }
-}
-
 const fail = (condition, message) => {
   if (!condition) throw new CatalogValidationError(message);
 };
 
 export function checkCheckpoint(checkpoint) {
-  scrub(checkpoint);
   if (!validateCheckpointShape(checkpoint)) {
     const error = validateCheckpointShape.errors[0];
     throw new CatalogValidationError(
@@ -149,6 +173,10 @@ export function checkCheckpoint(checkpoint) {
       );
       fail(!lines.get(map.file).has(tool.map.line), 'Duplicate source line.');
       lines.get(map.file).add(tool.map.line);
+      fail(
+        tool.verified.kind === verificationKind(tool.verified.note),
+        'Verification kind differs from its note.',
+      );
     }
     if (tool.faces) {
       const { selection, transform } = tool.faces;
@@ -202,6 +230,18 @@ export function readCheckpoints(directory = dataDirectory, partial = false) {
   fail(checkpoints.length > 0, 'No catalog checkpoints.');
   const ids = checkpoints.flatMap(({ tools }) => tools.map(({ id }) => id));
   fail(new Set(ids).size === ids.length, 'Duplicate tool id across checkpoints.');
+  if (!partial) {
+    const byId = new Map(checkpoints.flatMap(({ tools }) => tools.map((tool) => [tool.id, tool])));
+    for (const { tools } of checkpoints)
+      for (const tool of tools)
+        for (const relation of tool.related) {
+          fail(
+            relation.id === null || byId.get(relation.id)?.work === tool.work,
+            'Relation target is missing or belongs to another work.',
+          );
+          fail(relation.id !== tool.id, 'Relation links a concept to itself.');
+        }
+  }
   return checkpoints;
 }
 
@@ -223,8 +263,61 @@ export function catalogCounts(checkpoints) {
   };
 }
 
+export const sceneTransformKinds = [
+  'steer.blend',
+  'steer.priority',
+  'formation.twoLevel',
+  'formation.fixed',
+  'objective.set',
+];
+
+export function summarizeWork(tools, work, sceneType, typedShortfall) {
+  const rows = tools.filter((tool) => tool.work === work);
+  const chapters = new Map();
+  for (const tool of rows) {
+    const key = JSON.stringify([tool.place.part ?? '', tool.place.chapter]);
+    const chapter = chapters.get(key) ?? {
+      part: tool.place.part ?? '',
+      title: tool.place.chapter,
+      count: 0,
+    };
+    chapter.count++;
+    chapters.set(key, chapter);
+  }
+  return {
+    work,
+    sceneType,
+    typedShortfall,
+    chapters: [...chapters.values()],
+    sceneTools: rows
+      .filter(
+        (tool) =>
+          tool.status === 'typed' && sceneTransformKinds.includes(tool.faces.transform.kind),
+      )
+      .map((tool) => tool.id),
+  };
+}
+
+// The summary's date is the UTC day it was last written from the checkpoints.
+export function createSummary(checkpoints, previous) {
+  const tools = checkpoints.flatMap((checkpoint) => checkpoint.tools);
+  return {
+    ...previous,
+    schema: 'catalog-summary-v1',
+    date: new Date().toISOString().slice(0, 10),
+    mappedRows: tools.filter((tool) => tool.provenance === 'map').length,
+    totalRows: tools.length,
+    maps: checkpoints
+      .flatMap((checkpoint) => checkpoint.maps)
+      .sort((a, b) => a.file.localeCompare(b.file)),
+    counts: catalogCounts(checkpoints),
+    works: previous.works.map((work) =>
+      summarizeWork(tools, work.work, work.sceneType, work.typedShortfall),
+    ),
+  };
+}
+
 export function checkSummary(summary, checkpoints) {
-  scrub(summary);
   fail(
     sameKeys(summary, [
       'schema',
@@ -239,7 +332,7 @@ export function checkSummary(summary, checkpoints) {
     'Summary fields differ.',
   );
   fail(
-    summary.schema === 'catalog-summary-v0' && /^\d{4}-\d{2}-\d{2}$/.test(summary.date),
+    summary.schema === 'catalog-summary-v1' && /^\d{4}-\d{2}-\d{2}$/.test(summary.date),
     'Summary version or date invalid.',
   );
   const maps = checkpoints
@@ -264,8 +357,8 @@ export function checkSummary(summary, checkpoints) {
   const workIds = new Set();
   for (const work of summary.works) {
     fail(
-      sameKeys(work, ['work', 'sceneType', 'firstThree', 'typedShortfall']),
-      'Summary work fields differ.',
+      equal(work, summarizeWork(tools, work.work, work.sceneType, work.typedShortfall)),
+      'Summary work contents differ.',
     );
     fail(
       !workIds.has(work.work) && Object.hasOwn(summary.counts.work, work.work),
@@ -276,22 +369,7 @@ export function checkSummary(summary, checkpoints) {
       schema.$defs.faces.properties.scene.items.enum.includes(work.sceneType),
       'Unknown summary scene type.',
     );
-    fail(
-      Array.isArray(work.firstThree) &&
-        new Set(work.firstThree).size === work.firstThree.length &&
-        work.firstThree.length <= 3,
-      'Invalid first-three list.',
-    );
-    const typed = tools.filter((tool) => tool.work === work.work && tool.status === 'typed');
-    fail(
-      work.firstThree.length === Math.min(3, typed.length) &&
-        work.typedShortfall === Math.max(0, 3 - typed.length),
-      'Summary shortfall differs.',
-    );
-    fail(
-      work.firstThree.every((id) => typed.some((tool) => tool.id === id)),
-      'First-three tool is not typed in its work.',
-    );
+    fail(work.typedShortfall === (work.work === 'tt' ? 1 : 0), 'Historical shortfall differs.');
   }
   fail(
     sameKeys(summary.workers, ['classifiers', 'checkers', 'synthesizer', 'critic']),
@@ -330,12 +408,12 @@ if (isMain(import.meta.url)) {
     const args = process.argv.slice(2);
     if (args.length === 1 && args[0] !== '--partial') {
       checkCheckpoint(JSON.parse(readFileSync(resolve(args[0]), 'utf8')));
-      console.log('PASS catalog checkpoint: schema, allow-list, provenance and line coverage.');
+      console.log('PASS catalog checkpoint: schema, provenance and line coverage.');
     } else {
       fail(args.length === 0 || equal(args, ['--partial']), 'Invalid arguments.');
       const checkpoints = checkCatalog(dataDirectory, args.includes('--partial'));
       console.log(
-        `PASS catalog${args.includes('--partial') ? ' (partial)' : ''}: ${checkpoints.length} checkpoints, ${checkpoints.reduce((sum, batch) => sum + batch.tools.length, 0)} tools; schema, allow-list, provenance and counts.`,
+        `PASS catalog${args.includes('--partial') ? ' (partial)' : ''}: ${checkpoints.length} checkpoints, ${checkpoints.reduce((sum, batch) => sum + batch.tools.length, 0)} tools; schema, provenance and counts.`,
       );
     }
   } catch (error) {

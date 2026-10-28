@@ -30,7 +30,8 @@
     "lint:hygiene": "node tools/scripts/check-event-hygiene.mjs",
     "check:scripts": "node tools/scripts/check-script-reference.mjs",
     "catalog:check": "node tools/scripts/catalog/check-catalog.mjs",
-    "catalog:report": "node tools/scripts/catalog/report.mjs"
+    "catalog:report": "node tools/scripts/catalog/report.mjs",
+    "catalog:join": "node tools/scripts/catalog/join-maps.mjs"
   },
   "private": true,
   "dependencies": {

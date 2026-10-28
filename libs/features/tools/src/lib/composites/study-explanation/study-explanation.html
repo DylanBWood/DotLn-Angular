@@ -1,0 +1,340 @@
+@switch (section()) {
+  @case ('algorithm') {
+    <p>{{ 'tools.study.algorithmExplanation' | t }}</p>
+    @if (calculation(); as example) {
+      <section class="worked-step" aria-labelledby="arrive-worked-heading">
+        <h4 id="arrive-worked-heading">
+          {{
+            (example.settled ? 'tools.study.worked.atRest' : 'tools.study.worked.title')
+              | t: example.values
+          }}
+        </h4>
+        <p class="note">{{ 'tools.study.worked.current' | t }}</p>
+        <p>{{ 'tools.study.worked.state' | t: example.values }}</p>
+        @if (example.settled) {
+          <p>{{ 'tools.study.worked.stopped' | t: example.values }}</p>
+        } @else {
+          <ol>
+            <li>{{ 'tools.study.worked.distance' | t: example.values }}</li>
+            <li>
+              {{
+                (example.withinRadius
+                  ? 'tools.study.worked.desiredInside'
+                  : 'tools.study.worked.desiredOutside'
+                ) | t: example.values
+              }}
+            </li>
+            <li>{{ 'tools.study.worked.request' | t: example.values }}</li>
+            <li>{{ 'tools.study.worked.limit' | t: example.values }}</li>
+            <li>{{ 'tools.study.worked.velocity' | t: example.values }}</li>
+            <li>{{ 'tools.study.worked.position' | t: example.values }}</li>
+          </ol>
+          <p>
+            @switch (example.motion) {
+              @case ('accelerating') {
+                {{ 'tools.study.worked.accelerating' | t }}
+              }
+              @case ('braking') {
+                {{ 'tools.study.worked.braking' | t }}
+              }
+              @case ('steady') {
+                {{ 'tools.study.worked.steady' | t }}
+              }
+            }
+          </p>
+        }
+        <button type="button" (click)="momentRequested.emit(example.step)">
+          {{ 'tools.study.worked.show' | t }}
+        </button>
+        <p class="note">{{ 'tools.study.worked.precision' | t }}</p>
+      </section>
+    }
+    <section class="algorithm-guide" aria-labelledby="arrive-code-heading">
+      <h4 id="arrive-code-heading">{{ 'tools.study.codeGuide.title' | t }}</h4>
+      <p class="code-label">{{ 'tools.study.pseudocode' | t }}</p>
+      <pre translate="no"><code>{{ pseudocode }}</code></pre>
+      <!-- Each explanation can show the lines it describes; they start closed so the
+           complete code above stays the first reading. -->
+      <ol class="code-explanations" role="list">
+        <li>
+          <h5 id="arrive-code-settle">{{ 'tools.study.codeGuide.settleTitle' | t }}</h5>
+          <details class="code-lines">
+            <summary aria-describedby="arrive-code-settle">
+              {{ 'tools.study.codeGuide.showLines' | t }}
+            </summary>
+            <pre translate="no"><code>{{ pseudocodeParts.settle }}</code></pre>
+          </details>
+          <p class="code-explanation">{{ 'tools.study.codeGuide.settle' | t }}</p>
+        </li>
+        <li>
+          <h5 id="arrive-code-desired">{{ 'tools.study.codeGuide.desiredTitle' | t }}</h5>
+          <details class="code-lines">
+            <summary aria-describedby="arrive-code-desired">
+              {{ 'tools.study.codeGuide.showLines' | t }}
+            </summary>
+            <pre translate="no"><code>{{ pseudocodeParts.desired }}</code></pre>
+          </details>
+          <p class="code-explanation">{{ 'tools.study.codeGuide.desired' | t }}</p>
+        </li>
+        <li>
+          <h5 id="arrive-code-acceleration">{{ 'tools.study.codeGuide.accelerationTitle' | t }}</h5>
+          <details class="code-lines">
+            <summary aria-describedby="arrive-code-acceleration">
+              {{ 'tools.study.codeGuide.showLines' | t }}
+            </summary>
+            <pre translate="no"><code>{{ pseudocodeParts.acceleration }}</code></pre>
+          </details>
+          <p class="code-explanation">{{ 'tools.study.codeGuide.acceleration' | t }}</p>
+        </li>
+        <li>
+          <h5 id="arrive-code-advance">{{ 'tools.study.codeGuide.advanceTitle' | t }}</h5>
+          <details class="code-lines">
+            <summary aria-describedby="arrive-code-advance">
+              {{ 'tools.study.codeGuide.showLines' | t }}
+            </summary>
+            <pre translate="no"><code>{{ pseudocodeParts.advance }}</code></pre>
+          </details>
+          <p class="code-explanation">{{ 'tools.study.codeGuide.advance' | t }}</p>
+        </li>
+      </ol>
+    </section>
+    <p class="note">{{ 'tools.study.defaults' | t }}</p>
+  }
+  @case ('reactive') {
+    <p>{{ 'tools.study.reactiveExplanation' | t }}</p>
+    <section class="stream-example" aria-labelledby="arrive-stream-heading">
+      <h4 id="arrive-stream-heading">{{ 'tools.study.stream.title' | t }}</h4>
+      <p class="note">{{ 'tools.study.stream.scenario' | t }}</p>
+      <div class="stream-choice" role="group" [attr.aria-label]="'tools.study.stream.views' | t">
+        <button
+          type="button"
+          aria-controls="arrive-stream-diagram"
+          [attr.aria-pressed]="streamView() === 'flow'"
+          (click)="streamViewChanged.emit('flow')"
+        >
+          {{ 'tools.study.stream.flowView' | t }}
+        </button>
+        <button
+          type="button"
+          aria-controls="arrive-stream-diagram"
+          [attr.aria-pressed]="streamView() === 'timeline'"
+          (click)="streamViewChanged.emit('timeline')"
+        >
+          {{ 'tools.study.stream.timelineView' | t }}
+        </button>
+      </div>
+      <figure
+        id="arrive-stream-diagram"
+        class="stream-figure"
+        aria-labelledby="arrive-stream-heading"
+      >
+        @if (streamView() === 'flow') {
+          <div class="stream-flow">
+            <div class="stream-sources">
+              <div class="stream-node">
+                <code translate="no">{{ flowCode.frames }}</code>
+                <span>{{ 'tools.study.stream.frames' | t }}</span>
+              </div>
+              <div class="stream-node">
+                <code translate="no">{{ flowCode.targets }}</code>
+                <span>{{ 'tools.study.stream.targets' | t }}</span>
+              </div>
+            </div>
+            <svg class="stream-join" viewBox="0 0 600 36" aria-hidden="true">
+              <path d="M 150 0 V 16 H 300 V 31 M 450 0 V 16 H 300 M 295 26 L 300 31 L 305 26" />
+            </svg>
+            <div class="stream-node">
+              <code translate="no">{{ flowCode.sample }}</code>
+              <span>{{ 'tools.study.stream.sample' | t }}</span>
+              <div class="stream-values" translate="no">
+                <code>{{ flowCode.firstPair }}</code>
+                <code>{{ flowCode.nextPair }}</code>
+                <code>{{ flowCode.nextPair }}</code>
+              </div>
+            </div>
+            <div class="stream-node stream-connected">
+              <code translate="no">{{ flowCode.accumulate }}</code>
+              <span>{{ 'tools.study.stream.accumulate' | t }}</span>
+              <code translate="no">{{ flowCode.states }}</code>
+            </div>
+            <div class="stream-node stream-connected">
+              <code translate="no">{{ flowCode.stop }}</code>
+              <span>{{ 'tools.study.stream.stop' | t }}</span>
+            </div>
+            <div class="stream-node stream-connected">
+              <code translate="no">{{ flowCode.draw }}</code>
+              <code translate="no">{{ flowCode.drawings }}</code>
+            </div>
+          </div>
+        } @else {
+          <ol class="stream-timeline">
+            <li>
+              <strong>{{ 'tools.study.stream.tick1' | t }}</strong>
+              <code translate="no">{{ timelineCode.first }}</code>
+              <span>{{ 'tools.study.stream.firstEvent' | t }}</span>
+            </li>
+            <li class="stream-target">
+              <strong>{{ 'tools.study.stream.targetEvent' | t }}</strong>
+              <code translate="no">{{ timelineCode.target }}</code>
+              <span>{{ 'tools.study.stream.targetWaits' | t }}</span>
+            </li>
+            <li>
+              <strong>{{ 'tools.study.stream.tick2' | t }}</strong>
+              <code translate="no">{{ timelineCode.second }}</code>
+              <span>{{ 'tools.study.stream.secondEvent' | t }}</span>
+            </li>
+            <li>
+              <strong>{{ 'tools.study.stream.tick3' | t }}</strong>
+              <code translate="no">{{ timelineCode.third }}</code>
+              <span>{{ 'tools.study.stream.thirdEvent' | t }}</span>
+            </li>
+            <li class="stream-stop">
+              <strong>{{ 'tools.study.stream.stopEvent' | t }}</strong>
+              <code translate="no">{{ timelineCode.stop }}</code>
+              <span>{{ 'tools.study.stream.afterStop' | t }}</span>
+            </li>
+          </ol>
+        }
+      </figure>
+      <ul class="stream-rules">
+        <li>{{ 'tools.study.stream.sampleRule' | t }}</li>
+        <li>{{ 'tools.study.stream.stateRule' | t }}</li>
+        <li>{{ 'tools.study.stream.stopRule' | t }}</li>
+      </ul>
+    </section>
+    <p class="code-label">{{ 'tools.study.rxPseudocode' | t }}</p>
+    <pre translate="no"><code>{{ rxPseudocode }}</code></pre>
+    <p class="note">{{ 'tools.study.rxNote' | t }}</p>
+    <a
+      href="https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/withLatestFrom.ts"
+      >{{ 'tools.study.rxReference' | t }}</a
+    >
+  }
+  @case ('limits') {
+    <p>{{ 'tools.study.limitExplanation' | t }}</p>
+    @if (limitExample(); as example) {
+      <section class="failure-example" aria-labelledby="arrive-failure-heading">
+        <h4 id="arrive-failure-heading">{{ 'tools.study.failure.title' | t }}</h4>
+        <p class="failure-intro">{{ 'tools.study.failure.intro' | t: example.values }}</p>
+        <div class="failure-charts">
+          <svg
+            viewBox="0 0 600 320"
+            role="img"
+            aria-labelledby="arrive-failure-heading"
+            aria-describedby="arrive-failure-result arrive-failure-note"
+          >
+            <path class="failure-grid" [attr.d]="example.gridPath" />
+            <path class="failure-target" [attr.d]="example.targetPath" />
+            <path class="failure-axis" [attr.d]="example.axisPath" />
+            @for (trace of example.cases; track trace.id) {
+              <polyline
+                class="failure-trace"
+                [class.late-braking]="trace.id === 'late'"
+                [attr.points]="trace.points"
+              />
+              <circle
+                class="failure-peak"
+                [class.late-braking]="trace.id === 'late'"
+                [attr.cx]="trace.peakX"
+                [attr.cy]="trace.peakY"
+                r="5"
+              />
+            }
+            <text x="50" y="20">{{ 'tools.study.failure.position' | t }}</text>
+            <g translate="no">
+              @for (tick of example.positionTicks; track tick.label) {
+                <text x="40" [attr.y]="tick.y" text-anchor="end">{{ tick.label }}</text>
+              }
+              @for (tick of example.timeTicks; track tick.label) {
+                <text [attr.x]="tick.x" y="277" text-anchor="middle">{{ tick.label }}</text>
+              }
+            </g>
+            <text x="300" y="310" text-anchor="middle">{{ 'tools.study.failure.time' | t }}</text>
+          </svg>
+        </div>
+        <div class="failure-legend">
+          <span class="normal-key">{{ 'tools.study.failure.normal' | t: example.values }}</span>
+          <span class="late-key">{{ 'tools.study.failure.late' | t: example.values }}</span>
+          <span>{{ 'tools.study.failure.target' | t: example.values }}</span>
+        </div>
+        <p class="failure-summary" id="arrive-failure-result">
+          {{ 'tools.study.failure.result' | t: example.values }}
+        </p>
+        <p class="failure-summary">{{ 'tools.study.failure.reason' | t: example.values }}</p>
+        <p class="failure-note note" id="arrive-failure-note">
+          {{ 'tools.study.failure.note' | t }}
+        </p>
+      </section>
+    }
+    <p>{{ 'tools.study.compare' | t }}</p>
+  }
+  @case ('references') {
+    <section class="implementation-comparison" aria-labelledby="arrive-implementation-heading">
+      <h4 id="arrive-implementation-heading">{{ 'tools.study.implementation.title' | t }}</h4>
+      <p class="implementation-intro">{{ 'tools.study.implementation.intro' | t }}</p>
+      <p class="implementation-intro">{{ 'tools.study.implementation.libraryIntro' | t }}</p>
+      <a href="https://github.com/libgdx/gdx-ai">{{
+        'tools.study.implementation.aboutLibrary' | t
+      }}</a>
+      <p class="implementation-intro">{{ 'tools.study.implementation.whyCompare' | t }}</p>
+      <section class="implementation-group">
+        <h5>{{ 'tools.study.implementation.study' | t }}</h5>
+        <p>
+          <strong>{{ 'tools.study.implementation.slowing' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.studySlowing' | t
+          }}</span>
+        </p>
+        <p>
+          <strong>{{ 'tools.study.implementation.acceleration' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.studyAcceleration' | t
+          }}</span>
+        </p>
+        <p>
+          <strong>{{ 'tools.study.implementation.stopping' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.studyStopping' | t
+          }}</span>
+        </p>
+      </section>
+      <section class="implementation-group">
+        <h5>{{ 'tools.study.implementation.gdx' | t }}</h5>
+        <p>
+          <strong>{{ 'tools.study.implementation.slowing' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.gdxSlowing' | t
+          }}</span>
+        </p>
+        <p>
+          <strong>{{ 'tools.study.implementation.acceleration' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.gdxAcceleration' | t
+          }}</span>
+        </p>
+        <p>
+          <strong>{{ 'tools.study.implementation.stopping' | t }}</strong
+          ><span class="implementation-fact">{{
+            'tools.study.implementation.gdxStopping' | t
+          }}</span>
+        </p>
+      </section>
+      <p class="implementation-takeaway">{{ 'tools.study.implementation.takeaway' | t }}</p>
+      <p class="note">{{ 'tools.study.implementation.note' | t }}</p>
+    </section>
+    <ul class="references">
+      <li>
+        <a href="https://www.red3d.com/cwr/steer/Arrival.html">{{ 'tools.study.reynolds' | t }}</a>
+        <p>{{ 'tools.study.reynoldsNote' | t }}</p>
+      </li>
+      <li>
+        <a
+          href="https://github.com/libgdx/gdx-ai/blob/master/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java"
+          >{{ 'tools.study.gdx' | t }}</a
+        >
+        <p>{{ 'tools.study.gdxNote' | t }}</p>
+      </li>
+    </ul>
+    <p class="note">{{ 'tools.study.provenance' | t }}</p>
+  }
+}

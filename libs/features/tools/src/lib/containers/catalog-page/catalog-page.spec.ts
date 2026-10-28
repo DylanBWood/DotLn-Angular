@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideToolsTestKit } from '../../../../testing/src';
 import { CatalogPage } from './catalog-page';
 
-it('renders catalog rows and shows an untyped reason and the five faces on selection', async () => {
+it('presents a shelf, a readable definition and an untyped reason without a label-value grid', async () => {
   TestBed.configureTestingModule({
     imports: [CatalogPage],
     providers: [...provideToolsTestKit().providers],
@@ -12,14 +12,14 @@ it('renders catalog rows and shows an untyped reason and the five faces on selec
   await fixture.whenStable();
   const element: HTMLElement = fixture.nativeElement;
   expect(element.querySelector('h1')?.textContent).toBe('Catalog');
-  expect(element.querySelectorAll('[data-tool-id]')).toHaveLength(3);
-  const button = element.querySelector<HTMLButtonElement>('[data-tool-id="sample:2"] button');
-  button?.click();
+  expect(element.querySelectorAll('tools-work-shelf li')).toHaveLength(3);
+  fixture.componentInstance.facade.open('sample:2');
   await fixture.whenStable();
-  const details = element.querySelector('tools-tool-faces');
-  expect(details?.textContent).toContain('The scene needs a transaction contract.');
-  expect(
-    Array.from(details?.querySelectorAll('dt') ?? []).map((item) => item.textContent?.trim()),
-  ).toEqual(['Scene', 'Selection', 'Transform', 'Observable', 'Toy metrics']);
-  expect(button?.getAttribute('aria-pressed')).toBe('true');
+  expect(element.querySelector('[data-testid="definition"]')?.textContent).toContain(
+    'business transaction',
+  );
+  expect(element.querySelector('tools-concept-reading')?.textContent).toContain(
+    'The scene needs a transaction contract.',
+  );
+  expect(element.querySelector('dl')).toBeNull();
 });

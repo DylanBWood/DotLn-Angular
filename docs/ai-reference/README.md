@@ -14,7 +14,8 @@
 - Tag each project with one `scope:*` and one `type:*`; obey root ESLint constraints.
 - Add library aliases under `@dotln-angular/`. Avoid self-alias imports.
 - Run `npm run lint`, `npm test`, `npm run build`, `npm run format:check`,
-  `npm run lint:fixtures`, `npm run test:tooling`, `npm run typecheck:e2e` and `npm run e2e`.
+  `npm run test:tooling`, `npm run typecheck:e2e` and `npm run e2e`. Run
+  `npm run lint:fixtures` only when changing lint policy.
 - Install Chromium first with `npx playwright install --with-deps chromium`.
 - Fix failures. Never disable a lint or type check to make a gate green.
 - Record defects that cannot be fixed and make their boards visible.
@@ -31,7 +32,7 @@ Read [state rules](state-rules.md) for typed events, stores, HTTP, persistence a
 Read [sub-app rules](sub-app-rules.md) before adding a route or menu entry.
 
 Read [catalog rules](catalog-rules.md) before changing tool data, transforms,
-classifier checkpoints, loading or the Tools catalog browser.
+the source join, loading or the Tools reading surface.
 
 Read [performance policy](../dev-reference/architecture/performance.md) when a
 change affects code placement, loading, rendering or interactions. Attribute

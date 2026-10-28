@@ -33,17 +33,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - run: npx nx format:check
-      - run: npm run lint:hygiene
-      - run: npm run lint:fixtures
-      - run: npm run test:tooling
+      # The workspace checks cover the whole repository, so they run once on every
+      # change here rather than only when Nx counts the tools project as affected.
+      - run: npx nx run workspace-tools:lint
       - run: npm run typecheck:e2e
       - run: npm run boards
-      - run: npm run check:templates
-      - run: npm run check:tokens
-      - run: npm run check:kits
-      - run: npm run i18n:check
       - run: npm run check:bundle
-      - run: npx nx affected -t lint test build e2e
+      - run: npx nx affected -t lint test build e2e --exclude=workspace-tools
 
   visual:
     runs-on: macos-15

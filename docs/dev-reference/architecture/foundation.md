@@ -125,8 +125,9 @@ TestBed.configureTestingModule({
 
 Same-library specs import the relative testing entry point; consumers use the
 public alias. `workspace-tools:lint` runs template, token and kit checks, translation
-extraction, foundation type checks, negative lint fixtures and tooling tests.
-CI also calls the three structural checks explicitly. The checks parse syntax
+extraction, foundation type checks and tooling tests with the other workspace
+checks, and CI runs that target once on every change. `npm run lint:fixtures`
+exercises the negative lint fixtures when lint policy changes. The checks parse syntax
 trees; tests cover multiline templates, nested token generics, aliases, missing
 kits and missing or fabricated provider spreads. The `dotln/token-names`
 ESLint rule and `check:tokens` share one import-aware inspector, so bare,

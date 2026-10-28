@@ -48,6 +48,20 @@ test('transitive menu and catalog data leaks fail even when an output is small',
   }
 });
 
+test('direct vendor menu and overlay imports cannot bypass the lazy-route guard', () => {
+  for (const source of [
+    'node_modules/@angular/aria/fesm2022/menu.mjs',
+    'node_modules/@angular/aria/fesm2022/_menu-chunk.mjs',
+    'node_modules/@angular/cdk/fesm2022/overlay.mjs',
+    '../base/node_modules/@angular/cdk/fesm2022/_overlay-module-chunk.mjs',
+  ]) {
+    const stats = fixture();
+    stats.outputs['shared.js'].inputs[source] = { bytesInOutput: 1 };
+    assert.throws(() => checkBundle(stats), /Route-only code/);
+    assert.deepEqual(analyzeBundle(stats).lazyCodeInInitial, [source]);
+  }
+});
+
 test('deferring the menu again, missing metadata and static cycles are handled explicitly', () => {
   const stats = fixture();
   stats.outputs['tools.js'].imports[0].kind = 'dynamic-import';

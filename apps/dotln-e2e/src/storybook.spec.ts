@@ -30,15 +30,25 @@ const examples = [
   ['scene-arriving-page--default', 'scene-arriving-page'],
   ['machinery-arriving-page--default', 'machinery-arriving-page'],
   ['tools-home--default', 'tools-home'],
-  ['tools-catalog-page--default', 'tools-catalog-page'],
-  ['tools-tool-list--default', 'tools-tool-list'],
-  ['tools-tool-faces--typed', 'tools-tool-faces'],
-  ['tools-tool-faces--untyped', 'tools-tool-faces'],
-  ['tools-tool-faces--background', 'tools-tool-faces'],
+  ['tools-catalog-page--reading', 'tools-concept-reading'],
+  ['tools-catalog-page--untyped', 'tools-concept-reading'],
+  ['tools-catalog-page--model-knowledge', 'tools-concept-reading'],
+  ['tools-catalog-page--study', 'tools-arrive-study'],
+  ['tools-catalog-page--layout-side', 'tools-concept-reading'],
   ['board-page--recorded', 'board-page'],
   ['board-page--unavailable', 'board-page'],
   ['board-page--unsupported-version', 'dotln-unavailable'],
 ];
+
+test('the search story opens with usable results after its catalog loads', async ({ page }) => {
+  await page.goto(story('tools-catalog-page--search'));
+  await expect(page.getByRole('searchbox', { name: 'Find a concept' })).toHaveValue('arrive');
+  await expect(page.locator('[data-result-id]').first()).toHaveAttribute(
+    'data-result-id',
+    'aifg-a:112',
+  );
+});
+
 for (const [id, selector] of examples) {
   test(`${id} renders without browser errors`, async ({ page }) => {
     const errors: string[] = [];

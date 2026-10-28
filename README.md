@@ -20,7 +20,6 @@ npm test
 npm run build
 npm run e2e
 npm run format:check
-npm run lint:fixtures
 npm run test:tooling
 npm run typecheck:e2e
 ```

@@ -6,6 +6,11 @@ import { provideCatalog } from '../../../src';
 export const catalogFixture: readonly Tool[] = [
   {
     id: 'sample:1',
+    definition: 'A group moves using local separation, cohesion and velocity matching.',
+    place: { chapter: 'Chapter 1', section: 'First concepts' },
+    related: [],
+    hooks: [],
+    verified: { kind: 'model-knowledge', note: 'Test fixture.' },
     work: 'aifg',
     title: 'Flock',
     rowType: 'technique',
@@ -27,6 +32,11 @@ export const catalogFixture: readonly Tool[] = [
   },
   {
     id: 'sample:2',
+    definition: 'Track changes during a business transaction and coordinate writing them.',
+    place: { chapter: 'Chapter 1', section: 'First concepts' },
+    related: [],
+    hooks: [],
+    verified: { kind: 'model-knowledge', note: 'Test fixture.' },
     work: 'poeaa',
     title: 'Unit of Work',
     rowType: 'pattern',
@@ -45,6 +55,11 @@ export const catalogFixture: readonly Tool[] = [
   },
   {
     id: 'sample:3',
+    definition: 'A set of symbols and rules for constructing and transforming statements.',
+    place: { chapter: 'Chapter 1', section: 'First concepts' },
+    related: [],
+    hooks: [],
+    verified: { kind: 'model-knowledge', note: 'Test fixture.' },
     work: 'geb',
     title: 'Formal system',
     rowType: 'concept',

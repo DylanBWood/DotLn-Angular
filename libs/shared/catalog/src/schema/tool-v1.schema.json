@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dotln-angular.invalid/tool-v0.schema.json",
+  "$id": "https://dotln-angular.invalid/tool-v1.schema.json",
   "$ref": "#/$defs/tool",
   "$defs": {
     "param": {
@@ -10,13 +10,11 @@
       "properties": {
         "name": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9.-]*$",
-          "maxLength": 80
+          "pattern": "^[a-z][a-z0-9.-]*$"
         },
         "unit": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 40,
           "pattern": "\\S"
         },
         "default": {
@@ -74,7 +72,6 @@
         "reason": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 120,
           "pattern": "\\S"
         }
       }
@@ -104,8 +101,7 @@
       "properties": {
         "file": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*\\.jsonl$",
-          "maxLength": 80
+          "pattern": "^[a-z][a-z0-9-]*\\.jsonl$"
         },
         "line": {
           "type": "integer",
@@ -124,8 +120,7 @@
       "properties": {
         "file": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*\\.jsonl$",
-          "maxLength": 80
+          "pattern": "^[a-z][a-z0-9-]*\\.jsonl$"
         },
         "rows": {
           "type": "integer",
@@ -162,7 +157,6 @@
         "clause": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 120,
           "pattern": "\\S"
         }
       }
@@ -209,7 +203,6 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 120,
             "pattern": "\\S"
           }
         },
@@ -219,8 +212,7 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "pattern": "^[a-z][a-z0-9.-]*$",
-            "maxLength": 80
+            "pattern": "^[a-z][a-z0-9.-]*$"
           }
         }
       }
@@ -237,7 +229,12 @@
         "status",
         "classifiedBy",
         "provenance",
-        "map"
+        "map",
+        "definition",
+        "place",
+        "related",
+        "hooks",
+        "verified"
       ],
       "properties": {
         "id": {
@@ -268,7 +265,6 @@
         "title": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 80,
           "pattern": "\\S"
         },
         "rowType": {
@@ -309,8 +305,7 @@
         },
         "classifiedBy": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9.-]*$",
-          "maxLength": 80
+          "pattern": "^[a-z][a-z0-9.-]*$"
         },
         "provenance": {
           "enum": ["map", "public-work"]
@@ -324,6 +319,97 @@
               "type": "null"
             }
           ]
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "place": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["chapter"],
+          "properties": {
+            "part": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "chapter": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "section": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "subsection": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "id"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]*:[1-9][0-9]*$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "hooks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["domain", "clause"],
+            "properties": {
+              "domain": {
+                "enum": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11"]
+              },
+              "clause": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        },
+        "verified": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "note"],
+          "properties": {
+            "kind": {
+              "enum": ["sourced", "model-knowledge", "partial"]
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
         }
       },
       "allOf": [
@@ -427,12 +513,11 @@
       "required": ["schema", "batch", "maps", "tools"],
       "properties": {
         "schema": {
-          "const": "tool-v0"
+          "const": "tool-v1"
         },
         "batch": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9.-]*$",
-          "maxLength": 80
+          "pattern": "^[a-z][a-z0-9.-]*$"
         },
         "maps": {
           "type": "array",

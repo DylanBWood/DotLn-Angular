@@ -227,10 +227,11 @@ and [session rules](../../ai-reference/sub-app-rules.md) for the checklist.
 
 ## 23. Catalog data
 
-The catalog carries ids, short titles and generic terms under the `tool-v0`
-allow-list. Definitions, relations and hooks remain in intake; no quarantine
-file is opened. Keep map ids and digests stable, preserve uncertain candidates
-as untyped, and grow the transform enum only by a recorded decision. Use the
-checkpoint classifier/checker/synthesizer/critic procedure, the complete catalog
-check and the injectable lazy-loader seam. See [catalog architecture](../architecture/catalog.md)
+The catalog carries full definitions, relations, hooks, verification notes and
+place fields under `tool-v1`. The loader accepts v0 for one compatibility
+release. No quarantine file is opened. Keep map ids and digests stable; join
+only the declared maps; preserve uncertain candidates as untyped; and grow the
+transform enum only by a recorded decision. Use the complete catalog check and
+injectable lazy-loader seam. Present the data as a reading session and develop
+authored concept studies without obscuring source provenance. See [catalog architecture](../architecture/catalog.md)
 and [catalog rules](../../ai-reference/catalog-rules.md).

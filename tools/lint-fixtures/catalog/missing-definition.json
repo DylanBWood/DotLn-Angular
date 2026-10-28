@@ -1,5 +1,5 @@
 {
-  "schema": "tool-v0",
+  "schema": "tool-v1",
   "batch": "aifg-a",
   "maps": [
     {
@@ -23,7 +23,15 @@
         "line": 1,
         "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
-      "definition": "This field is forbidden."
+      "place": {
+        "chapter": "Chapter 1"
+      },
+      "related": [],
+      "hooks": [],
+      "verified": {
+        "kind": "model-knowledge",
+        "note": "Model-knowledge: test fixture."
+      }
     }
   ]
 }
