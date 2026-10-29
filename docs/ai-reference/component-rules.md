@@ -21,7 +21,10 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
 - G3: Translate host-authored strings through `t`. Render board titles, labels, questions and values as source data under `translate="no"`; this marker does not permit literals to bypass translation.
 - G4: Put appearance in CSS tokens and `[data-skin]` overrides. Ship only the plain skin here; keep domain state free of CSS class strings.
 - G5: Use native emoji for glyphs with a text equivalent. Do not add a vendor icon system.
-- G6: Use fluid label/value/status lists, wrapping long values without a fixed page-width cap. Keep true values and explicit unknowns visible.
+- G6: No fixed page width. Choose the form for the content. Recorded board values
+  use fluid label/value/status lists; catalog concepts use a reading measure,
+  prose, related links and explanatory visuals. Wrap long values and retain
+  explicit unknowns. A data list is not the default for material intended to be read.
 
 Run the existing unit, lint, fixture, browser and visual targets after changes.
 Read and inspect new screenshot baselines before accepting them. Do not update a

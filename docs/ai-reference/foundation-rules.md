@@ -32,9 +32,10 @@
   `public_api.ts`; keep testing helpers out of the production API.
 - Use ECMAScript `#private` and `readonly` members. Keep signals and the existing
   underscore opt-out for intentionally unused variables.
-- Run `check:templates`, `check:tokens`, `check:kits`, `i18n:check`,
-  `typecheck:foundations` and `lint:fixtures` with the ordinary workspace checks.
-  `workspace-tools:lint` carries these into every registered gate.
+- Run `check:templates`, `check:tokens`, `check:kits`, `i18n:check` and
+  `typecheck:foundations` with the ordinary workspace checks.
+  `workspace-tools:lint` carries these into every registered gate. Run
+  `lint:fixtures` when changing lint policy; it is a helper, not a gate.
 - Keep Nx task cache under `.nx/cache` and Angular's additional disk cache
   disabled until a portable worktree-local setting is available. Never put an
   absolute machine path in tracked configuration.

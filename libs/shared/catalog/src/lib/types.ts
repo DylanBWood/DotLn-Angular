@@ -1,4 +1,11 @@
-import type { AppError, CatalogFilters, Tool, ToolId, WorkSlug } from '@dotln-angular/models';
+import type {
+  AppError,
+  CatalogFilters,
+  CatalogReadingState,
+  Tool,
+  ToolId,
+  WorkSlug,
+} from '@dotln-angular/models';
 
 /** A mining API can replace the bundled reader without changing feature code. */
 export interface CatalogLoader {
@@ -8,10 +15,12 @@ export interface CatalogLoader {
 export type CatalogChunk = () => Promise<{ readonly default: unknown }>;
 export type CatalogChunks = Readonly<Partial<Record<WorkSlug, readonly CatalogChunk[]>>>;
 
-export interface CatalogState {
+export interface CatalogState extends CatalogReadingState {
   readonly tools: readonly Tool[];
   readonly filters: CatalogFilters;
   readonly selectedId: ToolId | null;
   readonly page: number;
   readonly failure: AppError | null;
+  readonly query: string;
+  readonly backStack: readonly ToolId[];
 }

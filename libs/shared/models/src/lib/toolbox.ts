@@ -60,6 +60,15 @@ export enum TransformKind {
   LevelRing = 'level.ring',
 }
 
+/** The transform kinds the soldier scene's engine interprets. */
+export const sceneTransformKinds: readonly TransformKind[] = [
+  TransformKind.SteerBlend,
+  TransformKind.SteerPriority,
+  TransformKind.FormationTwoLevel,
+  TransformKind.FormationFixed,
+  TransformKind.ObjectiveSet,
+];
+
 export type SelectionTarget = 'unit' | 'squad' | 'commander' | 'channel' | 'region' | 'scene';
 export type MetricId = string;
 export type DotLnRole =
@@ -118,7 +127,35 @@ export interface ToolMap {
 export type ToolProvenance =
   | { readonly provenance: 'map'; readonly map: ToolMap }
   | { readonly provenance: 'public-work'; readonly map: null };
-export interface ToolBase {
+export enum HookDomain {
+  Planning = 'D1',
+  OrderLifecycle = 'D2',
+  GateAndHarness = 'D3',
+  RecordsAndProjections = 'D4',
+  Publication = 'D5',
+  KitAndInstances = 'D6',
+  ConsoleAndUiHosts = 'D7',
+  FeedbackCompiler = 'D8',
+  OperatorWorkflow = 'D9',
+  InstanceWork = 'D10',
+  AgentBehaviour = 'D11',
+}
+export interface ToolContent {
+  readonly definition: string;
+  readonly place: {
+    readonly part?: string;
+    readonly chapter?: string;
+    readonly section?: string;
+    readonly subsection?: string;
+  };
+  readonly related: readonly { readonly title: string; readonly id: ToolId | null }[];
+  readonly hooks: readonly { readonly domain: HookDomain; readonly clause: string }[];
+  readonly verified: {
+    readonly kind: 'sourced' | 'model-knowledge' | 'partial';
+    readonly note: string;
+  };
+}
+export interface ToolBase extends ToolContent {
   readonly id: ToolId;
   readonly work: WorkSlug;
   readonly title: string;
@@ -146,18 +183,56 @@ export type Tool = ToolBase &
       }
   );
 
+/** A typed tool whose transform the soldier scene's engine interprets. */
+export const isSceneTool = (tool: Tool) =>
+  tool.status === 'typed' && sceneTransformKinds.includes(tool.faces.transform.kind);
+
 export interface CatalogMap {
   readonly file: string;
   readonly rows: number;
   readonly sha256: string;
 }
 export interface CatalogCheckpoint {
-  readonly schema: 'tool-v0';
+  readonly schema: 'tool-v1';
   readonly batch: string;
   readonly maps: readonly CatalogMap[];
   readonly tools: readonly Tool[];
 }
 
+/** One work on the catalog shelf; scene is null for a work the shelf has no entry for. */
+export interface CatalogWork {
+  readonly work: WorkSlug;
+  readonly title: string;
+  readonly scene: SceneTypeId | null;
+  readonly count: number;
+}
+/** A section of a chapter in a work's contents, with its concepts in source order. */
+export interface CatalogSection {
+  readonly title: string;
+  readonly tools: readonly Tool[];
+}
+/** A chapter in a work's contents. */
+export interface CatalogChapter {
+  readonly key: string;
+  readonly part: string;
+  readonly title: string;
+  readonly count: number;
+  readonly sections: readonly CatalogSection[];
+}
+
+export interface CatalogReadingState {
+  readonly version: 1;
+  readonly work: WorkSlug | null;
+  readonly chapter: string | null;
+  readonly section: string | null;
+  readonly selectedId: ToolId | null;
+  readonly history: readonly ToolId[];
+}
+
+/**
+ * Catalog filter dimensions. The reading surface's search facets set work, kind and
+ * status; scene and transform remain selector dimensions with no facet of their own.
+ */
 export interface CatalogFilters {
   readonly work: WorkSlug | null;
   readonly kind: ToolKind | null;

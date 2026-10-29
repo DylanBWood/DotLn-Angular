@@ -1,6 +1,6 @@
 {
-  "schema": "catalog-summary-v0",
-  "date": "2026-10-25",
+  "schema": "catalog-summary-v1",
+  "date": "2026-10-28",
   "mappedRows": 3463,
   "totalRows": 3463,
   "maps": [
@@ -72,69 +72,1118 @@
     "kind": {
       "analysis": 489,
       "background": 1010,
-      "behaviour": 646,
+      "behaviour": 648,
       "metric": 58,
       "mode": 184,
       "relationship": 172,
-      "rule": 488,
-      "sceneElement": 360,
+      "rule": 487,
+      "sceneElement": 359,
       "sceneType": 56
     },
     "transformKind": {
       "channel.policy": 90,
       "formation.fixed": 1,
-      "formation.twoLevel": 2,
+      "formation.twoLevel": 5,
       "ground.frag": 2,
       "ground.influence": 6,
       "level.ring": 6,
       "level.zoom": 3,
       "path.cost": 5,
       "squad.form": 1,
-      "steer.blend": 3,
+      "steer.blend": 8,
       "steer.priority": 2
     },
     "status": {
-      "background": 1428,
-      "typed": 121,
-      "untyped": 1914
+      "background": 1427,
+      "typed": 129,
+      "untyped": 1907
     }
   },
   "works": [
     {
       "work": "aifg",
       "sceneType": "units-on-terrain",
-      "firstThree": ["aifg-a:144", "aifg-a:145", "aifg-a:149"],
-      "typedShortfall": 0
+      "typedShortfall": 0,
+      "chapters": [
+        {
+          "part": "Part I AI and Games",
+          "title": "Chapter 1 Introduction",
+          "count": 60
+        },
+        {
+          "part": "Part II Techniques",
+          "title": "Chapter 3 Movement",
+          "count": 119
+        },
+        {
+          "part": "Part II Techniques",
+          "title": "Chapter 4 Pathfinding",
+          "count": 76
+        },
+        {
+          "part": "Part II Techniques",
+          "title": "Chapter 5 Decision Making",
+          "count": 108
+        },
+        {
+          "part": "Part I AI and Games",
+          "title": "Chapter 2 Game AI",
+          "count": 26
+        },
+        {
+          "part": "Part II — Techniques",
+          "title": "Chapter 6 — Tactical and Strategic AI (pp. 485–573)",
+          "count": 65
+        },
+        {
+          "part": "Part II — Techniques",
+          "title": "Chapter 7 — Learning (pp. 575–667)",
+          "count": 74
+        },
+        {
+          "part": "Part II — Techniques",
+          "title": "Chapter 8 — Procedural Content Generation (pp. 669–738)",
+          "count": 36
+        },
+        {
+          "part": "Part II — Techniques",
+          "title": "Chapter 9 — Board Games (pp. 741–799)",
+          "count": 57
+        },
+        {
+          "part": "Part III — Supporting Technologies (p. 801)",
+          "title": "Chapter 10 — Execution Management (pp. 803–834)",
+          "count": 24
+        },
+        {
+          "part": "Part III — Supporting Technologies (p. 801)",
+          "title": "Chapter 11 — World Interfacing (pp. 835–874)",
+          "count": 25
+        },
+        {
+          "part": "Part III — Supporting Technologies (p. 801)",
+          "title": "Chapter 12 — Tools and Content Creation (pp. 875–897)",
+          "count": 22
+        },
+        {
+          "part": "Part III — Supporting Technologies (p. 801)",
+          "title": "Chapter 13 — Programming Game AI (pp. 901–925)",
+          "count": 29
+        },
+        {
+          "part": "Part IV — Designing Game AI (p. 927)",
+          "title": "Chapter 14 — Designing Game AI (pp. 929–958)",
+          "count": 32
+        },
+        {
+          "part": "Part IV — Designing Game AI (p. 927)",
+          "title": "Chapter 15 — AI-Based Game Genres (pp. 959–969)",
+          "count": 12
+        },
+        {
+          "part": "Back matter",
+          "title": "References and Index (pp. 971–)",
+          "count": 3
+        }
+      ],
+      "sceneTools": [
+        "aifg-a:110",
+        "aifg-a:112",
+        "aifg-a:118",
+        "aifg-a:125",
+        "aifg-a:131",
+        "aifg-a:144",
+        "aifg-a:145",
+        "aifg-a:149",
+        "aifg-a:151",
+        "aifg-a:174",
+        "aifg-a:175",
+        "aifg-a:177",
+        "aifg-a:181",
+        "aifg-a:186",
+        "aifg-b:354",
+        "aifg-b:373"
+      ]
     },
     {
       "work": "eip",
       "sceneType": "channels",
-      "firstThree": ["eip:101", "eip:105", "eip:120"],
-      "typedShortfall": 0
+      "typedShortfall": 0,
+      "chapters": [
+        {
+          "part": "Foundations (front matter, chapters 1–2)",
+          "title": "Preface and Introduction",
+          "count": 13
+        },
+        {
+          "part": "Foundations (front matter, chapters 1–2)",
+          "title": "Chapter 1: Solving Integration Problems Using Patterns",
+          "count": 29
+        },
+        {
+          "part": "Pattern catalog: construction, routing, transformation (chapters 5, 7, 8)",
+          "title": "Chapter 7: Message Routing",
+          "count": 39
+        },
+        {
+          "part": "Pattern catalog: construction, routing, transformation (chapters 5, 7, 8)",
+          "title": "Chapter 8: Message Transformation",
+          "count": 11
+        },
+        {
+          "part": "Interludes and case study (chapters 6, 9, 12, 13)",
+          "title": "Chapter 9: Interlude: Composed Messaging",
+          "count": 18
+        },
+        {
+          "part": "Pattern catalog: endpoints and system management (chapters 10–11)",
+          "title": "Chapter 10: Messaging Endpoints",
+          "count": 19
+        },
+        {
+          "part": "Pattern catalog: endpoints and system management (chapters 10–11)",
+          "title": "Chapter 11: System Management",
+          "count": 17
+        },
+        {
+          "part": "Interludes and case study (chapters 6, 9, 12, 13)",
+          "title": "Chapter 6: Interlude: Simple Messaging",
+          "count": 7
+        },
+        {
+          "part": "Interludes and case study (chapters 6, 9, 12, 13)",
+          "title": "Chapter 12: Interlude: Systems Management Example",
+          "count": 7
+        },
+        {
+          "part": "Interludes and case study (chapters 6, 9, 12, 13)",
+          "title": "Chapter 13: Integration Patterns in Practice",
+          "count": 12
+        },
+        {
+          "part": "Conclusion (chapter 14, bibliography)",
+          "title": "Chapter 14: Concluding Remarks: Emerging Standards and Futures in Enterprise Integration",
+          "count": 19
+        },
+        {
+          "part": "Conclusion (chapter 14, bibliography)",
+          "title": "Bibliography and Revision History",
+          "count": 2
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Introduction",
+          "count": 2
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Describing Conversations",
+          "count": 4
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Discovery",
+          "count": 5
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Starting a Conversation",
+          "count": 5
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Basic Conversations",
+          "count": 6
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Intermediaries",
+          "count": 4
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Managing Distributed Systems",
+          "count": 1
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Resource Management",
+          "count": 4
+        },
+        {
+          "part": "Conversation Patterns (book website, work in progress, last updated January 2017; not part of the 2003 book)",
+          "title": "Ensuring Consistency",
+          "count": 5
+        },
+        {
+          "part": "Foundations (front matter, chapters 1–2)",
+          "title": "Chapter 2: Integration Styles",
+          "count": 12
+        },
+        {
+          "part": "Pattern catalog: systems and channels (chapters 3–4)",
+          "title": "Chapter 3: Messaging Systems",
+          "count": 16
+        },
+        {
+          "part": "Pattern catalog: systems and channels (chapters 3–4)",
+          "title": "Chapter 4: Messaging Channels",
+          "count": 14
+        },
+        {
+          "part": "Pattern catalog: construction, routing, transformation (chapters 5, 7, 8)",
+          "title": "Chapter 5: Message Construction",
+          "count": 17
+        }
+      ],
+      "sceneTools": []
     },
     {
       "work": "geb",
       "sceneType": "levels",
-      "firstThree": ["geb1:13", "geb1:51", "geb2:174"],
-      "typedShortfall": 0
+      "typedShortfall": 0,
+      "chapters": [
+        {
+          "part": "Front matter (1999 edition)",
+          "title": "Preface to the twentieth-anniversary edition",
+          "count": 3
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Introduction: A Musico-Logical Offering",
+          "count": 29
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter IV: Consistency, Completeness, and Geometry",
+          "count": 18
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Little Harmonic Labyrinth",
+          "count": 7
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter V: Recursive Structures and Processes",
+          "count": 22
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Canon by Intervallic Augmentation",
+          "count": 3
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter VI: The Location of Meaning",
+          "count": 13
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Chromatic Fantasy, And Feud",
+          "count": 3
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter VII: The Propositional Calculus",
+          "count": 20
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Crab Canon",
+          "count": 5
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter VIII: Typographical Number Theory",
+          "count": 24
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: A Mu Offering",
+          "count": 5
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter IX: Mumon and Gödel",
+          "count": 18
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Three-Part Invention",
+          "count": 5
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter I: The MU-puzzle",
+          "count": 18
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Two-Part Invention",
+          "count": 4
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter II: Meaning and Form in Mathematics",
+          "count": 15
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Sonata for Unaccompanied Achilles",
+          "count": 3
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Chapter III: Figure and Ground",
+          "count": 15
+        },
+        {
+          "part": "Part I: GEB",
+          "title": "Dialogue: Contracrostipunctus",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Prelude...",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter X. Levels of Description, and Computer Systems",
+          "count": 29
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Aria with Diverse Variations",
+          "count": 10
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XIII. BlooP and FlooP and GlooP",
+          "count": 23
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Air on G's String",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XIV. On Formally Undecidable Propositions of TNT and Related Systems",
+          "count": 23
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Birthday Cantatatata...",
+          "count": 6
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XV. Jumping out of the System",
+          "count": 13
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Edifying Thoughts of a Tobacco Smoker",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XVI. Self-Ref and Self-Rep",
+          "count": 34
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "The Magnificrab, Indeed",
+          "count": 9
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XVII. Church, Turing, Tarski, and Others",
+          "count": 15
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "SHRDLU, Toy of Man's Designing",
+          "count": 8
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XVIII. Artificial Intelligence: Retrospects",
+          "count": 18
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Contrafactus",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XIX. Artificial Intelligence: Prospects",
+          "count": 24
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Sloth Canon",
+          "count": 7
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XX. Strange Loops, Or Tangled Hierarchies",
+          "count": 24
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Six-Part Ricercar",
+          "count": 11
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "...Ant Fugue",
+          "count": 16
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XI. Brains and Thoughts",
+          "count": 21
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "English French German Suite",
+          "count": 5
+        },
+        {
+          "part": "Part II: EGB",
+          "title": "Chapter XII. Minds and Thoughts",
+          "count": 12
+        }
+      ],
+      "sceneTools": []
     },
     {
       "work": "poeaa",
       "sceneType": "channels",
-      "firstThree": ["poeaa:196", "poeaa:251", "poeaa:329"],
-      "typedShortfall": 0
+      "typedShortfall": 0,
+      "chapters": [
+        {
+          "part": "Front matter and Introduction",
+          "title": "Introduction",
+          "count": 30
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "3. Mapping to Relational Databases",
+          "count": 44
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "4. Web Presentation",
+          "count": 14
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "5. Concurrency",
+          "count": 50
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "6. Session State",
+          "count": 10
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "7. Distribution Strategies",
+          "count": 15
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "8. Putting It All Together",
+          "count": 17
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "9. Domain Logic Patterns",
+          "count": 17
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "10. Data Source Architectural Patterns",
+          "count": 15
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "11. Object-Relational Behavioral Patterns",
+          "count": 22
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "12. Object-Relational Structural Patterns",
+          "count": 45
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "1. Layering",
+          "count": 20
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "13. Object-Relational Metadata Mapping Patterns",
+          "count": 13
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "14. Web Presentation Patterns",
+          "count": 31
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "15. Distribution Patterns",
+          "count": 13
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "16. Offline Concurrency Patterns",
+          "count": 24
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "17. Session State Patterns",
+          "count": 13
+        },
+        {
+          "part": "Part 2: The Patterns",
+          "title": "18. Base Patterns",
+          "count": 49
+        },
+        {
+          "part": "Part 1: The Narratives",
+          "title": "2. Organizing Domain Logic",
+          "count": 13
+        }
+      ],
+      "sceneTools": []
     },
     {
       "work": "rxjs",
       "sceneType": "marbles",
-      "firstThree": ["rxc:135", "rxc:137", "rxc:139"],
-      "typedShortfall": 0
+      "typedShortfall": 0,
+      "chapters": [
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Overview (Introduction)",
+          "count": 10
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Marble Testing",
+          "count": 28
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Creation operators",
+          "count": 25
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Observable",
+          "count": 24
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Join creation operators",
+          "count": 8
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Transformation operators",
+          "count": 27
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Filtering operators",
+          "count": 25
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Join operators",
+          "count": 16
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Multicasting operators",
+          "count": 10
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Error handling operators",
+          "count": 5
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Utility operators",
+          "count": 15
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Conditional and Boolean operators",
+          "count": 6
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Mathematical and Aggregate operators",
+          "count": 4
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Utility functions (non-operators)",
+          "count": 11
+        },
+        {
+          "part": "Part II - Reference: operators by category (rxjs.dev Operators guide categories, completed from the API list)",
+          "title": "Category index",
+          "count": 2
+        },
+        {
+          "part": "Part III - Reference: classes, interfaces, types, errors and modules (API list)",
+          "title": "Classes",
+          "count": 45
+        },
+        {
+          "part": "Part III - Reference: classes, interfaces, types, errors and modules (API list)",
+          "title": "Interfaces and types",
+          "count": 49
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Observer",
+          "count": 3
+        },
+        {
+          "part": "Part III - Reference: classes, interfaces, types, errors and modules (API list)",
+          "title": "Modules and installation",
+          "count": 4
+        },
+        {
+          "part": "Part IV - Glossary and Semantics (rxjs.dev/guide/glossary-and-semantics)",
+          "title": "Major entities",
+          "count": 5
+        },
+        {
+          "part": "Part IV - Glossary and Semantics (rxjs.dev/guide/glossary-and-semantics)",
+          "title": "Major actions",
+          "count": 9
+        },
+        {
+          "part": "Part IV - Glossary and Semantics (rxjs.dev/guide/glossary-and-semantics)",
+          "title": "Major concepts",
+          "count": 6
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Operators",
+          "count": 14
+        },
+        {
+          "part": "Part IV - Glossary and Semantics (rxjs.dev/guide/glossary-and-semantics)",
+          "title": "Minor entities",
+          "count": 9
+        },
+        {
+          "part": "Part IV - Glossary and Semantics (rxjs.dev/guide/glossary-and-semantics)",
+          "title": "Other concepts",
+          "count": 3
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Breaking Changes in Version 7",
+          "count": 26
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Scheduler Argument deprecation",
+          "count": 2
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Subscribe Arguments deprecation",
+          "count": 2
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "ResultSelector Arguments deprecation",
+          "count": 1
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Array Arguments deprecation",
+          "count": 1
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Multicasting deprecation",
+          "count": 2
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Conversion to Promises deprecation",
+          "count": 1
+        },
+        {
+          "part": "Part V - Deprecations, breaking changes and the 6-to-7 change list",
+          "title": "Detailed 6-to-7 change list",
+          "count": 17
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Flattening strategies as concurrency policies",
+          "count": 6
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Higher-order observables",
+          "count": 1
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Backpressure",
+          "count": 4
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Terminal semantics",
+          "count": 4
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Memory and subscription leaks",
+          "count": 5
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Interop",
+          "count": 5
+        },
+        {
+          "part": "Part VI - Cross-cutting concepts and the next major (requested by the operator; mixed sources)",
+          "title": "Direction of the next major",
+          "count": 12
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Subscription",
+          "count": 3
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Subjects",
+          "count": 13
+        },
+        {
+          "part": "Part I - Guide (rxjs.dev Overview to Marble Testing)",
+          "title": "Scheduler",
+          "count": 13
+        },
+        {
+          "part": "Part A — Mental models professionals teach",
+          "title": "A1. Core vocabulary the core team standardised",
+          "count": 11
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D6. Status and progress",
+          "count": 4
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D7. Transport and realtime",
+          "count": 3
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D8. Browser and framework streams",
+          "count": 3
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D9. Learn RxJS recipes (classic exercises)",
+          "count": 7
+        },
+        {
+          "part": "Part E — Error-handling doctrine",
+          "title": "E1. What an error is",
+          "count": 4
+        },
+        {
+          "part": "Part E — Error-handling doctrine",
+          "title": "E2. Where to catch",
+          "count": 7
+        },
+        {
+          "part": "Part A — Mental models professionals teach",
+          "title": "A2. Thinking in time",
+          "count": 6
+        },
+        {
+          "part": "Part E — Error-handling doctrine",
+          "title": "E3. Retry and recovery policy",
+          "count": 6
+        },
+        {
+          "part": "Part E — Error-handling doctrine",
+          "title": "E4. Lint-enforced error hygiene",
+          "count": 4
+        },
+        {
+          "part": "Part F — Resource and lifecycle doctrine",
+          "title": "F1. Unsubscribe strategies",
+          "count": 7
+        },
+        {
+          "part": "Part F — Resource and lifecycle doctrine",
+          "title": "F2. Leak sources and their guards",
+          "count": 7
+        },
+        {
+          "part": "Part F — Resource and lifecycle doctrine",
+          "title": "F3. Teardown semantics",
+          "count": 5
+        },
+        {
+          "part": "Part G — Testing doctrine",
+          "title": "G1. Marble testing with TestScheduler",
+          "count": 9
+        },
+        {
+          "part": "Part G — Testing doctrine",
+          "title": "G2. Value-centric testing",
+          "count": 4
+        },
+        {
+          "part": "Part G — Testing doctrine",
+          "title": "G3. What to test and how",
+          "count": 5
+        },
+        {
+          "part": "Part H — Performance doctrine",
+          "title": "H1. Schedulers",
+          "count": 5
+        },
+        {
+          "part": "Part H — Performance doctrine",
+          "title": "H2. Change detection in Angular",
+          "count": 5
+        },
+        {
+          "part": "Part A — Mental models professionals teach",
+          "title": "A3. The declarative stance",
+          "count": 5
+        },
+        {
+          "part": "Part H — Performance doctrine",
+          "title": "H3. Reducing work in the stream",
+          "count": 6
+        },
+        {
+          "part": "Part I — Anti-patterns",
+          "title": "I1. Subscription anti-patterns",
+          "count": 7
+        },
+        {
+          "part": "Part I — Anti-patterns",
+          "title": "I2. Subject and sharing anti-patterns",
+          "count": 6
+        },
+        {
+          "part": "Part I — Anti-patterns",
+          "title": "I3. Semantics forgotten",
+          "count": 8
+        },
+        {
+          "part": "Part I — Anti-patterns",
+          "title": "I4. Architecture-level anti-patterns",
+          "count": 5
+        },
+        {
+          "part": "Part I — Anti-patterns",
+          "title": "I5. Lint-codified smells (eslint-plugin-rxjs family)",
+          "count": 4
+        },
+        {
+          "part": "Part J — Signals vs observables in modern Angular",
+          "title": "J1. The positioning",
+          "count": 5
+        },
+        {
+          "part": "Part J — Signals vs observables in modern Angular",
+          "title": "J2. Interop functions",
+          "count": 5
+        },
+        {
+          "part": "Part J — Signals vs observables in modern Angular",
+          "title": "J3. Async data: resource family",
+          "count": 4
+        },
+        {
+          "part": "Part B — Architecture: streams of intent",
+          "title": "B1. The shape",
+          "count": 4
+        },
+        {
+          "part": "Part J — Signals vs observables in modern Angular",
+          "title": "J4. What moved, what stayed",
+          "count": 7
+        },
+        {
+          "part": "Part K — Custom operators",
+          "title": "K1. Writing operators",
+          "count": 6
+        },
+        {
+          "part": "Part K — Custom operators",
+          "title": "K2. Library-provided domain operators",
+          "count": 4
+        },
+        {
+          "part": "Part L — Version drift and deprecations teams track",
+          "title": "L1. RxJS 7 deprecations (removed in 8)",
+          "count": 8
+        },
+        {
+          "part": "Part L — Version drift and deprecations teams track",
+          "title": "L2. Angular-side drift",
+          "count": 5
+        },
+        {
+          "part": "Part B — Architecture: streams of intent",
+          "title": "B2. Building blocks",
+          "count": 10
+        },
+        {
+          "part": "Part B — Architecture: streams of intent",
+          "title": "B3. Store choices in Angular",
+          "count": 9
+        },
+        {
+          "part": "Part B — Architecture: streams of intent",
+          "title": "B4. Architectural patterns built from streams",
+          "count": 6
+        },
+        {
+          "part": "Part C — The declarative data-flow rule",
+          "title": "C1. Define streams, subscribe once",
+          "count": 8
+        },
+        {
+          "part": "Part C — The declarative data-flow rule",
+          "title": "C2. Recurring shapes of the rule",
+          "count": 7
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D1. Input handling",
+          "count": 7
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D2. Requests and writes",
+          "count": 6
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D3. Time, retry and resilience",
+          "count": 5
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D4. Flow control, batching and collections",
+          "count": 8
+        },
+        {
+          "part": "Part D — Composition shapes catalogue",
+          "title": "D5. Sharing and caching",
+          "count": 4
+        }
+      ],
+      "sceneTools": []
     },
     {
       "work": "tt",
       "sceneType": "teams",
-      "firstThree": ["tt1:215", "tt1:319"],
-      "typedShortfall": 1
+      "typedShortfall": 1,
+      "chapters": [
+        {
+          "part": "Front matter",
+          "title": "Foreword (Ruth Malan)",
+          "count": 13
+        },
+        {
+          "part": "Part I: Teams as the Means of Delivery",
+          "title": "Chapter 1: The Problem with Org Charts",
+          "count": 77
+        },
+        {
+          "part": "Part I: Teams as the Means of Delivery",
+          "title": "Chapter 2: Conway's Law and Why It Matters",
+          "count": 84
+        },
+        {
+          "part": "Front matter",
+          "title": "Preface",
+          "count": 28
+        },
+        {
+          "part": "Part I: Teams as the Means of Delivery",
+          "title": "Chapter 3: Team-First Thinking",
+          "count": 159
+        },
+        {
+          "part": "Part I: Teams as the Means of Delivery",
+          "title": "Part I opener: key takeaways",
+          "count": 3
+        },
+        {
+          "part": "Part II: Team Topologies That Work for Flow",
+          "title": "Chapter 4: Static Team Topologies",
+          "count": 50
+        },
+        {
+          "part": "Part II: Team Topologies That Work for Flow",
+          "title": "Chapter 5: The Four Fundamental Team Topologies",
+          "count": 52
+        },
+        {
+          "part": "Part II: Team Topologies That Work for Flow",
+          "title": "Chapter 6: Choose Team-First Boundaries",
+          "count": 32
+        },
+        {
+          "part": "Part III: Evolving Team Interactions for Innovation and Rapid Delivery",
+          "title": "Chapter 7: Team Interaction Modes",
+          "count": 45
+        },
+        {
+          "part": "Part III: Evolving Team Interactions for Innovation and Rapid Delivery",
+          "title": "Conclusion: The Next-Generation Digital Operating Model (task label Chapter 9; publisher TOC gives no chapter number)",
+          "count": 33
+        },
+        {
+          "part": "Back matter",
+          "title": "Glossary (p. 187)",
+          "count": 24
+        },
+        {
+          "part": "Back matter",
+          "title": "Other back matter (pp. 189-216)",
+          "count": 1
+        },
+        {
+          "part": "Part III: Evolving Team Interactions for Innovation and Rapid Delivery",
+          "title": "Chapter 8: Evolve Team Structures with Organizational Sensing",
+          "count": 36
+        }
+      ],
+      "sceneTools": []
     }
   ],
   "workers": {

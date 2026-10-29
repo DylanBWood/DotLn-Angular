@@ -25,10 +25,6 @@ export const byTransform = (kind: TransformKind): ToolFilter =>
   R.filter((tool: Tool) => tool.status === 'typed' && tool.faces.transform.kind === kind);
 export const bySceneType = (scene: SceneTypeId): ToolFilter =>
   R.filter((tool: Tool) => tool.faces?.scene.includes(scene) ?? false);
-export const firstThree = (work: WorkSlug) =>
-  R.pipe(byWork(work), byStatus('typed'), (tools: readonly Tool[]) =>
-    [...tools].sort((a, b) => a.id.localeCompare(b.id)).slice(0, 3),
-  );
 
 export const emptyCatalogFilters: CatalogFilters = {
   work: null,

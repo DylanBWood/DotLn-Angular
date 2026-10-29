@@ -1,81 +1,84 @@
 # Workspace scripts
 
-Run commands from the repository root. Registered gates disable the Nx daemon
-and serialize tasks. Prefer the npm entry points below; the tools table explains
-their implementations and the helpers that other checks import.
+Every tool here has one purpose and one status: it runs **in a gate**, it is a
+**helper** a person runs for a task, or it is a **module** other tools import.
+A tool stays because it is useful: it catches a problem someone would otherwise
+ship, or it does a task someone needs. A gate check is a useful check that must
+run on every change; anything useful only now and then is a helper. Run commands
+from the repository root. Registered gates disable the Nx daemon and serialize
+tasks.
 
-`npm run check:bundle` builds production with metadata and runs
-`tools/scripts/check-bundle.mjs`. The check walks static imports from the app and
-global styles, reports raw initial bytes and package input attribution, refuses
-catalog/menu code in the initial graph and ensures the menu arrives with Tools.
-Input attribution precedes final output optimization and need not sum to the
-reported output bytes. A missing application entry or static output fails closed.
+## What the gates run
 
-`npm run perf:sample` rebuilds that production artifact and runs
-`tools/scripts/sample-performance.mjs`. It serves precompressed assets and the
-local board fixture on a temporary loopback port, collects five samples of three
-journeys under two profiles, and closes its browser and server. Raw observations,
-resource timings, environment, hashes and summaries go to ignored
-`dist/performance-samples.json`. It fails on broken journeys or new filter script
-requests; timings remain diagnostic. See [performance policy](../architecture/performance.md).
+The registered target gate runs `npm ci`, `nx run-many -t lint`, `-t test` and
+`nx format:check` (plain), and adds `-t build`, `-t e2e` and
+`nx e2e-visual dotln-e2e` (review). CI (`.github/workflows/ci.yml`) runs the
+workspace checks below once with `nx run workspace-tools:lint`, the other
+projects' targets with `nx affected` (excluding workspace-tools), the visual
+suite and `npm run check:bundle`. `.github/workflows/pr-title.yml` checks
+pull-request titles with `tools/pr-title.mjs`.
 
-| Command                         | Purpose and intended use                                                                                                                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run start`                 | Serve the development app with MSW; use for local feature work without an API or environment file.                                                                                                    |
-| `npm run lint`                  | Run every Nx lint target, including the workspace-tools project's structural, type, fixture and documentation checks; use before review or in CI.                                                     |
-| `npm run test`                  | Run all configured unit-test projects without watch mode; use after behavior changes and before review.                                                                                               |
-| `npm run build`                 | Build the production app; use to check compilation and bundle budgets. Storybook has a separate build target and is built by the browser-test dependency.                                             |
-| `npm run e2e`                   | Run the browser suite against the optimized mocked app and Storybook, including keyboard, accessibility and responsive checks.                                                                        |
-| `npm run format`                | Format workspace files with the repository's Prettier rules; use while editing. Generated worker and fixture exclusions stay in effect.                                                               |
-| `npm run format:check`          | Check formatting without rewriting files; use before review and in CI.                                                                                                                                |
-| `npm run lint:fixtures`         | Prove the dependency, component-role and convention rules reject their negative fixtures and accept controls; use when changing lint policy.                                                          |
-| `npm run test:tooling`          | Test the Node-based repository checks, environment primer and PR-title helper; use after tool changes.                                                                                                |
-| `npm run typecheck:e2e`         | Type-check Playwright sources under their NodeNext configuration without emitting files; use after browser-test changes.                                                                              |
-| `npm run boards`                | List and count `// BOARDED:` comments under apps and libs; use to inspect explicitly boarded code issues.                                                                                             |
-| `npm run env:prime`             | Validate public `.env` settings and generate ignored local environment, production public-settings and development-proxy files; run before local-configured serving or a configured production build. |
-| `npm run i18n:check`            | Run translation-key extraction through the house pipe adapter and report missing or extra keys without rewriting translations; use after template or copy changes.                                    |
-| `npm run check:templates`       | Refuse untranslated literal UI text in discovered Angular templates; use after changing template text or accessible labels.                                                                           |
-| `npm run check:tokens`          | Check injection-token names and namespaces; use when adding or moving tokens.                                                                                                                         |
-| `npm run check:kits`            | Check injectable/token test-kit exports and kit use in specs; use when adding providers, kits or tests.                                                                                               |
-| `npm run typecheck:foundations` | Type-check the shared, shell and board library/spec configurations without emitting files; use when changing public types or testing entry points.                                                    |
-| `npm run lint:components`       | Check component decorator/member ordering; use after adding or reorganizing Angular components.                                                                                                       |
-| `npm run check:shared-types`    | Detect duplicated exported shared type declarations; use when adding or moving models.                                                                                                                |
-| `npm run check:fixtures`        | Validate board fixtures and the complete toolbox catalog against their schemas, provenance and scrub rules; use when changing fixture tooling or ownership.                                           |
-| `npm run msw:init`              | Regenerate the tracked public service worker from the installed MSW version; run after an MSW upgrade and review the generated diff.                                                                  |
-| `npm run build:configured`      | Build the production `configured` profile with primed public API/flag settings, bypassing Nx cache because generated local settings are ignored inputs; run after `env:prime`.                        |
-| `npm run lint:hygiene`          | Refuse forbidden event-tier mappings and count documented exceptions; use after adding event handlers, subscriptions or command trinities.                                                            |
-| `npm run check:scripts`         | Check this reference names every npm script and every tools/scripts file; run after adding or removing a workspace command or tool.                                                                   |
+| Command                | Purpose and intended use                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run lint`         | Every Nx lint target, including the workspace-tools target below and the ESLint rules in `tools/lint-rules/`.                                 |
+| `npm run test`         | Every unit-test project without watch mode.                                                                                                   |
+| `npm run build`        | The production app, with its bundle budgets.                                                                                                  |
+| `npm run e2e`          | The browser suite against the optimized mocked app and Storybook: keyboard, accessibility and responsive checks.                              |
+| `npm run format:check` | Formatting, without rewriting files.                                                                                                          |
+| `npm run check:bundle` | CI and loading-related orders: builds production with metadata and runs `tools/scripts/check-bundle.mjs` (below). Not in the registered gate. |
 
-| Tool file                                   | Purpose and intended use                                                                                                                                                   |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools/scripts/check-board-fixtures.mjs`    | Implements board schema and scrub validation; normally invoke through `check:fixtures`.                                                                                    |
-| `tools/scripts/check-component-order.mjs`   | Inspects component declarations for house ordering rules; normally invoke through `lint:components`.                                                                       |
-| `tools/scripts/check-event-hygiene.mjs`     | Resolves event groups and inspects reducer, pipeline, subscription and command flows; `lint:hygiene` checks the workspace, while explicit paths support negative fixtures. |
-| `tools/scripts/check-foundation-types.mjs`  | Runs each library/spec TypeScript configuration sequentially; normally invoke through `typecheck:foundations`.                                                             |
-| `tools/scripts/check-i18n.mjs`              | Adapts the house translation pipe for the key extractor and checks the catalog without mutation; normally invoke through `i18n:check`.                                     |
-| `tools/scripts/check-script-reference.mjs`  | Compares this document with package scripts and the tool directory; normally invoke through `check:scripts`.                                                               |
-| `tools/scripts/check-shared-types.mjs`      | Finds duplicate exported shared type names; normally invoke through `check:shared-types`.                                                                                  |
-| `tools/scripts/check-spec-kits.mjs`         | Resolves kit declarations/imports and checks provider/spec coverage; normally invoke through `check:kits`.                                                                 |
-| `tools/scripts/check-template-literals.mjs` | Inspects component template text and labels for untranslated literals; normally invoke through `check:templates`.                                                          |
-| `tools/scripts/check-token-names.mjs`       | Validates token declaration names and namespace strings; shared with the ESLint token rule and `check:tokens`.                                                             |
-| `tools/scripts/prime-environment.mjs`       | Parses and validates public settings, then writes ignored outputs; normally invoke through `env:prime`. Diagnostics omit setting values.                                   |
-| `tools/scripts/scrub-board-fixture.mjs`     | Sanitizes a captured board before it becomes a recorded fixture; use only during an authorized fixture refresh, followed by `check:fixtures`.                              |
-| `tools/scripts/source-files.mjs`            | Supplies source discovery, TypeScript AST traversal and diagnostic-location helpers; imported by checks rather than run as a command.                                      |
-| `tools/scripts/templates.mjs`               | Discovers Angular templates and adapts house translation pipes; imported by template and translation checks.                                                               |
+The workspace-tools lint target runs these checks, in this order, inside
+`npm run lint`:
+
+| Command                         | Script                                                                                                             | What it protects                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check:templates`       | `tools/scripts/check-template-literals.mjs`                                                                        | No untranslated literal text in component templates.                                                                                  |
+| `npm run check:tokens`          | `tools/scripts/check-token-names.mjs`                                                                              | Injection-token names and namespaces; shared with the ESLint token rule.                                                              |
+| `npm run check:kits`            | `tools/scripts/check-spec-kits.mjs`                                                                                | Every injectable and token has a test kit, and specs use kits.                                                                        |
+| `npm run i18n:check`            | `tools/scripts/check-i18n.mjs`                                                                                     | No missing or extra translation keys; adapts the house pipe for the key extractor without rewriting translations.                     |
+| `npm run typecheck:foundations` | `tools/scripts/check-foundation-types.mjs`                                                                         | Each shared, shell and board library/spec TypeScript configuration compiles (sequential, no output).                                  |
+| `npm run test:tooling`          | `tools/*.test.mjs`                                                                                                 | The checks and helpers here behave as documented.                                                                                     |
+| `npm run lint:components`       | `tools/scripts/check-component-order.mjs`                                                                          | Component decorator and member order.                                                                                                 |
+| `npm run check:shared-types`    | `tools/scripts/check-shared-types.mjs`                                                                             | No duplicate exported shared type names.                                                                                              |
+| `npm run check:fixtures`        | `tools/scripts/check-board-fixtures.mjs`, then `npm run catalog:check` (`tools/scripts/catalog/check-catalog.mjs`) | Board fixtures match their schema and scrub rules; the eight catalog checkpoints and summary match the schema, provenance and counts. |
+| `npm run lint:hygiene`          | `tools/scripts/check-event-hygiene.mjs`                                                                            | Event-tier mappings in reducers, pipelines, subscriptions and command flows; explicit paths support negative fixtures.                |
+| `npm run check:scripts`         | `tools/scripts/check-script-reference.mjs`                                                                         | This reference names every npm script and every `tools/scripts` file.                                                                 |
+
+`npm run check:bundle` walks static imports from the app and global styles,
+reports raw initial bytes and package input attribution, refuses catalog/menu
+code, the Angular Aria menu and the CDK overlay in the initial graph and ensures
+the menu arrives with Tools. Input attribution precedes final output
+optimization and need not sum to the reported output bytes. A missing
+application entry or static output fails closed. The visual check compares the
+existing macOS baselines and does not authorize updating them.
+
+## Helpers
+
+Run these by hand for the task named; no gate runs them.
+
+| Command or file                         | Purpose and intended use                                                                                                                                                                                                                                          |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run start`                         | Serve the development app with MSW for local feature work without an API or environment file.                                                                                                                                                                     |
+| `npm run format`                        | Format workspace files with the repository's Prettier rules while editing.                                                                                                                                                                                        |
+| `npm run typecheck:e2e`                 | Type-check Playwright sources under their NodeNext configuration (CI also runs it).                                                                                                                                                                               |
+| `npm run perf:sample`                   | Rebuild the production artifact and run `tools/scripts/sample-performance.mjs`: five samples of three journeys under two profiles, written to ignored `dist/performance-samples.json`. Diagnostic only; see [performance policy](../architecture/performance.md). |
+| `npm run catalog:join`                  | Pass `-- <research-run-directory>` to rebuild catalog content from the eleven pinned maps through `tools/scripts/catalog/join-maps.mjs`, then run `npx prettier --write libs/shared/catalog/src/data`. Never writes the source directory.                         |
+| `npm run catalog:report`                | Print validated counts, chapter totals, each work's resolved relations and its scene tools (`tools/scripts/catalog/report.mjs`).                                                                                                                                  |
+| `npm run lint:fixtures`                 | When changing lint policy: prove the dependency, component-role and convention rules reject their negative fixtures in `tools/lint-fixtures/` and accept the controls (`tools/check-lint-fixtures.mjs`, `tools/check-taxonomy-fixtures.mjs`).                     |
+| `tools/scripts/scrub-board-fixture.mjs` | Sanitize a captured board before it becomes a recorded fixture, during an authorized fixture refresh; `check-board-fixtures.mjs` imports its rules.                                                                                                               |
+| `npm run env:prime`                     | Validate public `.env` settings and write ignored local environment, production public-settings and development-proxy files (`tools/scripts/prime-environment.mjs`); diagnostics omit values.                                                                     |
+| `npm run build:configured`              | Build the production `configured` profile with primed settings, bypassing the Nx cache; run after `env:prime`.                                                                                                                                                    |
+| `npm run msw:init`                      | Regenerate the tracked public service worker after an MSW upgrade; review the generated diff.                                                                                                                                                                     |
+| `npm run boards`                        | List and count `// BOARDED:` comments under apps and libs (CI prints the count; it never fails).                                                                                                                                                                  |
 
 The configured production build always disables mocks and URL flag overrides.
 Remove generated local configuration before worktree close. For optimized local
 play, use `npx nx serve dotln --configuration=mocked`; its production artifact
-counterpart is `npx nx build dotln --configuration=mocked`. The registered visual
-check is `npx nx e2e-visual dotln-e2e`; it compares the existing macOS baselines
-and does not authorize updating them.
+counterpart is `npx nx build dotln --configuration=mocked`.
 
-## Catalog commands
+## Modules
 
-| Command or file                               | Purpose                                                                                                                |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `npm run catalog:check`                       | Validate all eight catalog checkpoints and their summary; `-- --partial` checks an intermediate subset only.           |
-| `npm run catalog:report`                      | Print validated counts, scenes and the three typed examples per work.                                                  |
-| `tools/scripts/catalog/check-catalog.mjs`     | Schema, allow-list, provenance, line coverage and summary checks; a single checkpoint path supports negative fixtures. |
-| `tools/scripts/catalog/merge-checkpoints.mjs` | Validate incoming scratch checkpoints, sort by id and replace one file per batch.                                      |
-| `tools/scripts/catalog/report.mjs`            | Render the summary after complete validation.                                                                          |
+| File                             | Purpose                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `tools/scripts/source-files.mjs` | Source discovery, TypeScript AST traversal and diagnostic locations for the checks above.  |
+| `tools/scripts/templates.mjs`    | Discovers Angular templates and adapts the house translation pipe for the template checks. |

@@ -1,0 +1,73 @@
+:host {
+  display: block;
+}
+h2 {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dotln-muted);
+  margin: 0.4rem 0 1.5rem;
+}
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.4rem;
+}
+li {
+  border-inline-start: 3px solid var(--work-colour, var(--dotln-accent));
+  padding-inline-start: 0.8rem;
+}
+button {
+  border: 0;
+  padding: 0.15rem 0;
+  background: transparent;
+  text-align: start;
+  color: inherit;
+  cursor: pointer;
+  inline-size: 100%;
+}
+button:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 4px;
+}
+.title {
+  display: block;
+  color: var(--work-colour, var(--dotln-accent));
+  font-family: var(--dotln-font-reading);
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+.count,
+.scene {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--dotln-muted);
+  line-height: 1.7;
+}
+.selected {
+  border-inline-start-width: 5px;
+}
+.selected .title {
+  font-weight: 700;
+}
+@each $work in aifg, eip, poeaa, rxjs, geb, tt {
+  [data-work='#{$work}'] {
+    --work-colour: var(--dotln-work-#{$work});
+  }
+}
+@media (max-width: 1000px) {
+  ol {
+    display: flex;
+    overflow-x: auto;
+    padding: 0.3rem 0.3rem 1rem;
+    gap: 1.5rem;
+  }
+  li {
+    flex: 0 0 10rem;
+  }
+  h2 {
+    margin-block-end: 0.5rem;
+  }
+}

@@ -2,7 +2,6 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  computed,
   ElementRef,
   inject,
   Injector,
@@ -11,13 +10,18 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { BasePaths, buildRoute } from '@dotln-angular/core';
-import { TPipe, translateSignal } from '@dotln-angular/i18n';
-import type { CatalogFilters, ToolId } from '@dotln-angular/models';
+import { TPipe } from '@dotln-angular/i18n';
+import type { ToolId } from '@dotln-angular/models';
 import { DotlnFilterMenu } from '@dotln-angular/ui/menu';
 
-import { ToolFaces } from '../../composites/tool-faces/tool-faces';
-import { ToolList } from '../../composites/tool-list/tool-list';
+import { ArriveStudy } from '../../composites/arrive-study/arrive-study';
+import { CatalogSearch } from '../../composites/catalog-search/catalog-search';
+import { ContentsList } from '../../composites/contents-list/contents-list';
+import { ReadingHistory } from '../../composites/reading-history/reading-history';
+import { WorkShelf } from '../../composites/work-shelf/work-shelf';
 import { ToolsFacade } from '../../facades/tools.facade';
+import { CatalogLayout } from '../../layouts/catalog-layout/catalog-layout';
+import { ReadingMapper } from '../../mappers/reading-mapper/reading-mapper';
 
 @Component({
   selector: 'tools-catalog-page',
@@ -25,53 +29,55 @@ import { ToolsFacade } from '../../facades/tools.facade';
   templateUrl: './catalog-page.html',
   styleUrl: './catalog-page.scss',
   providers: [ToolsFacade],
-  imports: [TPipe, RouterLink, DotlnFilterMenu, ToolList, ToolFaces],
+  imports: [
+    TPipe,
+    RouterLink,
+    DotlnFilterMenu,
+    ArriveStudy,
+    CatalogSearch,
+    ContentsList,
+    ReadingHistory,
+    WorkShelf,
+    CatalogLayout,
+    ReadingMapper,
+  ],
 })
 export class CatalogPage {
   readonly facade = inject(ToolsFacade);
+  readonly vm = this.facade.vm;
   readonly #injector = inject(Injector);
-  protected readonly details = viewChild<ElementRef<HTMLElement>>('details');
-  protected readonly list = viewChild<unknown, ElementRef<HTMLElement>>('list', {
-    read: ElementRef,
-  });
+  protected readonly reading = viewChild<ElementRef<HTMLElement>>('reading');
   readonly home = buildRoute(BasePaths.Tools);
-  readonly #all = translateSignal('tools.filters.all');
-  readonly #labels = {
-    work: translateSignal('tools.filters.work'),
-    kind: translateSignal('tools.filters.kind'),
-    scene: translateSignal('tools.filters.scene'),
-    transform: translateSignal('tools.filters.transform'),
-    status: translateSignal('tools.filters.status'),
-  };
-  readonly filters = computed(() =>
-    (Object.keys(this.facade.options()) as (keyof CatalogFilters)[]).map((key) => ({
-      key,
-      label: this.#labels[key](),
-      options: [
-        { id: '', label: this.#all() },
-        ...this.facade.options()[key].map((value) => ({ id: value, label: value })),
-      ],
-    })),
-  );
 
-  select(id: ToolId) {
-    this.facade.select(id);
-    afterNextRender(() => this.#focus(this.details()?.nativeElement), {
-      injector: this.#injector,
-    });
+  open(id: ToolId, relation = false) {
+    if (relation) this.facade.follow(id);
+    else this.facade.open(id);
+    this.#focusReading();
   }
-
-  backToList() {
-    this.facade.revealSelected();
+  back() {
+    this.facade.back();
+    this.#focusReading();
+  }
+  showStudyMoment(step: number) {
+    this.facade.scrubStudy(step);
     afterNextRender(
-      () =>
-        this.#focus(this.list()?.nativeElement.querySelector<HTMLElement>('[aria-pressed="true"]')),
+      () => {
+        const slider =
+          this.reading()?.nativeElement.querySelector<HTMLInputElement>('#arrive-time');
+        slider?.focus({ preventScroll: true });
+        slider?.closest('figure')?.scrollIntoView({ block: 'start', behavior: 'instant' });
+      },
       { injector: this.#injector },
     );
   }
-
-  #focus(element: HTMLElement | null | undefined) {
-    element?.focus({ preventScroll: true });
-    element?.scrollIntoView?.({ block: 'nearest', behavior: 'instant' });
+  #focusReading() {
+    afterNextRender(
+      () => {
+        const element = this.reading()?.nativeElement;
+        element?.focus({ preventScroll: true });
+        element?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+      },
+      { injector: this.#injector },
+    );
   }
 }

@@ -61,7 +61,6 @@ npm test
 npm run build
 npm run e2e
 npm run format:check
-npm run lint:fixtures
 npm run test:tooling
 npm run typecheck:e2e
 npm run check:templates
@@ -86,8 +85,9 @@ See [the component taxonomy and rules](architecture/component-taxonomy.md) for t
 Read [sub-app architecture](architecture/sub-apps.md) for the Scene, Machinery and
 Tools groups and the convention for adding a lazy feature to the one app.
 
-Read [catalog architecture](architecture/catalog.md) for the schema, source
-allow-list, checkpoint pipeline, lazy loader and Tools catalog browser.
+Read [catalog architecture](architecture/catalog.md) for the tool-v1 schema, the
+source join and its digest rule, the catalog check, the lazy loader and the Tools
+reading surface.
 
 Read [concept mapping](architecture/concept-mapping.md) for the UIFA engineer's
 workshop purpose, applications across domains, diagnostic system traps, and the

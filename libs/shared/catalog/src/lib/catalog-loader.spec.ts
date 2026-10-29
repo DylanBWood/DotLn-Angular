@@ -15,9 +15,9 @@ it('loads only the requested work, shares pending imports, and retries a failed 
   let attempts = 0;
   const aifg = vi.fn(async () => {
     if (++attempts === 1) throw new Error('Chunk unavailable');
-    return { default: { schema: 'tool-v0', tools: [catalogFixture[0]] } };
+    return { default: { schema: 'tool-v1', tools: [catalogFixture[0]] } };
   });
-  const poeaa = vi.fn(async () => ({ default: { schema: 'tool-v0', tools: [catalogFixture[1]] } }));
+  const poeaa = vi.fn(async () => ({ default: { schema: 'tool-v1', tools: [catalogFixture[1]] } }));
   const loader = createCatalogLoader({ aifg: [aifg], poeaa: [poeaa] });
   await expect(loader.load('aifg')).rejects.toThrow('Chunk unavailable');
   const first = loader.load('aifg');
@@ -31,7 +31,26 @@ it('loads only the requested work, shares pending imports, and retries a failed 
 
 it('rejects chunks carrying another work or an unsupported schema', async () => {
   const loader = createCatalogLoader({
-    aifg: [async () => ({ default: { schema: 'tool-v0', tools: [catalogFixture[1]] } })],
+    aifg: [async () => ({ default: { schema: 'tool-v1', tools: [catalogFixture[1]] } })],
   });
   await expect(loader.load('aifg')).rejects.toThrow('unsupported shape');
+});
+
+it('reads v0 for one release while explicitly marking its missing reading content', async () => {
+  const {
+    definition: _definition,
+    place: _place,
+    related: _related,
+    hooks: _hooks,
+    verified: _verified,
+    ...legacy
+  } = catalogFixture[0];
+  const loader = createCatalogLoader({
+    aifg: [async () => ({ default: { schema: 'tool-v0', tools: [legacy] } })],
+  });
+  const [tool] = await loader.load('aifg');
+  expect(tool.id).toBe(legacy.id);
+  expect(tool.definition).toContain('does not contain a definition');
+  expect(tool.verified.kind).toBe('partial');
+  expect(tool.related).toEqual([]);
 });

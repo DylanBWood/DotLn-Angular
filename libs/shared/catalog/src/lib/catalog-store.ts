@@ -5,52 +5,123 @@ import { from, map } from 'rxjs';
 
 import { withCallState, withCommand, withPersistedState } from '@dotln-angular/data-access';
 import { catalogEvents, catalogPageEvents } from '@dotln-angular/events';
-import type { AppError, CatalogFilters, Tool, ToolId } from '@dotln-angular/models';
+import type { CatalogReadingState, ToolId } from '@dotln-angular/models';
 
 import { CatalogToken } from './catalog-token';
 import { emptyCatalogFilters, isCatalogFilters } from './filters';
+import { chapterKey, emptyReading, readingHistoryLimit, restoreReading } from './reading';
 import type { CatalogState } from './types';
+
+/** How many earlier readings "Back to the previous reading" can return through. */
+const backStackLimit = 20;
+
+function openReading(state: CatalogState, id: ToolId, returning = false): Partial<CatalogState> {
+  const tool = state.tools.find((tool) => tool.id === id);
+  if (!tool) return {};
+  return {
+    selectedId: id,
+    work: tool.work,
+    chapter: chapterKey(tool),
+    section: tool.place.section ?? '',
+    query: '',
+    page: 0,
+    history: [id, ...state.history.filter((previous) => previous !== id)].slice(
+      0,
+      readingHistoryLimit,
+    ),
+    backStack: returning
+      ? state.backStack.slice(0, -1)
+      : state.selectedId && state.selectedId !== id
+        ? [...state.backStack, state.selectedId].slice(-backStackLimit)
+        : state.backStack,
+  };
+}
 
 export const CatalogStore = signalStore(
   withState<CatalogState>({
-    tools: [] as readonly Tool[],
+    ...emptyReading,
+    tools: [],
     filters: emptyCatalogFilters,
-    selectedId: null as ToolId | null,
     page: 0,
-    failure: null as AppError | null,
+    failure: null,
+    query: '',
+    backStack: [],
   }),
   withCallState(),
-  withPersistedState<{ filters: CatalogFilters; selectedId: ToolId | null }>({
-    key: 'catalog',
-    select: (state) => ({ filters: state.filters, selectedId: state.selectedId }),
-    restore: (value) => {
-      if (
-        typeof value !== 'object' ||
-        value === null ||
-        !('filters' in value) ||
-        !isCatalogFilters(value.filters) ||
-        !('selectedId' in value)
-      )
-        return undefined;
-      if (
-        value.selectedId !== null &&
-        (typeof value.selectedId !== 'string' ||
-          !/^[a-z][a-z0-9-]*:[1-9][0-9]*$/.test(value.selectedId))
-      )
-        return undefined;
-      return { filters: value.filters, selectedId: value.selectedId as ToolId | null };
-    },
+  withPersistedState<CatalogReadingState>({
+    key: 'tools',
+    select: ({ version, work, chapter, section, selectedId, history }) => ({
+      version,
+      work,
+      chapter,
+      section,
+      selectedId,
+      history,
+    }),
+    restore: restoreReading,
   }),
   withReducer<CatalogState>(
     on(catalogPageEvents.opened, catalogPageEvents.retryRequested, () => ({ failure: null })),
-    on(catalogPageEvents.filtersChanged, ({ payload }) =>
-      isCatalogFilters(payload) ? { filters: payload, page: 0, selectedId: null } : {},
+    on(catalogPageEvents.workChosen, ({ payload }, state) =>
+      state.tools.some((tool) => tool.work === payload)
+        ? {
+            work: payload,
+            chapter: null,
+            section: null,
+            selectedId: null,
+            query: '',
+            backStack: [],
+          }
+        : {},
     ),
-    on(catalogPageEvents.toolSelected, ({ payload }) => ({ selectedId: payload })),
+    // Choosing the open chapter or section again closes it, as its expanded state says.
+    on(catalogPageEvents.chapterChosen, ({ payload }, state) =>
+      state.tools.some((tool) => tool.work === state.work && chapterKey(tool) === payload)
+        ? { chapter: payload === state.chapter ? null : payload, section: null }
+        : {},
+    ),
+    on(catalogPageEvents.sectionChosen, ({ payload }, state) =>
+      state.tools.some(
+        (tool) =>
+          tool.work === state.work &&
+          chapterKey(tool) === state.chapter &&
+          (tool.place.section ?? '') === payload,
+      )
+        ? { section: payload === state.section ? null : payload }
+        : {},
+    ),
+    on(catalogPageEvents.conceptOpened, catalogPageEvents.relationFollowed, ({ payload }, state) =>
+      openReading(state, payload),
+    ),
+    on(catalogPageEvents.readingReturned, (_event, state) => {
+      const id = state.backStack.at(-1);
+      return id ? openReading(state, id, true) : {};
+    }),
+    on(catalogPageEvents.searched, ({ payload }) => ({ query: payload, page: 0 })),
+    on(catalogPageEvents.filtersChanged, ({ payload }) =>
+      isCatalogFilters(payload) ? { filters: payload, page: 0 } : {},
+    ),
     on(catalogPageEvents.pageChanged, ({ payload }) =>
       Number.isSafeInteger(payload) && payload >= 0 ? { page: payload } : {},
     ),
-    on(catalogEvents.loadSuccess, ({ payload }) => ({ tools: payload, failure: null })),
+    on(catalogEvents.loadSuccess, ({ payload }, state) => {
+      const selected = payload.find((tool) => tool.id === state.selectedId);
+      const history = state.history.filter((id) => payload.some((tool) => tool.id === id));
+      return {
+        tools: payload,
+        failure: null,
+        history,
+        ...(selected
+          ? {
+              work: selected.work,
+              chapter: chapterKey(selected),
+              section: selected.place.section ?? '',
+            }
+          : !payload.some((tool) => tool.work === state.work)
+            ? { ...emptyReading, history }
+            : { selectedId: null }),
+      };
+    }),
     on(catalogEvents.loadFailure, ({ payload }) => ({ tools: [], failure: payload })),
   ),
   withCommand({

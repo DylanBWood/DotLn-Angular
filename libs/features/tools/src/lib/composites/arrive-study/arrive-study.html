@@ -1,0 +1,204 @@
+@let vm = study();
+@let showMotion = vm.activeView === 'motion';
+@let showVelocity = vm.activeView === 'velocity';
+<section class="study" [attr.aria-label]="'tools.study.label' | t">
+  <p class="eyebrow">{{ 'tools.study.authored' | t }}</p>
+  <h3>{{ 'tools.study.title' | t }}</h3>
+  <p class="intro">{{ 'tools.study.intuition' | t }}</p>
+  <figure>
+    <div class="view-choice" role="group" [attr.aria-label]="'tools.study.views' | t">
+      <button
+        type="button"
+        [attr.aria-pressed]="vm.activeView === 'motion'"
+        (click)="viewChanged.emit('motion')"
+      >
+        {{ 'tools.study.motionView' | t }}
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="vm.activeView === 'velocity'"
+        (click)="viewChanged.emit('velocity')"
+      >
+        {{ 'tools.study.velocityView' | t }}
+      </button>
+    </div>
+    @if (showMotion) {
+      <svg
+        viewBox="0 -45 600 300"
+        role="img"
+        [attr.aria-label]="
+          'tools.study.diagram' | t: { distance: vm.distance, speed: vm.speed, desired: vm.desired }
+        "
+      >
+        <circle class="slow-zone" cx="420" cy="105" r="136.8" />
+        <path class="ground" d="M 28 105 Q 210 107 420 105" />
+        <path class="radius" d="M 283.2 32 V 177" />
+        @for (point of vm.trail; track $index) {
+          <circle class="trail" [attr.cx]="point" cy="105" r="3" />
+        }
+        <path class="target" d="M 412 97 L 428 113 M 428 97 L 412 113" />
+        <circle class="character" [attr.cx]="vm.x" cy="105" r="10" />
+        <line class="actual" [attr.x1]="vm.x" y1="76" [attr.x2]="vm.actualEnd" y2="76" />
+        <circle class="actual-dot" [attr.cx]="vm.actualEnd" cy="76" r="3" />
+        <line class="desired" [attr.x1]="vm.x" y1="139" [attr.x2]="vm.desiredEnd" y2="139" />
+        <circle class="desired-dot" [attr.cx]="vm.desiredEnd" cy="139" r="3" />
+      </svg>
+    }
+    @if (showVelocity) {
+      <svg
+        viewBox="0 0 600 300"
+        role="img"
+        [attr.aria-label]="
+          'tools.study.plotDescription'
+            | t: { seconds: vm.seconds, speed: vm.speed, desired: vm.desired }
+        "
+      >
+        <path class="ground" d="M 40 30 V 250 H 560" />
+        <path class="grid" d="M 40 50 H 560 M 40 150 H 560" />
+        <polyline class="actual curve" [attr.points]="vm.velocityPlot.actual" />
+        <polyline class="desired curve" [attr.points]="vm.velocityPlot.desired" />
+        <line
+          class="cursor"
+          [attr.x1]="vm.velocityPlot.cursorX"
+          y1="30"
+          [attr.x2]="vm.velocityPlot.cursorX"
+          y2="250"
+        />
+        <circle
+          class="actual-dot"
+          [attr.cx]="vm.velocityPlot.cursorX"
+          [attr.cy]="vm.velocityPlot.actualY"
+          r="6"
+        />
+        <circle
+          class="desired-dot"
+          [attr.cx]="vm.velocityPlot.cursorX"
+          [attr.cy]="vm.velocityPlot.desiredY"
+          r="5"
+        />
+        <text x="40" y="18">{{ 'tools.study.plotSpeed' | t }}</text>
+        <text x="30" y="55" text-anchor="end" translate="no">{{ vm.velocityPlot.maxSpeed }}</text>
+        <text x="30" y="255" text-anchor="end" translate="no">{{ vm.velocityPlot.origin }}</text>
+        <text x="40" y="275" translate="no">{{ vm.velocityPlot.origin }}</text>
+        <text x="560" y="275" text-anchor="end" translate="no">{{ vm.velocityPlot.seconds }}</text>
+        <text x="300" y="290" text-anchor="middle">{{ 'tools.study.plotTime' | t }}</text>
+      </svg>
+    }
+    <figcaption>
+      <p class="legend">
+        <span class="actual-key">{{ 'tools.study.actual' | t }}</span
+        ><span class="desired-key">{{ 'tools.study.desired' | t }}</span>
+      </p>
+      @if (showMotion) {
+        <p>{{ 'tools.study.legend' | t }}</p>
+      }
+      @if (showVelocity) {
+        <p>{{ 'tools.study.plotLegend' | t }}</p>
+      }
+    </figcaption>
+    <div class="controls">
+      <label for="arrive-time">{{ 'tools.study.time' | t: { seconds: vm.seconds } }}</label>
+      <input
+        #time
+        id="arrive-time"
+        type="range"
+        min="0"
+        [max]="vm.steps"
+        step="1"
+        [value]="vm.step"
+        (input)="scrubbed.emit(time.valueAsNumber)"
+      />
+      <div class="moments">
+        <button type="button" (click)="scrubbed.emit(0)">{{ 'tools.study.start' | t }}</button>
+        <button type="button" (click)="scrubbed.emit(40)">{{ 'tools.study.cruise' | t }}</button>
+        <button type="button" (click)="scrubbed.emit(75)">{{ 'tools.study.slow' | t }}</button>
+        <button type="button" (click)="scrubbed.emit(240)">
+          {{ 'tools.study.settled' | t }}
+        </button>
+      </div>
+      <p class="reading" data-testid="arrive-reading">
+        {{
+          'tools.study.measurement'
+            | t: { distance: vm.distance, speed: vm.speed, desired: vm.desired }
+        }}
+      </p>
+      <p class="phase">
+        @switch (vm.phase) {
+          @case ('start') {
+            {{ 'tools.study.phases.start' | t }}
+          }
+          @case ('cruise') {
+            {{ 'tools.study.phases.cruise' | t }}
+          }
+          @case ('slow') {
+            {{ 'tools.study.phases.slow' | t }}
+          }
+          @case ('settled') {
+            {{ 'tools.study.phases.settled' | t }}
+          }
+        }
+      </p>
+    </div>
+  </figure>
+  <p class="choose">{{ 'tools.study.choose' | t }}</p>
+  <details #algorithm (toggle)="expanded.emit({ section: 'algorithm', open: algorithm.open })">
+    <summary>
+      <span>{{ 'tools.study.algorithm' | t }}</span>
+      <span class="section-preview">{{ 'tools.study.previews.algorithm' | t }}</span>
+    </summary>
+    @defer (when study().expanded.includes('algorithm')) {
+      <tools-study-explanation
+        section="algorithm"
+        [calculation]="vm.currentCalculation"
+        (momentRequested)="momentRequested.emit($event)"
+      />
+    } @loading (after 150ms) {
+      <p role="status">{{ 'tools.study.opening' | t }}</p>
+    } @error {
+      <p role="alert">{{ 'tools.study.loadFailed' | t }}</p>
+    }
+  </details>
+  <details #reactive (toggle)="expanded.emit({ section: 'reactive', open: reactive.open })">
+    <summary>
+      <span>{{ 'tools.study.reactive' | t }}</span>
+      <span class="section-preview">{{ 'tools.study.previews.reactive' | t }}</span>
+    </summary>
+    @defer (when study().expanded.includes('reactive')) {
+      <tools-study-explanation
+        section="reactive"
+        [streamView]="vm.streamView"
+        (streamViewChanged)="streamViewChanged.emit($event)"
+      />
+    } @loading (after 150ms) {
+      <p role="status">{{ 'tools.study.opening' | t }}</p>
+    } @error {
+      <p role="alert">{{ 'tools.study.loadFailed' | t }}</p>
+    }
+  </details>
+  <details #limits (toggle)="expanded.emit({ section: 'limits', open: limits.open })">
+    <summary>
+      <span>{{ 'tools.study.limits' | t }}</span>
+      <span class="section-preview">{{ 'tools.study.previews.limits' | t }}</span>
+    </summary>
+    @defer (when study().expanded.includes('limits')) {
+      <tools-study-explanation section="limits" [limitExample]="vm.limitExample" />
+    } @loading (after 150ms) {
+      <p role="status">{{ 'tools.study.opening' | t }}</p>
+    } @error {
+      <p role="alert">{{ 'tools.study.loadFailed' | t }}</p>
+    }
+  </details>
+  <details #references (toggle)="expanded.emit({ section: 'references', open: references.open })">
+    <summary>
+      <span>{{ 'tools.study.references' | t }}</span>
+      <span class="section-preview">{{ 'tools.study.previews.references' | t }}</span>
+    </summary>
+    @defer (when study().expanded.includes('references')) {
+      <tools-study-explanation section="references" />
+    } @loading (after 150ms) {
+      <p role="status">{{ 'tools.study.opening' | t }}</p>
+    } @error {
+      <p role="alert">{{ 'tools.study.loadFailed' | t }}</p>
+    }
+  </details>
+</section>

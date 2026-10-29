@@ -1,73 +1,95 @@
 :host {
   display: block;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
+  color: var(--dotln-ink);
+  padding: clamp(0.25rem, 1.8vw, 2rem);
 }
-h1 {
-  margin-block: 1.25rem 0.5rem;
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  letter-spacing: -0.035em;
-}
-.description {
-  color: var(--dotln-muted);
-  max-inline-size: 65ch;
-  margin-block-end: 1.5rem;
-}
-a {
-  color: var(--dotln-accent);
-}
-.filters {
+.catalog-heading {
   display: flex;
   flex-wrap: wrap;
-  align-items: start;
+  align-items: end;
+  justify-content: space-between;
   gap: 1rem;
-  padding-block: 1rem;
-  border-block: 1px solid var(--dotln-border);
+  margin-block-end: 2rem;
+}
+.catalog-heading a {
+  color: var(--dotln-muted);
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+h1 {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.catalog-heading p {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--dotln-muted);
+}
+.invitation {
+  max-inline-size: 42rem;
+  margin: 4rem auto 5rem;
+}
+.invitation h2 {
+  font-family: var(--dotln-font-reading);
+  font-size: clamp(2.25rem, 4vw, 4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.invitation p {
+  max-inline-size: 45ch;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--dotln-muted);
+}
+.invitation .eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.facets,
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  margin-block: 1rem;
+  font-size: 0.8rem;
 }
 button {
-  border: 1px solid var(--dotln-border-strong);
-  border-radius: var(--dotln-radius);
-  padding: 0.7rem 1rem;
   font: inherit;
+  border: 1px solid var(--dotln-border);
+  padding: 0.4rem 0.7rem;
   background: var(--dotln-surface);
   color: var(--dotln-ink);
   cursor: pointer;
 }
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
 }
 button:focus-visible,
-a:focus-visible,
-aside:focus-visible {
+a:focus-visible {
   outline: var(--dotln-focus);
   outline-offset: 3px;
 }
-.catalog {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(15rem, 1fr);
-  gap: 2rem;
-  align-items: start;
+section[reading]:focus {
+  outline: none;
 }
-aside {
-  padding: 1.25rem;
-  background: var(--dotln-surface);
-  border: 1px solid var(--dotln-border);
-  border-radius: var(--dotln-radius);
+.return {
+  display: block;
+  margin: 0 auto 1rem;
+  font-size: 0.75rem;
 }
-.pagination {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 1.5rem;
-}
-@media (max-width: 900px) {
-  .catalog {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 600px) {
+  :host {
+    padding: 0.25rem;
   }
-  aside {
-    grid-row: 1;
+  .invitation {
+    margin-block: 1rem 2rem;
   }
 }

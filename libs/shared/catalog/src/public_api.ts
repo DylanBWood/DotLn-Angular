@@ -2,12 +2,21 @@ export { createCatalogLoader, provideCatalog } from './lib/catalog-loader';
 export { CatalogToken } from './lib/catalog-token';
 export { CatalogStore } from './lib/catalog-store';
 export {
+  catalogShelf,
+  chapterKey,
+  contentsFor,
+  emptyReading,
+  restoreReading,
+  sceneTools,
+  searchReadings,
+  workTitle,
+} from './lib/reading';
+export {
   byKind,
   bySceneType,
   byStatus,
   byTransform,
   byWork,
-  firstThree,
   filterCatalog,
   catalogFilterOptions,
   availableCatalogOptions,

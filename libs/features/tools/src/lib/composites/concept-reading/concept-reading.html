@@ -1,0 +1,92 @@
+@let vm = reading();
+<article [attr.data-concept-id]="vm.tool.id" [attr.data-work]="vm.tool.work">
+  <p class="place">{{ 'tools.reading.place' | t: { type: vm.tool.rowType, place: vm.place } }}</p>
+  <h2 translate="no">{{ vm.tool.title }}</h2>
+  <p class="definition" data-testid="definition" translate="no">{{ vm.tool.definition }}</p>
+  @if (vm.tool.verified.kind === 'model-knowledge') {
+    <p class="source-note">{{ 'tools.reading.modelKnowledge' | t }}</p>
+  } @else if (vm.tool.verified.kind === 'partial') {
+    <p class="source-note">{{ 'tools.reading.partial' | t }}</p>
+  }
+  <details class="source">
+    <summary>{{ 'tools.reading.source' | t }}</summary>
+    <p translate="no">{{ vm.tool.verified.note }}</p>
+  </details>
+  <ng-content />
+  @for (hook of vm.hooks; track hook.domain) {
+    <section class="hook">
+      <h3>{{ 'tools.reading.hook' | t: { domain: hook.domain } }}</h3>
+      @for (clause of hook.clauses; track $index) {
+        <p translate="no">{{ clause }}</p>
+      }
+    </section>
+  }
+  @if (vm.faces; as faces) {
+    @let count =
+      faces.maximum === null
+        ? ('tools.reading.atLeast' | t: { min: faces.minimum })
+        : faces.minimum === faces.maximum
+          ? faces.minimum
+          : ('tools.reading.between' | t: { min: faces.minimum, max: faces.maximum });
+    <section class="application">
+      <h3>{{ 'tools.reading.try' | t }}</h3>
+      <p>
+        {{
+          'tools.reading.faces'
+            | t
+              : {
+                  count,
+                  target: faces.target,
+                  scenes: faces.scenes,
+                  transform: faces.transform,
+                  observable: faces.observable,
+                  metrics: faces.metrics,
+                }
+        }}
+      </p>
+      @if (faces.params.length) {
+        <p class="parameters">
+          {{ 'tools.reading.defaults' | t }}
+          @for (param of faces.params; track param.name) {
+            <span class="parameter">
+              <span translate="no"
+                ><span class="parameter-name">{{ param.name }}</span> {{ param.default }}
+                {{ param.unit }}</span
+              >
+              <span>{{ 'tools.reading.range' | t: { min: param.min, max: param.max } }}</span>
+              @if (!$last) {
+                <span class="parameter-separator">{{ 'tools.reading.separator' | t }}</span>
+              }
+            </span>
+          }
+        </p>
+      }
+    </section>
+  } @else if (vm.tool.status === 'untyped') {
+    <section class="application">
+      <h3>{{ 'tools.reading.untyped' | t }}</h3>
+      <p translate="no">{{ vm.tool.faces.transform.reason }}</p>
+    </section>
+  }
+  @if (vm.sceneTool) {
+    <p class="scene-note">{{ 'tools.reading.scene' | t }}</p>
+  }
+  @if (vm.relations.length) {
+    <p class="relations">
+      {{ 'tools.reading.related' | t }}
+      @for (relation of vm.relations; track $index) {
+        @if (relation.id; as id) {
+          <a href="#reading" translate="no" (click)="$event.preventDefault(); followed.emit(id)">{{
+            relation.title
+          }}</a>
+        } @else {
+          <span translate="no">{{ relation.title }}</span>
+          <span class="unresolved">{{ 'tools.reading.unresolved' | t }}</span>
+        }
+        @if (!$last) {
+          <span aria-hidden="true">{{ 'tools.reading.separator' | t }}</span>
+        }
+      }
+    </p>
+  }
+</article>

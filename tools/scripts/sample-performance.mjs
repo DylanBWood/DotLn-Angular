@@ -215,14 +215,17 @@ async function sample(profile, journey, index) {
         performance.getEntriesByType('resource').filter((entry) => entry.initiatorType === 'script')
           .length,
     );
+    await measure(
+      'search-concepts',
+      () => page.getByRole('searchbox', { name: 'Find a concept' }).fill('a'),
+      () => expect(page.locator('[data-result-id]')).toHaveCount(30),
+    );
     const selections =
       journey === 'board-to-catalog'
-        ? [['Work', 'eip']]
+        ? [['Work', 'Enterprise Integration Patterns']]
         : [
-            ['Work', 'eip'],
+            ['Work', 'Enterprise Integration Patterns'],
             ['Kind', 'rule'],
-            ['Scene type', 'channels'],
-            ['Transform kind', 'channel.policy'],
             ['Status', 'typed'],
           ];
     for (const [filter, value] of selections) {
@@ -261,28 +264,30 @@ async function sample(profile, journey, index) {
       );
       await measure(
         `reset-${filter}`,
-        () => page.getByRole('button', { name: 'Reset filters' }).click(),
-        () => catalogReady(page),
+        () => page.getByRole('button', { name: 'Clear facets' }).click(),
+        () => expect(page.locator('[data-result-id]')).toHaveCount(30),
       );
     }
-    const first = await page.locator('[data-tool-id]').first().getAttribute('data-tool-id');
+    const first = await page.locator('[data-result-id]').first().getAttribute('data-result-id');
     for (const name of ['Next', 'Previous']) {
       await measure(
         name,
         () => page.getByRole('button', { name, exact: true }).click(),
         async () => {
-          const row = expect(page.locator('[data-tool-id]').first());
-          if (name === 'Next') await row.not.toHaveAttribute('data-tool-id', first);
-          else await row.toHaveAttribute('data-tool-id', first);
+          const row = expect(page.locator('[data-result-id]').first());
+          if (name === 'Next') await row.not.toHaveAttribute('data-result-id', first);
+          else await row.toHaveAttribute('data-result-id', first);
         },
       );
     }
     await measure(
-      'show-details',
-      () => page.locator('[data-tool-id]').first().getByRole('button').click(),
-      () => expect(page.getByRole('complementary', { name: 'Tool details' })).toBeFocused(),
+      'open-reading',
+      () => page.locator('[data-result-id]').first().click(),
+      () =>
+        expect(page.getByRole('region', { name: 'Concept reading', exact: true })).toBeFocused(),
     );
-    assert.equal(await page.locator('[data-tool-id]').count(), 50);
+    assert.equal(await page.locator('[data-result-id]').count(), 0);
+    await expect(page.getByTestId('definition')).not.toBeEmpty();
     assert.equal(
       await page.evaluate(
         () =>

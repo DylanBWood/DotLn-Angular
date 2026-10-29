@@ -4,48 +4,80 @@ import type { CatalogCheckpoint } from '@dotln-angular/models';
 import { TransformKind } from '@dotln-angular/models';
 
 import summary from '../data/catalog-summary.json';
-import schema from '../schema/tool-v0.schema.json';
+import schema from '../schema/tool-v1.schema.json';
+import { catalogShelf, sceneTools } from './reading';
 
 const checkpoints = Object.values(
   import.meta.glob<CatalogCheckpoint>('../data/tools-*.json', { eager: true, import: 'default' }),
 );
 const tools = checkpoints.flatMap((checkpoint) => checkpoint.tools);
 
-it('compiles the allow-list schema and validates every shipped row with closed transform/status pairing', () => {
+it('validates every definition, chapter, transform contract and relation in all eight checkpoints', () => {
   const validate = new Ajv2020({ allErrors: true, allowUnionTypes: true }).compile(schema);
   expect(checkpoints).toHaveLength(8);
   expect(tools).toHaveLength(3463);
-  expect(new Set(tools.map((tool) => tool.id)).size).toBe(tools.length);
+  const byId = new Map(tools.map((tool) => [tool.id, tool]));
+  expect(byId.size).toBe(tools.length);
+  for (const checkpoint of checkpoints) expect(checkpoint.schema).toBe('tool-v1');
   for (const tool of tools) {
     expect(validate(tool), tool.id).toBe(true);
-    expect(['typed', 'untyped', 'background']).toContain(tool.status);
+    expect(tool.definition.trim().length).toBeGreaterThan(0);
+    expect(tool.place.chapter?.trim().length).toBeGreaterThan(0);
     if (tool.status === 'typed')
       expect(Object.values(TransformKind)).toContain(tool.faces.transform.kind);
     if (tool.status === 'untyped')
       expect(tool.faces.transform.reason.trim().length).toBeGreaterThan(0);
     if (tool.status === 'background') expect(tool.faces).toBeUndefined();
+    for (const relation of tool.related)
+      if (relation.id !== null) {
+        expect(relation.id, tool.id).not.toBe(tool.id);
+        expect(byId.get(relation.id)?.work, tool.id).toBe(tool.work);
+        expect(byId.get(relation.id)?.title, tool.id).toBe(relation.title);
+      }
   }
-  expect(validate({ ...tools[0], definition: 'Forbidden source text' })).toBe(false);
+  // The run marks one row as partially verified; a source URL naming PartialObserver is not one.
+  expect(tools.filter((tool) => tool.verified.kind === 'partial').map((tool) => tool.id)).toEqual([
+    'eip:258',
+  ]);
+  expect(
+    validate({ ...tools[0], definition: 'Readable content', place: { chapter: 'A chapter' } }),
+  ).toBe(true);
+  const { definition: _definition, ...missing } = tools[0];
+  expect(validate(missing)).toBe(false);
+  expect(validate({ ...tools[0], place: {} })).toBe(false);
 });
 
-it('records eleven maps, up to three typed examples per work and every explicit shortfall', () => {
+it('publishes the exact scene-tool set, chapter totals and historical Team Topologies shortfall', () => {
+  expect(summary.schema).toBe('catalog-summary-v1');
   expect(summary.maps).toHaveLength(11);
   expect(summary.mappedRows).toBe(3463);
   expect(summary.works).toHaveLength(6);
+  // The shelf's scene types are written beside its titles; they must agree with the summary.
+  expect(catalogShelf(tools).map(({ work, scene }) => [work, scene])).toEqual(
+    expect.arrayContaining(summary.works.map(({ work, sceneType }) => [work, sceneType])),
+  );
+  expect(catalogShelf(tools)).toHaveLength(summary.works.length);
   for (const work of summary.works) {
-    const typedCount = tools.filter(
-      (tool) => tool.work === work.work && tool.status === 'typed',
-    ).length;
-    expect(work.typedShortfall, work.work).toBe(Math.max(0, 3 - typedCount));
-    expect(work.firstThree, work.work).toHaveLength(Math.min(3, typedCount));
-    for (const id of work.firstThree) {
-      const tool = tools.find((candidate) => candidate.id === id);
-      expect(tool?.work).toBe(work.work);
-      expect(tool?.status).toBe('typed');
-      if (tool?.status === 'typed') {
-        expect(Object.values(TransformKind)).toContain(tool.faces.transform.kind);
-        expect(tool.faces.scene.length).toBeGreaterThan(0);
-      }
-    }
+    expect(work.sceneTools).toEqual(
+      sceneTools(work.work as (typeof tools)[number]['work'])(tools).map((tool) => tool.id),
+    );
+    expect(work.chapters.reduce((total, chapter) => total + chapter.count, 0)).toBe(
+      tools.filter((tool) => tool.work === work.work).length,
+    );
   }
+  expect(summary.works.find((work) => work.work === 'tt')?.typedShortfall).toBe(1);
+  const floor = sceneTools('aifg')(tools).map((tool) => tool.title);
+  for (const title of [
+    'Seek',
+    'Arrive',
+    'Separation',
+    'Velocity matching',
+    'Wander',
+    'Flocking',
+    'Priority steering',
+    'Two-level formation steering',
+    'Fixed formations',
+    'Slot assignment',
+  ])
+    expect(floor).toContain(title);
 });

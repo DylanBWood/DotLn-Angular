@@ -1,61 +1,113 @@
-@let vm = facade.vm();
-<a [routerLink]="home.commands">{{ 'tools.catalog.back' | t }}</a>
-<h1>{{ 'tools.catalog.title' | t }}</h1>
-<p class="description">{{ 'tools.catalog.description' | t }}</p>
-<div class="filters" [attr.aria-label]="'tools.filters.label' | t" role="group">
-  @for (filter of filters(); track filter.key) {
-    <dotln-filter-menu
-      [label]="filter.label"
-      [options]="filter.options"
-      [value]="vm.filters[filter.key]"
-      [allLabel]="'tools.filters.all' | t"
-      (selected)="facade.filter(filter.key, $event)"
-    />
-  }
-  <button type="button" (click)="facade.reset()">{{ 'tools.filters.reset' | t }}</button>
-</div>
-@if (vm.loading) {
+@let state = vm();
+<header class="catalog-heading">
+  <div>
+    <a [routerLink]="home.commands">{{ 'tools.catalog.back' | t }}</a>
+    <h1>{{ 'tools.catalog.title' | t }}</h1>
+  </div>
+  <p data-testid="catalog-count" [attr.data-count]="state.catalogTotal">
+    {{ 'tools.catalog.count' | t: { count: state.catalogTotal, works: state.shelf.length } }}
+  </p>
+</header>
+@if (state.loading) {
   <p role="status">{{ 'tools.catalog.loading' | t }}</p>
-} @else if (vm.failed) {
+} @else if (state.failed) {
   <p role="alert">{{ 'tools.catalog.failed' | t }}</p>
   <button type="button" (click)="facade.retry()">{{ 'tools.catalog.retry' | t }}</button>
 } @else {
-  <p role="status" data-testid="catalog-count" [attr.data-count]="vm.total">
-    {{ 'tools.catalog.count' | t: { count: vm.total, total: vm.catalogTotal } }}
-  </p>
-  <div class="catalog">
-    <section [attr.aria-label]="'tools.list.label' | t">
-      @if (vm.total) {
-        <tools-tool-list
-          #list
-          [tools]="vm.rows"
-          [selectedId]="vm.selected?.id ?? null"
-          (selected)="select($event)"
+  <tools-catalog-layout>
+    <tools-catalog-search
+      search
+      [query]="state.query"
+      [results]="state.rows"
+      [total]="state.total"
+      [workTitles]="state.workTitles"
+      (searched)="facade.search($event)"
+      (opened)="open($event)"
+    >
+      <div facets class="facets">
+        @for (facet of state.facets; track facet.key) {
+          <dotln-filter-menu
+            [label]="facet.label"
+            [options]="facet.options"
+            [value]="state.filterValues[facet.key]"
+            [allLabel]="'tools.filters.all' | t"
+            (selected)="facade.filter(facet.key, $event)"
+          />
+        }
+        <button type="button" (click)="facade.reset()">{{ 'tools.filters.reset' | t }}</button>
+      </div>
+      <div pagination class="pagination">
+        <button type="button" [disabled]="state.page === 0" (click)="facade.page(state.page - 1)">
+          {{ 'tools.pagination.previous' | t }}
+        </button>
+        <span>{{ 'tools.pagination.page' | t: { page: state.page + 1, pages: state.pages } }}</span>
+        <button
+          type="button"
+          [disabled]="state.page + 1 >= state.pages"
+          (click)="facade.page(state.page + 1)"
+        >
+          {{ 'tools.pagination.next' | t }}
+        </button>
+      </div>
+    </tools-catalog-search>
+    <tools-work-shelf
+      shelf
+      [works]="state.shelf"
+      [selected]="state.work"
+      (chosen)="facade.chooseWork($event)"
+    />
+    <div contents>
+      @if (state.work) {
+        <tools-contents-list
+          [chapters]="state.contents"
+          [chapter]="state.chapter"
+          [section]="state.section"
+          [selectedId]="state.selected?.id ?? null"
+          (chapterChosen)="facade.chooseChapter($event)"
+          (sectionChosen)="facade.chooseSection($event)"
+          (opened)="open($event)"
         />
-        <div class="pagination" role="group" [attr.aria-label]="'tools.pagination.label' | t">
-          <button type="button" [disabled]="vm.page === 0" (click)="facade.page(vm.page - 1)">
-            {{ 'tools.pagination.previous' | t }}
+      }
+    </div>
+    <section
+      reading
+      #reading
+      id="reading"
+      tabindex="-1"
+      [attr.aria-label]="'tools.reading.label' | t"
+    >
+      @if (state.selected; as tool) {
+        @if (state.canReturn) {
+          <button class="return" type="button" (click)="back()">
+            {{ 'tools.reading.back' | t }}
           </button>
-          <span>{{ 'tools.pagination.page' | t: { page: vm.page + 1, pages: vm.pages } }}</span>
-          <button
-            type="button"
-            [disabled]="vm.page + 1 >= vm.pages"
-            (click)="facade.page(vm.page + 1)"
-          >
-            {{ 'tools.pagination.next' | t }}
-          </button>
-        </div>
+        }
+        <tools-reading-mapper [tool]="tool" (followed)="open($event, true)">
+          @if (state.study; as study) {
+            <tools-arrive-study
+              [study]="study"
+              (scrubbed)="facade.scrubStudy($event)"
+              (momentRequested)="showStudyMoment($event)"
+              (viewChanged)="facade.viewStudy($event)"
+              (streamViewChanged)="facade.viewStudyStream($event)"
+              (expanded)="facade.expandStudy($event.section, $event.open)"
+            />
+          }
+        </tools-reading-mapper>
       } @else {
-        <p>{{ 'tools.catalog.empty' | t }}</p>
+        <div class="invitation">
+          <p class="eyebrow">{{ 'tools.catalog.eyebrow' | t }}</p>
+          @if (state.work) {
+            <h2 translate="no">{{ state.workTitle }}</h2>
+          } @else {
+            <h2>{{ 'tools.catalog.invitation' | t }}</h2>
+          }
+          <p>
+            {{ (state.work ? 'tools.catalog.chooseConcept' : 'tools.catalog.description') | t }}
+          </p>
+        </div>
       }
     </section>
-    <aside #details [attr.aria-label]="'tools.faces.label' | t" tabindex="-1">
-      @if (vm.selected; as tool) {
-        <button type="button" (click)="backToList()">{{ 'tools.faces.backToList' | t }}</button>
-        <tools-tool-faces [tool]="tool" />
-      } @else {
-        <p>{{ 'tools.faces.select' | t }}</p>
-      }
-    </aside>
-  </div>
+    <tools-reading-history history [tools]="state.history" (opened)="open($event)" />
+  </tools-catalog-layout>
 }

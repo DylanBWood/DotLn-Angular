@@ -57,6 +57,7 @@ UI barrel. Its Aria and CDK overlay code arrives with the route that uses it.
 Do not re-export that entry point from the eagerly imported root barrel.
 
 `npm run check:bundle` builds optimized production code and walks static output
-imports. It rejects catalog/menu code in the initial graph and a menu deferred
-past its Tools route. Its package attribution helps explain size changes; it
+imports. It rejects catalog/menu code, the Angular Aria menu and the CDK overlay
+in the initial graph, and a menu deferred past its Tools route. Its package
+attribution helps explain size changes; it
 does not treat bundle bytes as a user-experience measurement.

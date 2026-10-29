@@ -1,0 +1,59 @@
+<nav [attr.aria-label]="'tools.contents.title' | t">
+  <h2>{{ 'tools.contents.title' | t }}</h2>
+  <ol class="chapters">
+    @for (item of chapters(); track item.key) {
+      <li [class.active]="item.key === chapter()">
+        <button
+          class="chapter"
+          type="button"
+          [attr.aria-expanded]="item.key === chapter()"
+          (click)="chapterChosen.emit(item.key)"
+        >
+          @if (item.title) {
+            <span translate="no">{{ item.title }}</span>
+          } @else {
+            <span>{{ 'tools.contents.legacy' | t }}</span>
+          }
+          <span class="count" translate="no">{{ item.count }}</span>
+        </button>
+        @if (item.key === chapter()) {
+          <ol class="sections">
+            @for (part of item.sections; track part.title) {
+              <li>
+                <button
+                  class="section"
+                  type="button"
+                  [attr.aria-expanded]="part.title === section()"
+                  (click)="sectionChosen.emit(part.title)"
+                >
+                  @if (part.title) {
+                    <span translate="no">{{ part.title }}</span>
+                  } @else {
+                    <span>{{ 'tools.contents.concepts' | t }}</span>
+                  }
+                  <span class="count" translate="no">{{ part.tools.length }}</span>
+                </button>
+                @if (part.title === section()) {
+                  <ol class="concepts">
+                    @for (tool of part.tools; track tool.id) {
+                      <li>
+                        <a
+                          href="#reading"
+                          [attr.data-tool-id]="tool.id"
+                          [attr.aria-current]="tool.id === selectedId() ? 'page' : null"
+                          (click)="$event.preventDefault(); opened.emit(tool.id)"
+                          translate="no"
+                          >{{ tool.title }}</a
+                        >
+                      </li>
+                    }
+                  </ol>
+                }
+              </li>
+            }
+          </ol>
+        }
+      </li>
+    }
+  </ol>
+</nav>

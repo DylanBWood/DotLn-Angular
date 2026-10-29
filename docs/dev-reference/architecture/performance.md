@@ -11,7 +11,7 @@ session. Escalate an actual product or scope tradeoff, not every overrun.
 
 1. **Placement.** `npm run check:bundle` walks static imports in production
    metadata. Tools, its catalog and menu must stay outside the initial graph;
-   the menu must arrive with Tools so opening a filter adds no code-fetch
+   the menu must arrive with Tools so opening a facet adds no code-fetch
    waterfall. The browser regression independently navigates from Board and
    checks this behavior. Keep these structural assertions blocking.
 2. **Cost.** Record initial raw bytes, estimated compressed size, package input
@@ -22,9 +22,9 @@ session. Escalate an actual product or scope tradeoff, not every overrun.
    delivered bytes separately, including aggregate and largest component CSS.
 3. **Experience.** `npm run perf:sample` measures the production app using
    the recorded local board fixture. It runs cold Board → Catalog, cold direct
-   Catalog and warm Catalog reuse. It opens/selects filters, resets, pages and
-   selects details. Warm selection exercises keyboard input. Tests retain
-   keyboard focus, axe and responsive acceptance separately.
+   Catalog and warm Catalog reuse. It searches concepts, selects and clears
+   facets, pages and opens a reading. Warm selection exercises keyboard input.
+   Tests retain keyboard focus, axe and responsive acceptance separately.
 
 The sampler runs sequentially with five samples per journey/profile. Desktop
 is 1440 × 900 without artificial slowdown. The constrained surrogate is 390 ×
@@ -104,7 +104,7 @@ ships no telemetry. [Soft navigations](https://developer.chrome.com/docs/web-pla
 [CrUX methodology](https://developer.chrome.com/docs/crux/methodology).
 
 Use traces to find the actual LCP element, long work, DOM/overlay growth and
-layout shifts. Keep the catalog's 50-row bound; processing all records can still
+layout shifts. Keep the search's 30-result page bound; processing all records can still
 be expensive, so add indexing, yielding or workers only when measured work
 supports them. Preserve usable narrow layouts and keyboard behavior while
 optimizing. [Lab versus field](https://web.dev/articles/lab-and-field-data-differences),
