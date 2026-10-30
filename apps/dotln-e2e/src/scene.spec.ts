@@ -105,6 +105,23 @@ test('the text layer selects by keyboard alone', async ({ page }) => {
   await expect(page.locator('.focus')).toHaveText('1 selected');
 });
 
+test('a toggle and an Escape landing before one render leave no checkbox checked', async ({
+  page,
+}) => {
+  await arrived(page);
+  const row = page.locator('[data-unit-id="unit-01"] input');
+  // Space on a focused checkbox is a click. Two separate key presses render in between on a quick
+  // machine, so the clear is issued in the same task as the activation, as a fast hand lands them.
+  await row.evaluate((input) => {
+    input.focus();
+    input.click();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+  await expect(page.locator('.focus')).toHaveText('All 20 units');
+  await expect(page.locator('scene-canvas canvas')).toHaveAttribute('aria-label', / 0 selected/);
+  await expect(selected(page)).toHaveCount(0);
+});
+
 test('Flock changes the cohesion figure and draws its sparkline', async ({ page }) => {
   await arrived(page);
   await marquee(page);

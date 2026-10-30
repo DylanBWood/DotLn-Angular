@@ -7,7 +7,9 @@ import type { ObjectiveRegion, UnitRowView } from '../../models/scene-view-model
 
 /**
  * The text layer: every unit as a row with its state, the keyboard path through selection and
- * the accessibility surface of everything the field shows.
+ * the accessibility surface of everything the field shows. Each checkbox is controlled: its
+ * click is cancelled and the selection drives `checked`, so a toggle and a clear that land before
+ * one render cannot leave the native box out of step with the units.
  */
 @Component({
   selector: 'scene-unit-list',
@@ -19,7 +21,11 @@ import type { ObjectiveRegion, UnitRowView } from '../../models/scene-view-model
         @for (row of rows(); track row.id) {
           <li [attr.data-unit-id]="row.id">
             <label>
-              <input type="checkbox" [checked]="row.selected" (change)="toggled.emit(row.id)" />
+              <input
+                type="checkbox"
+                [checked]="row.selected"
+                (click)="$event.preventDefault(); toggled.emit(row.id)"
+              />
               <span class="role" translate="no" [style.color]="row.colour">{{ row.label }}</span>
               <span class="detail">
                 {{
