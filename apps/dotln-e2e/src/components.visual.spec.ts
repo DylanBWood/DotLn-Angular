@@ -10,6 +10,8 @@ for (const id of [
   'ui-button--replace',
   'ui-button--trailing',
   'ui-button--overlay',
+  'ui-button--small',
+  'ui-button--primary',
   'ui-card--default',
   'ui-skeleton--default',
   'ui-empty-state--default',

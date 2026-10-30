@@ -1,0 +1,25 @@
+{
+  "name": "scene-engine",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/scene-engine/src",
+  "prefix": "dotln",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/libs/features/scene/src/testing/fixtures/**/*"
+      ],
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/libs/shared/scene-engine"
+      }
+    }
+  }
+}

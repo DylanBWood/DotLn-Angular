@@ -1,0 +1,91 @@
+@let model = vm();
+<dotln-visually-hidden>
+  <h1>{{ 'scene.title' | t }}</h1>
+</dotln-visually-hidden>
+<scene-layout>
+  <scene-canvas
+    field-slot
+    [frames]="facade.frames$"
+    [selection]="model.selection"
+    [arrows]="model.arrows"
+    [ghostFrames]="model.ghostFrames"
+    [units]="model.unitStyles"
+    [motion]="!model.reducedMotion"
+    [label]="
+      'scene.field.label' | t: { units: model.transport.units, selected: model.transport.selected }
+    "
+    (selected)="facade.select($event.id, $event.additive)"
+    (marquee)="facade.marquee($event.from, $event.to, $event.additive)"
+    (pointAt)="facade.setObjective($event)"
+    (sendTo)="facade.sendTo($event)"
+    (squad)="facade.selectSquad($event)"
+  >
+    @if (model.coach; as step) {
+      <scene-coach-mapper [step]="step" />
+    }
+  </scene-canvas>
+  <scene-toolbox-rail
+    rail-slot
+    [rail]="model.rail"
+    (chosen)="facade.chooseTool($event.id, $event.pattern)"
+    (retried)="facade.retryCatalog()"
+  />
+  @if (model.notice; as notice) {
+    <scene-notice-mapper notice-slot [notice]="notice" />
+  }
+  <scene-unit-inspector
+    inspector-slot
+    [tool]="model.inspector"
+    [refusal]="model.refusal"
+    [formation]="model.formation"
+    [selectionCount]="model.transport.selected"
+    [awaitingRun]="model.awaitingRun"
+    [live]="model.live"
+    [canNote]="model.transport.canSave"
+    [note]="model.note"
+    (noted)="facade.note($event)"
+    (paramChanged)="facade.setParam($event.name, $event.value)"
+    (paramCommitted)="facade.commitParam()"
+    (applied)="facade.equip()"
+  />
+  <scene-instrument-strip
+    instruments-slot
+    [instruments]="model.instruments"
+    [transport]="model.transport"
+    [comparing]="model.trial !== null"
+    (played)="facade.play()"
+    (paused)="facade.pause()"
+    (stepped)="facade.step()"
+    (restarted)="facade.restart()"
+    (forked)="facade.fork()"
+    (compared)="facade.compare()"
+    (saved)="facade.save()"
+    (feelToggled)="facade.toggleFeel()"
+    (labelSetChanged)="facade.setLabelSet($event)"
+  >
+    @if (model.trial; as trial) {
+      <scene-trial-compare
+        [trial]="trial"
+        (kept)="facade.keepTrial()"
+        (closed)="facade.closeTrial()"
+      />
+    }
+  </scene-instrument-strip>
+  <scene-tool-log
+    log-slot
+    [log]="model.log"
+    (cleared)="facade.clear()"
+    (opened)="facade.open($event)"
+    (exported)="facade.exportJson()"
+    (imported)="facade.importJson($event)"
+  />
+  <scene-unit-list
+    text-slot
+    [rows]="model.rows"
+    [open]="model.textLayerOpen"
+    [objective]="model.objective"
+    [regions]="model.objectiveRegions"
+    (toggled)="facade.toggle($event)"
+    (objectivePlaced)="facade.setObjective($event)"
+  />
+</scene-layout>

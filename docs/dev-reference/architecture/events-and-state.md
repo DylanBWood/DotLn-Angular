@@ -40,11 +40,13 @@ App stores are explicit app providers and the board store is route-scoped.
 NgRx Signals 22.0.1 and toolkit 22.0.0 admit Angular 22.2.3. Toolkit call state
 is reused. Its default storage implementation chooses a browser storage global,
 so the house persistence feature passes an explicit synchronous strategy bound to
-`StorageToken`. Toolkit `watchState` supplies subscription and cleanup. Only the
-selected panel is restored and written, under `dotln-angular.board`; extra fields
-are ignored. A throwing storage, bad JSON or invalid panel id leaves Actors as
-the default, with later changes usable in memory. Other storage and cookie writes
-are absent. Devtools are enabled for the board only in development.
+`StorageToken`. Toolkit `watchState` supplies subscription and cleanup. For the
+board only the selected panel is restored and written, under
+`dotln-angular.board`; extra fields are ignored. A throwing storage, bad JSON or
+invalid panel id leaves Actors as the default, with later changes usable in memory.
+The catalog keeps reading state under `dotln-angular.tools`, and the scene keeps the
+compositions an operator saves under `dotln-angular.scene`, written only on a save.
+Other storage and cookie writes are absent. Devtools are enabled for the board only in development.
 
 Base URL resolution retains the configured API path and leaves absolute URLs
 untouched. Translation assets use absolute origin URLs so they cannot be prefixed

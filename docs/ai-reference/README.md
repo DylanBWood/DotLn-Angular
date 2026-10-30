@@ -34,6 +34,9 @@ Read [sub-app rules](sub-app-rules.md) before adding a route or menu entry.
 Read [catalog rules](catalog-rules.md) before changing tool data, transforms,
 the source join, loading or the Tools reading surface.
 
+Read [scene rules](scene-rules.md) before changing the scene, its engine or its
+painters.
+
 Read [performance policy](../dev-reference/architecture/performance.md) when a
 change affects code placement, loading, rendering or interactions. Attribute
 growth and compare credible alternatives before handing work to review.

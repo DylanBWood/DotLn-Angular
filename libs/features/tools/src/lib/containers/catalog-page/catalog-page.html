@@ -83,6 +83,10 @@
           </button>
         }
         <tools-reading-mapper [tool]="tool" (followed)="open($event, true)">
+          @let inScene = sceneRoute(tool.id);
+          <a scene-link [routerLink]="inScene.commands" [queryParams]="inScene.queryParams">
+            {{ 'tools.reading.scene' | t }}
+          </a>
           @if (state.study; as study) {
             <tools-arrive-study
               [study]="study"

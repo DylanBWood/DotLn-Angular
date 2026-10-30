@@ -31,6 +31,155 @@ const PanelStore = signalStore(
   }),
 );
 
+const GuardedStore = signalStore(
+  { protectedState: false },
+  withState({
+    value: 'default',
+    saves: 0,
+    unreadable: false as boolean,
+    unwritable: false as boolean,
+  }),
+  withPersistedState<{
+    value: string;
+    saves: number;
+    unreadable: boolean;
+    unwritable: boolean;
+  }>({
+    key: 'guarded',
+    select: (state) => ({ value: state.value }),
+    restore: (value) =>
+      typeof value === 'object' && value !== null && 'value' in value
+        ? { value: String(value.value) }
+        : undefined,
+    unreadable: () => ({ unreadable: true }),
+    unwritable: () => ({ unwritable: true }),
+    writeOn: (state) => state.saves,
+  }),
+);
+
+const ReportingStore = signalStore(
+  { protectedState: false },
+  withState({ value: 'default', unwritable: false as boolean }),
+  withPersistedState<{ value: string; unwritable: boolean }>({
+    key: 'reporting',
+    select: (state) => ({ value: state.value }),
+    restore: () => undefined,
+    unwritable: () => ({ unwritable: true }),
+  }),
+);
+
+const SliceKeyedStore = signalStore(
+  { protectedState: false },
+  withState({ value: 'default' }),
+  withPersistedState<{ value: string }>({
+    key: 'keyed',
+    select: (state) => ({ value: state.value }),
+    restore: (value) =>
+      typeof value === 'object' && value !== null && 'value' in value
+        ? { value: String(value.value) }
+        : undefined,
+    writeOn: (state) => state.value,
+  }),
+);
+
+describe('persisted state options', () => {
+  function guarded(stored?: string) {
+    const kit = provideStorageTokenTestKit();
+    if (stored !== undefined) kit.values.set('dotln-angular.guarded', stored);
+    TestBed.configureTestingModule({ providers: [...kit.providers, GuardedStore] });
+    const store = TestBed.inject(GuardedStore);
+    TestBed.tick();
+    return { kit, store };
+  }
+
+  it('writes only when the writeOn value changes', () => {
+    const { kit, store } = guarded();
+    patchState(store, { value: 'changed' });
+    TestBed.tick();
+    expect(kit.writes).toEqual([]);
+    patchState(store, { saves: 1 });
+    TestBed.tick();
+    expect(kit.values.get('dotln-angular.guarded')).toBe('{"value":"changed"}');
+    patchState(store, { value: 'changed again' });
+    TestBed.tick();
+    expect(kit.writes).toHaveLength(1);
+  });
+
+  it('reports a failed write through unwritable', () => {
+    const throwing = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('quota');
+      },
+      removeItem: () => undefined,
+    };
+    const kit = provideStorageTokenTestKit(throwing);
+    TestBed.configureTestingModule({ providers: [...kit.providers, GuardedStore] });
+    const store = TestBed.inject(GuardedStore);
+    TestBed.tick();
+    expect(store.unwritable()).toBe(false);
+    patchState(store, { saves: 1 });
+    TestBed.tick();
+    expect(store.unwritable()).toBe(true);
+  });
+
+  it('reports a failed write without writing again, with no writeOn to stop it', () => {
+    const throwing = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('quota');
+      },
+      removeItem: () => undefined,
+    };
+    const kit = provideStorageTokenTestKit(throwing);
+    TestBed.configureTestingModule({ providers: [...kit.providers, ReportingStore] });
+    const store = TestBed.inject(ReportingStore);
+    TestBed.tick();
+    expect(store.unwritable()).toBe(true);
+  });
+
+  it('does not count what it restored as a change to write back', () => {
+    const kit = provideStorageTokenTestKit();
+    kit.values.set('dotln-angular.keyed', '{"value":"stored"}');
+    TestBed.configureTestingModule({ providers: [...kit.providers, SliceKeyedStore] });
+    const store = TestBed.inject(SliceKeyedStore);
+    TestBed.tick();
+    expect(store.value()).toBe('stored');
+    expect(kit.writes).toEqual([]);
+    patchState(store, { value: 'changed' });
+    TestBed.tick();
+    expect(kit.writes).toHaveLength(1);
+  });
+
+  it('reports a value that does not parse and leaves it in place', () => {
+    const { kit, store } = guarded('{broken');
+    expect(store.unreadable()).toBe(true);
+    expect(kit.writes).toEqual([]);
+    expect(kit.values.get('dotln-angular.guarded')).toBe('{broken');
+  });
+
+  it('reports a value restore refuses', () => {
+    expect(guarded('[]').store.unreadable()).toBe(true);
+  });
+
+  it('reports nothing when the key is simply absent', () => {
+    expect(guarded().store.unreadable()).toBe(false);
+  });
+
+  it('treats a failing storage read as empty', () => {
+    const throwing = {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => undefined,
+      removeItem: () => undefined,
+    };
+    const kit = provideStorageTokenTestKit(throwing);
+    TestBed.configureTestingModule({ providers: [...kit.providers, GuardedStore] });
+    expect(TestBed.inject(GuardedStore).unreadable()).toBe(false);
+  });
+});
+
 describe('persisted state', () => {
   it('writes only the selected slice to the injected namespaced storage and restores it', () => {
     const kit = provideStorageTokenTestKit();

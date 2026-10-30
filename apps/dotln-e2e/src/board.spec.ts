@@ -6,8 +6,7 @@ test('renders five panels, selects Actors first and preserves cell label, value 
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/board$/);
+  await page.goto('/board');
   await expect(page).toHaveTitle('DotLn');
   await expect(page.getByRole('heading', { name: 'The actor board', exact: true })).toBeVisible();
   await expect(page.getByRole('tab')).toHaveText([

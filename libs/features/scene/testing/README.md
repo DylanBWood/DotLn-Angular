@@ -1,3 +1,4 @@
 # @dotln-angular/scene/testing
 
-Secondary entry point of `@dotln-angular/scene`. It can be used by importing from `@dotln-angular/scene/testing`.
+Test kits for the scene. `provideSceneFacadeTestKit()` gives the facade a manual clock,
+fake storage, the null renderer and reduced motion, and returns them for a spec to drive.

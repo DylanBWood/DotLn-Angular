@@ -66,6 +66,16 @@ import type { ButtonLoadingVariant } from '../../types';
       border-radius: inherit;
       background: var(--dotln-surface-hover);
     }
+    :host([data-size='small']) button {
+      min-block-size: 2rem;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.8rem;
+    }
+    :host([data-tone='primary']) button:not(:disabled) {
+      border-color: var(--dotln-accent);
+      color: var(--dotln-canvas);
+      background: var(--dotln-accent);
+    }
     @media (prefers-reduced-motion: reduce) {
       button {
         transition: none;
@@ -74,6 +84,8 @@ import type { ButtonLoadingVariant } from '../../types';
   `,
   host: {
     '[attr.data-loading]': 'loading() ? loadingVariant() : null',
+    '[attr.data-size]': "size() === 'regular' ? null : size()",
+    '[attr.data-tone]': "tone() === 'plain' ? null : tone()",
     '(click)': 'activate($event)',
   },
   imports: [TPipe],
@@ -83,6 +95,8 @@ export class DotlnButton {
   readonly loadingVariant = input<ButtonLoadingVariant>('trailing');
   readonly disabled = input(false);
   readonly type = input<'button' | 'submit' | 'reset'>('button');
+  readonly size = input<'regular' | 'small'>('regular');
+  readonly tone = input<'plain' | 'primary'>('plain');
   readonly pressed = output<MouseEvent>();
 
   activate(event: MouseEvent) {

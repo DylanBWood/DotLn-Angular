@@ -96,7 +96,7 @@ ignored; unexpected data files fail. `catalog:report` prints count dimensions,
 each work's resolved relations as a count and a percentage, and its scene tools.
 
 The join preserves classifications and faces. Source-warranted steering and
-formation rows expose parameters for the later soldier scene. No invented
+formation rows expose the parameters the soldier scene reads. No invented
 objective or squad operation is attached to an unrelated source term.
 A changed transform contract needs its own explicit provenance and review
 decision. See [the mapping method](concept-mapping.md) for applying a concept in
@@ -156,14 +156,14 @@ sections; null denotes no group chosen. This distinction survives restoration.
 The shelf shows each work's title, count and primary scene. Each work has one
 colour token, `--dotln-work-<slug>` in `libs/shared/ui/src/styles/_tokens.scss`;
 the shelf draws its spine and title in that colour and widens the chosen work's
-spine. The soldier scene's rail is to reuse the same six tokens for a tool's
-provenance. Contents groups chapters, sections and concepts in source-line
+spine. The soldier scene's rail uses the same six tokens for a tool's provenance;
+the field skin lightens them so they read on its dark ground. Contents groups chapters, sections and concepts in source-line
 order. The reading measure is bounded for prose. It renders the full definition,
 related links, grouped hook sentences and a typed tool's faces as one sentence
 (`tools.reading.faces`) with its parameters and defaults. Unlinked relations and
-untyped reasons remain visible. The soldier scene note is present for supported
-kinds; no executable scene link is offered while its route is still the
-arriving page.
+untyped reasons remain visible. A tool the scene runs links to `/scene?tool=<id>`,
+which arrives with it chosen; the link is the container's, projected into the
+reading so the composite stays free of the router.
 
 Search covers titles and definitions, prioritizes an exact title, and shows
 30 results per page with work/kind/status facets. Each result names its work

@@ -1,0 +1,34 @@
+{
+  "schema": "scene-cost-table-v0",
+  "costs": {
+    "cost.close-combat.close-combat": 0,
+    "cost.close-combat.ranged": 2,
+    "cost.close-combat.support": 4,
+    "cost.ranged.close-combat": 3,
+    "cost.ranged.ranged": 0,
+    "cost.ranged.support": 0,
+    "cost.support.close-combat": 0,
+    "cost.support.ranged": 0,
+    "cost.support.support": 0
+  },
+  "members": [
+    { "id": "unit-a", "unitClass": "support" },
+    { "id": "unit-b", "unitClass": "ranged" },
+    { "id": "unit-c", "unitClass": "close-combat" },
+    { "id": "unit-d", "unitClass": "close-combat" },
+    { "id": "unit-e", "unitClass": "ranged" },
+    { "id": "unit-f", "unitClass": "support" }
+  ],
+  "slotRoles": ["close-combat", "close-combat", "ranged", "ranged", "support", "support"],
+  "handComputed": {
+    "working": "Acceptable means a cost below 1. Close-combat units accept the two close-combat slots, ranged units the four ranged and support slots, support units all six. So the close-combat units choose first, then the ranged units, then the support units, each in list order, each taking its cheapest free slot and the earlier slot on a tie.",
+    "assignment": [
+      { "unitId": "unit-c", "slot": 0, "slotRole": "close-combat", "cost": 0 },
+      { "unitId": "unit-d", "slot": 1, "slotRole": "close-combat", "cost": 0 },
+      { "unitId": "unit-b", "slot": 2, "slotRole": "ranged", "cost": 0 },
+      { "unitId": "unit-e", "slot": 3, "slotRole": "ranged", "cost": 0 },
+      { "unitId": "unit-a", "slot": 4, "slotRole": "support", "cost": 0 },
+      { "unitId": "unit-f", "slot": 5, "slotRole": "support", "cost": 0 }
+    ]
+  }
+}

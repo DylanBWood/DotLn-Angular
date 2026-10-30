@@ -33,7 +33,8 @@
   diagnosis. Check whether the intervention recreates the trap at another level;
   a familiar label alone does not establish a diagnosis.
 - The transform enum is closed and grows only by a recorded decision. A typed
-  label describes a contract; it does not claim the scene engine exists.
+  label describes a contract; only the kinds in `sceneTransformKinds` run in the
+  scene, and the engine's `interpretedKinds` must equal them.
 - Preserve uncertain candidates as untyped with a nonempty specific reason;
   type a row only when its definition warrants the contract.
 - Carry the admitted run's full definitions, related titles, hooks, verification

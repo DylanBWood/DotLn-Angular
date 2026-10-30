@@ -1,0 +1,90 @@
+@let state = transport();
+<section class="transport" [attr.aria-label]="'scene.transport.label' | t">
+  <p class="status">
+    <span class="frame">{{ 'scene.transport.frame' | t: { frame: state.frameNo } }}</span>
+    <span>{{ 'scene.transport.seed' | t: { seed: state.seed } }}</span>
+    <span class="focus">
+      @if (state.selected) {
+        {{ 'scene.transport.someUnits' | t: { count: state.selected } }}
+      } @else {
+        {{ 'scene.transport.allUnits' | t: { count: state.units } }}
+      }
+    </span>
+  </p>
+  <div class="buttons">
+    @if (state.playing) {
+      <dotln-button data-transport="pause" size="small" (pressed)="paused.emit()">
+        {{ 'scene.transport.pause' | t }}
+      </dotln-button>
+    } @else {
+      <dotln-button data-transport="play" size="small" (pressed)="played.emit()">
+        {{ 'scene.transport.play' | t }}
+      </dotln-button>
+    }
+    <dotln-button
+      data-transport="step"
+      size="small"
+      [disabled]="state.playing"
+      (pressed)="stepped.emit()"
+    >
+      {{ 'scene.transport.step' | t }}
+    </dotln-button>
+    <dotln-button data-transport="restart" size="small" (pressed)="restarted.emit()">
+      {{ 'scene.transport.restart' | t }}
+    </dotln-button>
+    <dotln-button
+      data-transport="fork"
+      size="small"
+      [disabled]="!state.canSave"
+      (pressed)="forked.emit()"
+    >
+      {{ 'scene.transport.fork' | t }}
+    </dotln-button>
+    <dotln-button
+      data-transport="compare"
+      size="small"
+      [disabled]="!state.canCompare"
+      (pressed)="compared.emit()"
+    >
+      {{ 'scene.transport.compare' | t }}
+    </dotln-button>
+    <dotln-button
+      data-transport="save"
+      size="small"
+      [disabled]="!state.canSave"
+      (pressed)="saved.emit()"
+    >
+      {{ 'scene.transport.save' | t }}
+    </dotln-button>
+  </div>
+  <div class="toggles">
+    <label>
+      <input type="checkbox" [checked]="state.feel" (change)="feelToggled.emit()" />
+      {{ 'scene.transport.feel' | t }}
+    </label>
+    <label>
+      <input
+        type="checkbox"
+        [checked]="state.labelSet === 'uifa'"
+        (change)="labelSetChanged.emit(state.labelSet === 'uifa' ? 'lifecycle' : 'uifa')"
+      />
+      {{ 'scene.transport.uifa' | t }}
+    </label>
+  </div>
+</section>
+@if (comparing()) {
+  <ng-content />
+} @else {
+  <ul class="instruments" [attr.aria-label]="'scene.instruments.label' | t">
+    @for (reading of instruments(); track reading.id) {
+      <li class="instrument" [attr.data-metric]="reading.id" [class.unknown]="!reading.known">
+        <span class="figure" translate="no">{{ reading.value }}</span>
+        <span class="unit" translate="no">{{ reading.unit }}</span>
+        <span class="name" translate="no">{{ reading.label }}</span>
+        <svg class="spark" aria-hidden="true" preserveAspectRatio="none" [attr.viewBox]="viewBox">
+          <polyline [attr.points]="reading.points" />
+        </svg>
+      </li>
+    }
+  </ul>
+}

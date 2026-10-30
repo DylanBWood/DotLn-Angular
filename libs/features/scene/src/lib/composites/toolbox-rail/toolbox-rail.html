@@ -1,0 +1,52 @@
+<h2>{{ 'scene.rail.title' | t }}</h2>
+@switch (rail().status) {
+  @case ('loading') {
+    <p class="status">{{ 'scene.rail.loading' | t }}</p>
+  }
+  @case ('failed') {
+    <p class="status">{{ 'scene.rail.failed' | t }}</p>
+    <dotln-button (pressed)="retried.emit()">{{ 'scene.rail.retry' | t }}</dotln-button>
+  }
+  @default {
+    @for (group of rail().groups; track group.id) {
+      <section [attr.data-rail-group]="group.id">
+        <h3 translate="no">{{ group.label }}</h3>
+        <ul>
+          @for (tool of group.tools; track tool.id) {
+            <li>
+              <button
+                type="button"
+                class="tool"
+                translate="no"
+                [style.color]="tool.colour"
+                [attr.aria-pressed]="tool.chosen"
+                [attr.data-tool-id]="tool.id"
+                (click)="chosen.emit({ id: tool.id })"
+              >
+                {{ tool.title }}
+              </button>
+              @if (tool.patterns.length) {
+                <ul class="patterns" [attr.aria-label]="'scene.rail.patterns' | t">
+                  @for (pattern of tool.patterns; track pattern.value) {
+                    <li>
+                      <button
+                        type="button"
+                        class="pattern"
+                        translate="no"
+                        [attr.aria-pressed]="pattern.chosen"
+                        [attr.data-pattern]="pattern.value"
+                        (click)="chosen.emit({ id: tool.id, pattern: pattern.value })"
+                      >
+                        {{ pattern.label }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+}

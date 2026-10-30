@@ -1,4 +1,5 @@
 @use '../../../libs/shared/ui/src/styles/tokens';
+@use '../../../libs/shared/ui/src/styles/field-skin';
 @use '../../../libs/shared/ui/src/lib/wrappers/overlay';
 
 @font-face {
@@ -29,4 +30,12 @@ a {
 button,
 input {
   font: inherit;
+}
+
+// A page whose subject fills the viewport takes the main region's whole box, keeping the shell's
+// header and footer. The id outranks the shell's own padding rule.
+#main-content:has(> [data-full-bleed]) {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }

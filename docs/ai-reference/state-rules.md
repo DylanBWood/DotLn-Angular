@@ -30,9 +30,11 @@ to `NavigationStore`.
 
 Use `withCallState` from the toolkit and the house `withCommand` wrapper.
 Use `withPersistedState({key, select, restore})`, backed by toolkit synchronization
-and an injected storage strategy. Every key starts with `dotln-angular.`. Validate
-restored data, select only UI state, and retain in-memory defaults on invalid JSON,
-invalid panel ids or storage failures. Only `provideDotlnStorage()` may name the
+and an injected storage strategy. A store that must report a value it cannot read or
+write passes `unreadable` or `unwritable`, and one that writes only on an operator's
+act passes `writeOn`. Every key starts with `dotln-angular.`. Validate restored data,
+select only UI state or what the operator chose to save, and retain in-memory defaults
+on invalid JSON, invalid panel ids or storage failures. Only `provideDotlnStorage()` may name the
 browser's persistent storage; no component, facade or store accesses it directly.
 
 Use the library testing entry points and MSW 3 handlers. `onUnhandledFrame: 'error'`

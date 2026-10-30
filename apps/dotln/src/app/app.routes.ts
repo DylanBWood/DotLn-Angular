@@ -4,7 +4,7 @@ import { BasePaths } from '@dotln-angular/core';
 import { NotFoundPage } from '@dotln-angular/dotln/shell';
 
 export const appRoutes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: BasePaths.Board },
+  { path: '', pathMatch: 'full', redirectTo: BasePaths.Scene },
   {
     path: BasePaths.Board,
     loadChildren: () => import('@dotln-angular/board').then(({ boardRoutes }) => boardRoutes),

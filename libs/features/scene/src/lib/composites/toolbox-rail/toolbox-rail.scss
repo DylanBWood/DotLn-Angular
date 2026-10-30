@@ -1,0 +1,72 @@
+:host {
+  display: block;
+  font-size: 0.85rem;
+}
+h2 {
+  margin: 0 0 var(--dotln-space-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dotln-muted);
+}
+section {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: baseline;
+  margin-block-end: var(--dotln-space-1);
+}
+h3 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--dotln-muted);
+}
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.status {
+  margin: 0 0 var(--dotln-space-2);
+  color: var(--dotln-muted);
+}
+button {
+  border: 0;
+  border-radius: 0.3rem;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 1px;
+}
+.tool {
+  min-block-size: 1.75rem;
+  padding: 0.15rem 0.4rem;
+  text-align: start;
+  font-weight: 500;
+}
+.tool:hover,
+.pattern:hover {
+  background: var(--dotln-surface-hover);
+}
+.tool[aria-pressed='true'],
+.pattern[aria-pressed='true'] {
+  background: var(--dotln-surface-hover);
+  box-shadow: inset 2px 0 0 var(--dotln-accent);
+}
+.patterns {
+  display: inline-flex;
+  margin-inline-start: var(--dotln-space-1);
+  vertical-align: middle;
+}
+.pattern {
+  min-block-size: 1.75rem;
+  padding: 0.15rem 0.5rem;
+  color: var(--dotln-ink);
+}

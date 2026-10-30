@@ -69,7 +69,7 @@
     </section>
   }
   @if (vm.sceneTool) {
-    <p class="scene-note">{{ 'tools.reading.scene' | t }}</p>
+    <p class="scene-note"><ng-content select="[scene-link]" /></p>
   }
   @if (vm.relations.length) {
     <p class="relations">

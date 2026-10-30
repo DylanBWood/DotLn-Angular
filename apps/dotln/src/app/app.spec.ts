@@ -31,7 +31,7 @@ describe('App', () => {
 
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('router-outlet')).not.toBeNull();
-    expect(element.querySelector('h1')?.textContent).toBe('The actor board');
-    expect(TestBed.inject(Router).url).toBe('/board');
+    expect(element.querySelector('h1')?.textContent).toBe('The soldier scene');
+    expect(TestBed.inject(Router).url).toBe('/scene');
   });
 });

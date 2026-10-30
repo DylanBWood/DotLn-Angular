@@ -29,6 +29,7 @@ export { isPanelId } from './lib/board';
 export {
   HookDomain,
   isSceneTool,
+  sceneTransformKinds,
   sceneTypeIds,
   toolKinds,
   toolStatuses,

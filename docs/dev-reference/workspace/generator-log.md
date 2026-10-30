@@ -196,3 +196,24 @@ Exit 0: it created the menu entry point, registered the alias and expanded the
 UI compiler includes. Replaced its placeholder with the house one-line index
 and explicit public API for `DotlnMenu` and `MenuOption`. No new project,
 dependency or module is introduced.
+
+## Scene engine and scene data access, 2026-10-30
+
+Nx 23.3.0; Node 26. Use the established `unitTestRunner=none` route, because the
+installed Nx test generator still rejects Vitest 5, then apply the node Vitest
+configuration `models` uses to the pure engine and the existing AnalogJS
+configuration to the data-access library. Each command runs with
+`NX_DAEMON=false NX_ISOLATE_PLUGINS=false`.
+
+- Planned: `npx nx daemon --stop`.
+- Planned: `npx nx g @nx/angular:library libs/shared/scene-engine --name=scene-engine --importPath=@dotln-angular/scene-engine --tags=scope:shared,type:util --prefix=dotln --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library libs/features/scene-data-access --name=scene-data-access --importPath=@dotln-angular/scene-data-access --tags=scope:dotln,type:data-access --prefix=scene --style=scss --unitTestRunner=none --skipModule --skipPackageJson --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=scene-engine --name=testing --skipModule --skipFormat --interactive=false`.
+- Planned: `npx nx g @nx/angular:library-secondary-entry-point --library=scene-data-access --name=testing --skipModule --skipFormat --interactive=false`.
+
+All four generators exited 0 on the second attempt: the secondary entry points need
+the private package manifests the established pattern adds, so those were written
+first. The placeholder components were replaced, the engine took `models`' node Vitest
+configuration and the data-access library the AnalogJS one, and the generators' expanded
+`nx.json` and `tsconfig.base.json` were restored by Prettier, leaving the four aliases as
+the only change. No dependency version changed.

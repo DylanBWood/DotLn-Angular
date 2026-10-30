@@ -1,0 +1,74 @@
+:host {
+  display: block;
+  flex: 1 1 30rem;
+  min-inline-size: 0;
+  font-size: 0.75rem;
+}
+p {
+  margin: 0;
+}
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dotln-space-2) var(--dotln-space-3);
+  margin-block-end: var(--dotln-space-2);
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--dotln-space-2);
+  margin-inline-end: auto;
+  color: var(--dotln-muted);
+}
+.key {
+  inline-size: 1rem;
+  block-size: 2px;
+}
+.key.before {
+  background: var(--dotln-field-ghost);
+}
+.key.after {
+  background: var(--dotln-accent);
+}
+ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--dotln-space-3) var(--dotln-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+li {
+  display: grid;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+.name,
+.summary {
+  color: var(--dotln-muted);
+}
+.summary {
+  font-variant-numeric: tabular-nums;
+}
+svg {
+  inline-size: 100%;
+  block-size: 2.25rem;
+  border-block-end: 1px solid var(--dotln-border);
+}
+polyline {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+polyline.before {
+  stroke: var(--dotln-field-ghost);
+}
+polyline.after {
+  stroke: var(--dotln-accent);
+}
+.mark {
+  stroke: var(--dotln-field-objective);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
