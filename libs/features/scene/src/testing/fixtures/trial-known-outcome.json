@@ -1,0 +1,123 @@
+{
+  "schema": "scene-known-outcome-v0",
+  "sceneId": "the-twenty",
+  "seed": 20261030,
+  "frames": 600,
+  "sampleEvery": 60,
+  "focus": [
+    "unit-01",
+    "unit-02",
+    "unit-03",
+    "unit-04",
+    "unit-05",
+    "unit-06",
+    "unit-07",
+    "unit-08",
+    "unit-09",
+    "unit-10",
+    "unit-11",
+    "unit-12"
+  ],
+  "branchA": [],
+  "branchB": [
+    {
+      "at": 60,
+      "toolId": "aifg-a:145",
+      "kind": "steer.blend",
+      "selection": [
+        "unit-01",
+        "unit-02",
+        "unit-03",
+        "unit-04",
+        "unit-05",
+        "unit-06",
+        "unit-07",
+        "unit-08",
+        "unit-09",
+        "unit-10",
+        "unit-11",
+        "unit-12"
+      ],
+      "params": {
+        "separation-weight": 2,
+        "cohesion-weight": 1,
+        "velocity-match-weight": 1
+      }
+    }
+  ],
+  "hashes": {
+    "a": [
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f"
+    ],
+    "b": [
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "9aaaa2e7ce7d9585",
+      "78474884be7a4dc6",
+      "5efbb5f8cb8415ee",
+      "7747ffcfbad0f931",
+      "2b7522dc8828271a",
+      "87c9a2d30827b041",
+      "4c3fdcdfea653b95",
+      "d7b54decf9a86fde",
+      "835379d3a8976149"
+    ]
+  },
+  "metrics": {
+    "cohesionRadius": {
+      "a": [
+        53.715729, 53.715729, 53.715729, 53.715729, 53.715729, 53.715729, 53.715729, 53.715729,
+        53.715729, 53.715729, 53.715729
+      ],
+      "b": [
+        53.715729, 53.715729, 48.609295, 42.721643, 36.660292, 30.637509, 24.427045, 17.746719,
+        10.927038, 5.338106, 4.226556
+      ]
+    },
+    "collisions": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "headingVariance": {
+      "a": [
+        0.667022, 0.667022, 0.667022, 0.667022, 0.667022, 0.667022, 0.667022, 0.667022, 0.667022,
+        0.667022, 0.667022
+      ],
+      "b": [
+        0.667022, 0.667022, 0.927774, 0.78727, 0.680968, 0.669713, 0.61021, 0.34262, 0.23797,
+        0.085482, 0.006914
+      ]
+    },
+    "timeToObjective": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "stalledUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "anchorToMean": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "slotError": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "assignmentCost": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    }
+  },
+  "firstDivergenceFrame": 61
+}

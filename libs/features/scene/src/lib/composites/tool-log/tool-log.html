@@ -1,0 +1,68 @@
+@let view = log();
+<div class="heading">
+  <h2>{{ 'scene.log.title' | t }}</h2>
+  @if (view.canSave) {
+    <button type="button" class="clear" (click)="cleared.emit()">
+      {{ 'scene.log.clear' | t }}
+    </button>
+  }
+</div>
+@if (view.steps.length) {
+  <ol>
+    @for (step of view.steps; track $index) {
+      @if (step.afterFork) {
+        <li class="fork">{{ 'scene.log.forked' | t }}</li>
+      }
+      <li>
+        <span translate="no">{{ step.title }}</span>
+        <span class="detail">
+          @if (step.repeats > 1) {
+            {{ 'scene.log.steps' | t: { frame: step.at, count: step.repeats } }}
+          } @else {
+            {{ 'scene.log.step' | t: { frame: step.at, units: step.units } }}
+          }
+        </span>
+      </li>
+    }
+  </ol>
+} @else {
+  <p class="empty">{{ 'scene.log.empty' | t }}</p>
+}
+
+@if (view.kept) {
+  <p class="detail">{{ 'scene.log.kept' | t: { count: view.kept } }}</p>
+}
+
+@if (view.compositions.length) {
+  <h3>{{ 'scene.log.saved' | t }}</h3>
+  <ul class="saved">
+    @for (composition of view.compositions; track composition.id) {
+      <li [attr.data-composition-id]="composition.id">
+        <span class="saved-title" translate="no">{{ composition.title }}</span>
+        <span class="detail">
+          {{
+            'scene.log.savedDetail' | t: { steps: composition.steps, trials: composition.trials }
+          }}
+        </span>
+        @if (composition.note) {
+          <span class="detail" translate="no">{{ composition.note }}</span>
+        }
+        <dotln-button (pressed)="opened.emit(composition.id)">
+          {{ 'scene.log.open' | t }}
+        </dotln-button>
+      </li>
+    }
+  </ul>
+}
+
+<details class="transfer">
+  <summary>{{ 'scene.log.transfer' | t }}</summary>
+  <dotln-button [disabled]="!view.canSave" (pressed)="exported.emit()">
+    {{ 'scene.log.export' | t }}
+  </dotln-button>
+  <label>
+    <span>{{ 'scene.log.json' | t }}</span>
+    <textarea #json rows="3" translate="no" [value]="view.exported ?? ''"></textarea>
+  </label>
+  <dotln-button (pressed)="imported.emit(json.value)">{{ 'scene.log.import' | t }}</dotln-button>
+</details>

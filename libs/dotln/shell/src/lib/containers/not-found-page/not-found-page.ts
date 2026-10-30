@@ -11,7 +11,7 @@ import { DotlnEmptyState } from '@dotln-angular/ui';
   template: `
     <h1>{{ 'shell.notFound.title' | t }}</h1>
     <dotln-empty-state [message]="'shell.notFound.description' | t">
-      <a empty-action [routerLink]="board.commands">{{ 'shell.notFound.back' | t }}</a>
+      <a empty-action [routerLink]="scene.commands">{{ 'shell.notFound.back' | t }}</a>
     </dotln-empty-state>
   `,
   styles: `
@@ -22,5 +22,5 @@ import { DotlnEmptyState } from '@dotln-angular/ui';
   imports: [RouterLink, TPipe, DotlnEmptyState],
 })
 export class NotFoundPage {
-  readonly board = buildRoute(BasePaths.Board);
+  readonly scene = buildRoute(BasePaths.Scene);
 }

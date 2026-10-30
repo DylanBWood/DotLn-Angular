@@ -1,0 +1,94 @@
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dotln-space-4) var(--dotln-space-6);
+  align-items: flex-start;
+}
+p {
+  margin: 0;
+}
+.transport {
+  display: grid;
+  gap: var(--dotln-space-2);
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  font-size: 0.75rem;
+  color: var(--dotln-muted);
+}
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--dotln-space-3);
+}
+.frame {
+  color: var(--dotln-ink);
+  font-variant-numeric: tabular-nums;
+}
+.buttons,
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dotln-space-2) var(--dotln-space-2);
+}
+.toggles {
+  column-gap: var(--dotln-space-4);
+}
+.toggles label {
+  display: flex;
+  align-items: center;
+  gap: var(--dotln-space-2);
+}
+.toggles input {
+  accent-color: var(--dotln-accent);
+}
+.instruments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--dotln-space-3) var(--dotln-space-4);
+  flex: 1 1 30rem;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.instrument {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 var(--dotln-space-1);
+  min-inline-size: 0;
+}
+.figure {
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.unknown .figure {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--dotln-muted);
+}
+.unit {
+  font-size: 0.7rem;
+  color: var(--dotln-muted);
+}
+.name {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  color: var(--dotln-muted);
+}
+.spark {
+  grid-column: 1 / -1;
+  inline-size: 100%;
+  block-size: 1.75rem;
+  margin-block-start: var(--dotln-space-1);
+}
+.spark polyline {
+  fill: none;
+  stroke: var(--dotln-accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}

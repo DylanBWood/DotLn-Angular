@@ -64,7 +64,7 @@
       "defaults": "Starting values:",
       "range": "({{min}} to {{max}})",
       "untyped": "An application still to define",
-      "scene": "Runs in the soldier scene — the scene is coming next.",
+      "scene": "Run it in the soldier scene",
       "back": "Back to the previous reading",
       "place": "{{type}} · {{place}}",
       "atLeast": "{{min}} or more",

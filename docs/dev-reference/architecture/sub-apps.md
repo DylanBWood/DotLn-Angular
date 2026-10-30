@@ -6,19 +6,19 @@ composition stay in the app; implementations live in libraries.
 
 A **sub-app** is a lazy feature library. A **menu group** organizes links to one
 or more features. They are separate concepts: Machinery contains both its own
-arriving page and the existing actor board. A later feature can join a group
-without creating another group or moving the board's URL.
+arriving page and the actor board. A later feature can join a group without
+creating another group or moving the board's URL.
 
 | Menu group | Current routes             | Current content                                     |
 | ---------- | -------------------------- | --------------------------------------------------- |
-| Scene      | `/scene`                   | Arriving page for the game-AI authoring scene       |
+| Scene      | `/scene`                   | The soldier scene, see [its architecture](scene.md) |
 | Machinery  | `/board`, `/machinery`     | Actor board and the machinery arriving page         |
 | Tools      | `/tools`, `/tools/catalog` | Works, last reading and the catalog reading surface |
 
-The root continues to redirect to `/board`. Unknown paths reach a translated
-not-found page in the main region, with a board link. Each arriving page identifies the
-work that brings its implementation and links back to the actor board. It has no
-store or facade because it has no data to orchestrate.
+The root redirects to `/scene`. Unknown paths reach a translated not-found page in
+the main region, with a link home to the scene. An arriving page identifies the work
+that brings its implementation and links back to the actor board. It has no store or
+facade because it has no data to orchestrate.
 
 ## Presentation and navigation
 

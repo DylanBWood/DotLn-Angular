@@ -9,7 +9,7 @@ rendering behavior takes precedence over the analogy.
 | --------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | Fragment  | Small, domain-free content or status; inputs and projection only       | `libs/shared/ui/src/lib/fragments/badge/badge.ts`                            |
 | Template  | Reusable markup with slots and local presentation behavior             | `libs/shared/ui/src/lib/templates/button/button.ts`                          |
-| Wrapper   | House API around platform accessibility or behavior                    | `libs/shared/ui/src/lib/wrappers/tabs/tabs.ts`                               |
+| Wrapper   | House API around platform accessibility, behavior or a drawing surface | `libs/shared/ui/src/lib/wrappers/tabs/tabs.ts`                               |
 | Composite | Assemble presentational components without injected knowledge          | `libs/features/board/src/lib/composites/board-row/board-row.ts`              |
 | Layout    | Arrange projected regions and landmarks without knowing their contents | `libs/dotln/shell/src/lib/layouts/app-layout/app-layout.ts`                  |
 | Mapper    | Choose presentation from a typed value; no store or transport          | `libs/features/board/src/lib/mappers/cell-value-mapper/cell-value-mapper.ts` |
@@ -23,7 +23,8 @@ transport exists in this recorded-board feature.
 Presentational directories cannot import router, data access, state or behavior
 libraries, call `inject`, or accept constructor injection. Wrappers may use
 Angular Aria and CDK and inject platform services; feature knowledge stays above
-them. Mappers may understand the model but cannot import state or data access.
+them. A wrapper may also own a browser drawing API such as `<canvas>`, so a painter
+sits behind one component and can be swapped; `scene-canvas` is the example. Mappers may understand the model but cannot import state or data access.
 `eslint.config.mjs` applies these rules under each project configuration.
 
 Outputs travel at most two forwarding hops. The board passes lexical cell and

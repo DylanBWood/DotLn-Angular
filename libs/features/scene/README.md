@@ -1,8 +1,10 @@
 # Scene
 
-Lazy sub-app feature; the production entry point exports only `sceneRoutes`.
-The arriving page uses the house empty-state template and links back to the board.
+Lazy sub-app feature and the app's root; the production entry point exports only
+`sceneRoutes`. Twenty units on a dark field, a rail of the tools the engine runs,
+real-time-strategy selection, instruments, trials and saved compositions.
 
-Read [the sub-app convention](../../../docs/dev-reference/architecture/sub-apps.md).
+Read [the scene architecture](../../../docs/dev-reference/architecture/scene.md) and
+[the scene rules](../../../docs/ai-reference/scene-rules.md).
 
 Run `npx nx test scene` and `npx nx lint scene`.

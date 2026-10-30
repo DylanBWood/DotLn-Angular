@@ -24,7 +24,7 @@
     "typecheck:foundations": "node tools/scripts/check-foundation-types.mjs",
     "lint:components": "node tools/scripts/check-component-order.mjs",
     "check:shared-types": "node tools/scripts/check-shared-types.mjs",
-    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs && npm run catalog:check",
+    "check:fixtures": "node tools/scripts/check-board-fixtures.mjs && node tools/scripts/check-scene-fixtures.mjs && npm run catalog:check",
     "msw:init": "msw init apps/dotln/public --save",
     "build:configured": "nx build dotln --configuration=configured --skip-nx-cache",
     "lint:hygiene": "node tools/scripts/check-event-hygiene.mjs",

@@ -1,5 +1,8 @@
 import type { Routes } from '@angular/router';
 
-import { SceneArrivingPage } from './containers/scene-arriving-page/scene-arriving-page';
+import { ScenePage } from './containers/scene-page/scene-page';
+import { provideSceneFeature } from './providers/provide-scene-feature';
 
-export const sceneRoutes: Routes = [{ path: '', component: SceneArrivingPage }];
+export const sceneRoutes: Routes = [
+  { path: '', component: ScenePage, providers: [provideSceneFeature()] },
+];

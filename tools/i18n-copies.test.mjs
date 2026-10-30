@@ -11,3 +11,10 @@ test('the Tools testing translations equal the app catalog’s tools block', () 
   assert.deepEqual(Object.keys(copy), ['tools']);
   assert.deepEqual(copy.tools, app.tools);
 });
+
+test('the Scene testing translations equal the app catalog’s scene block', () => {
+  const app = read('../apps/dotln/public/i18n/en.json');
+  const copy = read('../libs/features/scene/testing/src/lib/scene-en.json');
+  assert.deepEqual(Object.keys(copy), ['scene']);
+  assert.deepEqual(copy.scene, app.scene);
+});

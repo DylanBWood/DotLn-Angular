@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotln-angular.local/schemas/scene-v0.schema.json",
+  "title": "Soldier scene fixtures",
+  "oneOf": [
+    { "$ref": "#/$defs/scene" },
+    { "$ref": "#/$defs/costTable" },
+    { "$ref": "#/$defs/knownOutcome" }
+  ],
+  "$defs": {
+    "vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+    },
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "labels",
+        "unitClass",
+        "position",
+        "velocity",
+        "heading",
+        "maxSpeed",
+        "maxAcceleration",
+        "radius"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^unit-[0-9]{2}$" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lifecycle", "uifa"],
+          "properties": {
+            "lifecycle": {
+              "enum": [
+                "executor",
+                "verifier",
+                "reviewer",
+                "repairer",
+                "planner",
+                "refuter",
+                "release-close"
+              ]
+            },
+            "uifa": {
+              "enum": ["product-lead", "showrunner", "engineer", "tester", "devops"]
+            }
+          }
+        },
+        "unitClass": { "enum": ["close-combat", "ranged", "support"] },
+        "position": { "$ref": "#/$defs/vector" },
+        "velocity": { "$ref": "#/$defs/vector" },
+        "heading": { "$ref": "#/$defs/vector" },
+        "maxSpeed": { "type": "number", "exclusiveMinimum": 0 },
+        "maxAcceleration": { "type": "number", "exclusiveMinimum": 0 },
+        "radius": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "id", "sceneType", "field", "seed", "units"],
+      "properties": {
+        "schema": { "const": "scene-v0" },
+        "id": { "type": "string", "minLength": 1 },
+        "sceneType": { "const": "units-on-terrain" },
+        "field": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0 },
+            "height": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "seed": { "type": "integer" },
+        "units": {
+          "type": "array",
+          "minItems": 20,
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/unit" }
+        }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unitId", "slot", "slotRole", "cost"],
+      "properties": {
+        "unitId": { "type": "string", "minLength": 1 },
+        "slot": { "type": "integer", "minimum": 0 },
+        "slotRole": { "type": "string", "minLength": 1 },
+        "cost": { "type": "number", "minimum": 0 }
+      }
+    },
+    "costTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "costs", "members", "slotRoles", "handComputed"],
+      "properties": {
+        "schema": { "const": "scene-cost-table-v0" },
+        "costs": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^cost\\.[a-z-]+\\.[a-z-]+$" },
+          "additionalProperties": { "type": "number", "minimum": 0 }
+        },
+        "members": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "unitClass"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "unitClass": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "slotRoles": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "handComputed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["working", "assignment"],
+          "properties": {
+            "working": { "type": "string", "minLength": 1 },
+            "assignment": { "type": "array", "items": { "$ref": "#/$defs/assignment" } }
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "toolId", "kind", "selection", "params"],
+      "properties": {
+        "at": { "type": "integer", "minimum": 0 },
+        "toolId": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "selection": { "type": "array", "items": { "type": "string" } },
+        "params": { "type": "object", "additionalProperties": { "type": "number" } }
+      }
+    },
+    "series": {
+      "type": "array",
+      "items": { "type": ["number", "null"] }
+    },
+    "knownOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sceneId",
+        "seed",
+        "frames",
+        "sampleEvery",
+        "focus",
+        "branchA",
+        "branchB",
+        "hashes",
+        "metrics",
+        "firstDivergenceFrame"
+      ],
+      "properties": {
+        "schema": { "const": "scene-known-outcome-v0" },
+        "sceneId": { "type": "string", "minLength": 1 },
+        "seed": { "type": "integer" },
+        "frames": { "type": "integer", "minimum": 1 },
+        "sampleEvery": { "type": "integer", "minimum": 1 },
+        "focus": { "type": "array", "items": { "type": "string" } },
+        "branchA": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+        "branchB": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+        "hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["a", "b"],
+          "properties": {
+            "a": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{16}$" } },
+            "b": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{16}$" } }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["a", "b"],
+            "properties": { "a": { "$ref": "#/$defs/series" }, "b": { "$ref": "#/$defs/series" } }
+          }
+        },
+        "firstDivergenceFrame": { "type": ["integer", "null"] }
+      }
+    }
+  }
+}

@@ -19,8 +19,8 @@ npx playwright install --with-deps chromium
 npx nx serve dotln
 ```
 
-Open the URL printed by Nx. The root opens **The actor board**, using the app's
-mocked HTTP API; Tools opens the bundled catalog. Default development needs no
+Open the URL printed by Nx. The root opens **The soldier scene**; Machinery opens the
+actor board, using the app's mocked HTTP API, and Tools opens the bundled catalog. Default development needs no
 environment file, external API or account. For public local
 settings, `cp .env.example .env && npm run env:prime` writes the ignored local
 environment and proxy, which `npx nx serve dotln --configuration=local` uses.
@@ -88,6 +88,9 @@ Tools groups and the convention for adding a lazy feature to the one app.
 Read [catalog architecture](architecture/catalog.md) for the tool-v1 schema, the
 source join and its digest rule, the catalog check, the lazy loader and the Tools
 reading surface.
+
+Read [scene architecture](architecture/scene.md) for the engine, the renderer seam, the
+clock, determinism and the scene's own steering rules.
 
 Read [concept mapping](architecture/concept-mapping.md) for the UIFA engineer's
 workshop purpose, applications across domains, diagnostic system traps, and the

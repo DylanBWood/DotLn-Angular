@@ -30,7 +30,7 @@ it.each(['/tools/nope', '/unknown'])(
     await fixture.whenStable();
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('main h1')?.textContent).toBe('Page not found');
-    expect(element.querySelector('main a')?.getAttribute('href')).toBe('/board');
+    expect(element.querySelector('main a')?.getAttribute('href')).toBe('/scene');
     expect(element.querySelector('dotln-toast')).toBeNull();
     expect(appRoutes.at(-1)?.path).toBe('**');
   },

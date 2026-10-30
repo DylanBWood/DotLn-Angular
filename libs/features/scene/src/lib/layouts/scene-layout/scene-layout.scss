@@ -1,0 +1,83 @@
+:host {
+  --scene-gutter: clamp(0.75rem, 1.5vw, 1.25rem);
+  // The shell's header and menu above the deck, so the deck can fill exactly what is left.
+  --scene-shell-top: 8.75rem;
+
+  display: block;
+  background: var(--dotln-field-ground);
+}
+.deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'field rail'
+    'field inspector'
+    'instruments inspector';
+  block-size: calc(100dvh - var(--scene-shell-top));
+  min-block-size: 32rem;
+}
+.field {
+  position: relative;
+  grid-area: field;
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+.instruments {
+  grid-area: instruments;
+  min-inline-size: 0;
+  padding: var(--scene-gutter);
+  border-block-start: 1px solid var(--dotln-border);
+}
+.rail,
+.inspector {
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: var(--scene-gutter);
+  overflow-y: auto;
+  background: var(--dotln-field-surface);
+}
+.rail {
+  grid-area: rail;
+  border-inline-start: 1px solid var(--dotln-border);
+}
+.inspector {
+  grid-area: inspector;
+  padding-block-end: 0;
+  border-block-start: 1px solid var(--dotln-border);
+  border-inline-start: 1px solid var(--dotln-border);
+}
+.below {
+  display: grid;
+  grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+  gap: calc(2 * var(--scene-gutter));
+  padding: var(--scene-gutter);
+  border-block-start: 1px solid var(--dotln-border);
+}
+
+// Below this the page is a single column. The field stays on screen while the operator scrolls
+// to the tools, so an applied tool is seen to act; it must be a block, not a grid item, for its
+// sticking to span the whole column.
+@media (width < 60rem) {
+  .deck {
+    display: block;
+    block-size: auto;
+    min-block-size: 0;
+  }
+  .field {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    block-size: min(66.67vw, 45dvh);
+    background: var(--dotln-field-ground);
+    border-block-end: 1px solid var(--dotln-border);
+  }
+  .rail,
+  .inspector {
+    overflow-y: visible;
+    border-inline-start: 0;
+  }
+  .below {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

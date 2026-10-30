@@ -48,6 +48,7 @@ export class CatalogPage {
   readonly #injector = inject(Injector);
   protected readonly reading = viewChild<ElementRef<HTMLElement>>('reading');
   readonly home = buildRoute(BasePaths.Tools);
+  readonly sceneRoute = (tool: ToolId) => buildRoute(BasePaths.Scene, { query: { tool } });
 
   open(id: ToolId, relation = false) {
     if (relation) this.facade.follow(id);

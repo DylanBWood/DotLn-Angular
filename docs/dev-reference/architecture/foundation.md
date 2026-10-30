@@ -53,13 +53,13 @@ with literal descriptions under `dotln-angular.<scope>.<lib>.<name>`.
 token with a root factory, and core also provides it explicitly. This limited
 default awaits the operator's ruling.
 
-`libs/shared/core/src/lib/paths/routes.ts` declares `BasePaths`, `HomePaths`
+`libs/shared/core/src/lib/paths/routes.ts` declares `BasePaths`, `ChildPaths`
 and `buildRoute()`. Route commands keep path parameters separate from query
-parameters. The root redirects to `BasePaths.Home`; the home component loads
+parameters. The root redirects to `BasePaths.Scene`; every feature route loads
 lazily. For example:
 
 ```ts
-const route = buildRoute(BasePaths.Home, { query: { page: 1 } });
+const route = buildRoute(BasePaths.Tools, { query: { page: 1 } });
 router.navigate(route.commands, { queryParams: route.queryParams });
 ```
 

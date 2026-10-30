@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--dotln-muted);
+}
+summary {
+  cursor: pointer;
+}
+summary:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 2px;
+}
+ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0 var(--dotln-space-4);
+  margin: var(--dotln-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--dotln-space-2);
+  min-block-size: 2.25rem;
+}
+input {
+  accent-color: var(--dotln-accent);
+}
+input:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 2px;
+}
+.role {
+  font-weight: 600;
+}
+.detail {
+  grid-column: 2 / -1;
+  grid-row: 2;
+}
+.id {
+  font-family: var(--dotln-font-mono);
+  font-size: 0.68rem;
+}
+fieldset {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 8rem));
+  gap: var(--dotln-space-1);
+  margin: var(--dotln-space-3) 0 0;
+  border: 0;
+  padding: 0;
+}
+legend {
+  margin-block-end: var(--dotln-space-1);
+  padding: 0;
+}
+button {
+  min-block-size: 1.75rem;
+  border: 1px solid var(--dotln-border);
+  border-radius: 0.3rem;
+  color: var(--dotln-ink);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--dotln-surface-hover);
+}
+button:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 1px;
+}

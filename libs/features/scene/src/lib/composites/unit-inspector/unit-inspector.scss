@@ -1,0 +1,175 @@
+:host {
+  display: block;
+  container-type: inline-size;
+  font-size: 0.85rem;
+}
+h2 {
+  margin: 0 0 var(--dotln-space-2);
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+h3 {
+  margin: 0 0 var(--dotln-space-1);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dotln-muted);
+}
+p {
+  margin: 0 0 var(--dotln-space-3);
+}
+.definition {
+  max-inline-size: 60ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.faces,
+.hint,
+.formation {
+  max-inline-size: 60ch;
+  color: var(--dotln-muted);
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dotln-space-1) var(--dotln-space-3);
+  margin: 0 0 var(--dotln-space-2);
+  border: 0;
+  padding: 0;
+}
+.choices legend {
+  padding: 0;
+  margin-block-end: var(--dotln-space-1);
+}
+.choices input,
+.param input {
+  accent-color: var(--dotln-accent);
+}
+.param {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--dotln-space-2);
+  margin-block-end: var(--dotln-space-2);
+}
+.param output {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--dotln-muted);
+  font-variant-numeric: tabular-nums;
+}
+.param input {
+  grid-column: 1 / -1;
+  inline-size: 100%;
+}
+.costs {
+  margin-block-end: var(--dotln-space-3);
+}
+.costs summary {
+  cursor: pointer;
+  color: var(--dotln-muted);
+}
+.cost {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--dotln-space-2);
+  margin-block-start: var(--dotln-space-1);
+}
+.cost input {
+  inline-size: 4.5rem;
+  border: 1px solid var(--dotln-border-strong);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.3rem;
+  color: var(--dotln-ink);
+  background: var(--dotln-canvas);
+  font: inherit;
+}
+.preview {
+  margin-block-end: var(--dotln-space-3);
+}
+table {
+  inline-size: 100%;
+  margin-block-end: var(--dotln-space-3);
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+// A standing formation's table fills as its units reach their slots.
+.slots.live tbody tr {
+  color: var(--dotln-muted);
+  transition: color 180ms;
+}
+.slots.live tbody tr.in-place {
+  color: var(--dotln-ink);
+}
+caption {
+  margin-block-end: var(--dotln-space-1);
+  text-align: start;
+  color: var(--dotln-muted);
+}
+th {
+  text-align: start;
+  font-weight: 500;
+  color: var(--dotln-muted);
+}
+th,
+td {
+  padding: 0.1rem var(--dotln-space-2) 0.1rem 0;
+  border-block-end: 1px solid var(--dotln-border);
+}
+.apply {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dotln-space-3);
+  margin-block-end: var(--dotln-space-3);
+  padding-block: var(--dotln-space-2);
+  background: var(--dotln-field-surface);
+}
+.issue {
+  flex: 1 1 10rem;
+  margin: 0;
+  color: var(--dotln-muted);
+}
+// The table can sit below the fold, so its running count stays beside Apply.
+.placed {
+  flex: 1 1 100%;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.refusal {
+  color: var(--dotln-field-objective);
+}
+.note {
+  display: grid;
+  gap: var(--dotln-space-1);
+  max-inline-size: 60ch;
+  color: var(--dotln-muted);
+}
+.note textarea {
+  inline-size: 100%;
+  border: 1px solid var(--dotln-border-strong);
+  border-radius: 0.3rem;
+  padding: 0.3rem 0.4rem;
+  color: var(--dotln-ink);
+  background: var(--dotln-canvas);
+  font: inherit;
+  resize: vertical;
+}
+.note textarea:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 1px;
+}
+
+// Wide enough, as on a tablet, the reading and the controls sit side by side.
+@container (width > 44rem) {
+  .inspector-body {
+    display: grid;
+    grid-template-columns: minmax(0, 60ch) minmax(0, 1fr);
+    gap: 0 var(--dotln-space-5);
+  }
+}

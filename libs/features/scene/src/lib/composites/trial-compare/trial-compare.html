@@ -1,0 +1,55 @@
+@let view = trial();
+<section [attr.aria-label]="'scene.trial.label' | t">
+  <div class="heading">
+    <p data-divergence>
+      @if (view.firstDivergence === null) {
+        {{ 'scene.trial.noDivergence' | t }}
+      } @else {
+        {{ 'scene.trial.divergence' | t: { frame: view.firstDivergence } }}
+      }
+    </p>
+    <p class="legend">
+      <span class="key before"></span>{{ 'scene.trial.before' | t }} <span class="key after"></span
+      >{{ 'scene.trial.after' | t }}
+    </p>
+    <dotln-button data-trial="keep" size="small" (pressed)="kept.emit()">
+      {{ 'scene.trial.keep' | t }}
+    </dotln-button>
+    <dotln-button data-trial="close" size="small" (pressed)="closed.emit()">
+      {{ 'scene.trial.close' | t }}
+    </dotln-button>
+  </div>
+  <ul>
+    @for (series of view.series; track series.id) {
+      <li [attr.data-series]="series.id">
+        <span class="name" translate="no">{{ series.label }}</span>
+        <svg
+          preserveAspectRatio="none"
+          role="img"
+          [attr.viewBox]="viewBox"
+          [attr.aria-label]="
+            'scene.trial.seriesLabel'
+              | t: { name: series.label, before: series.summaryBefore, after: series.summaryAfter }
+          "
+        >
+          @if (series.marker !== null) {
+            <line
+              class="mark"
+              y1="0"
+              [attr.x1]="series.marker"
+              [attr.x2]="series.marker"
+              [attr.y2]="height"
+            />
+          }
+          <polyline class="before" [attr.points]="series.before" />
+          <polyline class="after" [attr.points]="series.after" />
+        </svg>
+        <span class="summary">
+          {{
+            'scene.trial.summary' | t: { before: series.summaryBefore, after: series.summaryAfter }
+          }}
+        </span>
+      </li>
+    }
+  </ul>
+</section>

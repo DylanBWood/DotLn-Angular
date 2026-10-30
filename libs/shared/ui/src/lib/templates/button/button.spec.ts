@@ -20,6 +20,23 @@ class ButtonHost {
 }
 
 describe('DotlnButton', () => {
+  it.each([
+    ['size', 'small', 'data-size'],
+    ['tone', 'primary', 'data-tone'],
+  ])('marks a %s of %s on the host for its styles', async (name, value, attribute) => {
+    TestBed.configureTestingModule({
+      imports: [DotlnButton],
+      providers: [...provideUiTestKit().providers],
+    });
+    const fixture = TestBed.createComponent(DotlnButton);
+    await fixture.whenStable();
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.getAttribute(attribute)).toBeNull();
+    fixture.componentRef.setInput(name, value);
+    await fixture.whenStable();
+    expect(host.getAttribute(attribute)).toBe(value);
+  });
+
   it('projects its label and forwards native activation once', async () => {
     TestBed.configureTestingModule({
       imports: [ButtonHost],

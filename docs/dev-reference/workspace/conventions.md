@@ -36,7 +36,7 @@ permits the daemon; CI and the external gate set `NX_DAEMON=false`.
 
 Shared libraries belong under `libs/shared/` and import as
 `@dotln-angular/<name>`: `core`, `utils`, `i18n`, `ui`, `events`, `models`, `state`,
-`data-access` and `auth`. Features belong under `libs/features/` as `<feature>`,
+`data-access`, `auth`, `catalog` and `scene-engine`. Features belong under `libs/features/` as `<feature>`,
 `<feature>-data-access` and, when shared, `<feature>-models`. App-scoped libraries
 belong under `libs/<app>/` and import as `@dotln-angular/<app>/<name>`.
 Test kits import as `@dotln-angular/<lib>/testing`. `tsconfig.base.json` maps the
@@ -73,6 +73,8 @@ Use Sass (`.scss`) and CSS custom properties for design tokens. Keep a component
 template and styles inline while small, extracting them when they grow. The house `ui` library owns component APIs, markup, styles and tests. Angular
 Aria and CDK supply behavior behind wrappers; no vendor component library is used.
 The default plain skin is a token layer under `:root` and `[data-skin='plain']`.
+The field skin in `_field-skin.scss` overrides it for a scene's page, with
+`--dotln-field-*` tokens and the role and work palettes lightened for a dark ground.
 
 ## 7. Functional first
 

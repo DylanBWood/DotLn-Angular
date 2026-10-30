@@ -1,0 +1,51 @@
+// The field skin: a dark token set for a page whose subject is a scene. It overrides the plain
+// skin's tokens for that page and the shell around it, so components keep their behaviour and
+// take the skin through the tokens they already read (G4).
+[data-skin='field'],
+html:has([data-skin='field']) {
+  --dotln-field-ground: #0f1619;
+  --dotln-field-surface: #162024;
+  --dotln-field-raised: #1f2c31;
+  --dotln-field-line: #2c3b41;
+  --dotln-field-line-strong: #5f756d;
+  --dotln-field-ink: #e9f0ea;
+  --dotln-field-muted: #a9b9b1;
+  --dotln-field-accent: #84e3b4;
+  --dotln-field-objective: #ffd27a;
+  --dotln-field-ghost: rgb(233 240 234 / 32%);
+  --dotln-field-alert: #ff8a75;
+
+  --dotln-canvas: var(--dotln-field-ground);
+  --dotln-surface: var(--dotln-field-surface);
+  --dotln-surface-hover: var(--dotln-field-raised);
+  --dotln-ink: var(--dotln-field-ink);
+  --dotln-muted: var(--dotln-field-muted);
+  --dotln-accent: var(--dotln-field-accent);
+  --dotln-border: var(--dotln-field-line);
+  --dotln-border-strong: var(--dotln-field-line-strong);
+  --dotln-focus: 3px solid #8fb8ff;
+
+  // The shared palettes, lightened so each still reads on the dark ground.
+  --dotln-work-aifg: #84dcb6;
+  --dotln-work-eip: #e7b37c;
+  --dotln-work-poeaa: #a9bcef;
+  --dotln-work-rxjs: #f0a0bd;
+  --dotln-work-geb: #cfb0ea;
+  --dotln-work-tt: #93d0dd;
+  --dotln-role-executor: #7db8f7;
+  --dotln-role-verifier: #c3a6f2;
+  --dotln-role-reviewer: #eec26a;
+  --dotln-role-repairer: #f59a86;
+  --dotln-role-planner: #63d6cb;
+  --dotln-role-refuter: #f39ccc;
+  --dotln-role-release-close: #b4dc7a;
+  --dotln-role-product-lead: #63d6cb;
+  --dotln-role-showrunner: #eec26a;
+  --dotln-role-engineer: #7db8f7;
+  --dotln-role-tester: #c3a6f2;
+  --dotln-role-devops: #b4dc7a;
+
+  color: var(--dotln-ink);
+  background: var(--dotln-canvas);
+  color-scheme: dark;
+}

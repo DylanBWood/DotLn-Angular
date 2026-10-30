@@ -1,0 +1,217 @@
+@if (tool(); as view) {
+  <div class="inspector-body">
+    <div class="about">
+      <h2 translate="no" [style.color]="view.colour">{{ view.title }}</h2>
+      <p class="definition" translate="no">{{ view.definition }}</p>
+      @let faces = view.faces;
+      @let count =
+        faces.squad
+          ? ('scene.inspector.oneSquad' | t)
+          : faces.maximum === null
+            ? ('scene.inspector.atLeast' | t: { min: faces.minimum })
+            : ('scene.inspector.between' | t: { min: faces.minimum, max: faces.maximum });
+      <p class="faces">
+        {{
+          'scene.inspector.faces'
+            | t
+              : {
+                  count,
+                  transform: faces.transform,
+                  scenes: faces.scenes,
+                  observable: faces.observable,
+                  metrics: faces.metrics,
+                }
+        }}
+      </p>
+    </div>
+
+    <div class="controls">
+      @for (param of view.params; track param.name) {
+        @if (param.choices.length) {
+          <fieldset class="choices">
+            <legend translate="no">{{ param.label }}</legend>
+            @for (choice of param.choices; track choice.value) {
+              <label>
+                <input
+                  type="radio"
+                  [name]="param.name"
+                  [value]="choice.value"
+                  [checked]="choice.chosen"
+                  (change)="chose(param.name, choice.value)"
+                />
+                <span translate="no">{{ choice.label }}</span>
+              </label>
+            }
+          </fieldset>
+        } @else {
+          <label class="param">
+            <span translate="no">{{ param.label }}</span>
+            <input
+              type="range"
+              [min]="param.min"
+              [max]="param.max"
+              [step]="param.step"
+              [value]="param.value"
+              (input)="changed(param.name, $event)"
+              (change)="paramCommitted.emit()"
+            />
+            <output translate="no">{{ param.value }} {{ param.unit }}</output>
+          </label>
+        }
+      }
+
+      @if (view.costs.length) {
+        <details class="costs">
+          <summary>{{ 'scene.inspector.costs' | t }}</summary>
+          @for (param of view.costs; track param.name) {
+            <label class="cost">
+              <span translate="no">{{ param.label }}</span>
+              <input
+                type="number"
+                [min]="param.min"
+                [max]="param.max"
+                [step]="param.step"
+                [value]="param.value"
+                (change)="changed(param.name, $event); paramCommitted.emit()"
+              />
+            </label>
+          }
+        </details>
+      }
+
+      @if (view.preview; as preview) {
+        <section class="preview" aria-live="polite">
+          <h3>{{ 'scene.inspector.preview' | t }}</h3>
+          @if (preview.quiet) {
+            <p>{{ 'scene.inspector.previewQuiet' | t }}</p>
+          } @else {
+            <p>
+              {{
+                'scene.inspector.previewArrows'
+                  | t: { units: preview.units, strongest: preview.strongest }
+              }}
+            </p>
+          }
+        </section>
+      }
+
+      @if (view.slots; as slots) {
+        <table class="slots" [class.live]="slots.live">
+          <caption>
+            @if (slots.live) {
+              {{
+                'scene.inspector.slotCaptionLive'
+                  | t: { placed: slots.placed, total: slots.rows.length, cost: slots.totalCost }
+              }}
+            } @else {
+              {{ 'scene.inspector.slotCaption' | t: { cost: slots.totalCost } }}
+            }
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'scene.inspector.slotUnit' | t }}</th>
+              <th scope="col">{{ 'scene.inspector.slotNumber' | t }}</th>
+              <th scope="col">{{ 'scene.inspector.slotRole' | t }}</th>
+              <th scope="col">{{ 'scene.inspector.slotCost' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of slots.rows; track row.unitId) {
+              <tr [attr.data-unit-id]="row.unitId" [class.in-place]="row.inPlace">
+                <td translate="no">{{ row.label }}</td>
+                <td translate="no">{{ row.number }}</td>
+                <td translate="no">{{ row.slotRole }}</td>
+                <td translate="no">{{ row.cost }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div class="apply">
+        <dotln-button
+          data-apply
+          tone="primary"
+          [disabled]="!view.canApply"
+          (pressed)="applied.emit()"
+        >
+          {{ 'scene.inspector.apply' | t }}
+        </dotln-button>
+        @if (view.issue; as issue) {
+          <p class="issue">
+            @switch (issue.code) {
+              @case ('empty') {
+                {{ 'scene.inspector.issueEmpty' | t }}
+              }
+              @case ('too-few') {
+                {{ 'scene.inspector.issueTooFew' | t: { min: issue.min } }}
+              }
+              @case ('too-many') {
+                {{ 'scene.inspector.issueTooMany' | t: { max: issue.max } }}
+              }
+              @case ('objective') {
+                {{ 'scene.inspector.issueObjective' | t }}
+              }
+            }
+          </p>
+        } @else if (awaitingRun()) {
+          <p class="issue" role="status">{{ 'scene.inspector.awaitingRun' | t }}</p>
+        } @else if (live()) {
+          <p class="issue" role="status">{{ 'scene.inspector.live' | t }}</p>
+        }
+        @if (view.slots; as slots) {
+          @if (slots.live) {
+            <p class="placed">
+              {{
+                'scene.inspector.slotsPlaced'
+                  | t: { placed: slots.placed, total: slots.rows.length }
+              }}
+            </p>
+          }
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <p class="hint">
+    @if (selectionCount()) {
+      {{ 'scene.inspector.chooseTool' | t: { count: selectionCount() } }}
+    } @else {
+      {{ 'scene.inspector.selectFirst' | t }}
+    }
+  </p>
+}
+
+@if (refusal(); as refused) {
+  <p class="refusal" role="alert">
+    @switch (refused.code) {
+      @case ('no-units') {
+        {{ 'scene.inspector.refusedNoUnits' | t: { kind: refused.kind } }}
+      }
+      @default {
+        {{ 'scene.inspector.refused' | t: { kind: refused.kind } }}
+      }
+    }
+  </p>
+}
+
+@if (formation(); as reading) {
+  <p class="formation">
+    {{
+      'scene.inspector.formation'
+        | t
+          : {
+              anchor: reading.anchorToMean,
+              slot: reading.slotError,
+              cost: reading.assignmentCost,
+            }
+    }}
+  </p>
+}
+
+@if (canNote()) {
+  <label class="note">
+    <span>{{ 'scene.inspector.note' | t }}</span>
+    <textarea rows="2" [value]="note()" (input)="noted.emit(readText($event))"></textarea>
+  </label>
+}

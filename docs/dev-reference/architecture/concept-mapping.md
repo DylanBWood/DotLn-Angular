@@ -28,8 +28,9 @@ the engineer retains authorship of the composition. People can contribute workin
 shapes from many domains, including situations a mining model would not think to
 try. The UI should make those ideas tangible enough to discuss and experiment with.
 
-WO-014 delivers the catalog foundation and this guidance. Scene execution,
-composition editing, replay and promotion belong to later capabilities. The app's
+WO-014 delivered the catalog foundation and this guidance, and WO-015 the first
+scene, where tools run, compose and replay ([the scene architecture](scene.md)).
+Promotion belongs to a later capability. The app's
 sandbox informs DotLn through its declared promotion route; browsing this catalog
 does not change core control records or equip a live actor.
 

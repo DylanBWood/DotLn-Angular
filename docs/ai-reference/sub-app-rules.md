@@ -5,7 +5,7 @@
 - Export routes only from each feature's production entry point. Keep internal
   imports relative. Put test kits in its generated `testing` secondary entry point.
 - Distinguish a sub-app from a menu group: a group can link several features.
-  Keep the board at `/board` under Machinery and keep the root redirect to it.
+  Keep the board at `/board` under Machinery. The root redirects to the scene.
 - Add `BasePaths`, the lazy route, the projected menu link, an i18n block and an
   architecture document together. Use `ChildPaths` for a sub-app's child routes.
 - Keep the menu in shell templates and router links in the app. Project groups,

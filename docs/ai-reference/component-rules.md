@@ -19,7 +19,7 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
 - G1: Preserve landmarks, skip navigation, keyboard paths and WCAG 2.2 AA checks. Test native dialog and menu focus in a real browser.
 - G2: Animate transitions only, honor reduced motion and give every state a text equivalent. Do not animate idle activity or skeletons.
 - G3: Translate host-authored strings through `t`. Render board titles, labels, questions and values as source data under `translate="no"`; this marker does not permit literals to bypass translation.
-- G4: Put appearance in CSS tokens and `[data-skin]` overrides. Ship only the plain skin here; keep domain state free of CSS class strings.
+- G4: Put appearance in CSS tokens and `[data-skin]` overrides. The plain skin is the default; a page's own skin is a token layer under `[data-skin]`, as `field` is. Keep domain state free of CSS class strings.
 - G5: Use native emoji for glyphs with a text equivalent. Do not add a vendor icon system.
 - G6: No fixed page width. Choose the form for the content. Recorded board values
   use fluid label/value/status lists; catalog concepts use a reading measure,

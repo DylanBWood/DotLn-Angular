@@ -12,6 +12,19 @@ export function withPersistedState<State extends object>(options: PersistedState
   const factory: StorageStrategy<State> = Object.assign(
     (_config: unknown, store: Parameters<StorageStrategy<State>>[1]) => {
       const storage = inject(StorageToken);
+      let written = options.writeOn?.(getState(store) as State);
+      let merging = false;
+
+      // State that comes from storage, or reports on it, is no reason to write to it.
+      const merge = (state: Partial<State>) => {
+        merging = true;
+        try {
+          patchState(store, state);
+        } finally {
+          merging = false;
+        }
+        written = options.writeOn?.(getState(store) as State);
+      };
 
       return {
         clearStorage() {
@@ -23,20 +36,36 @@ export function withPersistedState<State extends object>(options: PersistedState
         },
 
         readFromStorage() {
+          let raw: string | null | undefined;
           try {
-            const raw = storage?.getItem(key);
-            const state = raw == null ? undefined : options.restore(JSON.parse(raw));
-            if (state) patchState(store, state);
+            raw = storage?.getItem(key);
           } catch {
-            /* Keep the in-memory defaults when reads or parsing fail. */
+            /* Storage is optional: a failed read is an empty one. */
           }
+          if (raw == null) return;
+
+          let state: Partial<State> | undefined;
+          try {
+            state = options.restore(JSON.parse(raw));
+          } catch {
+            /* Keep the in-memory defaults when parsing fails. */
+          }
+          const applied = state ?? options.unreadable?.();
+          if (applied) merge(applied);
         },
 
         writeToStorage() {
+          if (merging) return;
+          const state = getState(store) as State;
+          const version = options.writeOn?.(state);
+          if (options.writeOn && version === written) return;
+          written = version;
           try {
-            storage?.setItem(key, JSON.stringify(options.select(getState(store))));
+            storage?.setItem(key, JSON.stringify(options.select(state)));
           } catch {
             /* Quota and privacy failures must not block in-memory state. */
+            const applied = options.unwritable?.();
+            if (applied) merge(applied);
           }
         },
       };

@@ -79,8 +79,9 @@ test('read a work, follow Slot and return, search Arrive and recover the history
   await page.locator('[data-result-id="aifg-a:112"]').scrollIntoViewIfNeeded();
   await page.locator('[data-result-id="aifg-a:112"]').click();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Arrive');
-  await expect(reading(page)).toContainText('the scene is coming next');
-  await expect(reading(page).getByRole('link', { name: /soldier scene/ })).toHaveCount(0);
+  await expect(
+    reading(page).getByRole('link', { name: 'Run it in the soldier scene' }),
+  ).toHaveAttribute('href', /\/scene\?tool=/);
   await page.reload();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Arrive');
   const history = page.getByRole('navigation', { name: 'Recently read', exact: true });
@@ -448,11 +449,11 @@ test.describe('touch input', () => {
   });
 });
 
-test('an unknown Tools path has a working board link', async ({ page }) => {
+test('an unknown Tools path has a working link home', async ({ page }) => {
   await page.goto('/tools/nope');
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
-  await page.getByRole('link', { name: 'Back to the actor board' }).click();
-  await expect(page.getByRole('heading', { name: 'The actor board' })).toBeVisible();
+  await page.getByRole('link', { name: 'Back to the scene' }).click();
+  await expect(page.getByRole('heading', { name: 'The soldier scene' })).toBeAttached();
 });
 
 for (const width of [360, 768, 1440]) {

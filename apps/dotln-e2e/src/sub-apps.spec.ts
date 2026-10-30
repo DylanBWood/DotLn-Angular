@@ -1,11 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-test('the root keeps the actor board and the menu groups its four links including the catalog', async ({
+test('the menu groups its four links including the catalog and marks the board', async ({
   page,
 }) => {
-  await page.goto('/');
-  await expect(page).toHaveURL(/\/board$/);
+  await page.goto('/board');
   const menu = page.getByRole('navigation', { name: 'Primary navigation' });
   await expect(page.getByRole('navigation')).toHaveCount(1);
   await expect(menu.getByRole('heading')).toHaveText(['Scene', 'Machinery', 'Tools']);
@@ -49,10 +48,7 @@ test('keyboard reaches every menu link and activates the sub-app routes', async 
   await expect(menu.locator('[aria-current="page"]')).toHaveCount(1);
 });
 
-for (const [route, title, order] of [
-  ['scene', 'Scene', 'WO-015'],
-  ['machinery', 'Machinery', 'WO-016'],
-]) {
+for (const [route, title, order] of [['machinery', 'Machinery', 'WO-016']]) {
   test(`${route} deep link renders its arriving page, returns to the board, and supports browser history`, async ({
     page,
   }) => {

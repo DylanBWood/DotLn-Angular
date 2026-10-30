@@ -45,7 +45,10 @@ export const mapReading = (
   selector: 'tools-reading-mapper',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <tools-concept-reading [reading]="vm()" (followed)="followed.emit($event)"><ng-content /></tools-concept-reading>
+    <tools-concept-reading [reading]="vm()" (followed)="followed.emit($event)">
+      <ng-content select="[scene-link]" ngProjectAs="[scene-link]" />
+      <ng-content />
+    </tools-concept-reading>
   `,
   imports: [ConceptReading],
 })
