@@ -694,3 +694,36 @@ Affected checks: `publication:check`, `harness check` and `release check-surface
   "reopenWhen": "The final target publish or the records publish refuses, the pull request's head moves before a merge, or a later order finds a defect in the scene, its engine or its checks that this review's reading missed."
 }
 ```
+
+## WO-015-D022
+
+```json
+{
+  "id": "WO-015-D022",
+  "date": "2026-10-30",
+  "dispatch": "operator override: for authorized recovery, after CI on pull request 9 refused the final review's regression in typecheck:e2e (ignored capture docs/intake/notes/wo-015-override-2026-10-30.md, SHA-256 9d37ee27af8606eb71f242fcf23a379bd4012d230e2290946f75a3bfcf07a738, entries 1 and 2)",
+  "decision": "Correct the final review's browser regression so the e2e project type-checks: annotate the evaluate callback's element as HTMLInputElement on the one line of apps/dotln-e2e/src/scene.spec.ts that CI's typecheck:e2e refused. Prove the correction with npm run typecheck:e2e and the full target review gate at the corrected tree, commit it on wo-015 after the records commit as its own test commit with this decision in a records commit beside it, and push the branch over pull request 9 with git, because the kit's closed-phase publish helper refuses a head that differs from the records commit and the lifecycle has no repair phase after a passing final review. Board the gap that let the error through: typecheck:e2e runs in CI and in neither the registered gate nor the order's Preflight line.",
+  "evidence": [
+    "The CI failure the operator pasted: apps/dotln-e2e/src/scene.spec.ts(117,11): error TS2551: Property 'click' does not exist on type 'HTMLElement | SVGElement'. Reproduced at the published head b4c51461014a835ea470542de3ab5b95a570d86d with npm run typecheck:e2e under node scripts/harness.mjs bounded. Playwright types an untyped locator's evaluate element as HTMLElement | SVGElement; the callback was written in the final review's repair (D020), and no earlier phase had the line.",
+    "Why every local gate passed it: ESLint does not type-check; Playwright strips types without checking them; the registered gate's lint command runs each project's ESLint and the workspace-tools target, whose typecheck:foundations covers the shared, shell and board libraries and not the e2e project; the order's Preflight line omits typecheck:e2e; .github/workflows/ci.yml runs npm run typecheck:e2e as its own step. The executor ran it on their bytes as an extra, and it passed there; the final review changed an e2e spec and did not run it. That omission is the final review's, not the executor's or the verifier's.",
+    "With the annotation, npm run typecheck:e2e exits 0 with no error and prettier passes on the file. node scripts/target-gate.mjs WO-015 --review at the corrected tree 5c7aa4b6fceec12052ebe41adc5ced180f4694d4 passed install 6,350 ms, lint 38,524 ms, test 423 ms (Nx cache: no unit input changed), format 1,406 ms, build 413 ms (cached likewise), e2e 73,059 ms and visual 18,310 ms with no tracked-byte mutation; row target-gate:6e817aaa-872c-41bd-a562-ec734fea6e3a, recorded 2026-10-30T21:17:28.638Z, 138,485 ms in all. The 110-case browser suite and the six scene baselines passed again.",
+    "Bypassed under the override, recorded truthfully: the kit's lifecycle offers no repair dispatch after a passing final review (legal actions in closed: release-close, next, activate), so no verify or review phase re-judged this change and no passing check is claimed as a lifecycle row; the closed-phase publish helper's check that the branch head equals the records commit b4c51461 was not satisfied, so the branch was pushed with git rather than the registered helper and the registered-target admission did not judge the push; the TargetRecordsCommitted binding still names the records as of b4c51461, so the launchpad's decisions index and follow-up register read that commit's decisions file and do not carry this decision or its follow-up until a planning pass reads the target's records at the merged revision; FINAL-001's bytes are immutable and describe two reviewed commits, which this commit follows."
+  ],
+  "rejected": [
+    {
+      "option": "Leave pull request 9 failing until a new order repairs the line",
+      "reason": "A planning pass and a full order for one type annotation would cost hours for a change CI had already pinpointed; the operator chose recovery."
+    },
+    {
+      "option": "Rewrite the pushed commits in place",
+      "reason": "The reviewed commits are bound by the final review and the records commit; history is not rewritten."
+    },
+    {
+      "option": "Record this decision only in the launchpad",
+      "reason": "This order's decisions live in the target under docs/dotln since the records commit; a second decisions file would split the record."
+    }
+  ],
+  "reopenWhen": "CI on pull request 9 fails again, the registered gate gains typecheck:e2e so this class of error cannot pass a local gate, or release close reads the records differently from the binding.",
+  "followup": "Make the declared gate agree with CI on type-checking the e2e project: add typecheck:e2e to the workspace-tools lint target so npx nx run-many -t lint runs it, or to the dotln-angular registration's gate commands, and write it into the next order's Preflight line. Touches the target's tools/project.json or package.json and the launchpad's dotln.config.json; check with a deliberately mistyped e2e spec failing the gate's lint command."
+}
+```
