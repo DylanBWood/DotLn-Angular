@@ -112,7 +112,7 @@ test('a toggle and an Escape landing before one render leave no checkbox checked
   const row = page.locator('[data-unit-id="unit-01"] input');
   // Space on a focused checkbox is a click. Two separate key presses render in between on a quick
   // machine, so the clear is issued in the same task as the activation, as a fast hand lands them.
-  await row.evaluate((input) => {
+  await row.evaluate((input: HTMLInputElement) => {
     input.focus();
     input.click();
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
