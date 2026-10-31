@@ -14,8 +14,6 @@
   and layering can expose preserved relationships and useful differences. Save
   the starting model, transformation and observation; add executable transforms
   only through the existing decision rule.
-- A tool has five faces: scene, selection, transform, observable and toy metric.
-  The role analog is optional. Background, sceneElement and metric rows have no faces.
 - Capture useful metaphors across the app, code, working processes and agent
   interactions. An analog states a specific application and actual platform roles;
   it may accompany any status. Background is a representation category, not a
@@ -32,6 +30,8 @@
   suspected mechanism, proposed intervention and evidence that could refute the
   diagnosis. Check whether the intervention recreates the trap at another level;
   a familiar label alone does not establish a diagnosis.
+- A tool has five faces: scene, selection, transform, observable and toy metric.
+  The role analog is optional. Background, sceneElement and metric rows have no faces.
 - The transform enum is closed and grows only by a recorded decision. A typed
   label describes a contract; only the kinds in `sceneTransformKinds` run in the
   scene, and the engine's `interpretedKinds` must equal them.
@@ -52,14 +52,17 @@
   basenames. Pair map provenance with its map object, public-work provenance
   with null. Write readonly tool-v1 content; accept v0 through the loader for one
   compatibility release with an explicit unavailable-definition message.
-- Join only the declared maps through `catalog:join`, then format the data with
+- Join only the declared maps, through `tools/scripts/catalog/join-maps.mjs`; it needs
+  the research run's directory, which the
+  [catalog architecture](../dev-reference/architecture/catalog.md#reproducible-source-join)
+  describes. Then format the data with
   `npx prettier --write libs/shared/catalog/src/data`. Verify all pinned digests,
   source lines and complete output before writing. Preserve existing
   classifications unless a source-warranted change has been recorded. Earlier
   classification reviews remain provenance, not a reason to rerun the mining.
-- Partial checks are intermediate evidence only. Complete validation requires all
-  eight checkpoints, eleven maps, 3,463 mapped rows and the matching summary.
-- Keep this check scoped to `libs/shared/catalog/src/data/`. New-source maps
+- Partial checks are intermediate evidence only. Complete validation requires every
+  declared checkpoint and map, the recorded row total and the matching summary.
+- Keep the catalog check scoped to `libs/shared/catalog/src/data/`. New-source maps
   belong to their own directory and check until explicitly integrated.
 - Depend on `CatalogLoader` through `CatalogToken` and `provideCatalog()`,
   provided once for all Tools routes. Use `provideCatalogTestKit()` for tests.
@@ -88,6 +91,7 @@
   decided choices in each new pair, and address content and usefulness before
   cosmetic refinement.
 - Run `npm run catalog:check`, `npm run catalog:report`, `npm run test:tooling`,
-  the library tests, workspace preflight and registered gates.
+  `npx nx test catalog` and `npx nx test tools`, then the workspace checks in
+  [the reference index](README.md).
 
 See [catalog architecture](../dev-reference/architecture/catalog.md).

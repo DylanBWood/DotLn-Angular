@@ -36,5 +36,5 @@ fragment; direct loads select and focus the target after the document arrives.
 `npx nx e2e dotln-e2e` serves the optimized mocked build and exercises the five
 panels, persistence, failure notices, local links, keyboard paths, narrow viewports
 and serious/critical WCAG 2.2 AA checks.
-The component catalog adds unavailable/version-mismatch examples. See
+Storybook adds unavailable/version-mismatch examples. See
 [visual review](../workspace/storybook.md) for persistent screenshot comparisons.

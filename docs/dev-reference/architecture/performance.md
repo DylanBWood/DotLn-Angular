@@ -51,8 +51,9 @@ report. Timings are currently diagnostic, while journey assertions block.
 
 The inherited Angular limits (initial 500 kB warning / 1 MB error, component
 styles 4/8 kB) are engineering guardrails with no established user-population
-derivation. They are not Google recommendations. The current repair preserves
-them and removes the measured dependency leak. Do not equate exit 0 with
+derivation. They are not Google recommendations. The build keeps them: when avoidable
+growth took the initial bundle past the warning, the menu stack moved to the lazy
+Tools path, the utility exports were curated and the limit stayed. Do not equate exit 0 with
 absence of a performance regression, raise limits to silence a warning, or
 split styles/delay usable controls just to meet a number.
 

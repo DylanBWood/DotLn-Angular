@@ -1,7 +1,11 @@
 # i18n
 
-This library was generated with [Nx](https://nx.dev).
+Transloco behind the house API: `provideI18n()`, the `t` pipe (`TPipe`), `translateSignal`,
+the HTTP loader and the missing-key handler. It knows nothing of the app; core adapts the
+environment to its `I18nConfig`.
 
-## Running unit tests
+Import from `@dotln-angular/i18n`; test kits come from `@dotln-angular/i18n/testing`.
 
-Run `nx test i18n` to execute the unit tests.
+Read [the foundation libraries](../../../docs/dev-reference/architecture/foundation.md).
+
+Run `npx nx test i18n`, `npx nx lint i18n` and `npm run i18n:check`.

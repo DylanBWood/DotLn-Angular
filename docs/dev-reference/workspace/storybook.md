@@ -1,20 +1,22 @@
 # Storybook and visual review
 
-Run `npx nx storybook ui` to open the local catalog at `http://127.0.0.1:6006`.
+Run `npx nx storybook ui` to open the local Storybook at `http://127.0.0.1:6006`.
 The Angular Vite builder shares the installed Angular/Vite/AnalogJS stack and
 uses zoneless rendering. `npx nx build-storybook ui` creates `dist/storybook/ui`.
-The catalog is local development output; it is not published by these targets.
+Storybook is local development output; it is not published by these targets.
 
-Stories live beside the components. They cover every shared UI component,
-loading-button variants, all three status badges, tabs, menu, dialog, the shell,
-and recorded, unavailable and unsupported-version boards. Root `.storybook/`
-configuration provides the actual English catalog and the house UI providers.
+Stories live beside the components. They cover every shared UI component but the
+toast, which the shell's notices show, with loading-button variants, all three status
+badges, tabs, menu and dialog; the shell and its sub-app menu; recorded, unavailable
+and unsupported-version boards; and the scene, tool catalog, Tools home and Machinery
+pages. Root `.storybook/` configuration provides the actual English translations and
+the house UI providers.
 Storybook's documentation code is separate from the production application bundle.
 
 Run `npx nx e2e dotln-e2e` for the persistent browser suite. It builds both the app
-and catalog, serves their static output, and checks DOM contracts, local links,
+and Storybook, serves their static output, and checks DOM contracts, local links,
 keyboard behavior, dialog focus trapping and return, menu focus, narrow layouts,
-and axe. One browser worker keeps the suite within the bounded probe budget.
+and axe. One browser worker keeps the suite's memory use bounded.
 Unit runners use two workers and Nx schedules one task at a time for the same
 reason; no assertion or test has been disabled for resource pressure.
 
@@ -28,7 +30,8 @@ wait for fonts and stable rendering. Reduced motion is enabled.
 
 The visual suite captures desktop and mobile views of every board panel, a full
 actor row, component states, menu placement and focus, the dialog/backdrop, the
-shell, and unavailable/version-mismatch pages. It permits 0.1% differing pixels;
+shell, unavailable/version-mismatch pages, and the scene, the tool catalog and the
+Machinery placeholder at 360, 768 and 1440 pixels. It permits 0.1% differing pixels;
 this is a regression threshold, not a substitute for visual judgment.
 
 To deliberately refresh screenshots on the baseline environment, run:

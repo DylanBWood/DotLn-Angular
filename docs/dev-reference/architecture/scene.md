@@ -9,7 +9,16 @@ tool's parameters act on the units as they change, and any two moments can be co
 ## The engine
 
 `libs/shared/scene-engine` is pure TypeScript, tagged `type:util`, so every later scene
-can reuse it and nothing in it knows Angular or the DOM.
+can reuse it and nothing in it knows Angular or the DOM. Three things keep it that way.
+The tag lets it import only other `type:util` projects, so it holds its own types and
+takes nothing from `models`. `libs/shared/scene-engine/vite.config.mts` runs its specs in
+Vitest's `node` environment, with no Angular plugin and no DOM to reach for. And outside
+its specs, no module in `libs/shared/scene-engine/src/lib/` imports a package at all,
+which is a rule to keep rather than a check: nothing refuses an `@angular/core` import
+([the scene rules](../../ai-reference/scene-rules.md)).
+`simulation.ts` shows the result: one fixed step is a plain function from a state to the
+next state, and a unit reads the frame before, so the order units are visited in cannot
+matter.
 
 | Module                               | Holds                                                                                                                                                        |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -22,8 +31,6 @@ can reuse it and nothing in it knows Angular or the DOM.
 | `run.ts`                             | A run in progress: the steps still to come, what falls due on a frame, and the latest refusal                                                                |
 | `metrics.ts`                         | Cohesion radius, collisions, heading variance, time to objective, stalled units, anchor to mean, slot error, assignment cost                                 |
 | `hash.ts`, `trial.ts`                | Frame fingerprints, first divergence, two branches compared over one window                                                                                  |
-
-A unit reads the frame before, so the order units are visited in cannot matter.
 
 **How a tool becomes a behaviour.** `applyStep` reads a step's parameters by name:
 `separation-weight` sets a blend term, `slow-radius` tunes one, `avoidance-priority`
@@ -59,9 +66,10 @@ These rules are not in the catalog and are the scene's own:
   group sheds its speed as well as parting it; without this a crowd boils there.
   Anywhere else it keeps its speed, so a group under priority still travels.
 - **The objective is one point for the whole group.** Arrive sends each unit there, so
-  units with no separation pile onto it, collisions and all. That is worth seeing. A
-  group has arrived when its centre is inside the target radius and it has nearly
-  stopped, because twelve units cannot all stand inside a radius of one. Every part of
+  units with no separation pile onto it, collisions and all. That is worth seeing.
+- **A group arrives, not a unit.** A group has arrived when its centre is inside the
+  target radius and it has nearly stopped, because twelve units cannot all stand inside
+  a radius of one. Every part of
   it has to be there too, since a scattered group can start with its centre on the
   objective: a free unit within the crowd's reach of it, and a formation's anchor on it.
   A seeker has no brake and a wanderer never settles, so neither need slow. A group has
@@ -71,9 +79,9 @@ These rules are not in the catalog and are the scene's own:
 - **The stopwatch times one run.** It restarts when a unit newly heads for the
   objective, not when units already on their way are retuned. A fixed formation's
   followers only copy their leader, so the leader alone is timed.
-
-An anchor's speed is given in the catalog as distance per step. That step is a planning
-step, not a simulation tick; the engine reads it as a quarter of a second.
+- **An anchor's step is a planning step.** The catalog gives an anchor's speed as
+  distance per step; the engine reads that step as a quarter of a second, not a
+  simulation tick.
 
 ## Determinism
 
@@ -81,10 +89,19 @@ A run is a seed and a list of steps. Each step records the true tick it was appl
 so a replay applies it at exactly the same moment; steps take effect on the transition
 to the next frame, which is why the first divergence between a branch before and after
 an equip is the equip frame plus one. A step made on a frame with one already due goes
-after it, which is the order a replay applies them in. `trial-known-outcome.json` pins
-the frame hashes and metric series. Native `sin` and `cos` are kept out of the engine because the host's
+after it, which is the order a replay applies them in.
+`libs/features/scene/src/testing/fixtures/trial-known-outcome.json` pins the frame hashes
+and metric series. Native `sin` and `cos` are kept out of the engine because the host's
 C++ library rounds them differently by architecture, and a committed hash must
 reproduce on every machine. `feel` reseeds every run and says so in the transport.
+
+## The page around the engine
+
+`libs/features/scene` is the sub-app. `containers/scene-page/scene-page.ts` reads one `vm`
+from `facades/scene.facade.ts` and hands slices to the composites beside it: the rail,
+the inspector, the instruments, the trial compare, the log and the unit list. In
+`mappers/`, a flat module holds pure functions and a folder holds a component that
+chooses a sentence.
 
 ## The renderer seam
 
@@ -154,12 +171,14 @@ nothing chosen and a notice saying why, reading the wider catalog only to name t
 reason. Cohesion has no catalog row of its own; it is a weight of Flocking and Making
 the creatures, and no rail entry is invented for it.
 
-Only `CatalogToken` is injected. `CatalogStore` would write `dotln-angular.tools`.
+The route calls `provideCatalog()`, but only `CatalogToken` is injected: `CatalogStore`,
+which comes with it, would write `dotln-angular.tools`.
 
 ## The store
 
-`SceneStore` holds the live branch, the trial under comparison and the saved
-compositions. Compositions persist under `dotln-angular.scene` through
+`SceneStore`, in `libs/features/scene-data-access/src/lib/scene-store.ts`, holds the live
+branch, the trial under comparison and the saved compositions. Compositions persist under
+`dotln-angular.scene` through
 `withPersistedState`, whose `writeOn` writes only when the count of saves changes, whose
 `unreadable` reports a value that failed to parse or validate, and whose `unwritable`
 reports a save that did not reach storage. An unreadable value is left exactly as it is
@@ -173,18 +192,18 @@ validation. The shape is its own, and what the engine can run is the engine's, t
 and a last step inside eight hours of play. `encodeExport` and `parseExport` own the export
 format, and an import of another scene's composition is refused.
 
-In `mappers/`, a flat module holds pure functions and a folder holds a component that
-chooses a sentence.
-
 ## The field skin
 
 `[data-skin='field']` in `libs/shared/ui/src/styles/_field-skin.scss` is a token layer
 over the plain skin: `--dotln-field-*` for the field itself, the plain tokens redirected
 to them, and the role and work palettes lightened so they read on the dark ground. It
 also reaches the shell around the page, through tokens set by
-`html:has([data-skin='field'])`. Components change no behaviour for it (G4). One rule is
-not a token: `[data-full-bleed]` on a routed page takes the main region's padding away,
+`html:has([data-skin='field'])`. Components change no behaviour for it ([rule G4](../../ai-reference/component-rules.md)). One CSS
+rule is not a token: `[data-full-bleed]` on a routed page takes the main region's padding away,
 in the app's own styles rather than the shell's.
 
 Reduced motion stops anything starting by itself and turns off trails and ripples. The
 text layer opens for it and for keyboard users, and it is present for everyone.
+
+See [the scene rules](../../ai-reference/scene-rules.md) and
+[the sub-app convention](sub-apps.md).

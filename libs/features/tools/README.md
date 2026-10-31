@@ -1,7 +1,12 @@
 # Tools
 
-The lazy Tools home and the catalog reading surface. The production entry
-exports `toolsRoutes`; test providers live in `@dotln-angular/tools/testing`.
+The pages at `/tools` and `/tools/catalog`: a home that lists the works, and the surface
+that reads them concept by concept.
 
-See [catalog architecture](../../../docs/dev-reference/architecture/catalog.md)
-and [sub-app rules](../../../docs/ai-reference/sub-app-rules.md).
+A lazy sub-app: `@dotln-angular/tools` exports `toolsRoutes`, and test kits come from
+`@dotln-angular/tools/testing`.
+
+Read [catalog architecture](../../../docs/dev-reference/architecture/catalog.md) and
+[the catalog rules](../../../docs/ai-reference/catalog-rules.md).
+
+Run `npx nx test tools` and `npx nx lint tools`.

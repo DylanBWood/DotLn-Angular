@@ -32,8 +32,11 @@
   `Math.cos` out of the engine: a committed frame hash must reproduce on every
   machine, and they differ by architecture.
 - Regenerate the known outcome only when a change to the simulation is intended:
-  `WRITE_SCENE_FIXTURES=1 npx nx test scene-engine --skip-nx-cache`, then say why in
-  the decisions. Read the result before committing it.
+  `WRITE_SCENE_FIXTURES=1 npx nx test scene-engine --skip-nx-cache`, then format what it
+  wrote with
+  `npx prettier --write libs/features/scene/src/testing/fixtures/trial-known-outcome.json`
+  and say why in the pull request. An unchanged simulation leaves the file byte-identical
+  after both. Read the result before committing it.
 - `<canvas>`, `getContext(` and `OffscreenCanvas` belong to `wrappers/scene-canvas/`
   and nowhere else in the feature.
 - Put appearance in `--dotln-field-*` tokens and the role and work palettes. The
@@ -42,8 +45,8 @@
   seekers, wanderers and a crowd under priority steering never quite do, so those runs
   play on. Under reduced motion nothing starts by itself, and trails and ripples stay
   off.
-- Keep the page free of label-value lists (WS-001 G6): instruments are watched,
-  definitions are read, slots are compared in a table.
+- Keep the page free of label-value lists ([rule G6](component-rules.md)): instruments
+  are watched, definitions are read, slots are compared in a table.
 
 Run `npx nx test scene-engine`, `npx nx test scene`,
 `npx nx test scene-data-access` and `npx nx e2e dotln-e2e`, then read the page at 360,

@@ -1,9 +1,9 @@
 # Component taxonomy
 
 Directories tell a developer what a component may know. The Tipping Point analogy
-is a teaching aid: fragments and templates are Salesmen, composites and layouts
-are Connectors, and mappers and containers are Mavens. Angular's accessibility and
-rendering behavior takes precedence over the analogy.
+is a teaching aid: fragments, templates and wrappers are Salesmen, composites and
+layouts are Connectors, and mappers and containers are Mavens. Angular's accessibility
+and rendering behavior takes precedence over the analogy.
 
 | Kind      | Responsibility                                                         | Example                                                                      |
 | --------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -15,16 +15,19 @@ rendering behavior takes precedence over the analogy.
 | Mapper    | Choose presentation from a typed value; no store or transport          | `libs/features/board/src/lib/mappers/cell-value-mapper/cell-value-mapper.ts` |
 | Container | Read one facade view model and map outputs to facade intents           | `libs/features/board/src/lib/containers/board-page/board-page.ts`            |
 
-The facade in `libs/features/board/src/lib/facades/board.facade.ts` owns the selected
-panel, version check, source counts and lookup of local link destinations. Its
-`vm` is the container's only source of data. No command dispatch, store or HTTP
-transport exists in this recorded-board feature.
+The facade in `libs/features/board/src/lib/facades/board.facade.ts` composes
+`BoardStore` and the feature flags into one `vm`, with the version check, source
+counts and lookup of local link destinations, and dispatches the page's events. Its
+`vm` is the container's only source of data; the store and HTTP sit behind it, as
+[events, state and HTTP](events-and-state.md) describes.
 
 Presentational directories cannot import router, data access, state or behavior
 libraries, call `inject`, or accept constructor injection. Wrappers may use
 Angular Aria and CDK and inject platform services; feature knowledge stays above
 them. A wrapper may also own a browser drawing API such as `<canvas>`, so a painter
-sits behind one component and can be swapped; `scene-canvas` is the example. Mappers may understand the model but cannot import state or data access.
+sits behind one component and can be swapped;
+`libs/features/scene/src/lib/wrappers/scene-canvas/scene-canvas.ts` is the example.
+Mappers may understand the model but cannot import state or data access.
 `eslint.config.mjs` applies these rules under each project configuration.
 
 Outputs travel at most two forwarding hops. The board passes lexical cell and
@@ -32,8 +35,9 @@ link templates through its composites: each mapper output is handled directly by
 the container, so the presentation hierarchy does not become an event relay.
 
 All components use OnPush, signal inputs/outputs and host metadata. Shared UI and
-shell selectors start with `dotln-`; board selectors start with `board-`. The
-prefixes remain provisional pending the operator's design review. Use ECMAScript
+shell selectors start with `dotln-`; a feature's start with its own prefix, as the
+board's do with `board-`, which each project's ESLint configuration enforces.
+The prefixes remain provisional pending the operator's design review. Use ECMAScript
 private fields for internal state. Angular compiler queries cannot use ECMAScript
 private names; the dialog's view query is protected and readonly instead.
 
@@ -47,7 +51,8 @@ Run `npm run lint:fixtures` to exercise negative cases and controls, and
 helper types live once per library in `types.ts`, with explicit public exports;
 promote a helper to `utils` if a second library needs it.
 
-The local component catalog is described in [Storybook and visual review](../workspace/storybook.md).
+See [Storybook and visual review](../workspace/storybook.md) for Storybook, and
+[the component rules](../../ai-reference/component-rules.md) for what a session follows.
 
 ## Loading behavior
 
