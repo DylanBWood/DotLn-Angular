@@ -14,28 +14,29 @@
 - Import `R` and `RA` from `@dotln-angular/utils`. Fix faulty upstream types in
   the house adapter; preserve the upstream runtime. Assert the intended type
   contract rather than changing assertions to accept an incorrect declaration.
-  Port one attributed upstream spec for each newly used function and update
+- Port one attributed upstream spec for each newly used function and update
   `public_api.ts`'s used-function list. Run the compiler as well as Vitest.
   Export only functions used by application code; do not re-export either whole
   upstream namespace. Keep runtime and type assertions on the curated surface.
-  Prefer Ramda when currying or composition makes the operation clearer; replacing
+- Prefer Ramda when currying or composition makes the operation clearer; replacing
   an isolated native map/filter call alone is not an improvement.
   Use Ramda Adjunct predicates such as `RA.isNonEmptyString` for their established
   validation behavior rather than duplicate manual checks. This preference is
   independent of whether a collection operation benefits from a pipeline.
 - Use `| t` for template text and `translateSignal` from the house i18n entry
   point in class code. Add keys to `apps/dotln/public/i18n/en.json`.
-- Export `provide<Name>TestKit()` for each injectable and token through its
+- Export `provide<Name>TestKit()` for each `@Injectable` class and token through its
   library's `testing` entry point. Spread a kit's providers in TestBed setups.
   Import same-library helpers relatively and consumer helpers through aliases.
 - Keep `index.ts` to `export * from './public_api';`. Name public exports in
   `public_api.ts`; keep testing helpers out of the production API.
 - Use ECMAScript `#private` and `readonly` members. Keep signals and the existing
   underscore opt-out for intentionally unused variables.
-- Run `check:templates`, `check:tokens`, `check:kits`, `i18n:check` and
-  `typecheck:foundations` with the ordinary workspace checks.
-  `workspace-tools:lint` carries these into every registered gate. Run
-  `lint:fixtures` when changing lint policy; it is a helper, not a gate.
+- Run `npm run check:templates`, `npm run check:tokens`, `npm run check:kits`,
+  `npm run i18n:check` and `npm run typecheck:foundations` with the ordinary workspace
+  checks. `npx nx run workspace-tools:lint` runs them all and carries them into every
+  registered gate. Run `npm run lint:fixtures` when changing lint policy; it is a
+  helper, not a gate.
 - Keep Nx task cache under `.nx/cache` and Angular's additional disk cache
   disabled until a portable worktree-local setting is available. Never put an
   absolute machine path in tracked configuration.

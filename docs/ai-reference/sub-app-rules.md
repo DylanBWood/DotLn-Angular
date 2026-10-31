@@ -19,8 +19,9 @@
   and never reaches DotLn core. Use the app's own data and API.
 - Treat graduation as a GitHub issue on the platform's repository,
   `DylanBWood/DotLn`; do not mutate platform state from the app.
-- Record generator commands and results. Keep strict compiler checks, stories,
-  DOM tests, keyboard checks, axe and 360/768/1440 viewport checks current.
+- Record generator commands and results, and replace the generated READMEs of the
+  library and its `testing` entry point. Keep strict compiler checks, stories, DOM
+  tests, keyboard checks, axe and 360/768/1440 viewport checks current.
 - Run `npx nx format:check`, `npx nx run-many -t lint test build`,
   `npm run lint:components`, `npm run lint:hygiene`, `npm run check:fixtures`,
   `npm run i18n:check` and `npx nx e2e dotln-e2e`.

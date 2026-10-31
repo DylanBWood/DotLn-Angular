@@ -1,7 +1,9 @@
 # Workspace conventions
 
 These numbered rules retain the workstream's house-rule numbers. The scaffold
-implements the shell and its tooling; the rules also guide later libraries.
+implements the shell and its tooling; the rules also guide later libraries. The
+numbers skip what has nothing here to apply to yet, authentication (17), and the two
+rules that govern how an order is accepted rather than how code is written (24 and 25).
 
 ## 1. Stack
 
@@ -20,7 +22,8 @@ a fixed patch and checks pass.
 Nx 23.3.0 pins Undici 7.29.0. A parent-version-scoped npm override selects
 Undici 7.30.1 for its published security fixes. Recheck the override when Nx
 changes; remove it once Nx itself selects a fixed version and the audit and
-workspace checks pass. Keep Nx packages aligned and preserve peer checks.
+workspace checks pass. Keep Nx packages aligned and preserve peer checks. Nx's
+version-23 executors remain in use; their version-24 migration is separate maintenance.
 
 ## 2. Workspace
 
@@ -36,16 +39,18 @@ permits the daemon; CI and the external gate set `NX_DAEMON=false`.
 
 Shared libraries belong under `libs/shared/` and import as
 `@dotln-angular/<name>`: `core`, `utils`, `i18n`, `ui`, `events`, `models`, `state`,
-`data-access`, `auth`, `catalog` and `scene-engine`. Features belong under `libs/features/` as `<feature>`,
-`<feature>-data-access` and, when shared, `<feature>-models`. App-scoped libraries
+`data-access`, `catalog` and `scene-engine`. Features belong under `libs/features/` as
+`<feature>`, `<feature>-data-access` and, when shared, `<feature>-models`. App-scoped libraries
 belong under `libs/<app>/` and import as `@dotln-angular/<app>/<name>`.
 Test kits import as `@dotln-angular/<lib>/testing`. `tsconfig.base.json` maps the
 shared, app-scoped and feature libraries and their testing entry points.
 
 Every project has a scope and a type. Scopes are `scope:shared` and `scope:dotln`
 for the first app; types are `app`, `feature`, `ui`, `data-access`, `state`,
-`events`, `core`, `util`, `i18n`, `auth` and `models`, prefixed with `type:`.
-The shell library is tagged `scope:dotln` and `type:feature` because it now hosts a facade and notices container; the application is `type:app`.
+`events`, `core`, `util`, `i18n`, `auth` and `models`, prefixed with `type:`; `auth` has
+its constraint ready and no project yet. The shell library is tagged `scope:dotln` and
+`type:feature` because it hosts a facade and notices container; the application is
+`type:app`.
 
 ## 4. Barrels
 
@@ -60,8 +65,10 @@ The application uses `vitest-angular`, Angular's and Nx's standard Vitest wiring
 switch it to AnalogJS only after recording a failure in that route. New
 non-buildable libraries use Nx's documented `vitest-analog` default. Use one
 Playwright project per app and add axe checks on key
-pages as features arrive. HTTP-bearing features use MSW 3 in development and tests. Nearly every injectable should expose a `provide<Name>TestKit()` in its
-library's `testing` entry point. The board is the first HTTP-backed feature.
+pages as features arrive. HTTP-bearing features use MSW 3 in development and tests. Each `@Injectable` class and token exposes a `provide<Name>TestKit()` in its
+library's `testing` entry point, which `npm run check:kits` enforces; a signal store has
+one too or comes with its library's kit, as `CatalogStore` does with
+`provideCatalogTestKit()`. The board is the first HTTP-backed feature.
 
 Playwright's `.mts` configuration uses NodeNext module resolution and Node 26
 types. Run `npm run typecheck:e2e` as well as the browser test: Playwright's
@@ -103,7 +110,7 @@ still refuses literal host text inside that marker and requires `t` for framing.
 Compose explicit `provide*()` functions. Tokens are `PascalCaseToken` with
 literal `dotln-angular.<scope>.<lib>.<name>` descriptions. Keep the root-factory
 exception limited to `AppBasePathToken` pending the operator's ruling.
-Each injectable and token has an exported `provide<Name>TestKit()` in its
+Each `@Injectable` class and token has an exported `provide<Name>TestKit()` in its
 library's `testing` entry point, and TestBed setups spread those providers.
 
 Core adapts application configuration to independent shared i18n through
@@ -111,7 +118,7 @@ Core adapts application configuration to independent shared i18n through
 
 ## 11. Routing
 
-Declare `BasePaths` and feature path enums in core; load feature routes lazily.
+Declare `BasePaths` and `ChildPaths` in core; load feature routes lazily.
 Build navigation with `buildRoute()`, keeping path and query parameters separate.
 Use `AppBasePathToken`, derived from `<base href>`, for sub-path-aware assets.
 
@@ -119,10 +126,12 @@ Use `AppBasePathToken`, derived from `<base href>`, for sub-path-aware assets.
 
 Order decorator members as `selector`, `changeDetection`, `template` or
 `templateUrl`, `styles` or `styleUrl`, nonempty `providers`, then `imports`.
-Use OnPush and host metadata. Shared UI and shell use `dotln`; the board uses
-`board`. Keep inline templates on their own lines after the opening and before
-the closing backtick. Selector prefixes remain provisional for operator review. Prefer ECMAScript `#private` and mark
-unreassigned members `readonly`. Put one projected element on each line. Extract a template or style section above 40 lines.
+Use OnPush and host metadata. Shared UI and shell use the selector prefix `dotln`, and
+each feature its own, as the board uses `board`. Selector prefixes remain
+provisional for operator review. Keep inline templates on their own lines after the
+opening and before the closing backtick, and put one projected element on each line.
+Extract a template or style section above 40 lines. Prefer ECMAScript `#private` and
+mark unreassigned members `readonly`.
 
 ## 13. Lint and TypeScript
 
@@ -131,7 +140,11 @@ and `.editorconfig`. Unused variables warn; prefix an intentionally unused
 argument or variable with `_`. TypeScript `private` members are refused in favor
 of `#private`. Prefer signal APIs and readonly outputs. A lint or compiler
 suppression is an exceptional, documented choice, never the fix for a failing
-check. Prettier uses single quotes and a 100-column print width.
+check. Prettier uses single quotes and a 100-column print width, and it preserves
+embedded template bytes in TypeScript (`embeddedLanguageFormatting: off`); otherwise it
+collapses short Angular templates and conflicts with rule 12. ESLint enforces the
+surrounding newlines, and Angular template lint and compilation still check their
+contents.
 Typed lint overrides use an absolute workspace `basePath` so nested project
 configs still enforce readonly members. Imports have three autofixed groups:
 packages, house aliases, then relatives with the furthest parent first.
@@ -145,7 +158,8 @@ Import `@angular/aria` and `@angular/cdk` only under `wrappers/` or the shared U
 provider setup. Fragments, templates, composites and layouts receive inputs and
 projection instead of injection. Mappers understand value shapes, never stores.
 See [component taxonomy](../architecture/component-taxonomy.md) for the seven
-roles and [component rules](../../ai-reference/component-rules.md) for R1–R7.
+roles and [component rules](../../ai-reference/component-rules.md) for the rules
+that make them checkable.
 
 ## 15. Dependency constraints
 
@@ -165,6 +179,9 @@ must satisfy both its scope constraint and its type constraint.
 | `i18n`        | `util`, `models`                                                      |
 | `util`        | `util`                                                                |
 | `models`      | None                                                                  |
+
+Shared data-access also carries `layer:shared-data-access`: feature data-access may use
+those shared helpers while peer feature data-access remains prohibited.
 
 Shared projects import only shared projects. DotLn-scoped projects may import
 shared or DotLn-scoped projects. Add another scope's row before adding its
@@ -192,7 +209,10 @@ for spacing, typography, clipping and interaction detail; see
 
 Maintain `docs/dev-reference/` for people and `docs/ai-reference/` for coding
 sessions. DotLn's filed records belong under `docs/dotln/`, populated by the
-launchpad. Keep commands, paths and generated-project provenance current.
+launchpad. Keep commands, paths and generated-project provenance current. A library's
+README says what the library is for, how it is imported and how it is tested, and names
+the document to read next; a `testing` entry point's says what it exports and how to use
+it. Replace the generator's text when the library gets its first code.
 
 ## 20. Commits and pull requests
 
@@ -200,18 +220,16 @@ Write conventional commits in the present imperative. Open pull requests with a
 bare conventional title; the title workflow prepends the type's gitmoji from
 `.github/gitmoji-map.json`. The operator reviews the code and automated review
 comments before final review, and merges with a merge commit whose message is
-the pull-request title. Repository settings are operator-owned. The current
-launchpad route opens a draft after verification; final publication supersedes
-that draft.
+the pull-request title. Repository settings are operator-owned. The launchpad
+route opens a draft after verification; final publication reuses that branch and
+pull request and marks it ready.
 
 ## 21. Broken windows
 
 Fix an encountered defect in the same change or board it visibly with a skipped
 failing test and `// BOARDED: <follow-up>`, or a visible "not implemented" surface.
-Record the follow-up and its reopening condition in the order. CI prints the
+Record the follow-up and its reopening condition in the change. CI prints the
 board count. Do not conceal failed checks with a suppression or passing stub.
-
-Prettier preserves embedded template bytes in TypeScript (`embeddedLanguageFormatting: off`); otherwise it collapses short Angular templates and conflicts with rule 12. ESLint enforces the surrounding newlines, and Angular template lint and compilation still check their contents.
 
 ## 22. Sub-apps
 
@@ -237,3 +255,10 @@ transform enum only by a recorded decision. Use the complete catalog check and
 injectable lazy-loader seam. Present the data as a reading session and develop
 authored concept studies without obscuring source provenance. See [catalog architecture](../architecture/catalog.md)
 and [catalog rules](../../ai-reference/catalog-rules.md).
+
+## 26. Tools earn their place
+
+Every tool script states its purpose and its status, in a gate, a helper or a module,
+in [the scripts reference](scripts.md). `npm run check:scripts` refuses an npm script or
+a file directly under `tools/scripts` that the reference does not name. A tool stays because it is useful, and a check runs in the gate only when it
+protects something worth checking on every change.

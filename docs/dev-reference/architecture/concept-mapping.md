@@ -5,7 +5,7 @@ notice useful connections across the app, source code, agent coordination,
 working processes and human interaction. An existing implementation is evidence
 for one application and a starting point for further inquiry.
 
-This principle comes from the operator's WO-014 clarification. The catalog's
+This principle comes from the operator. The catalog's
 closed transform vocabulary describes toy operations. It is not the boundary of
 what the catalog can teach us. Metaphors, rules of practice and ways of examining
 a system can be useful without an executable transform.
@@ -28,8 +28,8 @@ the engineer retains authorship of the composition. People can contribute workin
 shapes from many domains, including situations a mining model would not think to
 try. The UI should make those ideas tangible enough to discuss and experiment with.
 
-WO-014 delivered the catalog foundation and this guidance, and WO-015 the first
-scene, where tools run, compose and replay ([the scene architecture](scene.md)).
+The app holds the catalog foundation, this guidance and the first scene, where tools
+run, compose and replay ([the scene architecture](scene.md)).
 Promotion belongs to a later capability. The app's
 sandbox informs DotLn through its declared promotion route; browsing this catalog
 does not change core control records or equip a live actor.
@@ -162,7 +162,8 @@ imposed by our modelling vocabulary. Expressibility with the same operator is
 not sufficient evidence for a universal truth. Seek counterexamples, alternative
 representations and predictions outside the example that suggested the mapping.
 Preserve the conditions under which a model or intervention works. This is a
-continuing mining question; WO-014 does not claim to have answered it universally.
+continuing mining question, and the catalog does not claim to have answered it
+universally.
 
 The catalog workflow is one example of this broader exercise. Treat an inquiry as a
 concept, a target context and an evidence revision. Finite asynchronous inquiries
@@ -205,19 +206,18 @@ does not by itself establish readiness for promotion; the findings let the
 engineer, tester and platform implementation work assess that readiness.
 
 The app's declared route informs DotLn through proposals on the core repository.
-WO-014 records candidate material and guidance; later promotion work can turn a
+The catalog records candidate material and guidance; later promotion work can turn a
 reviewed discovery into that proposal, then the platform's own planning,
 implementation and verification can establish the primary skill, support or
-interaction. The catalog browser itself has no live integration or control-record
-write. The operator's clarification establishes this graduation endpoint without
-adding such an integration to the current order.
+interaction. The catalog itself has no live integration or control-record write.
+The operator set this graduation endpoint; it adds no such integration to the app.
 
 The likely authoring destination is the platform's primary skills, supports and
 compositions. Those higher-level definitions can be candidates for compilation
 to a common intermediate representation (IR). A catalog analogy, a toy scene,
 an RxJS model, a skill definition and its compiled form serve different purposes;
-their relationships need to be made explicit. The operator's clarification does
-not require every discovery to be authored directly in IR or to introduce a new
+their relationships need to be made explicit. The operator does not require every
+discovery to be authored directly in IR or to introduce a new
 IR construct. Some discoveries may change a composition of existing pieces.
 
 Core's [IR compatibility document](https://github.com/DylanBWood/DotLn/blob/main/docs/product/10-ir-compatibility.md)
@@ -232,9 +232,9 @@ current contracts.
 
 ## Targeted follow-up
 
-WO-014 establishes the catalog, documents this method and performs a bounded
-metaphor pass over selected batches. A later planning pass can nominate a focused
-cross-area review of all eight batches, including already mapped concepts. It
+The catalog carries a bounded metaphor pass over selected batches and this
+method. A later planning pass can nominate a focused
+cross-area review of all the batches, including already mapped concepts. It
 should preserve ids, assess multiple target areas and modelling perspectives, independently challenge the
 strongest proposed correspondences, record counterexamples, and decide whether
 the current single-analog representation is sufficient. It should add only the
@@ -246,8 +246,9 @@ which ideas to present to DotLn-Angular, which to DotLn, and which need a coordi
 proposal. Trace one concrete discovery through an app experiment, a candidate
 primary skill or support, its composition and any compilation target. Identify
 the authoritative definition, editable projections, evidence and loss at each
-step before choosing storage or an interchange format. Preserve WO-017's
-separate executable RxJS source requirement when considering that example;
-shared semantics alone do not establish that two source artifacts are identical.
+step before choosing storage or an interchange format. If that discovery is the
+planned digital twin of the operator, preserve its own requirement, that the RxJS
+describing the operator is the RxJS that runs; shared semantics alone do not
+establish that two source artifacts are identical.
 
 See [catalog architecture](catalog.md) and [catalog rules](../../ai-reference/catalog-rules.md).

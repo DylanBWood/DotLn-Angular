@@ -6,19 +6,47 @@ composition stay in the app; implementations live in libraries.
 
 A **sub-app** is a lazy feature library. A **menu group** organizes links to one
 or more features. They are separate concepts: Machinery contains both its own
-arriving page and the actor board. A later feature can join a group without
+placeholder page and the actor board. A later feature can join a group without
 creating another group or moving the board's URL.
 
 | Menu group | Current routes             | Current content                                     |
 | ---------- | -------------------------- | --------------------------------------------------- |
 | Scene      | `/scene`                   | The soldier scene, see [its architecture](scene.md) |
-| Machinery  | `/board`, `/machinery`     | Actor board and the machinery arriving page         |
+| Machinery  | `/board`, `/machinery`     | Actor board and the machinery view's placeholder    |
 | Tools      | `/tools`, `/tools/catalog` | Works, last reading and the catalog reading surface |
 
 The root redirects to `/scene`. Unknown paths reach a translated not-found page in
-the main region, with a link home to the scene. An arriving page identifies the work
-that brings its implementation and links back to the actor board. It has no store or
-facade because it has no data to orchestrate.
+the main region, with a link home to the scene. The menu's Catalog link opens
+`/tools/catalog`, and `/tools` is the home page that links to it. The placeholder at
+`/machinery` identifies the work that brings its implementation and links back to the
+actor board. It has no store or facade because it has no data to orchestrate.
+
+## How a feature library is laid out
+
+`libs/features/board` shows the whole shape without a simulation. Its `src/index.ts` exports only
+`boardRoutes`, from `src/lib/board.routes.ts`, and the directories under
+`libs/features/board/src/lib/` name what each file is allowed to know
+([the taxonomy](component-taxonomy.md)):
+
+| Directory     | Holds                                                   | In the board                           |
+| ------------- | ------------------------------------------------------- | -------------------------------------- |
+| `containers/` | The routed page, which reads one facade's `vm`          | `containers/board-page/board-page.ts`  |
+| `facades/`    | The view model and the page's intents                   | `facades/board.facade.ts`              |
+| `composites/` | Presentational units built from house components        | `composites/board-row/board-row.ts`    |
+| `layouts/`    | Regions of the page, filled through projection          | `layouts/board-layout/board-layout.ts` |
+| `mappers/`    | The choice of presentation for a typed value            | `mappers/link-mapper/link-mapper.ts`   |
+| `models/`     | View-model types                                        | `models/board-view-model.ts`           |
+| `providers/`  | The one function the route calls to provide the feature | `providers/provide-board-feature.ts`   |
+
+The store and its API live beside the feature in `libs/features/board-data-access`,
+where a sub-app's own data access belongs (`libs/features/<sub-app>-data-access`), and
+test kits in the `testing` entry point of each. `libs/features/scene` adds the
+directories a running simulation needs (`clock/`, `renderers/`, `wrappers/`), and
+`libs/features/machinery` is the smallest form: one container and its routes.
+
+Reusable engines, models, readers and clocks belong in `libs/shared/` with their
+appropriate `util`, `models` or `data-access` tags. `libs/dotln/` remains the
+shell's home. Logic in libraries allows a future split without another app today.
 
 ## Presentation and navigation
 
@@ -28,7 +56,7 @@ inside a neutral layout region. `DotlnSubAppMenuGroup` supplies a heading and li
 project the heading through `[menu-heading]` and each `<li>` through `[menu-item]`.
 When no item matches, Angular's projection fallback displays `emptyMessage`.
 Pass a translated empty message for a group that has no entries. Adding a
-projected item replaces the fallback automatically; the catalog story exercises
+projected item replaces the fallback automatically; a Storybook story exercises
 that case without changing the shell.
 
 The app owns `routerLink`, `routerLinkActive` and `ariaCurrentWhenActive`, using
@@ -56,19 +84,19 @@ or custom keyboard protocol. The skip link still focuses the main landmark.
    `apps/dotln/src/app/app.routes.ts`. Use `ChildPaths` for internal child routes.
 4. Add a projected menu item in `apps/dotln/src/app/app.ts`, under an existing
    group or a new projected group. Keep router directives here. Do not change the
-   root redirect or relocate existing routes incidentally.
+   root redirect or relocate existing routes incidentally. Update the menu table in
+   this document and in the root README.
 5. Add the i18n block to `apps/dotln/public/i18n/en.json`, using `t` for visible
    text and accessibility labels. Add the architecture document and link it from
-   the developer and session reference roots.
+   the developer and session reference roots, replace the generated READMEs of the
+   library and its `testing` entry point
+   ([rule 19](../workspace/conventions.md#19-documentation)), and give a new store its
+   row in [the store table](events-and-state.md).
 6. Add component stories, the Storybook browser list, route and presentation
    tests, keyboard paths, axe checks and responsive checks. Include the new
-   features in the e2e project's implicit dependencies. Run the workspace
-   preflight and review gate; inspect intentional screenshot changes.
-
-A sub-app's data access belongs in `libs/features/<sub-app>-data-access`.
-Reusable engines, models, readers and clocks belong in `libs/shared/` with their
-appropriate `util`, `models` or `data-access` tags. `libs/dotln/` remains the
-shell's home. Logic in libraries allows a future split without another app today.
+   features in the e2e project's implicit dependencies. Run
+   [the checks](../README.md#checks) and `npx nx e2e-visual dotln-e2e`; inspect
+   intentional screenshot changes.
 
 ## The sandbox boundary
 

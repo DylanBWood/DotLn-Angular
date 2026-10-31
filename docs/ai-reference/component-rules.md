@@ -8,8 +8,8 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
 - R3: Import Angular Aria and CDK only under `wrappers/` or `libs/shared/ui/src/lib/provide-dotln-ui.ts`. Keep the public API house-owned.
 - R4: Keep containers thin: inject a facade, expose its one `vm` signal, and map outputs to its intents. Put derivation in the facade or pure functions.
 - R5: Put every component under its declared role directory. Location selects its lint constraints.
-- R6: Concentrate behavioral tests on facades, mappers and wrappers. Use DOM assertions for presentation contracts and browser tests for real keyboard/focus behavior.
-- R7: Fix an encountered defect within scope or record a concrete follow-up and reopening condition; never hide it with a suppression or a passing stub.
+- R6: Concentrate behavioral tests on facades, stores, mappers and wrappers. Use DOM assertions for presentation contracts and browser tests for real keyboard/focus behavior.
+- R7: Fix an encountered defect within scope or board it with a skipped failing test and `// BOARDED: <follow-up>`, or a visible "not implemented" surface, and record its reopening condition; never hide it with a suppression or a passing stub.
 - R8: Import `DotlnMenu` through `@dotln-angular/ui/menu`. Keep route-only behavior and its providers off the eager UI barrel; the component imports its own overlay providers. Run `npm run check:bundle` and the browser loading regression when changing these boundaries.
 - H1: Check `viewModelVersion` before rendering panels. Show unavailable and the supplied version when unsupported.
 - H2: Preserve `known`, `unknown` and `unavailable` visibly and textually. Keep unavailable sections and sources with their explanation.
@@ -26,6 +26,7 @@ Apply these rules together with [foundation rules](foundation-rules.md) and the
   prose, related links and explanatory visuals. Wrap long values and retain
   explicit unknowns. A data list is not the default for material intended to be read.
 
-Run the existing unit, lint, fixture, browser and visual targets after changes.
-Read and inspect new screenshot baselines before accepting them. Do not update a
-baseline solely to make an assertion pass.
+Run `npm run lint`, `npm test`, `npm run lint:components`, `npm run e2e` and
+`npx nx e2e-visual dotln-e2e` after changes, and `npm run lint:fixtures` when a role's
+lint rule changes. Read and inspect new screenshot baselines before accepting them.
+Do not update a baseline solely to make an assertion pass.

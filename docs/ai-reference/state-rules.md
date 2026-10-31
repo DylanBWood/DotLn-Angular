@@ -15,14 +15,15 @@ change state and handlers map events along this rule 16 table:
 No same-tier mapping. The trinity clause permits an action's own `actionSuccess`
 and `actionFailure` outcomes; these are outcomes, not new commands. `withCommand`
 sets call state and switches to the newest request. A cancelled request emits no
-failure. `lint:hygiene` checks stream mappings and command declarations, reads
+failure. `npm run lint:hygiene` checks stream mappings and command declarations, reads
 non-spec TypeScript across apps and libs, and prints counted `hygiene-exception`
 comments. Zero exceptions is the ordinary workspace result.
 
 Provide the global dispatcher and app stores through `provideDotlnState()`.
-Provide `BoardStore` at the lazy board route. Do not add route-local dispatchers:
-every feature observes the same event stream. Containers read a facade's `vm` and
-send intents up. HTTP errors and uncaught errors enter `ErrorStore`; shell notices
+Provide a feature store on its lazy route, as `BoardStore` at `/board`; a store several
+routes share goes once on their parent, as `CatalogStore` on Tools. Do not add
+route-local dispatchers: every feature observes the same event stream. Containers read a
+facade's `vm` and send intents up. HTTP errors and uncaught errors enter `ErrorStore`; shell notices
 render its latest item using the recorded source event, so only HTTP failures
 use request-failure text. Uncaught errors also retain Angular's default console
 report of the original value, including its stack. Canonical navigation belongs
@@ -48,5 +49,10 @@ worker and disables mocks and query flag overrides. `sourcesFooter` is the flag
 for hiding the provenance footer (an explicit evidence/source anchor reveals it); `?ff=sourcesFooter:off` works only in development
 and mocked builds. The primer supplies default flags and the public API base.
 
-Run the targeted unit tests while implementing; then the order's preflight and
-registered target gates. Keep the recorded fixture and visual baselines unchanged.
+While implementing, run `npx nx test events`, `npx nx test data-access`,
+`npx nx test state` and the test target of the store you changed, such as
+`npx nx test board-data-access`, then the workspace checks in
+[the reference index](README.md). Keep the recorded fixture unchanged, and change a
+visual baseline only as [visual review](../dev-reference/workspace/storybook.md) describes.
+
+Read [events, state and HTTP](../dev-reference/architecture/events-and-state.md).

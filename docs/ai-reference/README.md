@@ -5,6 +5,9 @@
 - Read `docs/ai-reference/foundation-rules.md` when changing core, utilities,
   translations, providers or test kits.
 - Generate every project with the installed Nx generator. Read its `--help`.
+- When a new library gets its first code, replace its generated README with what it is
+  for, how it is imported and tested and which document to read next, and its `testing`
+  entry point's with what that exports and how to use it.
 - Append the command, Nx version, created projects and result to
   `docs/dev-reference/workspace/generator-log.md`.
 - Keep `apps/dotln` slim. Keep the shell standalone, zoneless and OnPush.
@@ -21,6 +24,9 @@
 - Record defects that cannot be fixed and make their boards visible.
 - Keep generated outputs, caches, `.env` files and browser reports ignored.
 - Update both reference roots when conventions or commands change.
+- State every npm script and tool script's purpose and status in
+  `docs/dev-reference/workspace/scripts.md`; `npm run check:scripts` refuses an npm
+  script or a file directly under `tools/scripts` that the document does not name.
 - Leave `docs/dotln/` record movement to the launchpad's final-review route.
 - Write conventional commit subjects. Leave GitHub title decoration to the workflow.
 - Keep branch publication, merges and repository settings within explicit authority.
