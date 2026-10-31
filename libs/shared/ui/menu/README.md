@@ -9,3 +9,6 @@ not pull its Aria menu and CDK overlay stack into the initial application chunk.
 The component imports `OverlayModule`, which supplies its overlay providers
 when Angular creates the standalone component. `provideDotlnUi()` retains the
 application-wide accessibility setup. No additional menu provider is required.
+
+Its tests run with `npx nx test ui`. Read
+[loading behavior](../../../../docs/dev-reference/architecture/component-taxonomy.md#loading-behavior).

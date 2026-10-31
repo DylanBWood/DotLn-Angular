@@ -1,7 +1,11 @@
-# utils
+# Utils
 
-This library was generated with [Nx](https://nx.dev).
+The curated `R` and `RA` namespaces: Ramda and Ramda Adjunct behind house declarations,
+exporting only the functions application code uses, each with an attributed spec derived
+from upstream.
 
-## Running unit tests
+Import from `@dotln-angular/utils`; sample data comes from `@dotln-angular/utils/testing`.
 
-Run `nx test utils` to execute the unit tests.
+Read [the foundation libraries](../../../docs/dev-reference/architecture/foundation.md).
+
+Run `npx nx test utils`, `npx nx lint utils` and `npm run typecheck:foundations`.

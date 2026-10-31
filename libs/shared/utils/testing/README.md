@@ -1,3 +1,3 @@
 # @dotln-angular/utils/testing
 
-Secondary entry point of `@dotln-angular/utils`. It can be used by importing from `@dotln-angular/utils/testing`.
+`provideUtilsTestKit()` returns sample word lists for specs and no providers.

@@ -1,7 +1,12 @@
-# data-access
+# Data access
 
-This library was generated with [Nx](https://nx.dev).
+What a store uses to reach HTTP and the browser: `withCommand` over the toolkit's
+`withCallState`, `withPersistedState` over `StorageToken`, the interceptors behind
+`provideDotlnHttp()`, `provideDotlnStorage()`, and `startMocks()` for the development worker.
 
-## Running unit tests
+Import from `@dotln-angular/data-access`; test kits come from
+`@dotln-angular/data-access/testing`.
 
-Run `nx test data-access` to execute the unit tests.
+Read [events, state and HTTP](../../../docs/dev-reference/architecture/events-and-state.md).
+
+Run `npx nx test data-access` and `npx nx lint data-access`.

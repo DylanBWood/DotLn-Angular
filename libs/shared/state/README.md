@@ -1,7 +1,11 @@
-# state
+# App state
 
-This library was generated with [Nx](https://nx.dev).
+The app's own stores: `FeatureFlagStore`, `ErrorStore` and `NavigationStore`, with
+`DotlnErrorHandler` sending uncaught errors to the error store. `provideDotlnState()`
+provides them and the one event dispatcher.
 
-## Running unit tests
+Import from `@dotln-angular/state`; test kits come from `@dotln-angular/state/testing`.
 
-Run `nx test state` to execute the unit tests.
+Read [events, state and HTTP](../../../docs/dev-reference/architecture/events-and-state.md).
+
+Run `npx nx test state` and `npx nx lint state`.
