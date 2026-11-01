@@ -1,0 +1,122 @@
+@let view = drawing();
+<svg [attr.viewBox]="view.viewBox" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+  @for (zone of view.zones; track $index) {
+    <circle
+      class="zone"
+      [attr.cx]="zone.x"
+      [attr.cy]="zone.y"
+      [attr.r]="zone.r"
+      [attr.data-tone]="zone.tone"
+    />
+  }
+  @for (link of view.links; track $index) {
+    <line
+      class="link"
+      [attr.x1]="link.x1"
+      [attr.y1]="link.y1"
+      [attr.x2]="link.x2"
+      [attr.y2]="link.y2"
+      [attr.data-tone]="link.tone"
+    />
+  }
+  @for (point of view.trail; track $index) {
+    <circle class="trail" [attr.cx]="point.x" [attr.cy]="point.y" r="3" />
+  }
+  @for (mark of view.marks; track $index) {
+    @switch (mark.shape) {
+      @case ('cross') {
+        <path class="cross" [attr.d]="mark.cross" [attr.data-tone]="mark.tone" />
+      }
+      @case ('ring') {
+        <circle
+          class="ring"
+          [attr.cx]="mark.x"
+          [attr.cy]="mark.y"
+          r="7"
+          [attr.data-tone]="mark.tone"
+        />
+      }
+      @default {
+        <circle
+          class="dot"
+          [attr.cx]="mark.x"
+          [attr.cy]="mark.y"
+          r="4"
+          [attr.data-tone]="mark.tone"
+        />
+      }
+    }
+  }
+  @for (body of view.bodies; track body.id) {
+    @if (body.arrow; as points) {
+      <polygon class="body" [attr.points]="points" [attr.data-tone]="body.tone" />
+    } @else {
+      <circle
+        class="body"
+        [attr.cx]="body.x"
+        [attr.cy]="body.y"
+        r="10"
+        [attr.data-tone]="body.tone"
+      />
+    }
+  }
+  <g translate="no">
+    @for (body of view.bodies; track body.id) {
+      @if (body.label; as label) {
+        <text class="label" text-anchor="middle" [attr.x]="body.x" [attr.y]="body.labelY">
+          {{ label }}
+        </text>
+      }
+    }
+    @for (mark of view.marks; track $index) {
+      @if (mark.label; as label) {
+        <text class="label" text-anchor="middle" [attr.x]="mark.x" [attr.y]="mark.labelY">
+          {{ label }}
+        </text>
+      }
+    }
+  </g>
+  @for (vector of view.vectors; track $index) {
+    <line
+      class="vector"
+      [attr.x1]="vector.x1"
+      [attr.y1]="vector.y1"
+      [attr.x2]="vector.x2"
+      [attr.y2]="vector.y2"
+      [attr.data-tone]="vector.tone"
+    />
+    @if (vector.head; as head) {
+      <polygon class="vector-end" [attr.points]="head" [attr.data-tone]="vector.tone" />
+    }
+  }
+</svg>
+<tools-study-scrubber
+  [step]="step()"
+  [lastStep]="lastStep()"
+  [seconds]="seconds()"
+  [moments]="moments()"
+  [playing]="playing()"
+  (played)="played.emit($event)"
+  (stepped)="stepped.emit($event)"
+/>
+@if (note(); as text) {
+  <p class="note" translate="no">
+    {{ text }}
+  </p>
+  <details
+    #numbers
+    class="numbers"
+    [open]="numbersOpen()"
+    (toggle)="numbersToggled.emit(numbers.open)"
+  >
+    <summary>{{ 'tools.study.numbers' | t }}</summary>
+    <p class="reading" data-testid="study-reading" translate="no">
+      {{ textEquivalent() }}
+    </p>
+  </details>
+} @else {
+  <p class="reading" data-testid="study-reading" translate="no">
+    {{ textEquivalent() }}
+  </p>
+}
+<ng-content />

@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:186",
+  "work": "aifg",
+  "slug": "slot-assignment",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 10",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "At Beacon gate, putting the most versatile guard in the best-looking place first can leave a specialist with nowhere useful to stand. Reserve the scarce choices first. This protects specialists, but each reservation still ignores what it will cost the guards who choose later.",
+    "situation": "The gate commander must give Ari the reserve, Bryn the shield bearer and Cleo the medic distinct posts before anyone starts walking. The assignment answers who belongs where; it does not supply their routes."
+  },
+  "example": {
+    "name": "Beacon gate’s guard roster",
+    "description": "Ari, Bryn and Cleo wait for front, flank and rear posts, in that input order. Ari’s selected flank cost is {flankCost}; the resulting order is {order}, and {rosterOutcome}. Costs describe suitability independently of distance. Each moment reveals another reservation; its time is a presentation interval.",
+    "parameters": {
+      "cost.reserve.front": 0.1,
+      "cost.reserve.flank": 0.2,
+      "cost.reserve.rear": 0.3,
+      "cost.shield.front": 0,
+      "cost.shield.flank": 4,
+      "cost.shield.rear": 6,
+      "cost.medic.front": 5,
+      "cost.medic.flank": 0.4,
+      "cost.medic.rear": 0.1,
+      "comparisonFlankCost": 0.9,
+      "acceptableBelow": 1,
+      "unitX": -4,
+      "slotX": 4,
+      "spacing": 2,
+      "decisionSeconds": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read a cost for every guard and post",
+        "text": "The column order is front | flank | rear. The complete table is {costTable}. A smaller cost means a better role fit. Neither the straight link length nor proximity to a post enters this table."
+      },
+      {
+        "title": "Protect the guards with few choices",
+        "text": "Count entries strictly below {acceptableBelow} across the original table, before taking any slot: {counts}. The engine’s order is {order}. Equal counts preserve input order. This ranking is calculated once, rather than recalculated after every reservation."
+      },
+      {
+        "title": "Reserve the cheapest post still free",
+        "text": "For the displayed decision the available costs are {choices}; {decision}. Every reservation removes that post from later choices. Equal costs favour the earlier column. Costs above the ranking cut-off remain eligible: the cut-off changes priority, not permission."
+      },
+      {
+        "title": "Keep the links and audit the total",
+        "text": "After {stage} decisions: {assignments}; accumulated cost {total}. This example’s minimum complete cost is {optimum}, found by checking all complete assignments separately. The engine supplies the greedy links; that audit is a study-local diagnostic, not a replacement allocator."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "units = [Ari, Bryn, Cleo]\nroles = [front, flank, rear]\ncost[unit, role] = read the complete suitability table\n\n// The engine’s ranking pass:\nacceptable[unit] = count roles with cost[unit, role] < acceptableBelow\norder = sort units by (acceptable count, original input index)\n\n// The engine’s reservation pass:\nassignment = empty\nfree = all slot indices in column order\nfor unit in order:\n  slot = cheapest free slot for unit, earlier column breaking a tie\n  if no free slot: continue\n  append (unit, slot, cost[unit, role[slot]]) to assignment\n  remove slot from free\n\n// The model gets these decisions from engine.assignSlots(units, roles, cost).\nreveal assignment prefixes as links, without moving guards\ntotal = sum the costs of the revealed links\naudit = minimum total over all complete assignments // diagnostic only",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/slot-assignment.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/slot-assignment.model.ts",
+    "textEquivalent": "{reservations}, with accumulated cost {total}. The guards remain still while their choices follow the order {order}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · SoftRoleSlotAssignmentStrategy",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/SoftRoleSlotAssignmentStrategy.java",
+      "relevance": "gdx-ai is a Java game AI library. Its formation package provides a configurable allocator for members whose suitability differs between slots.",
+      "explanation": "It asks a SlotCostProvider for each member–slot cost, drops candidates at or above a configurable threshold, and sums reciprocal cost contributions into an assignment-ease score. It sorts the least easy members first, then reserves the cheapest unfilled candidate for each. It throws when no candidate remains. Its exclusion threshold controls which slots can be considered, and its graded ranking reflects the costs of the available candidates."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games · Chapter 3 Movement, §3.7.8 Slot Assignment",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers slot assignment in Chapter 3, section 3.7.8."
+    },
+    {
+      "title": "gdx-ai · SoftRoleSlotAssignmentStrategy.java at 1.8.2",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/SoftRoleSlotAssignmentStrategy.java",
+      "accessed": "2026-10-31",
+      "supports": "The code builds threshold-filtered candidate lists, ranks members by reciprocal-cost ease, reserves slots greedily and throws if a member has no free candidate."
+    }
+  ],
+  "limits": [
+    "For the selected table, {rosterOutcome}. The comparison shows how committing to a cheap post can leave another guard with an expensive remainder, even when the hardest-to-place guard chooses first.",
+    "A finite penalty is a preference, not a ban in this engine. Even making every post expensive for Cleo still produces a reservation. A game needing forbidden roles must check feasibility explicitly.",
+    "The links do not establish safe travel. Moving the guard dots changes the drawing but cannot change these role-only costs or prevent crossing routes."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:70",
+      "why": "Reach for the most-constrained-first heuristic when deciding the order of other scarce allocations, such as which Beacon gate order to place first."
+    },
+    {
+      "id": "aifg-a:184",
+      "why": "Read slot roles when deciding what front, flank and rear require, before assigning suitability costs to guards."
+    },
+    {
+      "id": "aifg-a:188",
+      "why": "Read greedy versus optimal assignment when Beacon gate’s total suitability cost matters enough to justify considering exchanges or a global solver."
+    },
+    {
+      "id": "aifg-a:177",
+      "why": "Use two-level formation steering after the roster is fixed and the guards need to follow moving posts."
+    }
+  ]
+}

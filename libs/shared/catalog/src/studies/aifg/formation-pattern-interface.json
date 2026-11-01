@@ -1,0 +1,138 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:181",
+  "work": "aifg",
+  "slug": "formation-pattern-interface",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 9",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A formation manager should be able to ask for places without knowing how a wedge is constructed. The pattern is a geometry strategy: it accepts a roster size, supplies indexed offsets and reports the centre of the places actually in use. That last answer matters when a roster has holes. A shape centred for the complete roster need not be centred for the members who remain.",
+    "situation": "At the harbour rendezvous the lookout leaves to inspect the beacon. Port and starboard retain their wing slots while the escort turns. Their manager must distinguish the full wedge's centre from the centre of the occupied slots."
+  },
+  "example": {
+    "name": "The harbour lookout leaves its slot",
+    "description": "The lookout leaves a {capacity}-place wedge with spacing {spacing}, leaving port and starboard in their original wing slots. Drift correction is {correctionState}: {correctionReading}. The heading then turns by {turnDegrees} degrees while the escorts follow the chosen targets.",
+    "parameters": {
+      "pattern": "wedge",
+      "capacity": 3,
+      "spacing": 3,
+      "anchorX": 10,
+      "anchorY": 10,
+      "releaseStep": 20,
+      "turnStartStep": 40,
+      "turnEndStep": 60,
+      "turnDegrees": 90,
+      "driftCorrection": 1,
+      "comparisonCorrection": 0,
+      "memberSpeed": 2,
+      "memberAcceleration": 4,
+      "memberRadius": 0.3,
+      "slowRadius": 2,
+      "targetRadius": 0,
+      "responseTime": 0.5,
+      "timeStep": 0.1,
+      "steps": 120
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Configure a contract with a capacity",
+        "text": "Configure the local adapter for a {capacity}-place {pattern} with spacing {spacing}. It accepts a positive whole roster no larger than {capacity}; the current answer for {activeCount} members is {supportAnswer}. Its slotOffset method checks the index and returns an offset from the engine's patternSlots. The capacity is a choice for this escort, not an engine limit. The engine has no public pattern object with support and occupied-drift queries, so those queries belong to the study adapter. Equal-cost engine assignment establishes the original identities before anyone leaves."
+      },
+      {
+        "title": "Ask about the places still occupied",
+        "text": "When the lookout departs at {releaseSeconds} s, remove its assignment while keeping the wing indices. Compute drift from the occupied offsets, rather than robot positions or the whole stored table. Its magnitude is currently {driftLength} units. The engine centred the complete pattern; a subset can still have a displaced centre. Changing the motors or delaying a robot does not change this geometric answer."
+      },
+      {
+        "title": "Subtract locally, then transform",
+        "text": "Drift correction is {correctionState}: multiply the occupied-slot drift by {driftCorrection} before subtracting it from each local offset. Turn the heading by {turnDegrees} degrees between {turnStartSeconds} and {turnEndSeconds} s. The engine's slotPosition rotates and translates the chosen offsets; the target mean is {targetGap} units from the anchor. The muted dots keep the complete pattern offsets unchanged, so they show the geometric bias that correction removes."
+      },
+      {
+        "title": "Let the members approach the answers",
+        "text": "The engine's arrive accelerates each escort towards its assigned target, using slowing radius {slowRadius} and response time {responseTime}. Speed is limited to {memberSpeed} units/s and acceleration to {memberAcceleration} units/s². Local integration updates velocity before position over {timeStep} s. The actual mean is {centreGap} units from the anchor: changing target geometry does not move the robots instantly. The chart separates occupied drift, target-centre error and actual-centre error. The comparison changes only drift subtraction."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "pattern = localAdapter(patternSlots(patternName, capacity, spacing))\nif not pattern.supportsSlots(roster.length): reject roster\n# supportsSlots accepts positive integers no greater than capacity.\nassignment = assignSlots(roster, equalRoles, equalCosts)\n# slotOffset rejects indices outside the configured slot table.\n\nif step >= releaseStep: remove lookout and its assignment\noccupied = assignment.map(entry => entry.slot)\nif not pattern.supportsSlots(occupied.length): reject roster\ndrift = pattern.driftOffset(occupied)\n# driftOffset averages pattern.slotOffset(i) for occupied indices only.\n\nangle = turnDegrees * radiansPerDegree * turnProgress(step)\nheading = (engine.cosine(angle), engine.sine(angle))\nfor each stored slot:\n  correctedOffset = pattern.slotOffset(slot) - driftCorrection * drift\nformation = fixedAnchorAndHeading(correctedOffsets, assignment)\nfor each occupied slot:\n  target[slot] = slotPosition(formation, slot)\n\nfor each member:\n  a = arrive(member, target[assignedSlot(member)],\n             slowRadius, targetRadius, responseTime)\n  velocity = clipLength(member.velocity + a * dt, memberSpeed)\n  position = member.position + velocity * dt\n# Keep the anchor fixed; update its scripted heading on the next step.",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/formation-pattern-interface.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/formation-pattern-interface.model.ts",
+    "textEquivalent": "{patternRelationship} The target mean is {targetGap} units from the anchor and the escorts' mean is {centreGap} units away."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai formation patterns",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationPattern.java",
+      "relevance": "gdx-ai is a Java library of game AI algorithms. Its FormationPattern interface lets a formation manager use different geometries through the same slot-query contract.",
+      "explanation": "The interface exposes slot-count configuration, indexed slot locations and a support query. DefensiveCircleFormationPattern distributes slots around a circle, derives its radius from member radius and slot count, and faces members outwards; its support method accepts every count. Drift is owned separately: FormationMotionModerator averages occupied pattern locations, and Formation consults the optional moderator while updating member targets. The separation of geometry, assignment and moderation is explicit in the code."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · 3.7.5 Implementation (formation pattern interface)",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers the formation pattern interface in Chapter 3 Movement, section 3.7.5 Implementation."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · FormationPattern.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationPattern.java",
+      "accessed": "2026-10-31",
+      "supports": "The public interface configures slot count, calculates an indexed slot location and answers whether a count is supported."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · DefensiveCircleFormationPattern.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/patterns/DefensiveCircleFormationPattern.java",
+      "accessed": "2026-10-31",
+      "supports": "A concrete pattern calculates a count-dependent circle radius, returns outward-facing slot locations and accepts every slot count in its support method."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · FormationMotionModerator.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationMotionModerator.java",
+      "accessed": "2026-10-31",
+      "supports": "Its drift calculation queries only assigned slots and averages their returned positions and orientations. Drift calculation belongs to this class rather than FormationPattern."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Formation.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "accessed": "2026-10-31",
+      "supports": "The manager checks support before adding a member or changing pattern, and uses the optional moderator's drift while updating slot targets."
+    }
+  ],
+  "limits": [
+    "After the lookout leaves, omitting drift subtraction displaces the target centre by {departureDriftLength} units. Better acceleration can reduce tracking delay but cannot centre a target set whose geometry is displaced. The comparison isolates that error by changing only driftCorrection.",
+    "A successful count query says that this adapter can supply indexed places. It does not prove that the quay has room, that robot bodies clear each other, or that a route to each place exists.",
+    "Retaining the original slot table is deliberate here. Regenerating a smaller pattern, reassigning members or moving the anchor to preserve existing world targets are other roster policies; they produce different movement after departure.",
+    "The drift is measured in the pattern's local frame. Subtracting it as an unrotated world displacement gives the wrong answer during the turn. This adapter handles positional drift only; it supplies no independent slot-facing or angular-drift contract."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:175",
+      "why": "Use scalable formations when the geometry should expand, contract or regenerate as the roster size changes, rather than retaining holes in the configured table."
+    },
+    {
+      "id": "aifg-a:180",
+      "why": "Read formation manager when deciding who owns assignments, departure handling and updates; the pattern supplies geometric answers to that manager."
+    },
+    {
+      "id": "aifg-a:182",
+      "why": "Read drift offset when the main difficulty is reconciling the occupied slots' centre with the anchor, especially after the roster changes."
+    },
+    {
+      "id": "aifg-a:177",
+      "why": "Use two-level formation steering when the anchor must travel and its progress must respond to where the real members have reached. Geometric drift alone supplies no such feedback."
+    }
+  ]
+}

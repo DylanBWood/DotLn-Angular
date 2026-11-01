@@ -1,0 +1,130 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:177",
+  "work": "aifg",
+  "slug": "two-level-formation-steering",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 9",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "The harbour escort has a destination and a shape to preserve. Give the route to an invisible anchor, and give each robot a place around it. The important feedback goes upwards: if the real robots fall behind, advancing their target positions faster only increases their unfinished work. Holding the anchor near their measured centre makes the plan wait for execution.",
+    "situation": "Lantern, port and starboard are rescue robots crossing an open quay towards the harbour beacon. The anchor can request a pace beyond their motors. They need a common direction without being asked to chase a wedge that keeps escaping."
+  },
+  "example": {
+    "name": "The harbour beacon escort",
+    "description": "The robots start at rest in a wedge of spacing {spacing}. Each motor is limited to {memberSpeed} units/s, while the anchor can request {maximumRequestedSpeed} units/s. A {lagLimit}-unit limit holds the anchor near their actual mean; try a looser limit to see the slots draw farther away.",
+    "parameters": {
+      "pattern": "wedge",
+      "memberCount": 3,
+      "spacing": 3,
+      "originX": 0,
+      "originY": 0,
+      "objectiveX": 40,
+      "objectiveY": 0,
+      "anchorSpeed": 2,
+      "lagLimit": 4,
+      "comparisonLagLimit": 12,
+      "memberSpeed": 2,
+      "memberAcceleration": 4,
+      "memberRadius": 0.3,
+      "slowRadius": 2,
+      "targetRadius": 0,
+      "responseTime": 0.5,
+      "timeStep": 0.1,
+      "steps": 120,
+      "planningStepSeconds": 0.25,
+      "anchorAcceleration": 24,
+      "anchorSlowRadius": 6,
+      "anchorStopRadius": 0.5,
+      "anchorPull": 0.02
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Give the robots stable places",
+        "text": "The engine's patternSlots centres the {memberCount}-member {pattern} around its anchor, using spacing {spacing}. assignSlots gives each escort a distinct slot; all role costs are equal here, so input order resolves the ties. Keep that assignment for the whole crossing. The links join each real robot to its assigned ring; the worked step gives their positions."
+      },
+      {
+        "title": "Let the members do real work",
+        "text": "Each robot reads its slot from the previous formation, with a speed limit of {memberSpeed} units/s and acceleration limit of {memberAcceleration} units/s². The engine's arrive chooses acceleration, reducing desired speed inside {slowRadius} units and closing the velocity gap over {responseTime} s. The study integrates velocity before position with {timeStep} s steps. Only after all robots move do we measure their new mean for the anchor. No robot teleports when the anchor advances."
+      },
+      {
+        "title": "Steer the plan towards the beacon",
+        "text": "Inside advanceFormation the anchor requests a velocity towards the objective. It requests up to {maximumRequestedSpeed} units/s from {anchorSpeed} units per {planningStepSeconds} s planning step; its speed request fades between the {anchorSlowRadius}-unit slowing radius and the {anchorStopRadius}-unit stopping radius. The change of planning velocity is limited by {anchorAcceleration} units/s². Multiplying the updated velocity by the study step gives the muted proposal ahead of the anchor."
+      },
+      {
+        "title": "Make the plan answer to the members",
+        "text": "The same engine call pulls the proposal towards the updated member mean by the fraction {anchorPull}, then clips any remaining gap to {lagLimit}. The resulting anchor defines the following update's slots. Clipping its position leaves its stored planning velocity intact: {planningSpeed} units/s describes an internal request, not necessarily the anchor's displacement divided by time. The chart measures actual anchor lag {lag} and mean slot error {slotError}. In this straight, equally paced wedge those distances coincide; that equality is a property of this example."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "slots = patternSlots(pattern, memberCount, spacing)\nassignment = assignSlots(escorts, equalRoles, equalCosts)\nformation = centredFormation(slots, assignment, origin)\n\nfor each member, reading the previous formation:\n  target = slotPosition(formation, assignedSlot(member))\n  a = arrive(member, target, slowRadius, targetRadius, responseTime)\n  velocity = clipLength(member.velocity + a * dt, memberSpeed)\n  position = member.position + velocity * dt\nnextMembers = all updated members\n\n# These planning lines run inside engine advanceFormation.\ngap = distance(objective, anchor)\nspeed = anchorSpeed / planningStepSeconds\nspeed *= clamp((gap - anchorStopRadius) /\n               (anchorSlowRadius - anchorStopRadius), 0, 1)\ndesired = normalise(objective - anchor) * speed\nanchorVelocity += clipLength(desired - anchorVelocity, anchorAcceleration * dt)\nproposed = anchor + anchorVelocity * dt\n\n# These moderation lines are in the same engine call.\nmean = centroid(nextMembers.positions)\npulled = proposed + (mean - proposed) * anchorPull\nanchor = mean + clipLength(pulled - mean, lagLimit)\n# advanceFormation also updates heading from planning velocity.\ncommit(nextMembers, nextFormation)\nmeasure distance(anchor, mean) and mean distance(member, assignedSlot)",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/two-level-formation-steering.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/two-level-formation-steering.model.ts",
+    "textEquivalent": "The robots are {slotError} units short of their slot rings on average; the anchor leads their mean by {lag} units. Pulling the anchor towards that mean and capping the gap at {lagLimit} units keeps the plan near the robots."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai formation management",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "relevance": "gdx-ai is a Java game AI library. Its Formation class coordinates an anchor, a geometry pattern, member targets and an optional motion moderator, providing a reusable home for formation control.",
+      "explanation": "updateSlots asks the pattern for each assigned slot, rotates its position by the anchor orientation, adds the anchor and drift translation, and writes the member's target. It then invokes updateAnchorPoint when a moderator is installed. FormationMotionModerator supplies the extension point for holding an anchor back; its base class averages occupied slot locations for drift but leaves the actual anchor feedback policy abstract. A game supplies the concrete anchor feedback policy through that callback."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · 3.7.4 Two-Level Formation Steering",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers two-level formation steering in Chapter 3 Movement, section 3.7.4."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Formation.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "accessed": "2026-10-31",
+      "supports": "updateSlots transforms pattern slots into member targets and calls the optional motion moderator after updating them."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · FormationMotionModerator.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationMotionModerator.java",
+      "accessed": "2026-10-31",
+      "supports": "Anchor moderation is an abstract callback; the base implementation of drift calculation averages occupied slot positions and orientations."
+    }
+  ],
+  "limits": [
+    "The loose-limit comparison allows the beacon plan to advance while the escorts remain far from their slots. The engine's gentle pull is still present. A large allowed lag weakens coordination even though the anchor remains mathematically bounded.",
+    "The circle bounds the anchor's distance to the member mean. Opposing errors can cancel in that mean, so a single stranded escort can be much farther from its assigned slot. A guarantee about the slowest member would need an additional rule.",
+    "Moderation can delay the crossing indefinitely when the escorts cannot progress. It does not choose another route around a blocked quay, avoid collisions or decide when to abandon the wedge.",
+    "The pull fraction is applied once per update. Changing the study time step changes its effect per simulated second. The study uses the engine's formation and arrive functions with local integration, and omits the full scene's separation, walls and rest handling."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:174",
+      "why": "Use fixed formations when a real leader should define the frame and followers should copy that leader's motion directly."
+    },
+    {
+      "id": "aifg-a:181",
+      "why": "Read the formation pattern interface when the problem is defining or replacing slot geometry, rather than controlling the pace of the whole escort."
+    },
+    {
+      "id": "aifg-a:186",
+      "why": "Use slot assignment when distinct capabilities or roles decide which escort belongs in each place; equal-cost input order is enough for this crossing."
+    },
+    {
+      "id": "aifg-a:178",
+      "why": "Read anchor point when choosing the position and orientation from which a formation's relative slots are measured."
+    }
+  ]
+}

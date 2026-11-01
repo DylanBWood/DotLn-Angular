@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:123",
+  "work": "aifg",
+  "slug": "face",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 2",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "The dock operator points to the ferry's beacon instead of choosing a compass heading. The camera needs to translate that place into a direction from its own pedestal. After that translation, turning the motor is the same job as matching any other heading. The beacon may keep moving while the motor responds, so a correct target direction and an accurate actual facing are different things.",
+    "situation": "A camera fixed to the quay should watch a ferry passing across the harbour. Its lens turns while its base stays still; the ferry's position, rather than its own facing, determines where the camera should look."
+  },
+  "example": {
+    "name": "Dock camera tracking the ferry beacon",
+    "description": "Beacon moves across the harbour with horizontal velocity {targetVelocityX} units/s for {travelDuration} s, then waits. Camera turns on a fixed pedestal with a motor speed limit of {maxAngularSpeed}°/s. Each step samples the beacon’s present position, derives a bearing and delegates the turn to Align. Change the motor limit or beacon velocity to see whether the lens can follow the changing bearing.",
+    "parameters": {
+      "cameraX": 0,
+      "cameraY": 0,
+      "initialHeading": 0,
+      "initialAngularSpeed": 0,
+      "targetStartX": 20,
+      "targetStartY": 20,
+      "targetVelocityX": -10,
+      "targetVelocityY": 0,
+      "travelDuration": 4,
+      "directionLength": 18,
+      "slowRadius": 45,
+      "maxAngularSpeed": 90,
+      "maxAngularAcceleration": 180,
+      "responseTime": 0.1,
+      "angleTolerance": 0.25,
+      "speedTolerance": 0.5,
+      "timeStep": 0.05,
+      "steps": 160,
+      "slowMotorSpeed": 10
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Locate the beacon at this step",
+        "text": "At {seconds} s, sample Beacon’s position along its path, stopping its scripted travel after {travelDuration} s. Subtract Camera’s position to get a relative displacement; its direction is the dashed ray. The worked step shows both components, including why moving the pedestal requires recomputing the displacement."
+      },
+      {
+        "title": "Convert the displacement into a heading",
+        "text": "atan2(dy, dx) uses both components to choose the quadrant, so a beacon to either side of the pedestal gets the appropriate bearing. The bearing now is {bearingText}. If both components vanish there is no direction to face: this example uses the current heading as a braking target, without inventing a bearing or drawing a sight ray."
+      },
+      {
+        "title": "Delegate the turn to Align",
+        "text": "Align receives the derived heading, not the beacon's position. It wraps the difference to a short signed error, currently {error}°, and requests {desiredAngularSpeed}°/s against the actual {angularSpeed}°/s. Its {slowRadius}° slowing angle, {responseTime} s response time and {maxAngularAcceleration}°/s² acceleration cap yield {acceleration}°/s² now. It brakes inside the angular tolerance and snaps only when both angular error and angular speed are small."
+      },
+      {
+        "title": "Apply the angular result and sample again",
+        "text": "Apply the returned heading {nextHeading}° and angular velocity {nextAngularSpeed}°/s for the next frame, keeping the camera at ({cameraX}, {cameraY}). Advance time by {timeStep} s and sample the beacon again. The motor acts on the bearing measured at the start of the step; Face adds no future-position prediction, so the beacon can move ahead of its gaze."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "travel = min(seconds, travelDuration)\nbeacon = startPosition + targetVelocity * travel\ndirection = beacon - cameraPosition\n\nif direction.x == 0 and direction.y == 0:\n  targetHeading = heading  // no bearing: brake at current facing\nelse:\n  targetHeading = degrees(atan2(direction.y, direction.x))\n\nnext = alignStep({ heading, angularVelocity }, targetHeading,\n                 { slowRadius, maxAngularSpeed, maxAngularAcceleration,\n                   responseTime, angleTolerance, speedTolerance, timeStep })\n\nheading = next.heading\nangularVelocity = next.angularVelocity\nseconds = seconds + timeStep\n// cameraPosition stays fixed; sample the beacon again next step",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/face.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/face.model.ts",
+    "textEquivalent": "{bearingRelation}. Camera’s angular velocity is {angularSpeed}°/s while the beacon’s bearing is {bearingText}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Face",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Face.java",
+      "relevance": "gdx-ai is a Java game AI toolkit. Its Face behaviour adapts a positional target for the toolkit's reusable orientation controller.",
+      "explanation": "Face extends ReachOrientation. It subtracts the owner's position from the target position, rejects a direction near zero using the active limiter’s threshold, and asks the owner's vectorToAngle method for an orientation. It then calls reachOrientation with that angle. The owner's conversion determines the angle convention; Face itself adds the position-to-orientation adaptation and the zero-direction guard. Its guard returns zero steering."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement, section 3.3.9 Face",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Face in Chapter 3 Movement, section 3.3.9."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Face.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Face.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation derives a direction from relative position, guards against a near-zero direction, converts it through vectorToAngle and delegates to reachOrientation."
+    }
+  ],
+  "limits": [
+    "A motor can be too slow for a changing bearing; computing the correct direction does not make the lens follow it immediately. The motor limit is {maxAngularSpeed}°/s and beacon velocity is {targetVelocityX} units/s. {trackingOutcome}. The comparison changes only the motor limit to {slowMotorSpeed}°/s.",
+    "Coincident camera and beacon positions do not define a bearing. This model brakes towards its current facing in that case; it can still rotate while shedding angular velocity. A game needs an explicit policy for that missing direction.",
+    "Face looks at the present position. It does not lead the ferry for a future photograph or projectile impact, and moving the pedestal requires recomputing the relative displacement. The example also assumes an unobstructed sightline; a computed bearing says nothing about whether the beacon is visible."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:116",
+      "why": "Read Align to tune the camera's slowing angle, response time and angular motor limits, or use it directly when the caller already knows the desired heading."
+    },
+    {
+      "id": "aifg-a:119",
+      "why": "Read Delegated behaviours when separating target interpretation from an existing controller would avoid duplicating steering logic. Face is that separation for a position and an angular controller."
+    },
+    {
+      "id": "aifg-a:124",
+      "why": "Use Looking where you are going when a moving camera platform should face along its own velocity instead of watching a separate beacon."
+    }
+  ]
+}

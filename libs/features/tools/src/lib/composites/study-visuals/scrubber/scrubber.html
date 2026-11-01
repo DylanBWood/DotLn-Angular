@@ -1,0 +1,29 @@
+<label [attr.for]="sliderId">{{ 'tools.study.time' | t: { seconds: seconds() } }}</label>
+<input
+  #slider
+  type="range"
+  min="0"
+  step="1"
+  [id]="sliderId"
+  [max]="lastStep()"
+  [value]="step()"
+  (input)="stepped.emit(slider.valueAsNumber)"
+/>
+<div class="moments">
+  @if (playing() !== null) {
+    <button type="button" [attr.aria-pressed]="playing()" (click)="played.emit(!playing())">
+      {{ (playing() ? 'tools.study.pause' : 'tools.study.play') | t }}
+    </button>
+  }
+  <button type="button" [disabled]="step() === 0" (click)="stepped.emit(step() - 1)">
+    {{ 'tools.study.previous' | t }}
+  </button>
+  <button type="button" [disabled]="step() === lastStep()" (click)="stepped.emit(step() + 1)">
+    {{ 'tools.study.next' | t }}
+  </button>
+  @for (moment of moments(); track moment.step) {
+    <button type="button" translate="no" (click)="stepped.emit(moment.step)">
+      {{ moment.label }}
+    </button>
+  }
+</div>

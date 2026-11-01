@@ -1,74 +1,90 @@
-import type { ParamSpec, Tool, ToolId } from '@dotln-angular/models';
+import type {
+  ConceptStudy,
+  ParamSpec,
+  StudyImplementation,
+  StudyReference,
+  Tool,
+  ToolId,
+} from '@dotln-angular/models';
 
-export interface ArriveState {
-  readonly position: number;
-  readonly velocity: number;
+import type {
+  MotionModel,
+  StudyComparison,
+  StudyInput,
+  StudyLegendEntry,
+  StudyMoment,
+  StudyWorkedStep,
+  TimelineModel,
+} from './studies/study-model';
+
+export type StudySection = 'mechanism' | 'reactive' | 'limits' | 'elsewhere';
+/** Every disclosure of a study: its explanations and the smaller ones around the drawing. */
+export type StudyDisclosure = StudySection | 'example' | 'numbers' | 'inputs' | 'legend';
+export type StudyVisualView = 'motion' | 'timeline';
+export type StudyStatus = 'none' | 'loading' | 'failed' | 'ready';
+
+/** What a reader does to a study; one output carries them all up to the facade. */
+export type StudyIntent =
+  | { readonly kind: 'step'; readonly step: number }
+  | { readonly kind: 'play'; readonly playing: boolean }
+  | { readonly kind: 'input'; readonly name: string; readonly value: number }
+  | { readonly kind: 'resetInputs' }
+  | { readonly kind: 'view'; readonly view: StudyVisualView }
+  | { readonly kind: 'expand'; readonly section: StudyDisclosure; readonly open: boolean };
+
+/** An input of the example with the value it has now. */
+export interface StudyInputView extends StudyInput {
+  readonly value: number;
 }
 
-export interface ArriveStep {
-  readonly distance: number;
-  readonly desired: number;
-  readonly requestedAcceleration: number;
-  readonly acceleration: number;
-  readonly settled: boolean;
-  readonly next: ArriveState;
-}
-
-export interface ArriveCalculationView {
+/** The drawing at the selected moment, with the record's prose filled from that moment. */
+export interface StudyDrawingView {
+  readonly view: StudyVisualView;
+  readonly motion: MotionModel;
+  readonly timeline: TimelineModel | null;
   readonly step: number;
-  readonly settled: boolean;
-  readonly withinRadius: boolean;
-  readonly motion: 'accelerating' | 'braking' | 'steady';
-  readonly values: Readonly<Record<string, string>>;
+  readonly moments: readonly StudyMoment[];
+  readonly legend: readonly StudyLegendEntry[];
+  readonly caption: string;
+  readonly textEquivalent: string;
+  readonly note: string | null;
+  /** Whether the example is running; null when a reader asked for reduced motion. */
+  readonly playing: boolean | null;
+  readonly inputs: readonly StudyInputView[];
 }
 
-export interface ArriveLimitExampleView {
-  readonly cases: readonly {
-    readonly id: 'normal' | 'late';
-    readonly points: string;
-    readonly peakX: number;
-    readonly peakY: number;
+/** A mechanism step with the lines of pseudocode it explains. */
+export interface StudyStepView {
+  readonly title: string;
+  readonly text: string;
+  readonly code: string;
+}
+
+export interface StudyView {
+  readonly id: ToolId;
+  readonly authoredBy: string;
+  readonly authoredOn: string;
+  readonly reviewers: string;
+  readonly intuition: ConceptStudy['intuition'];
+  readonly example: ConceptStudy['example'];
+  readonly visual: StudyDrawingView | null;
+  readonly expanded: readonly StudyDisclosure[];
+  readonly worked: StudyWorkedStep | null;
+  readonly pseudocode: string;
+  readonly steps: readonly StudyStepView[];
+  readonly rxjs: { readonly code: string; readonly executable: boolean } | null;
+  readonly limits: readonly string[];
+  readonly comparison: StudyComparison | null;
+  readonly implementations: readonly StudyImplementation[];
+  readonly references: readonly StudyReference[];
+  readonly nearby: readonly {
+    readonly id: ToolId;
+    readonly title: string;
+    readonly why: string;
   }[];
-  /** Axis labels and lines placed with the same scales as the plotted runs. */
-  readonly positionTicks: readonly { readonly label: string; readonly y: number }[];
-  readonly timeTicks: readonly { readonly label: string; readonly x: number }[];
-  readonly gridPath: string;
-  readonly targetPath: string;
-  readonly axisPath: string;
-  readonly values: Readonly<Record<string, string>>;
+  /** The next studied concept of the work, in source order; none after the last. */
+  readonly next: { readonly id: ToolId; readonly title: string } | null;
 }
-
-export interface ArriveStudyView {
-  readonly currentCalculation: ArriveCalculationView | null;
-  readonly limitExample: ArriveLimitExampleView | null;
-  readonly activeView: 'motion' | 'velocity';
-  readonly streamView: StudyStreamView;
-  readonly expanded: readonly StudySection[];
-  readonly step: number;
-  readonly steps: number;
-  readonly seconds: string;
-  readonly distance: string;
-  readonly speed: string;
-  readonly desired: string;
-  readonly x: number;
-  readonly actualEnd: number;
-  readonly desiredEnd: number;
-  readonly phase: 'start' | 'cruise' | 'slow' | 'settled';
-  readonly trail: readonly number[];
-  readonly velocityPlot: {
-    readonly origin: number;
-    readonly actual: string;
-    readonly desired: string;
-    readonly cursorX: number;
-    readonly actualY: number;
-    readonly desiredY: number;
-    readonly maxSpeed: number;
-    readonly seconds: number;
-  };
-}
-
-export type StudySection = 'algorithm' | 'reactive' | 'limits' | 'references';
-export type StudyStreamView = 'flow' | 'timeline';
 
 export interface ReadingView {
   readonly tool: Tool;
@@ -86,4 +102,6 @@ export interface ReadingView {
   readonly hooks: readonly { readonly domain: string; readonly clauses: readonly string[] }[];
   readonly relations: readonly { readonly title: string; readonly id: ToolId | null }[];
   readonly sceneTool: boolean;
+  readonly study: StudyView | null;
+  readonly studyStatus: StudyStatus;
 }

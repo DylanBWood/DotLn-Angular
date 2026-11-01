@@ -1,0 +1,132 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:151",
+  "work": "aifg",
+  "slug": "equilibrium-fallback",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 6",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Nori stands between depot beacons that pull equally in opposite directions. Neither request is weak, but their sum hides both. A sideways probe can change the geometry enough for the beacon group to speak again. That probe breaks the balance; it does not decide which beacon Nori ought to visit.",
+    "situation": "Use fallback when Nori’s combined steering is quiet despite competing goals. It is an escape from a local balance, provided moving away is actually desirable."
+  },
+  "example": {
+    "name": "Nori between the depot beacons",
+    "description": "Nori starts at rest midway between the West and East beacons, each {beaconHalfSpan} units away along their line. Their seek requests have equal weight {beaconWeight}. The lower group uses engine wander with a fixed direction across that line, towards the bottom of the drawing, and fallback weight {fallbackWeight}. Requests must exceed epsilon {epsilon} units/s²; acceleration is capped at {maxAcceleration} units/s² and speed at {maxSpeed} units/s. Each update takes {timeStep} s. Change the fallback weight or threshold to make the nudge take control or remain silent; the comparison keeps the same threshold and uses weight {weakFallbackWeight}.",
+    "parameters": {
+      "initialX": 0,
+      "initialY": 0,
+      "initialVelocityX": 0,
+      "initialVelocityY": 0,
+      "headingX": 0,
+      "headingY": 1,
+      "beaconHalfSpan": 6,
+      "beaconY": 0,
+      "beaconWeight": 1,
+      "maxSpeed": 5,
+      "maxAcceleration": 4,
+      "radius": 0.5,
+      "wanderAngle": 0,
+      "wanderRadius": 1,
+      "wanderOffset": 2,
+      "responseTime": 0.5,
+      "fallbackWeight": 1,
+      "weakFallbackWeight": 0.02,
+      "epsilon": 0.1,
+      "timeStep": 0.1,
+      "steps": 80
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Measure the combined beacon request",
+        "text": "Engine seek points at each beacon with full acceleration. Multiply both outputs by beaconWeight, then engine blend sums and clips them. The net request now has magnitude {primaryMagnitude} units/s². At the centre the opposing requests cancel; testing their individual magnitudes would miss that balance."
+      },
+      {
+        "title": "Prepare an independent nudge",
+        "text": "Engine wander supplies a velocity-matching request from the fixed heading and wander circle. Engine blend applies fallbackWeight and clips the result, currently {fallbackMagnitude} units/s². This separate group contributes nothing while the beacon group has priority, even when its own request is stronger."
+      },
+      {
+        "title": "Fall through only when the net is small",
+        "text": "Call engine firstActive with the beacon group first and the fallback second. Each must exceed epsilon strictly. The active group is {activeGroup}, supplying magnitude {selectedMagnitude} units/s². If both decline, acceleration is zero. No stalled flag or waiting period is involved."
+      },
+      {
+        "title": "Move, then let the original group try again",
+        "text": "The local integrator clips the new velocity after acceleration × timeStep, then moves with that velocity. Recompute both groups from the new state. {primaryHandover} {returnReading} Moving away changes the beacon geometry, but a group can reclaim control only if its net request clears the chosen threshold."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "left = engine.seek(body, leftBeacon)\nright = engine.seek(body, rightBeacon)\nprimary = engine.blend([\n  { acceleration: left, weight: beaconWeight },\n  { acceleration: right, weight: beaconWeight }\n], maxAcceleration)\n\nprobe = engine.wander(body,\n  { wanderRadius, wanderOffset, timeToTarget: responseTime })\nfallback = engine.blend([\n  { acceleration: probe, weight: fallbackWeight }\n], maxAcceleration)\n// Keep heading and wanderAngle fixed in this example.\n\nacceleration = engine.firstActive([primary, fallback], epsilon)\n// Use the first vector with length > epsilon.\n// If both decline, return zero; do not add the groups.\n\nvelocity = clipLength(velocity + acceleration * timeStep, maxSpeed)\nposition = position + velocity * timeStep\n// Rebuild both requests from this new state on the next update.",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/equilibrium-fallback.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/equilibrium-fallback.model.ts",
+    "textEquivalent": "Nori is {lineOffset} units from the line between West and East; {beaconReading}. The sideways fallback requests {fallbackMagnitude} units/s², and {activeGroup} controls this update."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · blended groups with PrioritySteering",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
+      "relevance": "gdx-ai provides composable Java steering behaviours. Its blended and priority controllers can place a secondary request after a group whose ingredients might cancel.",
+      "explanation": "BlendedSteering accumulates weighted behaviour outputs and limits linear acceleration. PrioritySteering then evaluates behaviours in order, passing on when squared magnitude does not exceed epsilon squared. This makes a cancelling blend eligible to yield to a later behaviour. If all behaviours are small, the controller retains the last result, including a small nonzero one."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · §3.4 Combining Steering Behaviors · §3.4.3 Priorities",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers equilibrium fallback in Chapter 3 Movement, §3.4.3 Priorities within §3.4 Combining Steering Behaviors."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · PrioritySteering.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
+      "accessed": "2026-10-31",
+      "supports": "A small net steering result yields to the next behaviour; the controller returns the first result above its threshold or the last small result."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · BlendedSteering.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
+      "accessed": "2026-10-31",
+      "supports": "A blended group adds weighted vectors before limiting the resulting linear acceleration, allowing opposing requests to cancel."
+    }
+  ],
+  "limits": [
+    "At comparison weight {weakFallbackWeight}, the first request has magnitude {comparisonInitialMagnitude} units/s² against epsilon {epsilon}: {comparisonStart}. Its largest offset is {comparisonMaxOffset} units. A fallback at or below epsilon cannot start Nori from this balance, even though the behaviour is present.",
+    "The chosen run reaches an offset of {maxOffset} units and uses fallback for {fallbackSteps} updates. {movementReading} {returnReading} Breaking the balance does not choose a beacon or find a route.",
+    "A small net result does not tell us whether Nori is trapped or already content. If both beacon goals are satisfied, the same fallback rule can move Nori away again. A completion condition belongs outside this magnitude test.",
+    "Zero acceleration does not stop a moving Nori in this integrator. An already moving body can coast even when both groups decline; only the initially resting case remains still without a request."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:149",
+      "why": "Read priority steering for the ordered group test that gives Nori’s fallback its turn."
+    },
+    {
+      "id": "aifg-a:146",
+      "why": "Read equilibria in blending when diagnosing why the opposing beacon requests cancel before deciding whether a fallback is appropriate."
+    },
+    {
+      "id": "aifg-a:144",
+      "why": "Use weighted blending to change the beacon group’s balance itself; fallback leaves those conflicting weights intact."
+    },
+    {
+      "id": "aifg-a:125",
+      "why": "Read wander when the lower group should explore with a changing direction; this probe holds its heading and angle fixed to expose the handover."
+    },
+    {
+      "id": "aifg-a:153",
+      "why": "Reach for a steering pipeline when Nori needs a target and constraints that resolve the route, rather than another local nudge."
+    }
+  ]
+}

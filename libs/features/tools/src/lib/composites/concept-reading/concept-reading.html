@@ -2,6 +2,16 @@
 <article [attr.data-concept-id]="vm.tool.id" [attr.data-work]="vm.tool.work">
   <p class="place">{{ 'tools.reading.place' | t: { type: vm.tool.rowType, place: vm.place } }}</p>
   <h2 translate="no">{{ vm.tool.title }}</h2>
+  @if (vm.study || vm.sceneTool) {
+    <p class="jump">
+      @if (vm.study) {
+        <button type="button" (click)="jumpToStudy()">{{ 'tools.study.jump' | t }}</button>
+      }
+      @if (vm.sceneTool) {
+        <span class="scene-link"><ng-content select="[scene-link]" /></span>
+      }
+    </p>
+  }
   <p class="definition" data-testid="definition" translate="no">{{ vm.tool.definition }}</p>
   @if (vm.tool.verified.kind === 'model-knowledge') {
     <p class="source-note">{{ 'tools.reading.modelKnowledge' | t }}</p>
@@ -12,7 +22,25 @@
     <summary>{{ 'tools.reading.source' | t }}</summary>
     <p translate="no">{{ vm.tool.verified.note }}</p>
   </details>
-  <ng-content />
+  @if (vm.studyStatus === 'loading') {
+    <p role="status">{{ 'tools.study.loading' | t }}</p>
+  } @else if (vm.studyStatus === 'failed') {
+    <p role="alert">{{ 'tools.study.failed' | t }}</p>
+    <button class="retry" type="button" (click)="studyRetried.emit()">
+      {{ 'tools.study.retry' | t }}
+    </button>
+  }
+  <!-- One item, so the study and its opened explanations are rebuilt for each concept. -->
+  @for (study of studies(); track study.id) {
+    <tools-study
+      #study
+      tabindex="-1"
+      [study]="study"
+      [hrefFor]="hrefFor()"
+      (intent)="studyIntent.emit($event)"
+      (followed)="followed.emit($event)"
+    />
+  }
   @for (hook of vm.hooks; track hook.domain) {
     <section class="hook">
       <h3>{{ 'tools.reading.hook' | t: { domain: hook.domain } }}</h3>
@@ -68,15 +96,12 @@
       <p translate="no">{{ vm.tool.faces.transform.reason }}</p>
     </section>
   }
-  @if (vm.sceneTool) {
-    <p class="scene-note"><ng-content select="[scene-link]" /></p>
-  }
   @if (vm.relations.length) {
     <p class="relations">
       {{ 'tools.reading.related' | t }}
       @for (relation of vm.relations; track $index) {
         @if (relation.id; as id) {
-          <a href="#reading" translate="no" (click)="$event.preventDefault(); followed.emit(id)">{{
+          <a translate="no" [attr.href]="hrefFor()(id)" (click)="follow($event, id)">{{
             relation.title
           }}</a>
         } @else {

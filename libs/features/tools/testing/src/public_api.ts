@@ -1,1 +1,6 @@
-export { provideToolsTestKit, provideToolsFacadeTestKit } from './lib/tools-test-kits';
+export {
+  loadStudy,
+  provideToolsTestKit,
+  provideToolsFacadeTestKit,
+  provideToolsHomeFacadeTestKit,
+} from './lib/tools-test-kits';

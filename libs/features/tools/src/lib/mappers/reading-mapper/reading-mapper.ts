@@ -5,7 +5,7 @@ import type { Tool, ToolId } from '@dotln-angular/models';
 import { HookDomain, isSceneTool, TransformKind } from '@dotln-angular/models';
 
 import { ConceptReading } from '../../composites/concept-reading/concept-reading';
-import type { ReadingView } from '../../types';
+import type { ReadingView, StudyIntent, StudyStatus, StudyView } from '../../types';
 import { mapHookDomains } from '../hook-domain-mapper/hook-domain-mapper';
 
 export const readable = (value: string) => value.replace(/[.-]/g, ' ');
@@ -14,6 +14,8 @@ export const mapReading = (
   transform: string,
   target: string,
   domains: Readonly<Record<HookDomain, string>>,
+  study: StudyView | null = null,
+  studyStatus: StudyStatus = 'none',
 ): ReadingView => ({
   tool,
   place: [tool.place.part, tool.place.chapter, tool.place.section, tool.place.subsection]
@@ -39,22 +41,34 @@ export const mapReading = (
         }
       : null,
   sceneTool: isSceneTool(tool),
+  study,
+  studyStatus,
 });
 
 @Component({
   selector: 'tools-reading-mapper',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <tools-concept-reading [reading]="vm()" (followed)="followed.emit($event)">
+    <tools-concept-reading
+      [reading]="vm()"
+      [hrefFor]="hrefFor()"
+      (followed)="followed.emit($event)"
+      (studyIntent)="studyIntent.emit($event)"
+      (studyRetried)="studyRetried.emit()"
+    >
       <ng-content select="[scene-link]" ngProjectAs="[scene-link]" />
-      <ng-content />
     </tools-concept-reading>
   `,
   imports: [ConceptReading],
 })
 export class ReadingMapper {
   readonly tool = input.required<Tool>();
+  readonly study = input<StudyView | null>(null);
+  readonly studyStatus = input<StudyStatus>('none');
+  readonly hrefFor = input.required<(id: ToolId) => string>();
   readonly followed = output<ToolId>();
+  readonly studyIntent = output<StudyIntent>();
+  readonly studyRetried = output<void>();
   readonly #targets = {
     unit: {
       one: translateSignal('tools.targets.unit'),
@@ -124,6 +138,8 @@ export class ReadingMapper {
           ]()
         : '',
       domains,
+      this.study(),
+      this.studyStatus(),
     );
   });
 }

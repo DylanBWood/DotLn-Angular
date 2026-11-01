@@ -1,10 +1,18 @@
 import type { Provider } from '@angular/core';
 
-import type { CatalogCheckpoint, Tool, ToolContent, WorkSlug } from '@dotln-angular/models';
+import type {
+  CatalogCheckpoint,
+  CatalogSummary,
+  ConceptStudy,
+  StudiesSummary,
+  Tool,
+  ToolContent,
+  WorkSlug,
+} from '@dotln-angular/models';
 
 import { CatalogStore } from './catalog-store';
 import { CatalogToken } from './catalog-token';
-import type { CatalogChunks, CatalogLoader } from './types';
+import type { CatalogChunks, CatalogLoader, StudyChunks, SummaryChunks } from './types';
 
 /** A tool-v0 row: a v1 tool without the content the join adds. Read for one release only. */
 type LegacyTool = Tool extends infer Entry
@@ -25,7 +33,71 @@ const chunks: CatalogChunks = {
   tt: [() => import('../data/tools-tt.json')],
 };
 
-export function createCatalogLoader(sources: CatalogChunks = chunks): CatalogLoader {
+// One chunk per work, beside the tool data, so a regenerated join never touches a study.
+const studyChunks: StudyChunks = {
+  aifg: () => import('../studies/aifg'),
+};
+
+const summaryChunks: SummaryChunks = [
+  () => import('../data/catalog-summary.json'),
+  () => import('../studies/studies-summary.json'),
+];
+
+const rowCounts = (module: { readonly default: unknown }) => {
+  const summary = module.default as { readonly counts?: { readonly work?: unknown } };
+  const counts = summary?.counts?.work;
+  if (!counts || typeof counts !== 'object')
+    throw new Error('Catalog summary has an unsupported shape.');
+  return Object.entries(counts).map(([work, count]) => ({
+    work: work as WorkSlug,
+    count: Number(count),
+  }));
+};
+
+const studiesOf = (module: { readonly default: unknown }) => {
+  const summary = module.default as StudiesSummary;
+  if (summary?.schema !== 'studies-summary-v0' || !Array.isArray(summary.works))
+    throw new Error('Studies summary has an unsupported shape.');
+  return summary;
+};
+
+const recordsOf = (work: WorkSlug, module: { readonly default: unknown }) => {
+  const records = module.default as readonly ConceptStudy[];
+  if (
+    !Array.isArray(records) ||
+    records.some((study) => study?.schema !== 'concept-study-v0' || study.work !== work)
+  )
+    throw new Error('Study chunk has an unsupported shape.');
+  return records;
+};
+
+/** Keeps one pending or settled value per key and forgets a failure, so a retry can run. */
+function cached<Key, Value>(load: (key: Key) => Promise<Value>) {
+  const values = new Map<Key, Promise<Value>>();
+  return (key: Key): Promise<Value> => {
+    const existing = values.get(key);
+    if (existing) return existing;
+    const pending = load(key).catch((error: unknown) => {
+      values.delete(key);
+      throw error;
+    });
+    values.set(key, pending);
+    return pending;
+  };
+}
+
+export function createCatalogLoader(
+  sources: CatalogChunks = chunks,
+  studies: StudyChunks = studyChunks,
+  summaries: SummaryChunks = summaryChunks,
+): CatalogLoader {
+  const summary = cached(async (_key: 'summary'): Promise<CatalogSummary> => {
+    const [catalog, studied] = await Promise.all(summaries.map((load) => load()));
+    return { works: rowCounts(catalog), studies: studiesOf(studied) };
+  });
+  const studiesFor = cached(async (work: WorkSlug): Promise<readonly ConceptStudy[]> =>
+    recordsOf(work, (await studies[work]?.()) ?? { default: [] }),
+  );
   const cache = new Map<WorkSlug, Promise<readonly Tool[]>>();
   const loadWork = (work: WorkSlug): Promise<readonly Tool[]> => {
     const existing = cache.get(work);
@@ -69,6 +141,15 @@ export function createCatalogLoader(sources: CatalogChunks = chunks): CatalogLoa
         : Promise.all((Object.keys(sources) as WorkSlug[]).map(loadWork)).then((groups) =>
             groups.flat().sort((a, b) => a.id.localeCompare(b.id)),
           ),
+    study: async (id) => {
+      const { studies: summarized } = await summary('summary');
+      const work = summarized.works.find(({ studies }) =>
+        studies.some((study) => study.id === id),
+      )?.work;
+      if (!work) return null;
+      return (await studiesFor(work)).find((study) => study.id === id) ?? null;
+    },
+    summary: () => summary('summary'),
   };
 }
 

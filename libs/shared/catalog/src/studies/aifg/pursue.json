@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:120",
+  "work": "aifg",
+  "slug": "pursue",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 1",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Ash wants to tag Reed, who is running along the quay. Steering at Reed's current position aims behind a moving runner. Ash instead aims at a temporary mark ahead of Reed. Each update replaces that mark using the latest motion; it is a forecast that can be revised, rather than a promised meeting place.",
+    "situation": "A tagger approaching a runner from the side needs a lead on steady motion. Short predictions near the runner keep the aim responsive, while a cap limits how far into an uncertain future the tagger commits."
+  },
+  "example": {
+    "name": "Ash chases Reed on the quay",
+    "description": "Ash approaches Reed’s running line from the side and predicts no more than {maxPrediction} s ahead. Reed runs steadily in the main run; the comparison brings a reversal into that forecast. The ring marks tag range, and entering it measures contact without stopping either runner. Ash observes current motion, never the reversal schedule.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "velocityX": 0,
+      "velocityY": 4,
+      "targetX": 0,
+      "targetY": 12,
+      "targetVelocityX": 4.5,
+      "targetVelocityY": 0,
+      "turnedVelocityX": -4.5,
+      "turnedVelocityY": 0,
+      "maxSpeed": 8,
+      "maxAcceleration": 8,
+      "maxPrediction": 2,
+      "turnAt": 20,
+      "comparisonTurnAt": 1,
+      "tagRadius": 2,
+      "timeStep": 0.1,
+      "steps": 80,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 0.5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Sample the runners now",
+        "text": "Measure the separation between Ash and Reed, {distance} units, and Ash's actual speed, {speed} units/s. This estimate uses Ash's current speed, not the speed cap or the relative closing speed. It does not solve the interception equation."
+      },
+      {
+        "title": "Choose a bounded lookahead",
+        "text": "If Ash is stationary, use maxPrediction to avoid dividing by zero. Otherwise use the smaller of maxPrediction and distance / speed. The selected horizon is {prediction} s here. Recomputing it lets the lead shorten as Ash closes in; timeStep still advances only one update."
+      },
+      {
+        "title": "Project Reed and delegate to Seek",
+        "text": "Project Reed’s current velocity over the chosen horizon to put Aim {leadDistance} units ahead. The engine has no pursuit function: this study calculates that prediction locally, then calls the engine’s seek for {accelerationMagnitude} units/s² of acceleration towards the cross."
+      },
+      {
+        "title": "Advance and observe again",
+        "text": "Update Ash's velocity with acceleration times timeStep, clip its length to maxSpeed, then move with the updated velocity. Read Reed's scripted position and current velocity at the next sample. The script drives the example only; the predictor sees no future turn. Tag range is a measurement, not an arrival or braking condition."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "distance = length(reed.position - ash.position)\nspeed = length(ash.velocity)\n\nif speed == 0:\n  prediction = maxPrediction\nelse:\n  prediction = min(maxPrediction, distance / speed)\n\npredicted = reed.position + reed.velocity * prediction\nacceleration = sceneEngine.seek(ash, predicted)\n\nvelocity = clipLength(ash.velocity + acceleration * timeStep,\n                      ash.maxSpeed)\nash = ash with { position: ash.position + velocity * timeStep, velocity }\nseconds = seconds + timeStep\nreed = sampleScriptedRunner(seconds)\n// Repeat; only current Reed data enters the prediction.",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/pursue.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/pursue.model.ts",
+    "textEquivalent": "The Aim cross lies {leadDistance} units ahead of Reed along the runner’s current direction, using a {prediction} s lookahead. Ash is {distance} units from Reed and {closingRelation}, with the pull aimed at the cross."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Pursue",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Pursue.java",
+      "relevance": "gdx-ai is a Java game AI library whose generic Pursue behaviour accepts a moving steerable target. It exposes a prediction cap for reusable pursuit and evasion steering.",
+      "explanation": "The code divides squared separation by the owner's squared current speed and takes the square root when that result fits within the cap. At rest it keeps the cap. It projects the target with its current linear velocity, then normalises the offset and scales it to the acceleration limit. An overridable acceleration method lets Evade reverse that output. Despite a comment discussing maximum speed, the calculation reads current velocity."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.3.8 Pursue and Evade",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Pursue in Chapter 3 Movement, §3.3.8 Pursue and Evade."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Pursue.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Pursue.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation caps a distance/current-speed horizon, keeps the cap at rest, projects the target's velocity and calculates seek acceleration."
+    },
+    {
+      "title": "Craig Reynolds · Pursuit and Evasion steering behaviours",
+      "url": "https://www.red3d.com/cwr/steer/PursueEvade.html",
+      "accessed": "2026-10-31",
+      "supports": "A predicted quarry position is a visible temporary target; pursuit seeks that estimate and evasion flees it."
+    }
+  ],
+  "limits": [
+    "Reed can reverse after Ash samples the velocity. In the comparison, forecasts made before the reversal miss Reed's actual position at their chosen future time. The error chart measures that miss, not separation between the runners. Replanning corrects subsequent forecasts but cannot undo motion already taken towards an old aim.",
+    "The horizon is a heuristic. It ignores Ash's acceleration time and the runners' relative direction, so its value is not an interception deadline. A faster pursuer and an accurate straight-line forecast still do not guarantee an exact meeting.",
+    "The closest pass with the selected prediction cap is {closestPass} units. {tagOutcome} Delegating to Seek adds no brake, contact latch or velocity matching; a game rule must finish a tag, or velocity matching can keep Ash beside Reed.",
+    "Neither the prediction nor Seek checks whether the route to the amber cross is traversable. A quay wall would need a route or an avoidance rule. A longer horizon also cannot make an unreachable faster runner catchable."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:110",
+      "why": "Use Seek directly when Reed is stationary or when leading the motion is unnecessary. It is also the acceleration step used after this predictor chooses an aim."
+    },
+    {
+      "id": "aifg-a:121",
+      "why": "Read Prediction time when choosing how far to lead Reed: the cap trades a longer lead against greater exposure to an unseen turn."
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "Use Velocity matching after closing in when Ash should run alongside Reed. Continuing to seek the projected point does not match their velocities."
+    },
+    {
+      "id": "aifg-a:122",
+      "why": "Use Evade when Reed is a pursuer to escape from: the forecast can still supply a future point, but the steering heads away from it."
+    }
+  ]
+}

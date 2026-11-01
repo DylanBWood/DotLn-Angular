@@ -2,11 +2,13 @@ import type {
   CatalogFilters,
   SceneTypeId,
   Tool,
+  ToolId,
   ToolKind,
   ToolStatus,
   WorkSlug,
 } from '@dotln-angular/models';
 import {
+  catalogStudiedFilters,
   sceneTypeIds,
   toolKinds,
   toolStatuses,
@@ -32,6 +34,7 @@ export const emptyCatalogFilters: CatalogFilters = {
   scene: null,
   transform: null,
   status: null,
+  studied: null,
 };
 export const catalogFilterOptions: Readonly<Record<keyof CatalogFilters, readonly string[]>> = {
   work: workSlugs,
@@ -39,6 +42,7 @@ export const catalogFilterOptions: Readonly<Record<keyof CatalogFilters, readonl
   scene: sceneTypeIds,
   transform: Object.values(TransformKind),
   status: toolStatuses,
+  studied: catalogStudiedFilters,
 };
 
 export function availableCatalogOptions(tools: readonly Tool[]) {
@@ -50,7 +54,12 @@ export function availableCatalogOptions(tools: readonly Tool[]) {
 }
 
 export function isCatalogFilters(value: unknown): value is CatalogFilters {
-  if (typeof value !== 'object' || value === null || Object.keys(value).length !== 5) return false;
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Object.keys(value).length !== Object.keys(catalogFilterOptions).length
+  )
+    return false;
   return Object.entries(catalogFilterOptions).every(([key, options]) => {
     if (!(key in value)) return false;
     const selected: unknown = Reflect.get(value, key);
@@ -62,7 +71,11 @@ export function isCatalogFilters(value: unknown): value is CatalogFilters {
   });
 }
 
-export function filterCatalog(tools: readonly Tool[], filters: CatalogFilters): readonly Tool[] {
+export function filterCatalog(
+  tools: readonly Tool[],
+  filters: CatalogFilters,
+  studied: ReadonlySet<ToolId> = new Set(),
+): readonly Tool[] {
   return tools.filter(
     (tool) =>
       (!filters.work || tool.work === filters.work) &&
@@ -70,6 +83,7 @@ export function filterCatalog(tools: readonly Tool[], filters: CatalogFilters): 
       (!filters.scene || tool.faces?.scene.includes(filters.scene)) &&
       (!filters.transform ||
         (tool.status === 'typed' && tool.faces.transform.kind === filters.transform)) &&
-      (!filters.status || tool.status === filters.status),
+      (!filters.status || tool.status === filters.status) &&
+      (!filters.studied || studied.has(tool.id) === (filters.studied === 'studied')),
   );
 }

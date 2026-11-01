@@ -1,7 +1,8 @@
 # Tools
 
-The pages at `/tools` and `/tools/catalog`: a home that lists the works, and the surface
-that reads them concept by concept.
+The pages at `/tools`, `/tools/catalog` and `/tools/catalog/<tool id>`: a home that lists the works
+from the summaries, and the surface that reads them concept by concept, with each concept's study,
+its visual families and the model modules that drive them.
 
 A lazy sub-app: `@dotln-angular/tools` exports `toolsRoutes`, and test kits come from
 `@dotln-angular/tools/testing`.

@@ -1,0 +1,46 @@
+@use '../tones';
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+svg {
+  display: block;
+  inline-size: 100%;
+  overflow: hidden;
+  @include tones.chart-text;
+}
+.body,
+.dot,
+.vector-end {
+  @include tones.fill-tones;
+}
+.zone {
+  fill: var(--dotln-known-bg);
+  stroke: var(--dotln-border-strong);
+  stroke-dasharray: 5 6;
+}
+.link {
+  stroke-width: 1.5;
+  stroke-dasharray: 3 6;
+  @include tones.stroke-tones;
+}
+.trail {
+  fill: var(--dotln-border-strong);
+}
+.cross,
+.ring {
+  fill: none;
+  @include tones.stroke-tones;
+}
+.cross {
+  stroke-width: 3;
+}
+.ring {
+  stroke-width: 2;
+}
+.vector {
+  stroke-width: 4;
+  @include tones.stroke-tones;
+}
+@include tones.reading;

@@ -2,7 +2,8 @@
 
 Types and small constants the app shares, with no runtime service: the board types
 transcribed from the pinned `uifa-board-v1` schema, app-state types such as `FeatureFlags`
-and `AppError`, and the catalog's `tool-v1` contract in `src/lib/toolbox.ts`.
+and `AppError`, the catalog's `tool-v1` contract in `src/lib/toolbox.ts`, and the concept-study
+record in `src/lib/concept-study.ts`.
 
 Import from `@dotln-angular/models`. The library has no `testing` entry point.
 

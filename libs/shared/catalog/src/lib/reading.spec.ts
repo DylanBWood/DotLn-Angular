@@ -2,11 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { Dispatcher } from '@ngrx/signals/events';
 
 import { provideStorageTokenTestKit } from '@dotln-angular/data-access/testing';
-import { catalogPageEvents } from '@dotln-angular/events';
+import { catalogPageEvents, toolsHomeEvents } from '@dotln-angular/events';
 import type { Tool } from '@dotln-angular/models';
 
 import { catalogFixture, provideCatalogTestKit } from '../../testing/src';
 import { CatalogStore } from './catalog-store';
+import { CatalogToken } from './catalog-token';
 import {
   catalogShelf,
   chapterKey,
@@ -18,7 +19,9 @@ import {
 
 it('shows a loaded work the shelf does not list by its slug, without a scene type', () => {
   const tool: Tool = { ...catalogFixture[0], id: 'goal:1', work: 'goal' };
-  expect(catalogShelf([tool])).toEqual([{ work: 'goal', title: 'goal', scene: null, count: 1 }]);
+  expect(catalogShelf([tool])).toEqual([
+    { work: 'goal', title: 'goal', scene: null, count: 1, studied: 0 },
+  ]);
 });
 
 function setup(stored?: unknown, tools: readonly Tool[] = catalogFixture) {
@@ -39,7 +42,7 @@ it('persists the chosen work, chapter, concept and ten unique readings at the to
   dispatch.dispatch(catalogPageEvents.workChosen('aifg'));
   dispatch.dispatch(catalogPageEvents.chapterChosen(chapterKey(catalogFixture[0])));
   dispatch.dispatch(catalogPageEvents.conceptOpened('sample:1'));
-  dispatch.dispatch(catalogPageEvents.relationFollowed('sample:2'));
+  dispatch.dispatch(catalogPageEvents.conceptOpened('sample:2'));
   expect(store.history()).toEqual(['sample:2', 'sample:1']);
   dispatch.dispatch(catalogPageEvents.readingReturned());
   expect(store.selectedId()).toBe('sample:1');
@@ -50,8 +53,8 @@ it('persists the chosen work, chapter, concept and ten unique readings at the to
     work: 'aifg',
     chapter: chapterKey(catalogFixture[0]),
     section: 'First concepts',
-    selectedId: 'sample:1',
     history: ['sample:1', 'sample:2'],
+    lastTitle: 'Flock',
   });
   expect(storage.values.has('dotln-angular.catalog')).toBe(false);
   dispatch.dispatch(catalogPageEvents.conceptOpened('absent:99'));
@@ -91,28 +94,77 @@ it('opens and restores the unnamed Concepts group for a chapter without sections
     work: 'geb',
     chapter: chapterKey(tool),
     section: '',
-    selectedId: tool.id,
     history: [tool.id],
+    lastTitle: tool.title,
   });
   TestBed.resetTestingModule();
   const reloaded = setup(persisted, [tool]).store;
   await vi.waitFor(() => expect(reloaded.tools()).toHaveLength(1));
   expect(reloaded.section()).toBe(group.title);
-  expect(reloaded.selectedId()).toBe(tool.id);
+  // The address names the open reading, so what was stored opens nothing by itself.
+  expect(reloaded.selectedId()).toBeNull();
+  expect(reloaded.lastTitle()).toBe(tool.title);
 });
 
-it('restores a v1 reading and prunes stale history ids', async () => {
+it('gives a reading stored before titles were kept its title, and prunes stale history ids', async () => {
+  const { lastTitle: _lastTitle, ...stored } = emptyReading;
   const { store } = setup({
-    ...emptyReading,
+    ...stored,
     work: 'aifg',
     selectedId: 'sample:2',
     history: ['sample:1', 'absent:99'],
   });
   await vi.waitFor(() => expect(store.tools()).toHaveLength(3));
-  expect(store.selectedId()).toBe('sample:2');
-  expect(store.work()).toBe('poeaa');
-  expect(store.chapter()).toBe(chapterKey(catalogFixture[1]));
+  expect(store.selectedId()).toBeNull();
+  expect(store.lastTitle()).toBe('Flock');
+  expect(store.work()).toBe('aifg');
   expect(store.history()).toEqual(['sample:1']);
+});
+
+it('keeps the title with the newest reading that survives pruning', async () => {
+  const { store } = setup({
+    ...emptyReading,
+    work: 'aifg',
+    history: ['absent:99', 'sample:1'],
+    lastTitle: 'A concept that has gone',
+  });
+  await vi.waitFor(() => expect(store.tools()).toHaveLength(3));
+  expect(store.history()).toEqual(['sample:1']);
+  expect(store.lastTitle()).toBe('Flock');
+});
+
+it('closes a reading and keeps the place it was read from', async () => {
+  const { store, dispatch } = setup();
+  await vi.waitFor(() => expect(store.tools()).toHaveLength(3));
+  dispatch.dispatch(catalogPageEvents.conceptOpened('sample:1'));
+  dispatch.dispatch(catalogPageEvents.readingClosed());
+  expect(store.selectedId()).toBeNull();
+  expect(store.work()).toBe('aifg');
+  expect(store.history()).toEqual(['sample:1']);
+});
+
+it('does not reload a loaded catalog when a page opens again, and a retry does', async () => {
+  const { store, dispatch } = setup();
+  await vi.waitFor(() => expect(store.tools()).toHaveLength(3));
+  const loader = TestBed.inject(CatalogToken);
+  const load = vi.spyOn(loader, 'load');
+  dispatch.dispatch(catalogPageEvents.opened());
+  expect(load).not.toHaveBeenCalled();
+  expect(store.loading()).toBe(false);
+  dispatch.dispatch(catalogPageEvents.retryRequested());
+  expect(load).toHaveBeenCalledTimes(1);
+});
+
+it('loads the summary for either page, keeps its failure apart and clears it on retry', async () => {
+  const { store, dispatch } = setup();
+  await vi.waitFor(() => expect(store.summary()?.works).toHaveLength(3));
+  const loader = TestBed.inject(CatalogToken);
+  vi.spyOn(loader, 'summary').mockRejectedValueOnce(new Error('Unavailable'));
+  dispatch.dispatch(toolsHomeEvents.retryRequested());
+  await vi.waitFor(() => expect(store.summaryFailure()).not.toBeNull());
+  expect(store.failure()).toBeNull();
+  dispatch.dispatch(toolsHomeEvents.opened());
+  await vi.waitFor(() => expect(store.summaryFailure()).toBeNull());
 });
 
 it('ignores the previous filter-shaped state and opens the shelf', async () => {

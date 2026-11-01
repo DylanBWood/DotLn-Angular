@@ -1,0 +1,147 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:145",
+  "work": "aifg",
+  "slug": "flocking",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 5",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mara can make room for Ivo without knowing where Noor plans to stand. Each walker adjusts against the people currently nearby, and their repeated adjustments make the crowd look organised. The useful result is a moving group with room between its members; agreeing on velocity alone would also describe a moving pile.",
+    "situation": "Mara, Ivo and Noor are crossing Reed Field abreast. Ivo starts faster. They need to travel east together without collapsing onto the same position, and there is no leader assigning places."
+  },
+  "example": {
+    "name": "The Reed Field crossing",
+    "description": "Mara starts above Ivo, with Noor below him. Each reads a circular neighbourhood, arriving towards its centre and matching its mean velocity while separation can leave room between them. Separation currently has weight {separationWeight}; a separate eastward drive has weight {cruiseWeight}. Change either control to expose crowding or a fading crossing. The model calls the scene engine for the steering and blend; neighbourhood selection and the simultaneous fixed-step update are study-local, independent of the scene's group-wide neighbour policy and cruising rule.",
+    "parameters": {
+      "startX": 0,
+      "spacing": 4,
+      "middleSpeed": 2,
+      "cruiseSpeed": 4,
+      "cruiseWeight": 1,
+      "neighbourRadius": 12,
+      "separationThreshold": 8,
+      "separationWeight": 1,
+      "cohesionWeight": 1,
+      "alignmentWeight": 1,
+      "slowRadius": 12,
+      "responseTime": 1,
+      "maxSpeed": 6,
+      "maxAcceleration": 6,
+      "radius": 0.8,
+      "crossingX": 30,
+      "timeStep": 0.1,
+      "steps": 200,
+      "crowdedSeparationWeight": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read neighbours from one snapshot",
+        "text": "Mara sees {neighbours} other walkers strictly within {neighbourRadius} units. Exclude Mara from their mean position and velocity. Every walker reads the same old frame, so updating Mara first cannot move Ivo's inputs; an empty neighbourhood supplies neither cohesion nor alignment."
+      },
+      {
+        "title": "Ask for room and for company",
+        "text": "The engine's linear separation fades to nothing at its threshold and caps the combined push. Cohesion calls engine arrive at the neighbour centre, using a point target and a slowing radius; correcting towards that desired velocity also brakes existing motion. Mara's weighted separation and cohesion have magnitudes {separationMagnitude} and {cohesionMagnitude} units/s²; the worked step shows their directions."
+      },
+      {
+        "title": "Agree on motion and supply a crossing direction",
+        "text": "Engine matchVelocity tries to close the gap to the neighbours' mean velocity over {responseTime} s. The separate crossing drive uses the same engine function with an eastward target velocity of {cruiseSpeed} units/s and weight {cruiseWeight}. The drive supplies travel; alignment cannot invent it when everyone is still."
+      },
+      {
+        "title": "Blend the requests, then cap the sum",
+        "text": "Multiply each engine output by its weight, add the vectors and call engine blend to cap the sum at {maxAcceleration} units/s². The weights are strengths, not percentages, and each component already obeys its own acceleration cap. The requested sum has magnitude {requestedMagnitude}; the capped result has magnitude {accelerationMagnitude} units/s². Opposite requests can cancel before the cap is reached."
+      },
+      {
+        "title": "Move everyone together",
+        "text": "Add acceleration times {timeStep} seconds to velocity, limit speed, then move with the updated velocity and publish all new bodies together. Mara's speed is {speed} units/s. The closest pair is {gap} units apart, while the chart's RMS disagreement with the group mean is {spread} units/s: spacing and agreement about motion answer different questions."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "old = snapshot(walkers)\nfor each body in old:\n  local = old within neighbourRadius of body, including body\n  neighbours = local excluding body\n  centre = mean(neighbours.positions) when nonempty\n  meanVelocity = mean(neighbours.velocities) when nonempty\n\n  separation = engine.separate(body, indexInLocal, local,\n    threshold = separationThreshold, falloff = linear)\n  cohesion = zero when neighbours is empty, otherwise\n    engine.arrive(body, centre, slowRadius, targetRadius = 0, responseTime)\n\n  alignment = zero when neighbours is empty, otherwise\n    engine.matchVelocity(body, meanVelocity, responseTime)\n  cruise = engine.matchVelocity(body, (cruiseSpeed, 0), responseTime)\n\n  acceleration = engine.blend([\n    (separationWeight, separation), (cohesionWeight, cohesion),\n    (alignmentWeight, alignment), (cruiseWeight, cruise)\n  ], maxAcceleration)\n\n  nextVelocity = clipLength(body.velocity + acceleration * timeStep, maxSpeed)\n  next[body] = body with velocity = nextVelocity,\n    position = body.position + nextVelocity * timeStep\nwalkers = next",
+    "rxjs": "// Each tick advances timeStep; one scan owns Mara, Ivo and Noor together.\nwalkers$ = ticks$.pipe(take(steps), scan((walkers) => {\n  old = snapshot(walkers)\n  next = old.map((body) => {\n    // ordinaryRules is the neighbour lookup and requests above, all reading old.\n    separation, cohesion, alignment, cruise = ordinaryRules(body, old)\n    acceleration = engine.blend([\n      (separationWeight, separation), (cohesionWeight, cohesion),\n      (alignmentWeight, alignment), (cruiseWeight, cruise)\n    ], maxAcceleration)\n    nextVelocity = clipLength(body.velocity + acceleration * timeStep, maxSpeed)\n    return body with velocity = nextVelocity, position = body.position + nextVelocity * timeStep\n  })\n  return next // Emit only after every walker has blended and moved.\n}, initialWalkers),\n  startWith(initialWalkers), // scan does not emit its seed.\n  shareReplay({ bufferSize: 1, refCount: true }) // Share complete frames across views.\n)\n// Pure rules must preserve old; RxJS neither freezes it nor prevents collisions.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/flocking.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/flocking.model.ts",
+    "textEquivalent": "{paceRelation}; the closest pair is {gap} units apart against a contact distance of {diameter} units. {steeringRelation}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Scene2dFlockingTest",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/scene2d/tests/Scene2dFlockingTest.java",
+      "relevance": "gdx-ai is a Java game-AI library. Its Scene2D fish demo assembles a flock from reusable behaviour objects and exposes their weights for experimentation.",
+      "explanation": "Each fish owns a field-of-view proximity query shared by Separation, Cohesion and Alignment. BlendedSteering weights their outputs. PrioritySteering tries that blend before Wander, so near-zero flock output can yield to another source of movement. The demo adds angular perception, live tuning and a wander fallback to the flocking controller."
+    },
+    {
+      "project": "OpenSteer · Boids plug-in",
+      "url": "https://raw.githubusercontent.com/meshula/OpenSteer/710432341807f5597b62fa168f194f9ef2640c8e/plugins/Boids.cpp",
+      "relevance": "OpenSteer is a C++ steering library with an interactive flock demonstration. The Boids plug-in shows how a flock controller fits into a vehicle update and a bounded world.",
+      "explanation": "steerToFlock first returns obstacle avoidance when it is active. Otherwise it queries a proximity database, evaluates separation, alignment and cohesion with different radii and angular cut-offs, and sums their weighted outputs. update applies the force, handles the spherical boundary and updates the proximity token. Its additions are obstacle precedence, independent perception ranges and a choice of proximity databases."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games · Chapter 3 Movement, §3.4.2 Weighted Blending: Flocking",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Flocking in Chapter 3, §3.4.2 Weighted Blending; this citation identifies the catalog location only."
+    },
+    {
+      "title": "Craig Reynolds · Boids: Background and Update",
+      "url": "https://www.red3d.com/cwr/boids/",
+      "accessed": "2026-10-31",
+      "supports": "Local flockmate perception combines separation, alignment and cohesion; goal seeking can be added separately to direct group travel."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Scene2dFlockingTest.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/scene2d/tests/Scene2dFlockingTest.java",
+      "accessed": "2026-10-31",
+      "supports": "The fish demo uses field-of-view proximity, a weighted flocking blend, weight controls and lower-priority wander."
+    },
+    {
+      "title": "OpenSteer · Boids.cpp at 710432341807f5597b62fa168f194f9ef2640c8e",
+      "url": "https://raw.githubusercontent.com/meshula/OpenSteer/710432341807f5597b62fa168f194f9ef2640c8e/plugins/Boids.cpp",
+      "accessed": "2026-10-31",
+      "supports": "The plug-in gives obstacle avoidance precedence over its weighted flock terms and queries a proximity database with separate rule radii and angles."
+    }
+  ],
+  "limits": [
+    "The crossing-drive weight is {cruiseWeight}. A blending equilibrium can be useful spacing or an unwanted standstill: outward separation can balance inward cohesion while velocity matching is already satisfied. Remove the drive from an initially still, symmetric group and active rules can leave it stationary. A small resultant alone cannot distinguish success from a deadlock; a priority or fallback policy must make that decision.",
+    "Separation currently has weight {separationWeight}, and the smallest sampled gap in this run is {minimumGap} units against a contact distance of {diameter} units. Lowering separation can leave velocity agreement working while the walkers pile up; reading the velocity-spread chart alone would miss that failure.",
+    "Separation reacts to current distances. It does not reserve space or predict a collision: fast walkers can pass through each other between samples, even with the separation weight enabled.",
+    "With no neighbours, a walker has no centre or mean velocity to follow. The model silences those terms and retains the crossing drive; a disconnected walker receives no regrouping instruction.",
+    "A local crowd controller contains no knowledge of paths, walls or a formation's assigned places. The public implementations add perception, arbitration and world handling explicitly; these are additional design choices, not consequences of choosing flock weights."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:131",
+      "why": "Read Separation when the crossing already has a useful direction and the remaining problem is leaving room between neighbours."
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "Read Velocity matching when walkers already occupy suitable positions but disagree about their motion; it will not create spacing or a travel goal."
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "Use Arrive for the speed correction behind cohesion, or when the group must slow down at a marked destination rather than keep crossing the field."
+    },
+    {
+      "id": "aifg-a:151",
+      "why": "Reach for Equilibrium fallback when a near-zero blend leaves an unfinished task motionless and another behaviour should supply movement."
+    },
+    {
+      "id": "aifg-a:174",
+      "why": "Choose Fixed formations when named walkers must keep assigned places instead of accepting whichever spacing emerges."
+    }
+  ]
+}

@@ -174,86 +174,71 @@ test('search facets, paging, source marks and untyped reasons remain readable', 
   await expect(reading(page).locator('dl, dotln-key-value-list')).toHaveCount(0);
 });
 
-test('the authored visual is inspectable by keyboard and connects both algorithms to references', async ({
+const summary = (page: Page, section: string) =>
+  page.locator('tools-study').locator('summary').filter({ hasText: section });
+
+async function showNumbers(page: Page) {
+  await page.locator('tools-study .numbers summary').click();
+}
+
+test('the authored visual is inspectable by keyboard and connects the algorithm to its references', async ({
   page,
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
+  const study = page.locator('tools-study');
+  await showNumbers(page);
   await study.getByRole('button', { name: 'At rest', exact: true }).click();
-  await expect(page.getByTestId('arrive-reading')).toHaveText(
-    '0.0 units to go · 0.0 units/s actual · 0.0 units/s desired',
-  );
-  await study.getByRole('slider').focus();
+  await expect(page.getByTestId('study-reading')).toContainText('0.0 units from the target');
+  await study.getByRole('slider', { name: /^Time/ }).focus();
   await page.keyboard.press('Home');
-  await expect(page.getByTestId('arrive-reading')).toContainText('100.0 units to go');
+  await expect(page.getByTestId('study-reading')).toContainText('100.0 units from the target');
   await page.keyboard.press('ArrowRight');
-  await expect(study.getByRole('slider')).toHaveValue('1');
-  await expect(study.getByRole('img', { name: /Actual speed is/ })).toHaveAccessibleName(
-    /Actual speed is 1.2/,
-  );
+  await expect(study.getByRole('slider', { name: /^Time/ })).toHaveValue('1');
+  await expect(study.getByRole('img').first()).toHaveAccessibleName(/Actual speed is 1\.2/);
   await expect(study.locator('tools-study-explanation')).toHaveCount(0);
-  await study.locator('summary').filter({ hasText: 'Follow the mechanism' }).press('Enter');
+  await summary(page, 'Follow the mechanism').press('Enter');
   await expect(study).toContainText('Ordinary pseudocode');
-  await study.locator('summary').filter({ hasText: 'Think in streams' }).press('Enter');
+  await summary(page, 'Think in streams').press('Enter');
   await expect(study).toContainText('RxJS pseudocode');
-  await study.locator('summary').filter({ hasText: 'See it elsewhere' }).press('Enter');
-  await expect(
-    study.getByRole('link', { name: 'Read Arrive.java — the gdx-ai library’s Java source' }),
-  ).toHaveAttribute('href', /^https:\/\/github.com\/libgdx\/gdx-ai\//);
-  const limits = study.locator('summary').filter({ hasText: 'Where this breaks down' });
+  await summary(page, 'See it elsewhere').press('Enter');
+  await expect(study.getByRole('link', { name: 'gdx-ai', exact: true })).toHaveAttribute(
+    'href',
+    /^https:\/\/github.com\/libgdx\/gdx-ai\//,
+  );
+  const limits = summary(page, 'Where this breaks down');
   await limits.press('Enter');
   await expect(study).toContainText('does not avoid obstacles');
-  await expect(study.locator('.failure-trace')).toHaveCount(2);
-  await expect(study.locator('#arrive-failure-result')).toContainText(
+  await expect(study.locator('.comparison .line')).toHaveCount(2);
+  await expect(study.getByTestId('comparison-finding').first()).toContainText(
     'overshooting the target by 3.93 units',
   );
-  await expect(study.locator('details[open]')).toHaveCount(4);
+  await expect(study.locator('section.study > details[open]')).toHaveCount(4);
   await limits.press('Enter');
-  await expect(study.locator('.failure-trace')).toHaveCount(0);
+  await expect(study.locator('.comparison')).toBeHidden();
   await expect(study.locator('tools-study-explanation')).toHaveCount(4);
   await limits.press('Enter');
-  await expect(study.locator('.failure-trace')).toHaveCount(2);
-  await expect(study.getByRole('slider')).toHaveValue('1');
+  await expect(study.locator('.comparison')).toBeVisible();
+  await expect(study.getByRole('slider', { name: /^Time/ })).toHaveValue('1');
 });
 
-test('the reactive explanation switches views without resetting the study or shared text', async ({
+test('the RxJS reading says it is illustrative and keeps the study where it was', async ({
   page,
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
-  const reactive = study.locator('summary').filter({ hasText: 'Think in streams' });
-  await expect(study.locator('.stream-example')).toHaveCount(0);
-  await study.locator('summary').filter({ hasText: 'Follow the mechanism' }).press('Enter');
+  const study = page.locator('tools-study');
+  const reactive = summary(page, 'Think in streams');
+  await expect(study.getByTestId('rxjs-label')).toHaveCount(0);
+  await summary(page, 'Follow the mechanism').press('Enter');
   const calculation = await study.locator('.worked-step').innerText();
   await reactive.press('Enter');
-  const example = study.locator('.stream-example');
-  const explanation = study
-    .locator('tools-study-explanation')
-    .filter({ has: page.locator('.stream-example') });
-  const rules = await example.locator('.stream-rules').innerText();
-  const pseudocode = await explanation.locator('pre').innerText();
-  await expect(example.locator('.stream-flow')).toBeVisible();
-  await expect(example.locator('.stream-timeline')).toHaveCount(0);
-  await example.getByRole('button', { name: 'Event timeline', exact: true }).press('Space');
-  await expect(
-    example.getByRole('button', { name: 'Event timeline', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  await expect(example.locator('.stream-flow')).toHaveCount(0);
-  await expect(example.locator('.stream-timeline')).toBeVisible();
-  await expect(study.getByRole('slider')).toHaveValue('75');
+  await expect(study.getByTestId('rxjs-label')).toContainText('Illustrative');
+  await expect(study.getByRole('slider', { name: /^Time/ })).toHaveValue('75');
   await expect(study.locator('.worked-step')).toHaveText(calculation, { useInnerText: true });
-  await expect(example.locator('.stream-rules')).toHaveText(rules, { useInnerText: true });
-  await expect(explanation.locator('pre')).toHaveText(pseudocode, { useInnerText: true });
   await reactive.press('Enter');
-  await expect(example).toBeHidden();
-  await reactive.press('Enter');
-  await expect(example.locator('.stream-timeline')).toBeVisible();
-  await example.getByRole('button', { name: 'Data flow', exact: true }).press('Enter');
-  await expect(example.locator('.stream-flow')).toBeVisible();
-  await expect(example.locator('.stream-timeline')).toHaveCount(0);
-  await expect(study.locator('details[open]')).toHaveCount(2);
+  await expect(study.getByTestId('rxjs-label')).toBeHidden();
+  await expect(study.locator('section.study > details[open]')).toHaveCount(1);
 });
 
 test('closed explanations defer creation and download, then retain their view on collapse', async ({
@@ -265,8 +250,8 @@ test('closed explanations defer creation and download, then retain their view on
   });
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
-  const mechanism = study.locator('summary').filter({ hasText: 'Follow the mechanism' });
+  const study = page.locator('tools-study');
+  const mechanism = summary(page, 'Follow the mechanism');
   await expect(study.locator('tools-study-explanation')).toHaveCount(0);
   const initially = scripts.length;
   await mechanism.press('Enter');
@@ -290,8 +275,8 @@ test('the code guide shows the complete pseudocode first and each step’s lines
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
-  await study.locator('summary').filter({ hasText: 'Follow the mechanism' }).press('Enter');
+  const study = page.locator('tools-study');
+  await summary(page, 'Follow the mechanism').press('Enter');
   const guide = study.locator('.algorithm-guide');
   const complete = guide.locator('pre').first();
   await expect(complete).toBeVisible();
@@ -318,18 +303,17 @@ test('the worked first step connects its numbers to the diagram and returns keyb
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
+  const study = page.locator('tools-study');
   await study.getByRole('button', { name: 'Start', exact: true }).click();
-  await study.locator('summary').filter({ hasText: 'Follow the mechanism' }).press('Enter');
+  await summary(page, 'Follow the mechanism').press('Enter');
   const calculation = study.locator('.worked-step');
   await expect(calculation).toContainText('(16.00 − 0.00) / 0.40 ≈ 40.00');
   await expect(calculation).toContainText('0.00 + (1.20 × 0.10) ≈ 0.12');
   await calculation.getByRole('button', { name: 'Show this moment in the diagram' }).click();
-  const timeline = study.getByRole('slider');
+  const timeline = study.getByRole('slider', { name: /^Time/ });
   await expect(timeline).toBeFocused();
   await expect(timeline).toHaveValue('0');
   await timeline.press('ArrowRight');
-  await expect(study.getByTestId('arrive-reading')).toContainText('1.2 units/s actual');
   await expect(calculation.getByRole('heading')).toHaveText('Worked step: 0.10 → 0.20 seconds');
 });
 
@@ -338,8 +322,8 @@ test('the worked calculation follows the timeline and explains the stopping bran
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
-  const mechanism = study.locator('summary').filter({ hasText: 'Follow the mechanism' });
+  const study = page.locator('tools-study');
+  const mechanism = summary(page, 'Follow the mechanism');
   await mechanism.press('Enter');
   const calculation = study.locator('.worked-step');
   await expect(calculation.getByRole('heading')).toHaveText('Worked step: 7.50 → 7.60 seconds');
@@ -348,7 +332,7 @@ test('the worked calculation follows the timeline and explains the stopping bran
   await expect(calculation.getByRole('heading')).toHaveText('At rest at 24.00 seconds');
   await expect(calculation).toContainText('Both conditions pass');
   await mechanism.press('Enter');
-  await expect(calculation).toHaveCount(0);
+  await expect(calculation).toBeHidden();
   await study.getByRole('button', { name: 'Start', exact: true }).click();
   await mechanism.press('Enter');
   await expect(calculation).toContainText('0.00 + (1.20 × 0.10) ≈ 0.12');
@@ -359,15 +343,15 @@ test('reselecting Arrive retains its open calculation and changing concepts rese
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
-  const study = page.locator('tools-arrive-study');
-  await study.locator('summary').filter({ hasText: 'Follow the mechanism' }).press('Enter');
+  const study = page.locator('tools-study');
+  await summary(page, 'Follow the mechanism').press('Enter');
   const calculation = study.locator('.worked-step');
   await expect(calculation.getByRole('heading')).toHaveText('Worked step: 7.50 → 7.60 seconds');
   await page
     .getByRole('navigation', { name: 'Recently read', exact: true })
     .getByRole('link', { name: 'Arrive', exact: true })
     .click();
-  await expect(study.locator('details[open]')).toHaveCount(1);
+  await expect(study.locator('section.study > details[open]')).toHaveCount(1);
   await study.getByRole('button', { name: 'Start', exact: true }).click();
   await expect(calculation.getByRole('heading')).toHaveText('Worked step: 0.00 → 0.10 seconds');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
@@ -377,7 +361,7 @@ test('reselecting Arrive retains its open calculation and changing concepts rese
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Kinematic arrive');
   await page.getByRole('button', { name: 'Back to the previous reading', exact: true }).click();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Arrive');
-  await expect(study.locator('details[open]')).toHaveCount(0);
+  await expect(study.locator('section.study > details[open]')).toHaveCount(0);
   await expect(study.locator('tools-study-explanation')).toHaveCount(0);
 });
 
@@ -387,19 +371,208 @@ test('a failed explanation download gives a readable error in the open section',
 }) => {
   await page.goto('/tools/catalog');
   await openBySearch(page, 'Arrive', 'aifg-a:112');
+  await expect(page.locator('tools-study')).toBeVisible();
   const failedScripts: string[] = [];
   page.on('requestfailed', (request) => {
     if (request.resourceType() === 'script') failedScripts.push(request.url());
   });
   await context.setOffline(true);
-  await page
-    .locator('tools-arrive-study')
-    .getByText('Follow the mechanism', { exact: true })
-    .click();
+  await page.locator('tools-study').getByText('Follow the mechanism', { exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText(
     'This explanation could not load. Reload the page to try again.',
   );
   expect(failedScripts.length).toBeGreaterThan(0);
+});
+
+test('a shared link opens its reading, in a new tab and at the study’s own measure', async ({
+  page,
+  context,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/tools/catalog/aifg-a:186');
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Slot assignment');
+  await expect(reading(page)).toBeFocused();
+  await expect(page.locator('tools-study')).toBeVisible();
+  const opened = await context.newPage();
+  await opened.goto(page.url());
+  await expect(reading(opened).getByRole('heading', { level: 2 })).toHaveText('Slot assignment');
+  await opened.close();
+  await page.goto('/tools/catalog/nothing:1');
+  await expect(page.getByRole('alert')).toContainText('names no concept');
+  expect(errors).toEqual([]);
+});
+
+test('Back returns to the previous reading, and a reading has a real address to copy', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog/aifg-a:110');
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Seek');
+  const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
+  await contents.getByRole('button', { name: /3\.4 Combining Steering Behaviors/ }).click();
+  const flocking = contents.getByRole('link', { name: 'Flocking', exact: true });
+  await expect(flocking).toHaveAttribute('href', /\/tools\/catalog\/aifg-a:145$/);
+  await flocking.click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Flocking');
+  await expect(page).toHaveURL(/\/tools\/catalog\/aifg-a:145$/);
+  await page.goBack();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Seek');
+  await expect(page).toHaveURL(/\/tools\/catalog\/aifg-a:110$/);
+  await page.goForward();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Flocking');
+});
+
+test('the scene link leaves a study and Back returns to the reading it left', async ({ page }) => {
+  await page.goto('/tools/catalog/aifg-a:145');
+  await reading(page).getByRole('link', { name: 'Run it in the soldier scene' }).click();
+  await expect(page).toHaveURL(/\/scene\?tool=aifg-a:145/);
+  await expect(page.getByRole('heading', { name: 'The soldier scene' })).toBeAttached();
+  await page.goBack();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Flocking');
+});
+
+test('Flocking’s study shows its drawing and text equivalent, explains itself and links onward', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog/aifg-a:145');
+  const study = page.locator('tools-study');
+  await expect(study.locator('.eyebrow')).toContainText('Authored study');
+  const drawing = study.getByRole('img').first();
+  await expect(drawing).toHaveAttribute('aria-label', /\S/);
+  await expect(study.locator('tools-study-motion .note')).toHaveText(/\S/);
+  await showNumbers(page);
+  await expect(page.getByTestId('study-reading')).toHaveText(/\S/);
+  await page.getByRole('button', { name: 'Jump to the study', exact: true }).click();
+  await expect(study).toBeFocused();
+  await expect(study.locator('tools-study-explanation')).toHaveCount(0);
+  await summary(page, 'Follow the mechanism').press('Enter');
+  await expect(study.locator('.algorithm-guide > pre')).toBeVisible();
+  await summary(page, 'Think in streams').press('Enter');
+  await expect(study.getByTestId('rxjs-label')).toContainText('Illustrative');
+  await summary(page, 'See it elsewhere').press('Enter');
+  await expect(study.locator('.references a').first()).toBeVisible();
+  await expect(study.locator('.references a').first()).toHaveAttribute('href', /^https:\/\//);
+  const nearby = study.locator('.nearby a');
+  expect(await nearby.count()).toBeGreaterThan(0);
+  const title = await nearby.first().innerText();
+  await nearby.first().click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(title);
+});
+
+test.describe('with motion allowed', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('a study runs only on command and a changed input reruns its example', async ({ page }) => {
+    await page.goto('/tools/catalog/aifg-a:112');
+    const study = page.locator('tools-study');
+    const time = study.getByRole('slider', { name: /^Time/ });
+    await expect(time).toHaveValue('75');
+    await page.waitForTimeout(300);
+    await expect(time).toHaveValue('75');
+    await study.getByRole('button', { name: 'Start', exact: true }).click();
+    await study.getByRole('button', { name: 'Play', exact: true }).click();
+    await expect.poll(async () => Number(await time.inputValue())).toBeGreaterThan(0);
+    await study.getByRole('button', { name: 'Pause', exact: true }).click();
+    const paused = await time.inputValue();
+    await page.waitForTimeout(300);
+    await expect(time).toHaveValue(paused);
+    await showNumbers(page);
+    await study.getByRole('button', { name: 'Slow down', exact: true }).click();
+    await expect(page.getByTestId('study-reading')).toContainText('8.0 units from the target');
+    const before = await page.getByTestId('study-reading').innerText();
+    await study.locator('tools-study-inputs summary').click();
+    await study.getByRole('slider', { name: /Slowing radius/ }).fill('8');
+    await expect(page.getByTestId('study-reading')).not.toHaveText(before);
+    await study.getByRole('button', { name: 'Back to the example', exact: true }).click();
+    await expect(page.getByTestId('study-reading')).toHaveText(before);
+  });
+});
+
+test.describe('reduced motion', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('Flocking’s study never runs by itself, offers no Play and still steps', async ({
+    page,
+  }) => {
+    await page.goto('/tools/catalog/aifg-a:145');
+    const study = page.locator('tools-study');
+    const time = study.getByRole('slider', { name: /^Time/ });
+    const opening = await time.inputValue();
+    await page.waitForTimeout(400);
+    await expect(time).toHaveValue(opening);
+    await expect(study.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+    await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+    await expect(time).toHaveValue(String(Number(opening) + 1));
+  });
+});
+
+test('the shelf and the home count the studies, and contents and results mark them', async ({
+  page,
+}) => {
+  const scripts: string[] = [];
+  page.on('response', (response) => {
+    if (response.request().resourceType() === 'script') scripts.push(response.url());
+  });
+  await page.goto('/tools');
+  await expect(page.getByText('20 studied')).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'AI for Games' })).toContainText(
+    '768 concepts',
+  );
+  expect(scripts.some((url) => url.includes('tools-aifg'))).toBe(false);
+  await page.getByRole('link', { name: 'Read the catalog', exact: true }).click();
+  const shelf = page.getByRole('navigation', { name: 'The works' });
+  await expect(shelf.getByRole('button', { name: /AI for Games/ })).toContainText('20 studied');
+  await shelf.getByRole('button', { name: /AI for Games/ }).click();
+  const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
+  await contents.getByRole('button', { name: /Chapter 3 Movement/ }).click();
+  await contents.getByRole('button', { name: /3\.3 Steering Behaviors/ }).click();
+  await expect(contents.getByRole('img', { name: 'Has a study' })).not.toHaveCount(0);
+  await search(page).fill('Flocking');
+  await expect(
+    page.getByRole('listitem').filter({ has: page.locator('[data-result-id="aifg-a:145"]') }),
+  ).toContainText('📖');
+});
+
+test('a chosen work lists its studied concepts, and a study hands on to the next', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  await page
+    .getByRole('navigation', { name: 'The works' })
+    .getByRole('button', { name: /AI for Games/ })
+    .click();
+  const list = page.locator('.studied-list');
+  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
+  await expect(list.getByRole('link')).toHaveCount(20);
+  await list.getByRole('link', { name: 'Seek', exact: true }).click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Seek');
+  const next = page.locator('tools-study .next a');
+  await expect(next).toContainText('Next study: Arrive');
+  await next.click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Arrive');
+  await expect(page).toHaveURL(/\/tools\/catalog\/aifg-a:112$/);
+});
+
+test('the disclosures around a drawing stay open across its two views', async ({ page }) => {
+  await page.goto('/tools/catalog/aifg-a:112');
+  const study = page.locator('tools-study');
+  await study.locator('.numbers summary').click();
+  await study.locator('tools-study-inputs summary').click();
+  await study.getByRole('button', { name: 'Chart', exact: true }).click();
+  await expect(study.locator('.chart-title')).toHaveText('Velocity');
+  await expect(study.locator('.numbers[open]')).toHaveCount(1);
+  await expect(study.getByRole('slider', { name: /Slowing radius/ })).toBeVisible();
+});
+
+test('the studied facet narrows the results to the concepts with a study', async ({ page }) => {
+  await page.goto('/tools/catalog');
+  await search(page).fill('a');
+  const all = Number(await page.getByTestId('search-count').getAttribute('data-count'));
+  await choose(page, 'Study', 'Has a study');
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '20');
+  expect(all).toBeGreaterThan(20);
+  await choose(page, 'Study', 'No study yet');
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 20));
 });
 
 test('keyboard menu scrolling holds focus under a stationary pointer and pointer input resumes', async ({
@@ -476,19 +649,18 @@ for (const width of [360, 768, 1440]) {
       expect(await fits()).toBe(true);
       expect(await serious()).toEqual([]);
       // The same threshold holds with every study section and one step's code open.
-      const study = page.locator('tools-arrive-study');
+      const study = page.locator('tools-study');
       for (const section of [
         'Follow the mechanism',
         'Think in streams',
         'Where this breaks down',
         'See it elsewhere',
       ])
-        await study.locator('summary').filter({ hasText: section }).press('Enter');
+        await summary(page, section).press('Enter');
       await study.locator('.code-lines summary').first().press('Enter');
       await expect(study.locator('.code-lines[open] pre')).toBeVisible();
-      await expect(study.locator('.stream-example')).toBeVisible();
-      await expect(study.locator('.failure-trace')).toHaveCount(2);
-      await expect(study.locator('.implementation-group')).toHaveCount(2);
+      await expect(study.locator('.comparison .line')).toHaveCount(2);
+      await expect(study.locator('.implementation')).toHaveCount(1);
       expect(await fits()).toBe(true);
       expect(await serious()).toEqual([]);
       await search(page).fill('a');
@@ -497,6 +669,38 @@ for (const width of [360, 768, 1440]) {
       await page.keyboard.press('Escape');
     },
   );
+
+  test(`Flocking's study and the home fit ${width}px at the board accessibility threshold`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    const serious = async () =>
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations.filter(
+        (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+      );
+    await page.goto('/tools/catalog/aifg-a:145');
+    await expect(page.locator('tools-study')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    for (const section of [
+      'Follow the mechanism',
+      'Think in streams',
+      'Where this breaks down',
+      'See it elsewhere',
+    ])
+      await summary(page, section).press('Enter');
+    await expect(page.locator('tools-study .references a').first()).toBeVisible();
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+    await page.goto('/tools');
+    await expect(page.getByRole('link', { name: 'Read the catalog', exact: true })).toBeVisible();
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+  });
 }
 
 test('a long unbroken title wraps in search results and the history at 360px', async ({ page }) => {

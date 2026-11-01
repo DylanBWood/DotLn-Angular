@@ -38,13 +38,20 @@
                     @for (tool of part.tools; track tool.id) {
                       <li>
                         <a
-                          href="#reading"
+                          [attr.href]="hrefFor()(tool.id)"
                           [attr.data-tool-id]="tool.id"
                           [attr.aria-current]="tool.id === selectedId() ? 'page' : null"
-                          (click)="$event.preventDefault(); opened.emit(tool.id)"
+                          (click)="open($event, tool.id)"
                           translate="no"
                           >{{ tool.title }}</a
                         >
+                        @if (studied().has(tool.id)) {
+                          <dotln-icon
+                            class="studied"
+                            [glyph]="'tools.contents.studiedGlyph' | t"
+                            [label]="'tools.contents.studied' | t"
+                          />
+                        }
                       </li>
                     }
                   </ol>

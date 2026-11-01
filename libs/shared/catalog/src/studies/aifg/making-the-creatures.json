@@ -1,0 +1,155 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-b:373",
+  "work": "aifg",
+  "slug": "making-the-creatures",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 5",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Fern needs to look like a creature the player can influence. Keeping company, leaving room, drifting about and moving away from the player are separate requests for acceleration. Giving sheep and goats different strengths for those requests creates different responses from the same controller. The design work is deciding which requests apply, whom each creature observes and what happens when the requests conflict.",
+    "situation": "Kit drives the sheep Fern and Moss and the goats Flint and Pebble east through Bracken Meadow. Each species has its own profile; adjust the player response and the goats' wander weight to see how those choices change the drive. These are chosen game personalities, not measured animal traits."
+  },
+  "example": {
+    "name": "The Bracken Meadow drive",
+    "description": "Kit follows a fixed eastward path. The creatures start still: Fern and Moss form the inner pair, Flint and Pebble the outer pair. They separate from either species but cohere and match velocity only with nearby members of their own species. Player response has scale {fleeScale}; goat wandering has weight {goatWander}, against the sheep's {sheepWander}. Both profiles call the scene engine's separation, arrive, matchVelocity, wander, flee and blend functions. Profile selection, perception, the prescribed wander-angle wobble and the simultaneous fixed-step update are study-local. Distances use arbitrary field units, time uses seconds and angles use radians; the engine's fixed flee range is {fleeRadius} units.",
+    "parameters": {
+      "startX": 0,
+      "sheepOffset": 3,
+      "goatOffset": 9,
+      "playerStartX": -10,
+      "playerY": -3,
+      "playerSpeed": 1.3,
+      "neighbourRadius": 24,
+      "separationThreshold": 8,
+      "separationWeight": 1.5,
+      "cohesionWeight": 0.5,
+      "alignmentWeight": 1,
+      "sheepWanderWeight": 0.2,
+      "goatWanderWeight": 0.5,
+      "sheepFleeWeight": 1.5,
+      "goatFleeWeight": 0.5,
+      "fleeScale": 1,
+      "unresponsiveFleeScale": 0,
+      "fleeRadius": 20,
+      "wanderRadius": 3,
+      "wanderOffset": 6,
+      "wanderAmplitude": 0.6,
+      "wanderRate": 0.8,
+      "slowRadius": 12,
+      "responseTime": 1,
+      "maxSpeed": 4,
+      "maxAcceleration": 4,
+      "radius": 0.7,
+      "timeStep": 0.1,
+      "steps": 160
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Sample Kit and the creature neighbourhoods",
+        "text": "Kit is {playerRelation} the sheep. Fern reads {neighbours} sheep neighbours, excluding herself when averaging their positions and velocities. Same-species membership affects cohesion and alignment; separation still considers goats. Each creature reads the old frame, before anyone moves."
+      },
+      {
+        "title": "Select a profile without changing the algorithm",
+        "text": "The sheep profile uses wander weight {sheepWander} and effective flee weight {sheepFlee}; the goat profile uses {goatWander} and {goatFlee}. Effective flee weight is the species weight times fleeScale, the input changed in the comparison. The common spacing and velocity rules keep the same implementation for both profiles."
+      },
+      {
+        "title": "Build the social requests",
+        "text": "Engine separate uses linear falloff over close creatures. Engine arrive heads towards the same-species centre with a point target and a slowing radius, while engine matchVelocity closes the gap to the neighbours' mean velocity. Empty social neighbourhoods silence cohesion and alignment. The Social row adds these weighted requests; their individual directions and values appear in the worked step."
+      },
+      {
+        "title": "Add wandering and the player response",
+        "text": "A deterministic sine wobble sets Fern's wander angle to {angle} radians; paired creatures use opposite signs. Engine wander selects a velocity along its projected circle and corrects towards it. Engine flee points away from Kit, fading to nothing at the fixed {fleeRadius}-unit range. Fern is {gap} units away; her weighted wander and flee requests have magnitudes {wanderMagnitude} and {fleeMagnitude} units/s²."
+      },
+      {
+        "title": "Resolve all requests with a weighted sum",
+        "text": "Engine blend multiplies the social, wander and flee outputs by their selected weights, adds them and caps the result at {maxAcceleration} units/s². Fern's result has magnitude {accelerationMagnitude} units/s². No request has automatic precedence: increasing flee strengthens a contribution but does not turn the blend into a safety constraint."
+      },
+      {
+        "title": "Integrate together and measure the response",
+        "text": "Update each velocity over {timeStep} seconds, cap speed and move with the updated velocity, then publish the whole new frame. Kit's next position comes from the same fixed path. The chart shows signed eastward centre displacements of {sheepTravel} units for sheep and {goatTravel} for goats; these measure the profiles' effects on this drive."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "old = snapshot(creatures)\nseconds = step * timeStep\nplayer = (playerStartX + playerSpeed * seconds, playerY)\nfor each body in old:\n  neighbours = other bodies of body.species strictly within neighbourRadius\n  centre, meanVelocity = means of neighbours when nonempty\n\n  profile = sheepProfile when body.species is sheep, otherwise goatProfile\n  wanderWeight = profile.wanderWeight\n  fleeWeight = profile.fleeWeight * fleeScale\n\n  separation = engine.separate(body, body.index, old,\n    threshold = separationThreshold, falloff = linear)\n  cohesion = zero when neighbours is empty, otherwise\n    engine.arrive(body, centre, slowRadius, targetRadius = 0, responseTime)\n  alignment = zero when neighbours is empty, otherwise\n    engine.matchVelocity(body, meanVelocity, responseTime)\n\n  angle = wanderAmplitude * engine.sine(wanderRate * seconds) * body.wanderSign\n  wandering = engine.wander(body with wanderAngle = angle,\n    wanderOffset, wanderRadius, responseTime)\n  fleeing = engine.flee(body, player)\n\n  acceleration = engine.blend([\n    (separationWeight, separation), (cohesionWeight, cohesion),\n    (alignmentWeight, alignment), (wanderWeight, wandering),\n    (fleeWeight, fleeing)\n  ], maxAcceleration)\n\n  nextVelocity = clipLength(body.velocity + acceleration * timeStep, maxSpeed)\n  next[body] = body with velocity = nextVelocity,\n    position = body.position + nextVelocity * timeStep,\n    heading = direction(nextVelocity) when moving, otherwise body.heading\ncreatures = next",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/making-the-creatures.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/making-the-creatures.model.ts",
+    "textEquivalent": "Fern and Moss {sheepLinkRelation}, while Flint and Pebble {goatLinkRelation}; Kit is {playerRelation} the sheep and {gap} units from Fern. {creatureSteeringRelation}, giving a capped acceleration of {accelerationMagnitude} units/s²."
+  },
+  "implementations": [
+    {
+      "project": "Sheep_Dog_Game · sheep controller and boids force",
+      "url": "https://raw.githubusercontent.com/SarasiNishala/Sheep_Dog_Game/1a1c98e74238a613c72c7bbeb031bf6d8ce7850e/src/agents/sheep.py",
+      "relevance": "Sheep_Dog_Game is a Python/Pygame herding game. Its sheep are assembled from flocking, threat responses and state-specific movement, making the controller useful to read as a complete game creature.",
+      "explanation": "compute_boids_force weights separation, alignment and cohesion together with distance-faded dog and owner repulsion and a wolf-panic term. Sheep.update changes that force for grazing, alert, herded and fleeing states; grazing adds a wandering target and herded movement biases towards the pen. It adds remembered threats, whistle recall, boundary repulsion and terrain avoidance around the steering. A penned sheep stops, so reaching the game's goal changes the creature's controller."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games · Chapter 15 AI-Based Game Genres, §15.2 Flocking and Herding Games, §15.2.1 Making the creatures",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Making the creatures in Chapter 15, §15.2 Flocking and Herding Games; this citation identifies the catalog location only."
+    },
+    {
+      "title": "Craig Reynolds · Boids: Background and Update",
+      "url": "https://www.red3d.com/cwr/boids/",
+      "accessed": "2026-10-31",
+      "supports": "Local separation, alignment and cohesion produce group motion, and additional steering goals can direct those groups."
+    },
+    {
+      "title": "Sheep_Dog_Game · src/ai/boids.py at 1a1c98e74238a613c72c7bbeb031bf6d8ce7850e",
+      "url": "https://raw.githubusercontent.com/SarasiNishala/Sheep_Dog_Game/1a1c98e74238a613c72c7bbeb031bf6d8ce7850e/src/ai/boids.py",
+      "accessed": "2026-10-31",
+      "supports": "The game combines flock terms with separate dog, owner and wolf responses, using distance falloff for herding pressure."
+    },
+    {
+      "title": "Sheep_Dog_Game · src/agents/sheep.py at 1a1c98e74238a613c72c7bbeb031bf6d8ce7850e",
+      "url": "https://raw.githubusercontent.com/SarasiNishala/Sheep_Dog_Game/1a1c98e74238a613c72c7bbeb031bf6d8ce7850e/src/agents/sheep.py",
+      "accessed": "2026-10-31",
+      "supports": "The sheep controller combines steering with grazing, alert, herded, fleeing and penned states, remembered threats, whistle recall and world avoidance."
+    }
+  ],
+  "limits": [
+    "Player response currently has scale {fleeScale}. With that response switched off, all social and wander rules remain but the creatures cannot react to Kit; this can let him approach Fern much more closely. Flocking alone does not supply the interaction that a herding game promises.",
+    "Blending gives flee no guaranteed precedence over cohesion or wander. It also cannot produce an away direction when Kit and Fern occupy exactly the same point: engine flee returns no acceleration there. Such a contact needs a separate collision or arbitration rule.",
+    "Flee means away from Kit, not towards a game objective. Place Kit on the other side of the same herd and the flee contribution reverses. A controller for the player, an explicit goal or a higher-level creature state must supply the intended drive.",
+    "Cohesion and alignment lose their targets when a creature has no nearby member of its own species. A goat cannot regroup with sheep under this perception policy. Retaining a herd target or changing membership is a separate design decision.",
+    "The prescribed wander wobble and fixed profiles have no memory, grazing state or concept of being safely penned. The opened herding implementation adds those decisions and world avoidance explicitly; this study stops at the steering composition that those decisions can select."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:145",
+      "why": "Read Flocking first when spacing, cohesion and agreement about motion are still unclear; this creature controller builds on those social requests."
+    },
+    {
+      "id": "aifg-a:125",
+      "why": "Read Wander when the drifting part of a creature's personality needs its own explanation or tuning."
+    },
+    {
+      "id": "aifg-a:111",
+      "why": "Reach for Flee when the task is simply to respond to the player's position, including the missing direction at exact coincidence."
+    },
+    {
+      "id": "aifg-a:144",
+      "why": "Read Weighted blending when choosing a species profile exposes cancellation, scaling or acceleration-limit problems."
+    },
+    {
+      "id": "aifg-a:149",
+      "why": "Choose Priority steering when a threat or collision response should take precedence over ordinary social movement."
+    }
+  ]
+}

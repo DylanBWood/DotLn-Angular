@@ -1,0 +1,20 @@
+<details #disclosure [open]="open()" (toggle)="toggled.emit(disclosure.open)">
+  <summary>{{ 'tools.study.inputs.title' | t }}</summary>
+  @for (item of inputs(); track item.name) {
+    <label translate="no">
+      <span>{{
+        'tools.study.inputs.value' | t: { label: item.label, value: item.value, unit: item.unit }
+      }}</span>
+      <input
+        #slider
+        type="range"
+        [min]="item.min"
+        [max]="item.max"
+        [step]="item.step"
+        [value]="item.value"
+        (input)="changed.emit({ name: item.name, value: slider.valueAsNumber })"
+      />
+    </label>
+  }
+  <button type="button" (click)="restored.emit()">{{ 'tools.study.inputs.reset' | t }}</button>
+</details>

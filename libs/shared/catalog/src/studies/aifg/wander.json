@@ -1,0 +1,133 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:125",
+  "work": "aifg",
+  "slug": "wander",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 3",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Nia, a night guard in the museum gallery, needs to keep moving without a destination. Give her a small moving point ahead to lean towards. Keep that point's previous angle, then nudge it, so each decision grows out of the last. The forward circle turns that remembered angle into a direction she can follow with limited acceleration.",
+    "situation": "Use this to give Nia a roaming motion between deliberate tasks, when she can choose her next direction locally. A task such as inspecting every exhibit needs an additional rule for where to go."
+  },
+  "example": {
+    "name": "Nia roaming the museum gallery",
+    "description": "Nia starts at rest facing along the gallery. The circle radius is {wanderRadius} units and the angle nudge scale is {turnScale} radians per update. A local update cycles the explicit tape of input pairs and carries the resulting angle forward, so every turn can be replayed. The engine's wander supplies acceleration towards the target at walking speed {walkingSpeed} units/s; the local update moves with the new velocity and makes facing follow it. The drawing moves and turns with Nia, while the worked step retains world coordinates. The comparison holds the tape fixed and uses reference radius {narrowRadius} units.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "startHeading": 0,
+      "startSpeed": 0,
+      "initialAngle": 0,
+      "maxSpeed": 10,
+      "maxAcceleration": 8,
+      "responseTime": 0.5,
+      "wanderRadius": 4,
+      "narrowRadius": 0.5,
+      "wanderOffset": 6,
+      "turnScale": 0.6,
+      "walkingFraction": 0.4,
+      "drawPairs": "0.5:0.5,0.75:0.25,0.75:0.25,0.5:0.5,0.25:0.75,0.25:0.75,0.25:0.75,0.25:0.75,0.5:0.5,0.75:0.25,0.75:0.25,0.5:0.5",
+      "timeStep": 0.2,
+      "steps": 100,
+      "radius": 1,
+      "arrowSeconds": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Nudge an angle that survives the update",
+        "text": "Subtract the tape pair to obtain {binomial}, then multiply by turnScale, {turnScale} radians per update. Add this nudge to the carried angle {oldAngle} to get {angle} radians after wrapping. A zero difference retains the angle; it does not choose a fresh direction. The tape illustrates the memory without claiming to sample a random distribution."
+      },
+      {
+        "title": "Turn that relative angle into a world target",
+        "text": "Project the circle centre {wanderOffset} units along Nia's current heading, then place the target on its {wanderRadius}-unit radius using the carried angle. The point is now {targetRelation}, {targetDistance} units away. The local drawing keeps Nia's heading to the right, so the spoke shows the target's angle relative to her current direction."
+      },
+      {
+        "title": "Ask the engine to steer towards the circle point",
+        "text": "The engine takes its fixed fraction {walkingFraction} of maximum speed {maxSpeed}, giving walking speed {walkingSpeed} units/s towards the target. Divide the velocity difference by response time {responseTime} s to request acceleration of magnitude {requestedMagnitude} units/s². The engine's wander caps the magnitude at {maxAcceleration} units/s², giving {accelerationMagnitude} units/s² here."
+      },
+      {
+        "title": "Move, then let the next circle follow the new heading",
+        "text": "Apply the acceleration over {timeStep} s, enforce the speed limit and move {stepDistance} units with the new velocity. Face that velocity and retain the wander angle for the next update. The chart compares the requested turn of {desiredTurnMagnitude} radians with the next velocity's turn of {actualTurnMagnitude} radians, both measured from the current heading."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "u, v = drawPairs[step modulo length(drawPairs)]\nbinomial = u - v\nangle = wrapToSignedTurn(previousAngle + binomial * turnScale)\n\ncentre = position + heading * wanderOffset\nspoke = rotateByHeading((cos(angle), sin(angle)), heading)\ntarget = centre + spoke * wanderRadius\n\ndesired = normalize(target - position) * maxSpeed * walkingFraction\nrequested = (desired - velocity) / responseTime\n# engine.wander computes this geometry and capped velocity correction.\nacceleration = clampLength(requested, maxAcceleration)\n\nvelocity = clampLength(velocity + acceleration * timeStep, maxSpeed)\nposition += velocity * timeStep\nif length(velocity) > 0: heading = normalize(velocity)\npreviousAngle = angle",
+    "rxjs": "// ticks$ emits step indices from zero, one per fixed timeStep.\n// Each subscription owns its angle history; drawPairs is the parsed tape.\nangle$ = ticks$.pipe(\n  scan((previousAngle, step) => {\n    const [u, v] = drawPairs[step % drawPairs.length]\n    const binomial = u - v\n    const angle = wrapToSignedTurn(previousAngle + binomial * turnScale)\n    return angle\n  }, initialAngle),\n  takeUntil(stop$) // stop$ emits when the study closes.\n)\n// The seed is remembered, not emitted; each tick emits the next angle.\n// Small nudges make successive circle targets share a direction history.\n// Feed each angle to the ordinary circle construction and velocity update.\n// scan carries memory; limited acceleration still makes Nia’s motion gradual.\n// This fold supplies neither the fixed clock nor wall avoidance.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/wander.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/wander.model.ts",
+    "textEquivalent": "Target sits {targetRelation} of Nia on a circle of radius {wanderRadius} units, centred {wanderOffset} units ahead. Her velocity turns by {actualTurnMagnitude} radians on the next update, against a target bearing of {desiredTurnMagnitude} radians."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Wander",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Wander.java",
+      "relevance": "gdx-ai provides reusable game AI behaviours in Java. Its Wander class keeps an internal orientation and exposes both the constructed target and circle centre for inspection.",
+      "explanation": "Wander uses elapsed AI time to scale a triangular random perturbation, then builds a target from the owner's orientation, forward offset and radius. With independent facing enabled it delegates angular steering to Face and accelerates along the owner's orientation. Otherwise it seeks the constructed target and returns zero angular acceleration. The timepiece must advance for the perturbation to advance. This provides a concrete implementation with both facing arrangements and a turn rate expressed per second."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement · §3.3.11 Wander",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers wander in Chapter 3, section 3.3.11."
+    },
+    {
+      "title": "Craig Reynolds · Wander steering behavior",
+      "url": "https://www.red3d.com/cwr/steer/Wander.html",
+      "accessed": "2026-10-31",
+      "supports": "Wander retains a direction between updates, perturbs it on a forward circle and exposes controls over the variation instead of choosing unrelated directions each frame."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Wander.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Wander.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation constructs the forward-circle target, scales a triangular perturbation with elapsed AI time, and selects between Face with forward acceleration and direct seeking."
+    }
+  ],
+  "limits": [
+    "Nia's target angle can keep changing while her patrol stays in a narrow strip. Compare the chosen radius {wanderRadius} units with the reference radius {narrowRadius} units: a small circle beside the {wanderOffset}-unit forward offset gives little sideways deflection. A lively angle trace does not establish useful coverage.",
+    "This tape provides repeatability, not a sample from which to estimate random patrol coverage. Even a genuinely random wander does not promise an exhibit visit. A route or a decision about the next exhibit must supply that purpose.",
+    "The nudge scale of {turnScale} radians per update is applied once per update rather than multiplied by elapsed seconds. Changing the update interval changes how often Nia receives a perturbation in real time. Setting the scale to zero leaves the target straight ahead and produces a straight patrol.",
+    "The circle is a steering construction, not a test for walls or other people. Nia can steer towards a point through a wall. Following velocity also gives her no independent facing controller or angular acceleration limit."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:103",
+      "why": "Use kinematic wander when Nia's motion can be assigned directly and the acceleration lag shown here is unnecessary."
+    },
+    {
+      "id": "aifg-a:104",
+      "why": "Read random binomial when replacing the scripted tape with independent draws; subtraction favours small perturbations but does not itself remember a direction."
+    },
+    {
+      "id": "aifg-a:123",
+      "why": "Use Face when Nia must turn towards the wander target through an angular controller instead of letting facing follow velocity."
+    },
+    {
+      "id": "aifg-a:126",
+      "why": "Read wander circle parameters when tuning the radius and forward offset; their geometry explains why the smaller circle weakens Nia's turns."
+    },
+    {
+      "id": "aifg-a:127",
+      "why": "Use path following when Nia must inspect a planned sequence of exhibits rather than hope that roaming reaches them."
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "Add obstacle and wall avoidance when the gallery's boundaries must influence Nia's motion; wander never queries that geometry."
+    }
+  ]
+}

@@ -15,6 +15,9 @@ import type { CatalogWork, WorkSlug } from '@dotln-angular/models';
             <button type="button" [attr.aria-current]="item.work === selected() ? 'true' : null" (click)="chosen.emit(item.work)">
               <span class="title" translate="no">{{ item.title }}</span>
               <span class="count">{{ 'tools.shelf.count' | t: { count: item.count } }}</span>
+              @if (item.studied) {
+                <span class="studied">{{ 'tools.shelf.studied' | t: { count: item.studied } }}</span>
+              }
               @if (item.scene; as scene) {
                 <span class="scene" translate="no">{{ sceneLabel(scene) }}</span>
               }

@@ -16,6 +16,7 @@ export const toolsRoutes: Routes = [
     children: [
       { path: ChildPaths.Root, pathMatch: 'full', component: ToolsHome },
       { path: ChildPaths.Catalog, component: CatalogPage },
+      { path: ChildPaths.Reading, component: CatalogPage },
     ],
   },
 ];

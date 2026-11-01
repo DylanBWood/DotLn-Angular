@@ -1,0 +1,112 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:118",
+  "work": "aifg",
+  "slug": "velocity-matching",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 3",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mira, a museum courier, wants to walk at the pace of a cart already rolling ahead. She watches how the cart is moving and adjusts her own velocity. Once they move alike, the distance between them stops changing. That can make a companion feel coordinated, but it does not bring someone who started behind up alongside.",
+    "situation": "Use this when Mira should copy the cart's motion while another behaviour decides where she belongs relative to it."
+  },
+  "example": {
+    "name": "Mira pacing the museum cart",
+    "description": "Mira starts at rest behind the museum cart, which rolls steadily at {cartVelocity} units/s. The engine's matchVelocity chooses her acceleration using response time {responseTime} s and acceleration limit {maxAcceleration} units/s². A local fixed update changes velocity, applies her speed limit and then moves both courier and cart. Change either control to see how pace agreement depends on the correction and its limit; the comparison uses a reference response time of {shortResponseTime} s.",
+    "parameters": {
+      "courierStart": 0,
+      "courierVelocity": 0,
+      "cartStart": 12,
+      "cartVelocity": 5.5,
+      "maxSpeed": 10,
+      "maxAcceleration": 4,
+      "responseTime": 0.5,
+      "shortResponseTime": 0.1,
+      "timeStep": 0.25,
+      "steps": 32,
+      "radius": 1,
+      "arrowSeconds": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read the velocity to copy",
+        "text": "At {seconds} s, the cart moves at {cartVelocity} units/s and Mira at {courierVelocity} units/s. Subtract them to get a signed velocity gap of {velocityGap} units/s. The dashed arrow is the cart's velocity drawn beside Mira, so its difference from the solid arrow is visible without confusing it with the distance to the cart."
+      },
+      {
+        "title": "Turn the velocity gap into bounded acceleration",
+        "text": "Divide that gap by responseTime, {responseTime} s, to request {requestedAcceleration} units/s². The engine's matchVelocity caps the magnitude at {maxAcceleration} units/s², giving {acceleration} units/s² here. Response time is a controller setting; the acceleration cap can prevent the requested change from happening that quickly."
+      },
+      {
+        "title": "Advance both movers",
+        "text": "Over timeStep, {timeStep} s, Mira's new velocity becomes {nextVelocity} units/s after her speed limit is applied. Move both courier and cart with their respective velocities. The update interval advances the simulation, while response time sets the strength of the correction."
+      },
+      {
+        "title": "Measure agreement without treating it as arrival",
+        "text": "The cart is {positionGap} units ahead, but that link never enters the acceleration calculation. When neither cap acts, each update multiplies velocity error by {errorMultiplier}. A factor between zero and one closes the velocity gap; a negative factor reverses its sign. Matching pace still leaves the distance already lost."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "targetVelocity = cart.velocity\nvelocityGap = targetVelocity - courier.velocity\n\nrequested = velocityGap / responseTime\n# On this axis, engine.matchVelocity performs this clamp.\nacceleration = clamp(requested, -maxAcceleration, maxAcceleration)\n\ncourier.velocity = clamp(courier.velocity + acceleration * timeStep,\n                         -maxSpeed, maxSpeed)\ncourier.position += courier.velocity * timeStep\ncart.position += cart.velocity * timeStep\n\npositionGap = cart.position - courier.position\ndrawLink(courier.position, cart.position)\nplot(courier.velocity, cart.velocity)  # observations, not steering inputs",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/velocity-matching.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/velocity-matching.model.ts",
+    "textEquivalent": "The cart is {positionGap} units ahead of Mira. Mira moves at {courierVelocity} units/s against the cart’s {cartVelocity} units/s; the two arrows compare pace rather than closing distance."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · MatchVelocity",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "relevance": "gdx-ai is a Java game AI library with steering behaviours that work on a vector interface. Its MatchVelocity class is a reusable velocity controller for a moving owner and target.",
+      "explanation": "The calculation subtracts the owner's linear velocity from the target's, scales by the reciprocal of timeToTarget and limits the resulting vector to the configured maximum linear acceleration. It sets angular acceleration to zero and returns the steering output. This keeps the controller independent of the code that integrates movement and allows either planar or spatial vectors."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement · §3.3.6 Velocity Matching",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers velocity matching in Chapter 3, section 3.3.6."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · MatchVelocity.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "accessed": "2026-10-31",
+      "supports": "The public implementation divides a linear velocity difference by timeToTarget, limits acceleration and returns zero angular acceleration."
+    }
+  ],
+  "limits": [
+    "Mira cannot catch the cart by copying its velocity alone. Once the velocities agree, any remaining position gap persists; matching pace does not establish a rendezvous.",
+    "With updates every {timeStep} s and response time {responseTime} s, the uncapped velocity-error multiplier is {errorMultiplier}. A negative multiplier reverses the error, and a magnitude greater than one amplifies it until a cap intervenes. The response-time control can expose alternating overshoot; a quicker correction is not automatically better movement.",
+    "If the cart exceeds Mira's speed limit, she cannot match it even with continuing acceleration. This controller also has no position-based collision response: moving the cart nearer does not change the acceleration."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:108",
+      "why": "Reach for variable matching when deciding which part of the cart's state Mira should copy; matching velocity does not also match position or facing."
+    },
+    {
+      "id": "aifg-a:144",
+      "why": "Use weighted blending when Mira also needs positional attraction or separation; inspect the combined acceleration because competing terms can disturb velocity agreement."
+    },
+    {
+      "id": "aifg-a:120",
+      "why": "Reach for pursue when Mira's actual task is to intercept the moving cart rather than preserve a shared pace at the current distance."
+    },
+    {
+      "id": "aifg-a:114",
+      "why": "Read time to target when choosing a response time that works with Mira's acceleration limit and the simulation's update interval."
+    }
+  ]
+}

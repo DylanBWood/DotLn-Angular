@@ -5,25 +5,13 @@ import { provideCatalog } from '@dotln-angular/catalog';
 import { provideToolsTestKit } from '../../../../testing/src';
 import { CatalogPage } from './catalog-page';
 
-function readingProviders(id: string | null) {
-  const kit = provideToolsTestKit();
-  kit.storage.values.set(
-    'dotln-angular.tools',
-    JSON.stringify({
-      version: 1,
-      work: id ? 'aifg' : null,
-      chapter: null,
-      section: null,
-      selectedId: id,
-      history: id ? [id] : [],
-    }),
-  );
-  return [...kit.providers, ...provideCatalog()];
-}
 const meta: Meta<CatalogPage> = {
   title: 'Tools/catalog-page',
   component: CatalogPage,
-  decorators: [applicationConfig({ providers: readingProviders('aifg-a:177') })],
+  decorators: [
+    applicationConfig({ providers: [...provideToolsTestKit().providers, ...provideCatalog()] }),
+  ],
+  args: { toolId: 'aifg-a:177' },
 };
 export default meta;
 export const Reading: StoryObj<CatalogPage> = {};
@@ -35,13 +23,7 @@ export const Search: StoryObj<CatalogPage> = {
     );
   },
 };
-export const Untyped: StoryObj<CatalogPage> = {
-  decorators: [applicationConfig({ providers: readingProviders('aifg-a:176') })],
-};
-export const ModelKnowledge: StoryObj<CatalogPage> = {
-  decorators: [applicationConfig({ providers: readingProviders('aifg-a:145') })],
-};
+export const Untyped: StoryObj<CatalogPage> = { args: { toolId: 'aifg-a:176' } };
+export const ModelKnowledge: StoryObj<CatalogPage> = { args: { toolId: 'aifg-a:145' } };
 export const LayoutSide: StoryObj<CatalogPage> = {};
-export const Study: StoryObj<CatalogPage> = {
-  decorators: [applicationConfig({ providers: readingProviders('aifg-a:112') })],
-};
+export const Study: StoryObj<CatalogPage> = { args: { toolId: 'aifg-a:112' } };

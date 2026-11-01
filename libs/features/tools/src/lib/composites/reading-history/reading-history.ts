@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { TPipe } from '@dotln-angular/i18n';
 import type { Tool, ToolId } from '@dotln-angular/models';
 
+import { isPlainClick } from '../../plain-click';
+
 @Component({
   selector: 'tools-reading-history',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -12,7 +14,7 @@ import type { Tool, ToolId } from '@dotln-angular/models';
       @if (tools().length) {
         <ol>
           @for (tool of tools(); track tool.id) {
-            <li><a href="#reading" (click)="$event.preventDefault(); opened.emit(tool.id)" translate="no">{{ tool.title }}</a></li>
+            <li><a [attr.href]="hrefFor()(tool.id)" (click)="open($event, tool.id)" translate="no">{{ tool.title }}</a></li>
           }
         </ol>
       } @else { <p>{{ 'tools.history.empty' | t }}</p> }
@@ -31,5 +33,12 @@ import type { Tool, ToolId } from '@dotln-angular/models';
 })
 export class ReadingHistory {
   readonly tools = input<readonly Tool[]>([]);
+  readonly hrefFor = input.required<(id: ToolId) => string>();
   readonly opened = output<ToolId>();
+
+  open(event: MouseEvent, id: ToolId) {
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    this.opened.emit(id);
+  }
 }

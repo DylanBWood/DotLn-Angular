@@ -1,17 +1,25 @@
 import { provideRouter } from '@angular/router';
 
+import { createCatalogLoader } from '@dotln-angular/catalog';
 import { catalogFixture, provideCatalogTestKit } from '@dotln-angular/catalog/testing';
 import { provideStorageTokenTestKit } from '@dotln-angular/data-access/testing';
 import { provideDotlnI18nTestKit } from '@dotln-angular/i18n/testing';
-import type { Tool } from '@dotln-angular/models';
+import type {
+  ConceptStudy,
+  StudyExecutable,
+  StudyVisual,
+  Tool,
+  ToolId,
+} from '@dotln-angular/models';
 import { provideDotlnStateTestKit } from '@dotln-angular/state/testing';
 import { provideDotlnUi } from '@dotln-angular/ui';
 
 import { ToolsFacade } from '../../../src/lib/facades/tools.facade';
+import { ToolsHomeFacade } from '../../../src/lib/facades/tools-home.facade';
 import en from './tools-en.json';
 
-export function provideToolsFacadeTestKit(tools: readonly Tool[] = catalogFixture) {
-  const catalog = provideCatalogTestKit(tools);
+const provideToolsBase = (tools: readonly Tool[], studies?: readonly ConceptStudy[]) => {
+  const catalog = provideCatalogTestKit(tools, studies);
   const storage = provideStorageTokenTestKit();
   return {
     catalog,
@@ -23,11 +31,42 @@ export function provideToolsFacadeTestKit(tools: readonly Tool[] = catalogFixtur
       ...provideDotlnI18nTestKit({ langs: { en } }).providers,
       provideRouter([]),
       provideDotlnUi(),
-      ToolsFacade,
     ],
   };
+};
+
+export function provideToolsFacadeTestKit(
+  tools: readonly Tool[] = catalogFixture,
+  studies?: readonly ConceptStudy[],
+) {
+  const base = provideToolsBase(tools, studies);
+  return { ...base, providers: [...base.providers, ToolsFacade] };
 }
 
-export function provideToolsTestKit(tools: readonly Tool[] = catalogFixture) {
-  return provideToolsFacadeTestKit(tools);
+export function provideToolsHomeFacadeTestKit(
+  tools: readonly Tool[] = catalogFixture,
+  studies?: readonly ConceptStudy[],
+) {
+  const base = provideToolsBase(tools, studies);
+  return { ...base, providers: [...base.providers, ToolsHomeFacade] };
+}
+
+export function provideToolsTestKit(
+  tools: readonly Tool[] = catalogFixture,
+  studies?: readonly ConceptStudy[],
+) {
+  return provideToolsFacadeTestKit(tools, studies);
+}
+
+/** A study with a drawing and a model that runs it, as a model's spec reads it. */
+export type DrawnStudy = ConceptStudy & {
+  readonly visual: StudyVisual;
+  readonly pseudocode: ConceptStudy['pseudocode'] & { readonly executable: StudyExecutable };
+};
+
+/** A bundled study, for a spec that checks a model against the record it runs from. */
+export async function loadStudy(id: ToolId): Promise<DrawnStudy> {
+  const study = await createCatalogLoader().study(id);
+  if (!study?.visual || !study.pseudocode.executable) throw new Error(`No drawn study of ${id}.`);
+  return study as DrawnStudy;
 }

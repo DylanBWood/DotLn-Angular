@@ -1,0 +1,111 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:112",
+  "work": "aifg",
+  "slug": "arrive",
+  "authored": {
+    "by": "Claude Code, the catalog's reading author",
+    "on": "2026-10-26",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Imagine moving a character to a marked spot. Pointing toward it is easy; getting there without sailing past it takes a second decision: how fast should we still be going? Arrive reduces the desired speed as the remaining distance shrinks.",
+    "situation": "A unit told to walk to a flag should stop on the flag, not run past it and turn back."
+  },
+  "example": {
+    "name": "A character walking to a marked spot",
+    "description": "One character starts at rest 100 units from a fixed target and moves along a straight line. Maximum speed is 16 units/s, maximum acceleration {maxAcceleration} units/s², the slowing radius {slowRadius} units and the response time 0.4 s. Each step is 0.1 s, and the final snap needs both distance and speed within 0.3 of zero. These are teaching values, separate from the catalog's scene defaults.",
+    "parameters": {
+      "target": 100,
+      "slowRadius": 36,
+      "maxSpeed": 16,
+      "maxAcceleration": 12,
+      "responseTime": 0.4,
+      "tolerance": 0.3,
+      "timeStep": 0.1,
+      "steps": 240,
+      "lateRadius": 8
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Recognize an actual stop",
+        "text": "A character can pass close to the target while still moving quickly. Stop only when both remaining distance and speed are small. This example then places it exactly at the target with zero velocity."
+      },
+      {
+        "title": "Choose a desired velocity",
+        "text": "sign(offset) chooses left or right. min(1, distance / slowRadius) keeps the requested speed at its maximum outside the slowing zone, then reduces it toward zero inside. This is the velocity we want; the actual velocity takes time to catch up."
+      },
+      {
+        "title": "Limit how quickly velocity can change",
+        "text": "responseTime controls how quickly we try to close the velocity gap. It differs from dt, the time advanced by this update. clamp limits the resulting acceleration, so a large gap cannot cause an instant stop."
+      },
+      {
+        "title": "Update velocity, then position",
+        "text": "Acceleration multiplied by dt changes velocity; the new velocity multiplied by dt changes position. The velocity clamp enforces maxSpeed. Using the updated velocity for position is the update order chosen for this example."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "if abs(target - position) <= tolerance\n   and abs(velocity) <= tolerance:\n  return { position: target, velocity: 0 }\n\noffset = target - position\ndesired = sign(offset) * maxSpeed\ndesired *= min(1, abs(offset) / slowRadius)\n\nacceleration = clamp((desired - velocity) / responseTime,\n                     -maxAcceleration, maxAcceleration)\n\nvelocity = clamp(velocity + acceleration * dt,\n                 -maxSpeed, maxSpeed)\nposition = position + velocity * dt",
+    "rxjs": "// A stream supplies the clock without changing the steering rule.\nframes$ = animationFrames().pipe(\n  pairwise(),\n  map(([before, now]) =>\n    min((now.elapsed - before.elapsed) / 1000, 0.1))\n)\n\n// Each frame samples the latest target; a target change alone advances nothing.\nstate$ = frames$.pipe(\n  withLatestFrom(target$.pipe(startWith(100))),\n  scan((state, [dt, target]) =>\n    stepArrive(state, target, dt), initialState),\n  takeUntil(stop$)\n)\n\nsubscription = state$.subscribe(draw)\n// Dispose this subscription when the view closes.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/arrive.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/arrive.model.ts",
+    "textEquivalent": "The character is {distance} units from the target. Actual speed is {speed} units per second; desired speed is {desired}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai",
+      "url": "https://github.com/libgdx/gdx-ai/blob/master/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
+      "relevance": "gdx-ai is an open-source Java library for game AI, and Arrive.java is where it calculates how a character should accelerate toward a target and slow down near it.",
+      "explanation": "Inside decelerationRadius it scales the configured maximum linear speed by distance / decelerationRadius, divides the velocity gap by timeToTarget (0.1 s by default) and caps the result at the configured acceleration limit. Inside arrivalTolerance it returns zero acceleration, which does not stop the character by itself: other game code applies the acceleration and moves the character, so a moving character can keep moving unless that code also handles stopping."
+    }
+  ],
+  "references": [
+    {
+      "title": "Craig Reynolds · Arrival",
+      "url": "https://www.red3d.com/cwr/steer/Arrival.html",
+      "accessed": "2026-10-26",
+      "supports": "A visual reference for the desired-speed ramp and the lag caused by limited acceleration."
+    },
+    {
+      "title": "Arrive.java in gdx-ai",
+      "url": "https://github.com/libgdx/gdx-ai/blob/master/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
+      "accessed": "2026-10-26",
+      "supports": "A reusable library calculates acceleration toward a target and leaves applying it to other game code."
+    },
+    {
+      "title": "The RxJS withLatestFrom contract",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/withLatestFrom.ts",
+      "accessed": "2026-10-26",
+      "supports": "Sampling the latest value of one stream on each emission of another, as the RxJS reading does with the target."
+    }
+  ],
+  "limits": [
+    "A character cannot brake instantly. A small slowing zone, high speed or low acceleration can still produce overshoot.",
+    "A large time step can make the numerical motion unstable.",
+    "This example holds the target still and moves on one axis; it does not avoid obstacles or coordinate other characters."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:110",
+      "why": "Seek is the nearby idea when movement toward a target is enough. Arrive adds speed control near the destination."
+    },
+    {
+      "id": "aifg-a:120",
+      "why": "A moving target introduces another question, prediction, which this example leaves out."
+    },
+    {
+      "id": "aifg-a:114",
+      "why": "Time to target is the response time here: how quickly the character tries to close the velocity gap."
+    }
+  ]
+}

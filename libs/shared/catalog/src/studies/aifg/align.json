@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:116",
+  "work": "aifg",
+  "slug": "align",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 2",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A dock camera receives a compass heading, but its motor cannot simply adopt that heading. It must choose which way to turn, build angular speed and shed that speed before stopping. The awkward part is that a compass wraps: two headings on opposite sides of its written boundary can point almost the same way. Align makes the motor respond to their short angular separation.",
+    "situation": "The dock operator wants the camera to copy the quay's inspection heading while its pedestal stays fixed. A smooth turn matters more than changing the displayed angle immediately."
+  },
+  "example": {
+    "name": "Dock camera copying the quay heading",
+    "description": "Camera starts at rest and turns through the short gap across the angle boundary towards the fixed Command heading. The slowing angle is {slowRadius}° and motor acceleration is limited to {maxAngularAcceleration}°/s². Each step lasts {timeStep} s; a small final correction finishes the turn only when both angular error and turning speed are within tolerance. Change the slowing angle to see braking begin earlier or later.",
+    "parameters": {
+      "cameraX": 0,
+      "cameraY": 0,
+      "initialHeading": 170,
+      "initialAngularSpeed": 0,
+      "targetHeading": -170,
+      "directionLength": 24,
+      "slowRadius": 60,
+      "maxAngularSpeed": 60,
+      "maxAngularAcceleration": 60,
+      "responseTime": 0.25,
+      "angleTolerance": 0.2,
+      "speedTolerance": 0.5,
+      "timeStep": 0.05,
+      "steps": 160,
+      "lateSlowRadius": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Measure the short turn",
+        "text": "At this moment, command minus accumulated heading is {targetHeading} − {continuousHeading} = {rawError}°. Wrapping that difference gives {error}°, the signed short turn between the rays. Positive means clockwise in this drawing. A full-turn change in how a heading is written must not change the motor's instruction; an exact half-turn tie chooses the negative direction."
+      },
+      {
+        "title": "Distinguish closeness from rest",
+        "text": "Accept a final snap only when the angular error is within {angleTolerance}° and angular speed is within {speedTolerance}°/s. Passing the command while still rotating is not a stop. The snap corrects the remaining small angle to the equivalent commanded heading and clears angular velocity; it is a separate settling rule, outside the normal acceleration update."
+      },
+      {
+        "title": "Ask for an angular velocity",
+        "text": "Outside the {slowRadius}° slowing angle, ask for the {maxAngularSpeed}°/s limit in the error's direction. Inside it, scale that request by the remaining angular error; inside the angular tolerance, ask for no rotation so the motor brakes. The current request is {desiredAngularSpeed}°/s. These radii measure angles, so the drawing uses direction rays rather than a spatial slowing circle."
+      },
+      {
+        "title": "Let the motor close the speed gap",
+        "text": "Actual angular velocity is {angularSpeed}°/s. Divide the gap to the desired velocity by responseTime, {responseTime} s, then cap acceleration at {maxAngularAcceleration}°/s² in either direction. The acceleration now used is {acceleration}°/s². A smaller desired speed can therefore coexist with continued rotation towards the command: the camera is braking, not instantly stopped."
+      },
+      {
+        "title": "Turn through one fixed step",
+        "text": "If the settling test fails, add acceleration times {timeStep} s to angular velocity, cap the result at the angular speed limit, then turn using that updated velocity. Otherwise use the small settling snap. The next state has {nextAngularSpeed}°/s and accumulated heading {nextHeading}°. Camera stays on its pedestal; neither ray asks it to travel."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "rawError = targetHeading - heading\nerror = wrapDegrees(rawError)  // half-open: negative half-turn to positive half-turn\n\nif abs(error) <= angleTolerance and abs(angularVelocity) <= speedTolerance:\n  equivalentCommand = targetHeading - (rawError - error)\n  return { heading: equivalentCommand, angularVelocity: 0 }\n\ndesired = 0\nif abs(error) > angleTolerance:\n  desired = sign(error) * maxAngularSpeed\n  desired *= min(1, abs(error) / slowRadius)\n\nrequested = (desired - angularVelocity) / responseTime\nacceleration = clamp(requested, -maxAngularAcceleration, maxAngularAcceleration)\n\nangularVelocity = clamp(angularVelocity + acceleration * timeStep,\n                        -maxAngularSpeed, maxAngularSpeed)\nheading = heading + angularVelocity * timeStep\nreturn { heading, angularVelocity }",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/align.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/align.model.ts",
+    "textEquivalent": "{alignmentText}. Actual angular velocity is {angularSpeed}°/s; requested angular velocity is {desiredAngularSpeed}°/s."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · ReachOrientation",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/ReachOrientation.java",
+      "relevance": "gdx-ai is a Java game AI toolkit. Its ReachOrientation behaviour is an angular steering controller for making an owner adopt a target orientation.",
+      "explanation": "ReachOrientation wraps the orientation difference, scales desired angular speed inside decelerationRadius, divides the angular velocity gap by timeToTarget and limits angular acceleration. It clears linear acceleration. Inside alignTolerance it returns zero steering; that branch does not itself clear the owner's angular velocity. The behaviour returns steering for the application to apply rather than updating the owner's orientation."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement, section 3.3.5 Align",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Align in Chapter 3 Movement, section 3.3.5."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · ReachOrientation.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/ReachOrientation.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation wraps angular error, slows the desired angular speed, caps angular acceleration and returns zero steering inside its alignment tolerance."
+    }
+  ],
+  "limits": [
+    "A small slowing angle can leave the camera turning as it passes the command; the motor limit of {maxAngularAcceleration}°/s² determines how quickly braking can remove that rotation. {runOutcome}. The comparison keeps the same motor and uses a {lateSlowRadius}° slowing angle, so changing either live input also changes the comparison’s outcome.",
+    "At an exact half-turn, both directions are equally short. This implementation chooses the negative one; tiny changes to the command on either side of that tie can reverse the preferred direction. It has no memory of a preferred turning side.",
+    "The pedestal permits a full rotation. A short angular route can still be illegal for a real mount with mechanical stops or cables. This controller has no travel limits to reject that route."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:112",
+      "why": "Use Arrive when the controlled quantity is the camera platform's position. Its desired speed and braking explain the same response problem in linear movement."
+    },
+    {
+      "id": "aifg-a:117",
+      "why": "Read Map to range when a turn unexpectedly takes the long way round or flips near the half-turn tie. It isolates the angular representation problem before motor tuning."
+    },
+    {
+      "id": "aifg-a:123",
+      "why": "Use Face when the operator supplies a beacon position rather than a compass heading. Face derives the bearing that this angular controller needs."
+    }
+  ]
+}

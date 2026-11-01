@@ -25,8 +25,23 @@ export type {
   NavigationIntent,
 } from './lib/app-state';
 export type { BoardResponse } from './lib/board';
+export { studyStates, visualFamilies } from './lib/concept-study';
+export type {
+  CatalogSummary,
+  ConceptStudy,
+  StudiesSummary,
+  StudyExecutable,
+  StudyImplementation,
+  StudyParameters,
+  StudyReference,
+  StudyState,
+  StudyStep,
+  StudyVisual,
+  VisualFamily,
+} from './lib/concept-study';
 export { isPanelId } from './lib/board';
 export {
+  catalogStudiedFilters,
   HookDomain,
   isSceneTool,
   sceneTransformKinds,
@@ -43,6 +58,7 @@ export type {
   CatalogFilters,
   CatalogMap,
   CatalogSection,
+  CatalogStudiedFilter,
   CatalogWork,
   DotLnRole,
   MetricId,

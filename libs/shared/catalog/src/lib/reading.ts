@@ -1,6 +1,7 @@
 import type {
   CatalogChapter,
   CatalogReadingState,
+  CatalogSummary,
   CatalogWork,
   SceneTypeId,
   Tool,
@@ -35,6 +36,7 @@ export const emptyReading: CatalogReadingState = {
   section: null,
   selectedId: null,
   history: [],
+  lastTitle: null,
 };
 export const chapterKey = (tool: Tool) =>
   JSON.stringify([tool.place.part ?? '', tool.place.chapter ?? '']);
@@ -42,18 +44,35 @@ export const chapterKey = (tool: Tool) =>
 export const workTitle = (work: WorkSlug) => works[work]?.title ?? work;
 export const sceneTools = (work: WorkSlug) => R.pipe(byWork(work), R.filter(isSceneTool));
 
+/** The concepts that carry a study, across every work in the summary. */
+export const studiedIds = (summary: CatalogSummary | null): ReadonlySet<ToolId> =>
+  new Set(summary?.studies.works.flatMap(({ studies }) => studies.map(({ id }) => id)));
+
+const studiedIn = (summary: CatalogSummary | null, work: WorkSlug) =>
+  summary?.studies.works.find((entry) => entry.work === work)?.studies.length ?? 0;
+
+const shelfEntry = (work: WorkSlug, count: number, summary: CatalogSummary | null) => ({
+  work,
+  title: works[work]?.title ?? work,
+  scene: works[work]?.scene ?? null,
+  count,
+  studied: studiedIn(summary, work),
+});
+
 // A work a replacement loader returns without a shelf entry still reaches the reader, by
 // its slug and without a scene type; the data spec keeps every bundled work listed.
-export function catalogShelf(tools: readonly Tool[]): readonly CatalogWork[] {
+export function catalogShelf(
+  tools: readonly Tool[],
+  summary: CatalogSummary | null = null,
+): readonly CatalogWork[] {
   const counts = new Map<WorkSlug, number>();
   for (const tool of tools) counts.set(tool.work, (counts.get(tool.work) ?? 0) + 1);
-  return [...counts].map(([work, count]) => ({
-    work,
-    title: works[work]?.title ?? work,
-    scene: works[work]?.scene ?? null,
-    count,
-  }));
+  return [...counts].map(([work, count]) => shelfEntry(work, count, summary));
 }
+
+/** The shelf from the summary alone, for a page that has loaded no work. */
+export const summaryShelf = (summary: CatalogSummary): readonly CatalogWork[] =>
+  summary.works.map(({ work, count }) => shelfEntry(work, count, summary));
 
 export const contentsFor = (work: WorkSlug) =>
   R.pipe(byWork(work), (tools: readonly Tool[]): CatalogChapter[] => {
@@ -120,7 +139,10 @@ export function restoreReading(value: unknown): CatalogReadingState | undefined 
     work: state['work'] as WorkSlug | null,
     chapter: state['chapter'] as string | null,
     section: state['section'] as string | null,
-    selectedId: state['selectedId'] as ToolId | null,
+    // The address names the open reading, so a stored one opens nothing.
+    selectedId: null,
     history: [...new Set(state['history'] as ToolId[])],
+    // A reading stored before titles were kept has none; the link then names no concept.
+    lastTitle: RA.isNonEmptyString(state['lastTitle']) === true ? String(state['lastTitle']) : null,
   };
 }

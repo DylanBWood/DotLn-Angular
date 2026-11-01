@@ -1,0 +1,96 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:174",
+  "work": "aifg",
+  "slug": "fixed-formations",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 8",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mira's escort positions behave like marks painted on a board she carries. Turning her rotates the whole board, even while her feet stay still. A guard far from her has farther to travel for the same change of heading. Cheap target geometry can therefore demand expensive movement.",
+    "situation": "A ceremonial escort can keep a recognisable shape in an open court if its leader turns gently. Before using the same arrangement for a quick pivot, check the movement demanded of the guards."
+  },
+  "example": {
+    "name": "Mira's Lantern Court pivot",
+    "description": "Mira halts in Lantern Court with an escort slot behind each shoulder. Each offset uses {spacing} units along both of her local axes, and her scripted turn lasts {turnDuration} seconds. Rings show destinations; the chart checks the speed needed to reach successive samples against a {speedLimit} units/s guard budget. The reference turn lasts {fastTurnDuration} seconds. The full scene separately uses Arrive to move guards towards these targets; this study isolates the fixed-slot geometry.",
+    "parameters": {
+      "members": 3,
+      "leaderX": 0,
+      "leaderY": 0,
+      "spacing": 4,
+      "turnDegrees": 90,
+      "turnStart": 10,
+      "turnSteps": 20,
+      "fastTurnSteps": 1,
+      "speedLimit": 6,
+      "timeStep": 0.1,
+      "steps": 50
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Keep offsets in Mira's coordinates",
+        "text": "The engine makes a wedge for {members} members, then measures it from its leading slot. Mira occupies that origin, with escort offsets spaced {spacing} units along her local axes. Cache these offsets: a turn changes their world positions, not the pattern."
+      },
+      {
+        "title": "Let the leader determine the frame",
+        "text": "The study-local schedule changes Mira's heading towards {turnDegrees} degrees over {turnDuration} seconds. The engine's advanceFormation copies her position and heading into the fixed formation without moderation. Her current heading is {angle} degrees."
+      },
+      {
+        "title": "Rotate, then translate each offset",
+        "text": "slotPosition rotates each offset into Mira's forward and sideways directions, then adds her position. The escort targets stay behind her and {orbitRadius} units away throughout the pivot; the worked step shows the coordinate arithmetic."
+      },
+      {
+        "title": "Check the movement the targets demand",
+        "text": "The local measurement compares each target with its preceding sample. The largest displacement is {displacement} units over {timeStep} seconds, requiring at least {requiredSpeed} units/s to reach the selected target. The budget is {speedLimit} units/s: {speedStatus}. An excessive request is reported without slowing Mira or clipping the destinations."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "centred = patternSlots(\"wedge\", members, spacing)\n// Measure every offset from the leader at the wedge's tip.\noffsets = centred.map(slot => slot - centred[0])\nformation = fixedFormation(offsets, leader = Mira)\n\nprogress = clamp((step - turnStart) / turnSteps, 0, 1)\nangle = turnDegrees * pi / 180 * progress\nMira.heading = (cosine(angle), sine(angle))\nformation = advanceFormation(formation, [Mira], null, timeStep)\n\ntargets = offsets.map((offset, index) =>\n  slotPosition(formation, index))\n\n// Exclude Mira's own slot; the first sample has no displacement.\ndisplacements = escortTargets - previousEscortTargets\nrequiredSpeed = max(length(displacement) / timeStep)\nreport(requiredSpeed, requiredSpeed > speedLimit)",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/fixed-formations.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/fixed-formations.model.ts",
+    "textEquivalent": "Both escort targets stay behind Mira and {orbitRadius} units from her as they rotate with her heading. Their latest sweep requires {requiredSpeed} units/s against a guard budget of {speedLimit} units/s ({speedStatus})."
+  },
+  "implementations": [],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · 3.7.1 Fixed Formations",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers this topic at Chapter 3 Movement, section 3.7.1 Fixed Formations, as listed in its contents."
+    },
+    {
+      "title": "gdx-ai documentation · Formation Motion · Fixed Formations",
+      "url": "https://github.com/libgdx/gdx-ai/wiki/Formation-Motion",
+      "accessed": "2026-10-31",
+      "supports": "Leader-relative rigid slots need limits on leader turning and clearance for the whole group; this documentation explicitly says gdx-ai does not implement rigid fixed formations."
+    }
+  ],
+  "limits": [
+    "This turn peaks at {peakSpeed} units/s against a {speedLimit} units/s guard budget: {runSpeedStatus}. Increasing spacing or shortening the pivot can make the targets unreachable even while Mira stays still.",
+    "Passing the sampled speed check does not establish physical feasibility. A curved journey is longer than its chord, and this schedule starts and stops turning abruptly; acceleration and turning limits still need attention.",
+    "The target generator never reads terrain. A clear location for Mira does not establish clearance for her escort, and keeping the offsets fixed gives the group no way to squeeze around a wall."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:175",
+      "why": "Use scalable formations when the escort's membership changes and a recipe must generate a new set of offsets. It solves a different problem from turning an existing set."
+    },
+    {
+      "id": "aifg-a:177",
+      "why": "Use two-level formation steering when a separately controlled anchor should guide the pattern and individual guards need time and freedom to reach their slots."
+    }
+  ]
+}
