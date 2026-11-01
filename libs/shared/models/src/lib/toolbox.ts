@@ -205,6 +205,7 @@ export interface CatalogWork {
   readonly title: string;
   readonly scene: SceneTypeId | null;
   readonly count: number;
+  readonly studied: number;
 }
 /** A section of a chapter in a work's contents, with its concepts in source order. */
 export interface CatalogSection {
@@ -227,11 +228,16 @@ export interface CatalogReadingState {
   readonly section: string | null;
   readonly selectedId: ToolId | null;
   readonly history: readonly ToolId[];
+  /** The title of the newest reading, so a page can name it without loading its work. */
+  readonly lastTitle: string | null;
 }
 
+export const catalogStudiedFilters = ['studied', 'unstudied'] as const;
+export type CatalogStudiedFilter = (typeof catalogStudiedFilters)[number];
+
 /**
- * Catalog filter dimensions. The reading surface's search facets set work, kind and
- * status; scene and transform remain selector dimensions with no facet of their own.
+ * Catalog filter dimensions. The reading surface's search facets set work, kind,
+ * status and studied; scene and transform remain selector dimensions with no facet of their own.
  */
 export interface CatalogFilters {
   readonly work: WorkSlug | null;
@@ -239,4 +245,5 @@ export interface CatalogFilters {
   readonly scene: SceneTypeId | null;
   readonly transform: TransformKind | null;
   readonly status: ToolStatus | null;
+  readonly studied: CatalogStudiedFilter | null;
 }

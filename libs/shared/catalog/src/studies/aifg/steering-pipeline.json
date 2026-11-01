@@ -1,0 +1,139 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:153",
+  "work": "aifg",
+  "slug": "steering-pipeline",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 7",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "The courier still wants the delivery desk when a pallet blocks its way. What changes is the next place it should head for. A steering pipeline lets the parts responsible for intent, route detail, clearance and movement negotiate that intermediate goal. The useful result is a checked movement proposal with a reason for its detour.",
+    "situation": "A warehouse courier must take a parcel from the entrance to the delivery desk beyond a pallet. Its delivery request should survive a change of waypoint, while its clearance check must be able to refuse movement."
+  },
+  "example": {
+    "name": "The courier, the pallet and the delivery desk",
+    "description": "The courier carries a parcel from the entrance to a delivery desk initially {initialGoalDistance} units away, beyond a pallet. The pallet radius {palletRadius}, courier radius {courierRadius} and safety margin {safetyMargin} give a forbidden centre radius of {exclusionRadius}. The supplied upper bypass places its entry and exit corners {offset} units to either side and above the pallet, including {detourPadding} units of padding. The selected budget is {maxChecks} candidate checks per update; the comparison changes only that budget to {comparisonChecks}. The courier can travel at {maxSpeed} units/s and accelerate at {maxAcceleration} units/s². Arrive uses slow radius {slowRadius}, target radius {targetRadius} and response time {responseTime} s, and a corner is released only when the courier is close and slower than {cornerSpeed} units/s. Updates advance {timeStep} s for {steps} steps.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "startVelocityX": 0,
+      "startVelocityY": 0,
+      "goalX": 80,
+      "goalY": 0,
+      "palletX": 40,
+      "palletY": 0,
+      "palletRadius": 8,
+      "courierRadius": 2,
+      "safetyMargin": 2,
+      "detourPadding": 8,
+      "maxSpeed": 12,
+      "maxAcceleration": 24,
+      "slowRadius": 12,
+      "targetRadius": 2,
+      "responseTime": 0.5,
+      "cornerSpeed": 0.2,
+      "timeStep": 0.1,
+      "steps": 220,
+      "maxChecks": 2,
+      "failureChecks": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Targeter: retain the delivery request",
+        "text": "The targeter keeps the delivery desk as the final goal while the courier negotiates intermediate stops. The grey line shows that continuing intent. This example needs only a position channel; there is no competing orientation or velocity request to merge."
+      },
+      {
+        "title": "Decomposer: select the next piece of the route",
+        "text": "The initial route contains just delivery. After repair it contains the bypass corners and delivery. Select the earliest remaining waypoint, currently the {waypointName}. Remove a corner only when its distance is within {targetRadius} and the courier is moving at most {cornerSpeed} units/s. This deliberately makes the courier slow at corners instead of cutting across the pallet. Retain an accepted route between updates, so the bypass does not change sides every frame."
+      },
+      {
+        "title": "Constraint: preview, reject, repair and check again",
+        "text": "Ask the actuator to preview its actual next movement towards the waypoint. The constraint checks the entire remaining polyline and that next movement segment against the inflated pallet. For a segment a→b, project the pallet centre onto the segment, clamp the projection to its endpoints, and subtract {exclusionRadius} from the closest distance. A negative result refuses the proposal. Suggest the upper bypass with offset {offset}, select its next waypoint and preview again. Each check consumes budget, including the check of a repair. At this moment there are {checks} checks and {rejections} refusals; the last route clearance is {routeClearance} and the predicted movement clearance is {sweptClearance}."
+      },
+      {
+        "title": "Actuator: commit checked motion or brake",
+        "text": "This study supplies local target selection, decomposition and constraint negotiation because the scene engine has no pipeline. Its actuator calls the engine's Arrive function: outside the slow radius request maximum speed; inside, reduce speed towards rest at half the target radius, then cap acceleration while closing the velocity gap over the response time. Commit the same velocity-first update that was previewed. The current acceleration magnitude is {accelerationMagnitude} units/s²; the next speed is {nextSpeed} units/s. On budget exhaustion, discard unverified repairs and use the engine's velocity matching to brake towards rest. A failed update retains only its previously accepted route."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "goal = targeter.position(goalX, goalY)\nbody = state.kinematics\n\nroute = dropReachedCorners(state.route, targetRadius, cornerSpeed)\n// The initial route is [goal].\n// Keep each corner until both distance and speed are small.\n\ninflatedRadius = palletRadius + courierRadius + safetyMargin\naccepted = false\nrepeat at most maxChecks:\n  waypoint = first(route)\n  acceleration = engine.arrive(body, waypoint,\n                              slowRadius, targetRadius, responseTime)\n  preview = integrateVelocityThenPosition(state, acceleration, route)\n  routeGap = minimumSegmentClearance([state.position, ...route])\n  sweptGap = segmentClearance(state.position, preview.position)\n  if routeGap >= 0 and sweptGap >= 0:\n    accepted = true\n    break\n  route = upperBypass(goal, inflatedRadius + detourPadding)\n  route = dropReachedCorners(route, targetRadius, cornerSpeed)\n\nif accepted:\n  return preview\nacceleration = engine.matchVelocity(body, zeroVelocity, responseTime)\nreturn integrateVelocityThenPosition(state, acceleration, state.route)\n// vNext = clipLength(v + acceleration * timeStep, maxSpeed)\n// pNext = p + vNext * timeStep; discard unverified repairs.",
+    "rxjs": "// Illustrative: one fixed-state update per subscription; maxChecks is positive.\nbody = state.kinematics; inflatedRadius = palletRadius + courierRadius + safetyMargin\ncheck = route => { const waypoint = first(route);\n  const acceleration = engine.arrive(body, waypoint, slowRadius, targetRadius, responseTime);\n  const preview = integrateVelocityThenPosition(state, acceleration, route);\n  const routeGap = minimumSegmentClearance([state.position, ...route]);\n  const sweptGap = segmentClearance(state.position, preview.position);\n  return { preview, accepted: routeGap >= 0 && sweptGap >= 0 };\n}\nupdate$ = defer(() => of(targeter.position(goalX, goalY))).pipe(\n  map(goal => ({ goal, route: dropReachedCorners(state.route, targetRadius, cornerSpeed) })),\n  concatMap(({ goal, route }) => of(check(route)).pipe(\n    expand((candidate, index) => candidate.accepted || index + 1 >= maxChecks ? EMPTY :\n      of(check(dropReachedCorners(upperBypass(goal, inflatedRadius + detourPadding),\n        targetRadius, cornerSpeed))), 1), // repair feeds back within the check budget\n    last() // only the final decision reaches actuation\n  )),\n  map(({ accepted, preview }) => accepted ? preview : integrateVelocityThenPosition(\n    state, engine.matchVelocity(body, zeroVelocity, responseTime), state.route))\n) // Streams organise attempts; the helpers still determine geometry and braking safety.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/steering-pipeline.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/steering-pipeline.model.ts",
+    "textEquivalent": "The courier {relationship}; delivery is {goalDistance} units away. {proposalReading}"
+  },
+  "implementations": [
+    {
+      "project": "Ian Millington's historical aicore C++ library",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/steerpipe.cpp",
+      "relevance": "aicore is the historical companion code for an earlier edition of Artificial Intelligence for Games. Its maintainer labels it obsolete. It is useful here as a concrete implementation of pipeline interfaces and repair control flow, rather than as current engine guidance.",
+      "explanation": "SteeringPipe merges compatible goal channels, runs decomposers, asks its actuator for a path and selects the constraint reporting the earliest violation. A suggestion replaces the goal and triggers another pass; exhausting constraintSteps invokes a configured fallback. AvoidSpheresConstraint projects a straight direction against sphere exclusion zones and suggests an avoidance position. BasicActuator delegates accepted positional movement to Seek. The interfaces allow specialised path objects and constraints that understand them; these basic components do not implement a general path planner."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · 3.4 Combining Steering Behaviors · 3.4.5 Steering Pipeline",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers steering pipelines in Chapter 3, section 3.4.5."
+    },
+    {
+      "title": "aicore · pipeline control flow and basic components",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/steerpipe.cpp",
+      "accessed": "2026-10-31",
+      "supports": "SteeringPipe retries a constraint's suggested goal within a bounded loop, actuates a clear path and invokes its fallback when the loop is exhausted; the file also implements sphere avoidance and a Seek actuator."
+    },
+    {
+      "title": "aicore · goal, targeter, decomposer, constraint and actuator interfaces",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/include/aicore/steerpipe.h",
+      "accessed": "2026-10-31",
+      "supports": "Goal carries separate position, orientation, velocity and rotation channels. Actuator exposes path creation, prediction and steering methods, while constraints inspect paths and return suggested goals."
+    },
+    {
+      "title": "aicore · maintainer's historical status notice",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/README.md",
+      "accessed": "2026-10-31",
+      "supports": "The maintainer identifies this repository as historical companion code that did not keep up with later corrections and improvements."
+    }
+  ],
+  "limits": [
+    "With a check budget of {failureChecks}, the courier stalls at the resting start. The direct route uses the available budget, so the bypass is suggested but never validated. Discarding unverified suggestions makes the next update repeat the same refusal. A safe refusal does not guarantee eventual delivery.",
+    "More iterations cannot rescue an impossible destination. If the desk is placed inside the pallet's forbidden region, the proposed bypass still ends inside that region, so every check refuses it. The targeter needs a reachable goal.",
+    "Braking is a fallback, not an emergency collision barrier. A courier moving quickly near the forbidden boundary can enter it before stopping, even when the pipeline refuses every proposal. A production constraint needs to check a safe stopping horizon.",
+    "The upper bypass is supplied warehouse knowledge for this pallet. It does not discover other passages, test other obstacles or model a vehicle with a minimum turning radius. The courier slows almost to rest at each corner; a vehicle that must keep moving needs a different actuator and route representation."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:154",
+      "why": "Read Targeter when delivery itself must be chosen or several goal channels must be combined before the courier can plan movement."
+    },
+    {
+      "id": "aifg-a:155",
+      "why": "Read Decomposer when a supplied warehouse route should become local waypoints, or when route knowledge belongs in a separate component."
+    },
+    {
+      "id": "aifg-a:156",
+      "why": "Read Constraint when the important question is which movement to refuse and what correction would let the courier try again."
+    },
+    {
+      "id": "aifg-a:157",
+      "why": "Read Actuator when the courier's speed, braking or turning limits require a more faithful path prediction than the next movement segment used here."
+    },
+    {
+      "id": "aifg-a:159",
+      "why": "Read Constraint iteration limit and deadlock behaviour when the repair budget or repeated refusal in the comparison needs an explicit progress policy."
+    }
+  ]
+}

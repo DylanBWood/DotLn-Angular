@@ -14,6 +14,12 @@
   <p role="alert">{{ 'tools.catalog.failed' | t }}</p>
   <button type="button" (click)="facade.retry()">{{ 'tools.catalog.retry' | t }}</button>
 } @else {
+  @if (state.summaryFailed) {
+    <p role="alert">{{ 'tools.catalog.summaryFailed' | t }}</p>
+    <button type="button" (click)="facade.retrySummary()">
+      {{ 'tools.catalog.retry' | t }}
+    </button>
+  }
   <tools-catalog-layout>
     <tools-catalog-search
       search
@@ -21,6 +27,8 @@
       [results]="state.rows"
       [total]="state.total"
       [workTitles]="state.workTitles"
+      [studied]="state.studied"
+      [hrefFor]="hrefFor"
       (searched)="facade.search($event)"
       (opened)="open($event)"
     >
@@ -54,7 +62,7 @@
       shelf
       [works]="state.shelf"
       [selected]="state.work"
-      (chosen)="facade.chooseWork($event)"
+      (chosen)="chooseWork($event)"
     />
     <div contents>
       @if (state.work) {
@@ -63,6 +71,8 @@
           [chapter]="state.chapter"
           [section]="state.section"
           [selectedId]="state.selected?.id ?? null"
+          [studied]="state.studied"
+          [hrefFor]="hrefFor"
           (chapterChosen)="facade.chooseChapter($event)"
           (sectionChosen)="facade.chooseSection($event)"
           (opened)="open($event)"
@@ -82,22 +92,22 @@
             {{ 'tools.reading.back' | t }}
           </button>
         }
-        <tools-reading-mapper [tool]="tool" (followed)="open($event, true)">
+        <tools-reading-mapper
+          [tool]="tool"
+          [study]="state.study"
+          [studyStatus]="state.studyStatus"
+          [hrefFor]="hrefFor"
+          (followed)="open($event)"
+          (studyIntent)="facade.studyIntent($event)"
+          (studyRetried)="facade.retryStudy()"
+        >
           @let inScene = sceneRoute(tool.id);
           <a scene-link [routerLink]="inScene.commands" [queryParams]="inScene.queryParams">
             {{ 'tools.reading.scene' | t }}
           </a>
-          @if (state.study; as study) {
-            <tools-arrive-study
-              [study]="study"
-              (scrubbed)="facade.scrubStudy($event)"
-              (momentRequested)="showStudyMoment($event)"
-              (viewChanged)="facade.viewStudy($event)"
-              (streamViewChanged)="facade.viewStudyStream($event)"
-              (expanded)="facade.expandStudy($event.section, $event.open)"
-            />
-          }
         </tools-reading-mapper>
+      } @else if (unknownReading()) {
+        <p role="alert">{{ 'tools.catalog.unknownReading' | t }}</p>
       } @else {
         <div class="invitation">
           <p class="eyebrow">{{ 'tools.catalog.eyebrow' | t }}</p>
@@ -109,9 +119,28 @@
           <p>
             {{ (state.work ? 'tools.catalog.chooseConcept' : 'tools.catalog.description') | t }}
           </p>
+          @if (state.studiedTools.length) {
+            <section class="studied-list">
+              <h3>
+                {{ 'tools.catalog.studiedHeading' | t: { count: state.studiedTools.length } }}
+              </h3>
+              <ul translate="no">
+                @for (tool of state.studiedTools; track tool.id) {
+                  <li>
+                    <a [routerLink]="readingLink(tool.id)">{{ tool.title }}</a>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
         </div>
       }
     </section>
-    <tools-reading-history history [tools]="state.history" (opened)="open($event)" />
+    <tools-reading-history
+      history
+      [tools]="state.history"
+      [hrefFor]="hrefFor"
+      (opened)="open($event)"
+    />
   </tools-catalog-layout>
 }

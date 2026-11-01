@@ -1,0 +1,52 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:110",
+  "work": "aifg",
+  "slug": "seek",
+  "authored": {
+    "by": "fixture",
+    "on": "2026-10-31",
+    "reviewedBy": ["factual-critic", "reading-critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Head straight for the target at full acceleration.",
+    "situation": "A scout runs for a flag."
+  },
+  "example": {
+    "name": "A scout and a flag",
+    "description": "One body starts ten units from a fixed target.",
+    "parameters": {
+      "maxAcceleration": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Point at the target",
+        "text": "Subtract the position from the target and normalize it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "direction = normalize(target - position)\nreturn direction * maxAcceleration",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": null,
+  "implementations": [],
+  "references": [
+    {
+      "title": "A public reference",
+      "url": "https://example.org/steering",
+      "accessed": "2026-10-31"
+    }
+  ],
+  "limits": ["Seek overshoots a fixed target."],
+  "nearby": [
+    {
+      "id": "aifg-a:112",
+      "why": "Arrive adds the braking Seek lacks."
+    }
+  ]
+}

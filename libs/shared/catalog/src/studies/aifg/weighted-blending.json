@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:144",
+  "work": "aifg",
+  "slug": "weighted-blending",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 4",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Nia wants to reach a loading bay while keeping clear of a parked robot. Seek pulls towards the bay and separation pushes away from the robot. Treat those requests as vectors: their weights change how much each contributes, and their directions decide whether they reinforce, deflect or cancel one another.",
+    "situation": "Use a blend when several steering requests should influence the same movement update. Nia can head towards the bay and make room for the robot in a single calculation, provided a compromise between those requests is acceptable."
+  },
+  "example": {
+    "name": "Nia passing a parked robot on the way to the loading bay",
+    "description": "Nia starts at rest and seeks a fixed loading bay while the robot stays parked. Seek has weight {seekWeight} and separation weight {separationWeight}; the robot's offset below the direct route is {robotOffset} units. The scene engine supplies seek, linear separation and blend, followed by a study-local update of velocity and position. The arrows add requests tip to tail, and the chart compares their sum with the acceleration cap. A comparison aligns the robot with the route: {alignmentResult}. This example studies linear acceleration.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "targetX": 16,
+      "targetY": 0,
+      "robotX": 2,
+      "robotY": 1.5,
+      "alignedRobotY": 0,
+      "radius": 0.8,
+      "threshold": 4,
+      "maxAcceleration": 4,
+      "maxSpeed": 3,
+      "seekWeight": 1.5,
+      "separationWeight": 3,
+      "timeStep": 0.1,
+      "steps": 60,
+      "accelerationScale": 0.5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Ask both behaviours about the same position",
+        "text": "Seek pulls towards the bay, while separation pushes away from the robot inside {threshold} units. Their current unweighted magnitudes are {seekMagnitude} and {separationMagnitude} units/s²; both read the same position before Nia moves."
+      },
+      {
+        "title": "Scale each request and add the vectors",
+        "text": "Weights {seekWeight} and {separationWeight} scale the requests to magnitudes {weightedSeekMagnitude} and {weightedSeparationMagnitude} units/s². The grey separation arrow starts at the amber seek arrow's tip, so its endpoint is their vector sum. Direction matters: opposing requests can cancel. The weights total {weightSum}, and the engine does not divide by that total."
+      },
+      {
+        "title": "Cap the length of the completed sum",
+        "text": "The completed sum requests {rawMagnitude} units/s². The engine's blend caps its length at {maxAcceleration}, preserving direction, to apply {accelerationMagnitude} units/s². Clipping scales the whole sum and gives neither request a protected share."
+      },
+      {
+        "title": "Move Nia while keeping the robot parked",
+        "text": "Add acceleration × {timeStep} s to velocity, cap speed at {maxSpeed} units/s, then update position with that velocity. Nia's current speed is {speed} units/s with {bayDistance} units left to the bay. Recalculate both requests at the next position; a zero sum preserves velocity and can leave a resting courier stuck."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "before = Nia\nseekRequest = seek(before, bay)\nseparationRequest = separate(before, 0, [before, parkedRobot], linearTuning)\n\nweightedSeek = seekRequest * seekWeight\nweightedSeparation = separationRequest * separationWeight\nraw = weightedSeek + weightedSeparation\n// Do not divide by the sum of the weights.\n\nacceleration = blend([\n  { acceleration: seekRequest, weight: seekWeight },\n  { acceleration: separationRequest, weight: separationWeight }\n], maxAcceleration)\n// blend returns capLength(raw, maxAcceleration).\n\nvelocity = capLength(before.velocity + acceleration * dt, maxSpeed)\nposition = before.position + velocity * dt\nNia = before with position and velocity\n// parkedRobot keeps its position; recompute requests next step.",
+    "rxjs": "// before$ supplies each fixed-step snapshot of Nia; movement is handled elsewhere.\nrequests$ = before$.pipe(\n  // Each frame owns its two sources; concatMap keeps frames in order.\n  concatMap(before => forkJoin({\n    seekRequest: of(seek(before, bay)),\n    separationRequest: of(separate(before, 0, [before, parkedRobot], linearTuning))\n  })),\n  // of emits once and completes; forkJoin needs both to emit and complete.\n  map(({ seekRequest, separationRequest }) => {\n    weightedSeek = seekRequest * seekWeight\n    weightedSeparation = separationRequest * separationWeight\n    raw = weightedSeek + weightedSeparation\n    acceleration = capLength(raw, maxAcceleration)\n    return { weightedSeek, weightedSeparation, raw, acceleration }\n  })\n)\n// A non-completing source stalls its frame and queues later frames.\nacceleration$ = requests$.pipe(map(({ acceleration }) => acceleration))\n// Zero can mean silence or cancellation; keep requests$ to tell them apart.\n// Clipping hides excess strength; this join cannot guarantee clearance or choose a detour.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/weighted-blending.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/weighted-blending.model.ts",
+    "textEquivalent": "Nia is {robotRelation} the parked robot, {robotDistance} units away, and the bay is {bayDistance} units {bayDirection}. The weighted seek and separation arrows {pullRelation}; the applied acceleration is {accelerationMagnitude} units/s²."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · BlendedSteering",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
+      "relevance": "gdx-ai is a Java game AI library whose BlendedSteering class composes existing steering behaviours. It provides a reusable container for behaviour and weight pairs.",
+      "explanation": "Each calculation clears an accumulator, evaluates every listed behaviour into a reusable temporary result, then adds that result multiplied by its weight. Afterwards it limits the linear vector using the active limiter. It also carries angular acceleration in the steering result. Adding a behaviour assigns the blend's owner to it, and entries can be removed or inspected through the list API. The weights are not normalised."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement, §3.4.2 Weighted Blending",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers weighted blending in Chapter 3 Movement, section 3.4.2 Weighted Blending."
+    },
+    {
+      "title": "Craig Reynolds · Steering Behaviors For Autonomous Characters · Combining Behaviors",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-10-31",
+      "supports": "Weighted vector sums combine simultaneous steering requests, but conflicting components can cancel; priority selection is an alternative."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · BlendedSteering.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation calculates every listed behaviour, multiplies by its weight, accumulates without normalising the weights and limits the completed linear sum."
+    }
+  ],
+  "limits": [
+    "With the robot on the direct route, {alignmentResult}. Cancellation can hold Nia still with the bay ahead; a stronger pull in either direction removes that equilibrium without choosing a route around the robot.",
+    "A weight does not enforce clearance. At these inputs, {clearanceSummary}, with a smallest centre gap of {minimumGap} units against body diameter {diameter}. Reducing separation can allow overlap; clipping limits acceleration without enforcing a safe path.",
+    "Seek supplies no arrival brake. If Nia reaches the bay while moving, a zero seek output at that point does not erase her velocity; a destination that requires a stop needs speed control too.",
+    "Rotation needs its own output and limit. The scene engine's blend used here combines linear vectors, so this drawing and its acceleration cap make no claim about how quickly Nia can turn."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:143",
+      "why": "Read blending versus arbitration when deciding whether both of Nia's requests should influence movement or one should take control."
+    },
+    {
+      "id": "aifg-a:145",
+      "why": "Use flocking when Nia should move with a group as well as keep her distance; it introduces cohesion and velocity alignment as additional requests to combine."
+    },
+    {
+      "id": "aifg-a:149",
+      "why": "Use priority steering when an active clearance request should take precedence over seeking the bay instead of being weakened or cancelled by it."
+    },
+    {
+      "id": "aifg-a:151",
+      "why": "Read equilibrium fallback when the aligned robot leaves Nia at rest and a separate escape behaviour should act only after the ordinary requests cancel."
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "Use arrive in place of seek when reaching the loading bay must include slowing down and stopping."
+    }
+  ]
+}

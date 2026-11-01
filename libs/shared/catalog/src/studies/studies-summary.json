@@ -1,0 +1,90 @@
+{
+  "schema": "studies-summary-v0",
+  "works": [
+    {
+      "work": "aifg",
+      "studies": [
+        {
+          "id": "aifg-a:110",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:112",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:116",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:118",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:120",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:123",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:125",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:131",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:144",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:145",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:149",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:151",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:153",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:174",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:175",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:177",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:181",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:186",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-b:354",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-b:373",
+          "state": "checked"
+        }
+      ]
+    }
+  ]
+}

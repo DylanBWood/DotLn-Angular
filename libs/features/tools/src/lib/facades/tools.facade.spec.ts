@@ -1,33 +1,307 @@
 import { TestBed } from '@angular/core/testing';
 
-import { CatalogToken } from '@dotln-angular/catalog';
-import { catalogFixture } from '@dotln-angular/catalog/testing';
+import { CatalogToken, createCatalogLoader } from '@dotln-angular/catalog';
+import { catalogFixture, studyFixture } from '@dotln-angular/catalog/testing';
 
 import { provideToolsFacadeTestKit } from '../../../testing/src';
 import { ToolsFacade } from './tools.facade';
 
-it('calculates the selected moment only while its explanation is open', async () => {
-  const kit = provideToolsFacadeTestKit([{ ...catalogFixture[0], id: 'aifg-a:112' }]);
+const arrive = async () => {
+  const study = await createCatalogLoader().study('aifg-a:112');
+  if (!study) throw new Error('The Arrive record is missing.');
+  return study;
+};
+const openArrive = async () => {
+  const kit = provideToolsFacadeTestKit(
+    [{ ...catalogFixture[0], id: 'aifg-a:112' }],
+    [await arrive()],
+  );
   TestBed.configureTestingModule({ providers: [...kit.providers] });
   const facade = TestBed.inject(ToolsFacade);
   await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(1));
   facade.open('aifg-a:112');
-  expect(facade.vm().study?.currentCalculation).toBeNull();
-  facade.expandStudy('algorithm', true);
-  expect(facade.vm().study?.currentCalculation?.motion).toBe('braking');
+  await vi.waitFor(() => expect(facade.vm().study).not.toBeNull());
+  return facade;
+};
+
+it('follows the selected moment from the model, inside the run', async () => {
+  const facade = await openArrive();
+  const moment = () => facade.vm().study?.worked;
+  expect(moment()?.note).toContain('brakes');
+  facade.studyIntent({ kind: 'step', step: 0 });
+  expect(moment()?.lines.at(-1)).toContain('0.12');
+  facade.studyIntent({ kind: 'step', step: 9999 });
+  expect(moment()?.title).toBe('At rest at 24.00 seconds');
+  facade.studyIntent({ kind: 'step', step: Number.NaN });
+  expect(moment()?.title).toBe('At rest at 24.00 seconds');
+});
+
+it('is the one source of each section’s open state and of the view, reset with the reading', async () => {
+  const facade = await openArrive();
+  expect(facade.vm().study?.expanded).toEqual([]);
+  facade.studyIntent({ kind: 'expand', section: 'limits', open: true });
+  facade.studyIntent({ kind: 'expand', section: 'mechanism', open: true });
+  facade.studyIntent({ kind: 'expand', section: 'limits', open: true });
+  expect(facade.vm().study?.expanded).toEqual(['limits', 'mechanism']);
+  facade.studyIntent({ kind: 'expand', section: 'limits', open: false });
+  expect(facade.vm().study?.expanded).toEqual(['mechanism']);
+  facade.studyIntent({ kind: 'view', view: 'timeline' });
+  facade.studyIntent({ kind: 'step', step: 3 });
+  expect(facade.vm().study?.visual?.view).toBe('timeline');
   facade.open('aifg-a:112');
-  expect(facade.vm().study?.currentCalculation?.motion).toBe('braking');
-  facade.open('missing:99');
-  expect(facade.vm().study?.currentCalculation?.motion).toBe('braking');
-  facade.scrubStudy(0);
-  expect(facade.vm().study?.currentCalculation?.values['nextPosition']).toBe('0.12');
-  facade.scrubStudy(240);
-  expect(facade.vm().study?.currentCalculation?.settled).toBe(true);
-  facade.expandStudy('algorithm', false);
-  facade.scrubStudy(40);
-  expect(facade.vm().study?.currentCalculation).toBeNull();
-  facade.expandStudy('algorithm', true);
-  expect(facade.vm().study?.currentCalculation?.step).toBe(40);
+  expect(facade.vm().study?.expanded).toEqual(['mechanism']);
+  expect(facade.vm().study?.visual?.step).toBe(3);
+  expect(facade.arrive(undefined)).toBe(true);
+  expect(facade.vm().selected).toBeNull();
+  expect(facade.arrive('aifg-a:112')).toBe(true);
+  await vi.waitFor(() => expect(facade.vm().study).not.toBeNull());
+  expect(facade.vm().study?.expanded).toEqual([]);
+  expect(facade.vm().study?.visual?.view).toBe('motion');
+  expect(facade.vm().study?.visual?.step).toBe(75);
+});
+
+it('reruns the example from a changed input, keeps the record’s parameters, and restores it', async () => {
+  const facade = await openArrive();
+  const textEquivalent = () => facade.vm().study?.visual?.textEquivalent;
+  const original = textEquivalent();
+  expect(facade.vm().study?.visual?.inputs[0]).toMatchObject({ name: 'slowRadius', value: 36 });
+  facade.studyIntent({ kind: 'input', name: 'slowRadius', value: 8 });
+  expect(facade.vm().study?.visual?.inputs[0].value).toBe(8);
+  expect(textEquivalent()).not.toBe(original);
+  facade.studyIntent({ kind: 'input', name: 'slowRadius', value: Number.NaN });
+  expect(facade.vm().study?.visual?.inputs[0].value).toBe(8);
+  facade.studyIntent({ kind: 'resetInputs' });
+  expect(textEquivalent()).toBe(original);
+  facade.studyIntent({ kind: 'input', name: 'slowRadius', value: 8 });
+  expect(facade.arrive(undefined)).toBe(true);
+  expect(facade.arrive('aifg-a:112')).toBe(true);
+  await vi.waitFor(() => expect(facade.vm().study).not.toBeNull());
+  expect(textEquivalent()).toBe(original);
+});
+
+it('runs the example only on command, stops on a hand step and offers nothing under reduced motion', async () => {
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback));
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
+  const facade = await openArrive();
+  const step = () => facade.vm().study?.visual?.step;
+  const tick = (time: number) => frames.splice(0).forEach((callback) => callback(time));
+  expect(facade.vm().study?.visual?.playing).toBe(false);
+  frames.length = 0;
+  expect(facade.vm().study?.visual?.step).toBe(75);
+  facade.studyIntent({ kind: 'step', step: 10 });
+  facade.studyIntent({ kind: 'play', playing: true });
+  expect(facade.vm().study?.visual?.playing).toBe(true);
+  // The run is 0.1 s to a step, and a gap past 100 ms counts as 100 ms, so a hidden tab
+  // does not jump when it returns.
+  for (const time of [0, 16, 216, 416]) tick(time);
+  expect(step()).toBeGreaterThan(10);
+  expect(step()).toBeLessThan(14);
+  facade.studyIntent({ kind: 'step', step: 20 });
+  expect(facade.vm().study?.visual?.playing).toBe(false);
+  tick(500);
+  expect(step()).toBe(20);
+  facade.studyIntent({ kind: 'step', step: 240 });
+  facade.studyIntent({ kind: 'play', playing: true });
+  expect(step()).toBe(0);
+  facade.studyIntent({ kind: 'play', playing: false });
+  expect(facade.vm().study?.visual?.playing).toBe(false);
+  vi.unstubAllGlobals();
+});
+
+it('says a concept has no study, loads one on opening, and retries a failure', async () => {
+  const kit = provideToolsFacadeTestKit();
+  let fail = true;
+  const study = vi.fn(async () => {
+    if (fail) throw new Error('Unavailable');
+    return studyFixture;
+  });
+  TestBed.configureTestingModule({
+    providers: [
+      ...kit.providers,
+      { provide: CatalogToken, useValue: { ...kit.catalog.loader, study } },
+    ],
+  });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(3));
+  expect(facade.vm().studyStatus).toBe('none');
+  facade.open('sample:1');
+  await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('failed'));
+  expect(facade.vm().study).toBeNull();
+  fail = false;
+  facade.retryStudy();
+  await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('ready'));
+  expect(facade.vm().study?.id).toBe('sample:1');
+  study.mockResolvedValue(null as never);
+  facade.open('sample:2');
+  await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('none'));
+  expect(facade.vm().study).toBeNull();
+});
+
+it('keeps a model that throws to its own study, and the reading stays open', async () => {
+  const study = await arrive();
+  const broken = {
+    ...study,
+    example: { ...study.example, parameters: { ...study.example.parameters, slowRadius: 'far' } },
+  };
+  const kit = provideToolsFacadeTestKit([{ ...catalogFixture[0], id: 'aifg-a:112' }], [broken]);
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(1));
+  facade.open('aifg-a:112');
+  await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('failed'));
+  expect(facade.vm().study).toBeNull();
+  expect(facade.vm().selected?.id).toBe('aifg-a:112');
+});
+
+it('goes back to the record’s own inputs on a retry', async () => {
+  const facade = await openArrive();
+  facade.studyIntent({ kind: 'input', name: 'slowRadius', value: 8 });
+  expect(facade.vm().study?.visual?.inputs[0].value).toBe(8);
+  facade.retryStudy();
+  await vi.waitFor(() => expect(facade.vm().study?.visual?.inputs[0].value).toBe(36));
+});
+
+it('fails a study whose model is not listed, rather than showing it without its drawing', async () => {
+  const study = await arrive();
+  const unlisted = {
+    ...study,
+    visual: study.visual && { ...study.visual, model: 'libs/unlisted.model.ts' },
+  };
+  const kit = provideToolsFacadeTestKit([{ ...catalogFixture[0], id: 'aifg-a:112' }], [unlisted]);
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(1));
+  facade.open('aifg-a:112');
+  await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('failed'));
+});
+
+it('shows a failed summary and retries it without reloading the catalog', async () => {
+  const kit = provideToolsFacadeTestKit();
+  let fail = true;
+  const summary = vi.fn(async () => {
+    if (fail) throw new Error('Unavailable');
+    return kit.catalog.loader.summary();
+  });
+  TestBed.configureTestingModule({
+    providers: [
+      ...kit.providers,
+      { provide: CatalogToken, useValue: { ...kit.catalog.loader, summary } },
+    ],
+  });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().summaryFailed).toBe(true));
+  expect(facade.vm().failed).toBe(false);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(3));
+  const calls = kit.catalog.calls.length;
+  fail = false;
+  facade.retrySummary();
+  await vi.waitFor(() => expect(facade.vm().studied.size).toBe(1));
+  expect(facade.vm().summaryFailed).toBe(false);
+  expect(kit.catalog.calls).toHaveLength(calls);
+});
+
+it('stops a running example and withdraws Play when reduced motion is turned on', async () => {
+  const listeners: (() => void)[] = [];
+  const preference = {
+    matches: false,
+    addEventListener: (_type: string, listener: () => void) => listeners.push(listener),
+    removeEventListener: vi.fn(),
+    // The layout's breakpoint observer asks the same global through the older listeners.
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  };
+  vi.stubGlobal('matchMedia', () => preference);
+  vi.stubGlobal('requestAnimationFrame', () => 1);
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
+  const facade = await openArrive();
+  facade.studyIntent({ kind: 'play', playing: true });
+  expect(facade.vm().study?.visual?.playing).toBe(true);
+  preference.matches = true;
+  listeners.forEach((listener) => listener());
+  expect(facade.vm().study?.visual?.playing).toBeNull();
+  facade.studyIntent({ kind: 'play', playing: true });
+  expect(facade.vm().study?.visual?.playing).toBeNull();
+  TestBed.resetTestingModule();
+  expect(preference.removeEventListener).toHaveBeenCalled();
+  vi.unstubAllGlobals();
+});
+
+it('lets an unknown address close a reading without opening anything', async () => {
+  const kit = provideToolsFacadeTestKit();
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(3));
+  facade.open('sample:1');
+  expect(facade.arrive('nothing:1')).toBe(true);
+  expect(facade.vm().selected).toBeNull();
+  expect(facade.arrive(undefined)).toBe(false);
+});
+
+it('treats reaching the reading on the return stack as going back', async () => {
+  const kit = provideToolsFacadeTestKit();
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(3));
+  facade.open('sample:1');
+  facade.open('sample:2');
+  expect(facade.vm().canReturn).toBe(true);
+  expect(facade.arrive('sample:1')).toBe(true);
+  expect(facade.vm().selected?.id).toBe('sample:1');
+  expect(facade.vm().canReturn).toBe(false);
+  facade.open('sample:2');
+  expect(facade.back()).toBe('sample:1');
+  expect(facade.vm().canReturn).toBe(false);
+});
+
+it('counts studied concepts on the shelf, marks them and narrows the results to them', async () => {
+  const kit = provideToolsFacadeTestKit();
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().studied.size).toBe(1));
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(3));
+  expect(facade.vm().shelf.map(({ work, studied }) => [work, studied])).toEqual([
+    ['aifg', 1],
+    ['poeaa', 0],
+    ['geb', 0],
+  ]);
+  expect(facade.vm().studied.has('sample:1')).toBe(true);
+  facade.search('a');
+  expect(facade.vm().total).toBe(3);
+  facade.filter('studied', 'studied');
+  expect(facade.vm().rows.map(({ id }) => id)).toEqual(['sample:1']);
+  expect(facade.vm().filterValues.studied).toBe('Has a study');
+  facade.filter('studied', 'unstudied');
+  expect(
+    facade
+      .vm()
+      .rows.map(({ id }) => id)
+      .sort(),
+  ).toEqual(['sample:2', 'sample:3']);
+  facade.filter('studied', 'everything');
+  expect(facade.vm().filters.studied).toBe('unstudied');
+  facade.reset();
+  expect(facade.vm().filters.studied).toBeNull();
+});
+
+it('lists the open work’s studied concepts in book order and hands each study to the next', async () => {
+  const second = { ...catalogFixture[0], id: 'sample:9' as const, title: 'Herd' };
+  const nextStudy = { ...studyFixture, id: 'sample:9' as const, slug: 'herd' };
+  const kit = provideToolsFacadeTestKit([...catalogFixture, second], [studyFixture, nextStudy]);
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(4));
+  await vi.waitFor(() => expect(facade.vm().studied.size).toBe(2));
+  expect(facade.vm().studiedTools).toEqual([]);
+  facade.chooseWork('aifg');
+  expect(facade.vm().studiedTools.map(({ id }) => id)).toEqual(['sample:1', 'sample:9']);
+  facade.open('sample:1');
+  await vi.waitFor(() =>
+    expect(facade.vm().study?.next).toEqual({ id: 'sample:9', title: 'Herd' }),
+  );
+  facade.open('sample:9');
+  await vi.waitFor(() => expect(facade.vm().study?.id).toBe('sample:9'));
+  expect(facade.vm().study?.next).toBeNull();
 });
 
 it('opens the shelf, searches full definitions, applies result facets and persists readings', async () => {
@@ -53,25 +327,6 @@ it('opens the shelf, searches full definitions, applies result facets and persis
   expect(kit.storage.values.get('dotln-angular.tools')).toContain('sample:2');
 });
 
-it('derives the braking comparison on expansion and reuses it through unrelated interactions', async () => {
-  const kit = provideToolsFacadeTestKit([{ ...catalogFixture[0], id: 'aifg-a:112' }]);
-  TestBed.configureTestingModule({ providers: [...kit.providers] });
-  const facade = TestBed.inject(ToolsFacade);
-  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(1));
-  facade.open('aifg-a:112');
-  expect(facade.vm().study?.limitExample).toBeNull();
-  facade.expandStudy('limits', true);
-  const comparison = facade.vm().study?.limitExample;
-  expect(comparison?.values['overshoot']).toBe('3.93');
-  facade.scrubStudy(40);
-  facade.expandStudy('reactive', true);
-  expect(facade.vm().study?.limitExample).toBe(comparison);
-  facade.expandStudy('limits', false);
-  expect(facade.vm().study?.limitExample).toBeNull();
-  facade.expandStudy('limits', true);
-  expect(facade.vm().study?.limitExample).toEqual(comparison);
-});
-
 it('recovers from a failed loader and never reports failure as an empty success', async () => {
   const kit = provideToolsFacadeTestKit();
   let fail = true;
@@ -81,6 +336,7 @@ it('recovers from a failed loader and never reports failure as an empty success'
       {
         provide: CatalogToken,
         useValue: {
+          ...kit.catalog.loader,
           load: async () => {
             if (fail) throw new Error('Unavailable');
             return catalogFixture;

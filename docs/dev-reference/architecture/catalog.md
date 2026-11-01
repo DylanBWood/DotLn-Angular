@@ -1,9 +1,10 @@
 # Toolbox catalog
 
 Tools at `/tools` opens a library of works ([the inventory](#reproducible-source-join));
-`/tools/catalog` is its reading surface. Choosing a concept changes the reading session, never the
-platform or a running scene. The catalog is a foundation for studying and
-trying ideas, including several explanations of one idea.
+`/tools/catalog` is its reading surface, and `/tools/catalog/<tool id>` is one concept's reading.
+Choosing a concept changes the reading session, never the platform or a running scene. The catalog
+is a foundation for studying and trying ideas: [a study](#studies) explains one concept from several
+sides.
 
 ## Data and provenance
 
@@ -121,14 +122,19 @@ review, and corresponding tests. It then touches:
 
 ## Loading and state
 
-`CatalogToken` exposes `CatalogLoader.load(work?)`; `provideCatalog()`, in
+`CatalogToken` exposes `CatalogLoader`: `load(work?)` reads the tools, `summary()` reads the works
+and their studies without loading a work, and `study(id)` reads one concept's study, loading that
+work's studies once, or answers null. `provideCatalog()`, in
 `libs/shared/catalog/src/lib/catalog-loader.ts`, provides the bundled loader and
 the store. The Tools routes provide it once on
-their shared parent route, so the home and the catalog page read one store and
-the catalog loads once; the scene's route provides it too and injects only the
+their shared parent route, so the home and the catalog page read one store; the
+scene's route provides it too and injects only the
 token. Each work imports its named JSON chunks; parallel requests share a pending
 promise and failed requests are evicted for retry. A loading failure is visible and
-retryable, never presented as an empty success.
+retryable, never presented as an empty success, and a summary that fails where the tools loaded
+says so above the catalog, which stays readable without its counts and marks. A page opened again
+over loaded data fetches nothing, so moving between `/tools/catalog` and a reading shows no loading
+state.
 Features do not import the data files. A later API can replace the provider
 without changing the reading feature. Presentational components and mappers take
 shared shapes (`CatalogWork`, `CatalogChapter`, `isSceneTool`) from
@@ -143,39 +149,53 @@ The next change to the loader removes the reader and its type.
 `CatalogStore`, in `libs/shared/catalog/src/lib/catalog-store.ts`, uses the shared
 event, command, call-state and persistence features.
 UI intents include workChosen, chapterChosen, sectionChosen, conceptOpened,
-relationFollowed, readingReturned and searched; filtersChanged and pageChanged
+readingReturned, readingClosed and searched; filtersChanged and pageChanged
 remain for the search facets and paging. Choosing the open chapter or section
 again closes it. An empty section key denotes the Concepts group of a chapter with
 no named sections; null denotes no group chosen, and this distinction survives
 restoration. Reading navigation updates the selected work, chapter and
 section, a bounded return stack and the ten most recent unique ids.
 
+The address owns the open reading. `ChildPaths.Reading`, `catalog/:toolId`, binds the id to the
+catalog page's `toolId` input, and `ToolsFacade.arrive` brings the store in line with it, so a
+shared link opens a reading and `/tools/catalog` opens none. Reaching the id on top of the return
+stack counts as going back, so the browser's Back and the page's own return control make the same
+transition. `buildRoute` fills the route's parameter. Every link to a reading is a real address,
+so it can be copied or opened in a new tab: composites take a `hrefFor` function and handle a plain
+click themselves, because they may not use the router. An id the catalog does not have says so.
+
 Only versioned reading state is persisted at `dotln-angular.tools`: work,
-chapter, section, selected id and last ten readings. Catalog data, query, facets,
-page, return stack and loading errors are transient. The old filter-shaped
+chapter, section, last ten readings and the newest reading's title, which lets the home name it
+without loading its work. Catalog data, query, facets,
+page, return stack, the open reading and loading errors are transient. The old filter-shaped
 state is ignored. Restored ids are checked against loaded data.
 
 ## Reading and studying
 
-The shelf on the catalog page shows each work's title, count and primary scene; Tools
-home lists the titles and counts with a last-reading link. Each work has one
+The shelf on the catalog page shows each work's title, count, studied count and primary scene.
+Tools home lists the titles, counts and studied counts with a last-reading link, all from
+`catalog-summary.json`, `studies-summary.json` and the stored history, so it loads no work's chunk;
+`ToolsHomeFacade` reads them. Each work has one
 colour token, `--dotln-work-<slug>` in `libs/shared/ui/src/styles/_tokens.scss`;
 the shelf draws its spine and title in that colour and widens the chosen work's
 spine. The soldier scene's rail uses the same tokens for a tool's provenance,
 and the field skin lightens them so they read on its dark ground.
 
-Contents groups chapters, sections and concepts in source-line order. The reading
+Contents groups chapters, sections and concepts in source-line order, and marks a concept with a
+study by a glyph with a text equivalent. With a work chosen and no concept open, the reading area
+lists that work's studied concepts. The reading
 measure is bounded for prose. It renders the full definition, related links, grouped
 hook sentences and a typed tool's faces as one sentence (`tools.reading.faces`) with
 its parameters and defaults. Unlinked relations and untyped reasons remain visible. A
-tool the scene runs links to `/scene?tool=<id>`, which arrives with it chosen; the
+line under the title jumps to the study, when there is one, and a
+tool the scene runs links there to `/scene?tool=<id>`, which arrives with it chosen; the
 link is the container's, projected into the reading so the composite stays free of
 the router. Opening a concept focuses its reading region; following a relation
 provides a return action.
 
 Search covers titles and definitions, prioritizes an exact title, and shows
-30 results per page with work/kind/status facets. Each result names its work
-by title. Long unbroken titles wrap. Enter opens the first result.
+30 results per page with work, kind, status and studied facets. Each result names its work
+by title and carries the studied mark. Long unbroken titles wrap. Enter opens the first result.
 
 `ToolsFacade`, in `libs/features/tools/src/lib/facades/tools.facade.ts`, derives one
 view model and handles intents. The container connects shelf, contents, reading mapper,
@@ -192,42 +212,118 @@ alternatives are removed during execution; screenshots, decisions and an impleme
 record preserve the history, and no comparison switches remain in the application.
 Content, usability and usefulness are addressed before UI polish.
 
-### The Arrive study
+## Studies
 
-Arrive has an additional original teaching study, distinct from the mined definition,
-in `libs/features/tools/src/lib/composites/arrive-study/` and
-`libs/features/tools/src/lib/arrive-example.ts`: a custom one-dimensional drawing, a
-velocity-over-time chart, time scrubbing, ordinary and RxJS pseudocode, limitations
-and public references. This is not the soldier scene, and other concepts do not claim
-this enrichment.
+A study explains one concept from several sides, on one example, in its author's own words. It sits
+in the reading below the definition, marked as authored, and the definition keeps its provenance
+beside it. The operator's direction for what a study is lives in the launchpad's
+`docs/product/concept-study.md`.
 
-Movement and Velocity share the same timeline while the reader switches views. The
-diagrams explain actual versus desired velocity using tested fixed-step arithmetic,
-and the late-braking chart takes its axis labels from the same scales that plot its
-runs. The mechanism explanation works through the selected moment’s distance, desired
-velocity, acceleration limit and next position using that same calculation; its values
-stop deriving while the explanation is closed.
+### The record
 
-The ordinary pseudocode is shown complete, then explained in four steps; each step's
-own lines sit in a disclosure that starts closed. The RxJS version is labeled
-illustrative and explains its omitted host responsibilities.
+`ConceptStudy`, in `libs/shared/models/src/lib/concept-study.ts`, is one JSON file per study at
+`libs/shared/catalog/src/studies/<work>/<slug>.json`, validated by the closed
+`concept-study-v0.schema.json`. It carries the authored state, the intuition with a situation it
+serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
+RxJS reading and executable module, the visual, implementations, references, limits and nearby
+concepts. A change to the record's shape after it has shipped is a new schema version, never an
+edit of `concept-study-v0`.
 
-Expandable explanations use native disclosure semantics and Angular `@defer`
-with explicit open-state conditions. The explanation component is referenced
-only inside deferred blocks, allowing its component code and pseudocode to load
-on first expansion. Closed, never-opened explanations are not instantiated.
-A loaded explanation is retained when collapsed; no active animation or timer
-runs in it. Future animated explanations must suspend their work while hidden.
-Loading and failure text accompany delayed imports. The visual above the
-sections is immediately available and only changes on user input.
+A representation an idea does not need is null or an empty list, never filled. The mechanism's
+steps and the blocks of the ordinary pseudocode separated by a blank line match one to one, so the
+page shows each step beside its own lines. Prose reads the selected moment through `{name}`
+placeholders in the example's description, the text equivalent, the mechanism's steps and the
+limits, so a number a model computes never lives in prose.
+
+Each work's records load as one lazy chunk, `studies/<work>.ts`, beside the tool data and apart
+from it, so a regenerated join never touches a study. A new work's chunk also needs an entry in
+`studyChunks` in `catalog-loader.ts`.
+
+### The models
+
+A model module, `libs/features/tools/src/lib/studies/<subject>/<slug>.model.ts` with a spec beside
+it, exports `model`: a pure function from the record's parameters to the example's run
+(`StudyModel` in `studies/study-model.ts`). It returns the frames the drawing reads, a timeline, the
+named moments, the legend and caption, and, where they help, each moment's note, the worked
+arithmetic of that moment, a comparison that makes a failure visible and the inputs a reader may
+change. `studies/study-models.ts` lists the modules by the path the record names, and each loads
+with the study that reads it. Where the scene engine has the behaviour, the model calls the
+engine's pure function, so the study explains what actually runs; the drawing stays the study's
+own, a few bodies and not the twenty-unit scene. Arrive keeps a study-local step because its
+worked numbers are pinned. `studies/drawing.ts` holds what the models share about laying a drawing
+out: the width it is drawn at, the box round a run's frames and the rule that drops a name which
+would collide with one already placed.
+
+A model that throws, or a record naming a model the list lacks, fails that study alone: the reading
+stays open and offers the study again, from the record's own inputs.
+
+### The families
+
+A visual family, under `libs/features/tools/src/lib/composites/study-visuals/<family>/`, is one
+composite that takes a declarative model and a step index and draws an SVG with a text equivalent.
+Geometry derives from the model in a pure `*-drawing.ts` module with its own spec. `motion` draws the
+positions of bodies, with their vectors, zones, links and marks, over frames in one or two
+dimensions. `timeline` draws series over time with the moment marked, or a still chart when it has
+no step. `scrubber` and `inputs` are the controls they share. The other names in `visualFamilies`,
+`marbles`, `flow`, `states` and `relations`, land with the batch that first needs each.
+
+Nothing runs by itself. A reader moves through the example by the slider, Step back, Step forward
+and the named moments, or presses Play, which runs from the selected moment at the example's own
+pace and stops on any hand step, on leaving the reading and at the end. A reader who asks for
+reduced motion is not offered Play, and asking while the example runs stops it. The moment's short sentence stays on screen; its full text is
+the drawing's accessible name and sits behind Show the numbers. A slider under Try another value
+reruns the whole model with one input changed, and Back to the example restores it. A study opens on
+the moment its author chose as the most telling, and the switch's two views are always Movement and
+Chart, with the chart's own title above it.
+
+### The composite
+
+`composites/study/study.ts` shows the study in the order the operator chose: the authored mark, the
+idea and the situation, the drawing with its controls, then the explanations in native disclosures,
+with the mechanism, the RxJS reading, the limits and then the implementations with the references,
+then the nearby concepts and a link to the work's next study. Everything a reader may want only
+sometimes is one click away: the example in full, the moment's numbers, the inputs and how to read
+the drawing. `ToolsFacade` derives one `StudyView` from the record and the model through `mapStudy`,
+and `ReadingView` carries it; the facade is the single source of every disclosure's open state,
+bound onto the disclosures, so switching between the drawing and the chart keeps them, and every
+reader intent reaches it as one `StudyIntent`. The study owns its focus, and element ids carry a
+per-instance suffix.
+
+Explanations use native disclosure semantics and Angular `@defer` on first expansion, so a section
+never opened creates no view and downloads no code. A loaded explanation is kept when it is
+collapsed. Loading and failure text accompany delayed imports. Implementations are introduced on
+their own terms, references are links with the claim each supports, and the RxJS reading says from
+the record whether it is illustrative or executable.
+
+### The check and the coverage
+
+`npm run studies:check`, `tools/scripts/catalog/check-studies.mjs`, runs inside `check:fixtures`. It
+validates every record against the schema, resolves its id, work and nearby ids against the catalog,
+checks that a model or executable module exists with a spec beside it, matches the mechanism's steps
+to the pseudocode's blocks, refuses a draft and a record with fewer than two different reviewers, and
+compares `studies-summary.json` with the records. `--write-summary` rewrites the summary, a stale
+one fails, and a work's chunk must import and export each of its records. A record the schema refuses
+is reported and stops the check before anything counts it, so nothing is written from it. `npm run studies:report` prints each work's studied,
+checked and total rows, and `npm run studies:links` opens every cited address once; it reaches the
+network, so a batch runs it by hand and records the result, and no gate does.
+
+### Writing a batch
+
+A batch is authored by a fan-out: authors with two concepts each, a factual critic who opens every
+reference and implementation and checks each supports its claim, and a reading critic who reads as
+the operator would. Each author receives the record contract, its catalog rows, a decided study as
+the worked example and the rules; a rewrite continues the same author. The batch's decisions dispose
+of every critic finding, then the records are set to `checked` with the reviewers named. Link rot
+after a batch merges is a content defect the next batch's link check reports.
 
 ## Evidence
 
 Unit and tooling checks cover all rows and source-join safeguards, summary
 counts, exact relation targets, v0 compatibility, retries, persistence, search,
-paging, recent readings and the teaching model's motion limits. Browser tests
-exercise the objective reading session, keyboard/touch controls, loading
-boundaries, disclosure rendering, the board's serious/critical axe threshold
+paging, recent readings, the study check's rules and every model's claims, across
+each input's range. Browser tests
+exercise the objective reading session, shared links and Back, keyboard/touch controls, loading
+boundaries, disclosure rendering, reduced motion, the board's serious/critical axe threshold
 and overflow at 360, 768 and 1440 pixels. Review actual screenshots before
 accepting new visual baselines.
 

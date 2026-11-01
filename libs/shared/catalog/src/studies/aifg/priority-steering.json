@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:149",
+  "work": "aifg",
+  "slug": "priority-steering",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 6",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mica wants to reach the loading bay, but a parked trolley demands room. Adding the two requests could let eagerness weaken braking. Give Clearance ownership of acceleration while it has something to say, then let Travel take over when it declines. Think of ordered handlers returning a result: the winner supplies the whole vector.",
+    "situation": "Use this order when Mica must give personal space precedence over progress towards the loading bay. It is useful only if the urgent group becomes quiet when its condition passes."
+  },
+  "example": {
+    "name": "Mica approaching a parked trolley",
+    "description": "Mica starts at rest on an aisle with a parked trolley between the courier and the loading bay. Clearance wakes inside {separationThreshold} units and has priority {clearancePriority}: {order}. A request must exceed epsilon {epsilon} units/s² to take control. Speed is limited to {maxSpeed} units/s and acceleration to {maxAcceleration} units/s², with decisions every {timeStep} s. The inner ring marks touching centre distance {contactDistance} units. Change the priority, buffer or threshold to see which requests actually move Mica; the comparison reverses only the group order.",
+    "parameters": {
+      "initialPosition": 0,
+      "initialVelocity": 0,
+      "trolleyPosition": 6,
+      "target": 12,
+      "maxSpeed": 3,
+      "maxAcceleration": 4,
+      "radius": 0.5,
+      "separationThreshold": 3,
+      "separationFalloff": 1,
+      "separationWeight": 1,
+      "brakeWeight": 1,
+      "slowRadius": 4,
+      "targetRadius": 0.2,
+      "responseTime": 0.5,
+      "epsilon": 0.1,
+      "timeStep": 0.1,
+      "steps": 120,
+      "clearancePriority": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Measure the trolley before moving",
+        "text": "Read Mica and the stationary trolley from the current frame. Engine separate measures the centre gap, currently {gap}, and produces a push away inside separationThreshold. This example chooses linear falloff: the push grows with the fraction of that distance still occupied. On the edge and outside it, the push is zero."
+      },
+      {
+        "title": "Build a Clearance group that can decline",
+        "text": "While separation is nonzero, blend its request with a request to match zero velocity over responseTime. The weights are separationWeight and brakeWeight; engine blend sums and clips them to maxAcceleration. Clearance currently requests {clearanceAcceleration} units/s² along the aisle. When separation is zero, return zero for the whole group: braking must not keep this priority permanently active."
+      },
+      {
+        "title": "Build the Travel group",
+        "text": "Engine arrive asks for motion towards the loading bay, using slowRadius, targetRadius and responseTime. Its desired speed fades to zero halfway inside targetRadius; its acceleration is clipped to maxAcceleration. Travel currently requests {travelAcceleration} units/s². It remains a complete candidate even when Clearance will win."
+      },
+      {
+        "title": "Let the first substantial request own acceleration",
+        "text": "Clearance priority {clearancePriority} gives the order {order}. Call engine firstActive: a magnitude must be strictly greater than epsilon, so equality declines. At this moment {activeGroup} supplies {selectedMagnitude} units/s². The losing group contributes nothing. If both decline, firstActive returns zero; ordering the groups chooses a request rather than adding them."
+      },
+      {
+        "title": "Advance and decide again",
+        "text": "This study uses a local fixed-step integrator: add acceleration × timeStep to velocity, clip speed, then move with the new velocity. The next decision reads the new state. Steering and integration are distinct: zero acceleration preserves momentum here. Touching is measured without a collision response, and there is no automatic rest snap."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "body = current Mica state\ntrolley = stationary body at trolleyPosition\npush = engine.separate(body, bodyIndex, [body, trolley],\n  { separationThreshold, separationFalloff })\n\nbrake = engine.matchVelocity(body, zero, responseTime)\nclearance = zero if length(push) == 0 else engine.blend([\n  { acceleration: push, weight: separationWeight },\n  { acceleration: brake, weight: brakeWeight }\n], maxAcceleration)\n\ntravel = engine.arrive(body, loadingBay,\n  { slowRadius, targetRadius, timeToTarget: responseTime })\n\ngroups = [clearance, travel] if clearancePriority == 1\n         else [travel, clearance]\nacceleration = engine.firstActive(groups, epsilon)\n// First length strictly above epsilon; zero if neither qualifies.\n\nvelocity = clipLength(velocity + acceleration * timeStep, maxSpeed)\nposition = position + velocity * timeStep\n// Read these new values on the next update.",
+    "rxjs": "// frames$ emits Mica’s pre-update snapshot with clearance and travel already computed.\nacceleration$ = frames$.pipe(\n  concatMap(({ clearance, travel, clearancePriority, epsilon }) => {\n    const groups = clearancePriority == 1\n      ? [clearance, travel] : [travel, clearance];\n    return from(groups).pipe(\n      filter(group => length(group) > epsilon),\n      take(1),\n      defaultIfEmpty(zero)\n    );\n  })\n);\n// from emits this ready list synchronously, so list order sets priority.\n// take(1) ends only this frame’s inner stream; the next frame starts a fresh choice.\n// Apply acceleration in the ordinary velocity/position update before the next snapshot.\n// This reading adds no hysteresis or safety guarantee, so changed requests can flip the winner.\n// Async results must first share a frame snapshot; first arrival is not priority.",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/priority-steering.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/priority-steering.model.ts",
+    "textEquivalent": "Mica is {gap} units from the trolley, which {trolleyRelationship}. {activeGroup} supplies {selectedMagnitude} units/s² {pushDirection}, with touching starting at {contactDistance} units."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · PrioritySteering",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
+      "relevance": "gdx-ai is a Java game AI library. PrioritySteering is its reusable controller for giving conditional steering requests precedence over later requests.",
+      "explanation": "The class evaluates its behaviour list in order and returns as soon as the steering’s squared magnitude exceeds epsilon squared. It records the selected index for inspection. If every result is small, it returns the final behaviour’s result; an empty list returns zero. Behaviours can themselves be blended groups."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · §3.4 Combining Steering Behaviors · §3.4.3 Priorities",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers priority steering in Chapter 3 Movement, §3.4.3 Priorities within §3.4 Combining Steering Behaviors."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · PrioritySteering.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
+      "accessed": "2026-10-31",
+      "supports": "An ordered behaviour list uses a strict squared-magnitude threshold, exposes the selected index and retains the last small result when none exceeds the threshold."
+    }
+  ],
+  "limits": [
+    "With {order}, the minimum gap is {minimumGap} units and there are {touchingSamples} sampled touching moments. Reversing only the order to {comparisonOrder} gives a minimum of {comparisonMinimumGap} units and {comparisonTouchingSamples} touching moments. {outcome} A clearance request can lose when Travel gets first refusal, and a large epsilon can silence both groups.",
+    "A crowd under priority steering keeps a faint shimmer in the soldier scene, as docs/dev-reference/architecture/scene.md records. Mica changes selected group {switches} times in the chosen run. A threshold and smooth component forces do not promise a final rest.",
+    "Priority does not plan a detour around the trolley. Passing through it in this teaching integrator is an overlap, not a discovered route to the loading bay.",
+    "Separation reacts to the current gap. A small clearance distance can leave too little room to brake; a large time step can miss a useful decision or a brief overlap. This integrator measures touching without predictive collision avoidance or rigid body contact handling."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:144",
+      "why": "Use weighted blending when Mica should compromise between requests within the same priority group; it also explains the sum inside Clearance."
+    },
+    {
+      "id": "aifg-a:143",
+      "why": "Read blending versus arbitration when deciding whether competing requests should share acceleration or one should own it, as Clearance does here."
+    },
+    {
+      "id": "aifg-a:131",
+      "why": "Read separation to change how the trolley’s proximity produces a push, rather than changing which group gets precedence."
+    },
+    {
+      "id": "aifg-a:151",
+      "why": "Use equilibrium fallback when a blended group goes quiet because requests cancel and a later request should move Mica out of that balance."
+    },
+    {
+      "id": "aifg-a:153",
+      "why": "Reach for a steering pipeline when Mica needs coordinated targets and constraints to negotiate the blocked route to the loading bay."
+    }
+  ]
+}

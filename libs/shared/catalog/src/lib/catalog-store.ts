@@ -1,10 +1,15 @@
 import { inject } from '@angular/core';
 import { signalStore, withState } from '@ngrx/signals';
 import { Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { from, map } from 'rxjs';
+import { catchError, filter, from, map, merge, of, switchMap } from 'rxjs';
 
-import { withCallState, withCommand, withPersistedState } from '@dotln-angular/data-access';
-import { catalogEvents, catalogPageEvents } from '@dotln-angular/events';
+import {
+  toAppError,
+  withCallState,
+  withCommand,
+  withPersistedState,
+} from '@dotln-angular/data-access';
+import { catalogEvents, catalogPageEvents, toolsHomeEvents } from '@dotln-angular/events';
 import type { CatalogReadingState, ToolId } from '@dotln-angular/models';
 
 import { CatalogToken } from './catalog-token';
@@ -29,6 +34,7 @@ function openReading(state: CatalogState, id: ToolId, returning = false): Partia
       0,
       readingHistoryLimit,
     ),
+    lastTitle: tool.title,
     backStack: returning
       ? state.backStack.slice(0, -1)
       : state.selectedId && state.selectedId !== id
@@ -46,17 +52,21 @@ export const CatalogStore = signalStore(
     failure: null,
     query: '',
     backStack: [],
+    summary: null,
+    summaryFailure: null,
   }),
   withCallState(),
   withPersistedState<CatalogReadingState>({
     key: 'tools',
-    select: ({ version, work, chapter, section, selectedId, history }) => ({
+    // The address names the open reading, so it is not stored here.
+    select: ({ version, work, chapter, section, history, lastTitle }) => ({
       version,
       work,
       chapter,
       section,
-      selectedId,
+      selectedId: null,
       history,
+      lastTitle,
     }),
     restore: restoreReading,
   }),
@@ -90,9 +100,8 @@ export const CatalogStore = signalStore(
         ? { section: payload === state.section ? null : payload }
         : {},
     ),
-    on(catalogPageEvents.conceptOpened, catalogPageEvents.relationFollowed, ({ payload }, state) =>
-      openReading(state, payload),
-    ),
+    on(catalogPageEvents.conceptOpened, ({ payload }, state) => openReading(state, payload)),
+    on(catalogPageEvents.readingClosed, () => ({ selectedId: null })),
     on(catalogPageEvents.readingReturned, (_event, state) => {
       const id = state.backStack.at(-1);
       return id ? openReading(state, id, true) : {};
@@ -107,10 +116,13 @@ export const CatalogStore = signalStore(
     on(catalogEvents.loadSuccess, ({ payload }, state) => {
       const selected = payload.find((tool) => tool.id === state.selectedId);
       const history = state.history.filter((id) => payload.some((tool) => tool.id === id));
+      // The title follows whichever reading is now the newest, since pruning can change it.
+      const lastTitle = payload.find((tool) => tool.id === history[0])?.title ?? null;
       return {
         tools: payload,
         failure: null,
         history,
+        lastTitle,
         ...(selected
           ? {
               work: selected.work,
@@ -118,11 +130,14 @@ export const CatalogStore = signalStore(
               section: selected.place.section ?? '',
             }
           : !payload.some((tool) => tool.work === state.work)
-            ? { ...emptyReading, history }
+            ? { ...emptyReading, history, lastTitle }
             : { selectedId: null }),
       };
     }),
     on(catalogEvents.loadFailure, ({ payload }) => ({ tools: [], failure: payload })),
+    on(catalogEvents.summaryLoad, () => ({ summaryFailure: null })),
+    on(catalogEvents.summaryLoadSuccess, ({ payload }) => ({ summary: payload })),
+    on(catalogEvents.summaryLoadFailure, ({ payload }) => ({ summaryFailure: payload })),
   ),
   withCommand({
     trigger: catalogEvents.load,
@@ -130,9 +145,31 @@ export const CatalogStore = signalStore(
     failure: catalogEvents.loadFailure,
     call: () => from(inject(CatalogToken).load()),
   }),
-  withEventHandlers((_store, events = inject(Events)) => ({
-    load: events
-      .on(catalogPageEvents.opened, catalogPageEvents.retryRequested)
-      .pipe(map(() => catalogEvents.load())),
+  withEventHandlers((store, events = inject(Events), catalog = inject(CatalogToken)) => ({
+    // A page opened again over loaded data has nothing to fetch, and a load would flash its
+    // loading state; a retry always fetches.
+    load: merge(
+      events.on(catalogPageEvents.opened).pipe(filter(() => store.tools().length === 0)),
+      events.on(catalogPageEvents.retryRequested),
+    ).pipe(map(() => catalogEvents.load())),
+    summaryRequested: events
+      .on(
+        catalogPageEvents.opened,
+        catalogPageEvents.retryRequested,
+        catalogPageEvents.summaryRetryRequested,
+        toolsHomeEvents.opened,
+        toolsHomeEvents.retryRequested,
+      )
+      .pipe(map(() => catalogEvents.summaryLoad())),
+    // This does not share the catalog's call state: the summary answering first would mark
+    // the catalog loaded while its tools are still on their way.
+    summary: events.on(catalogEvents.summaryLoad).pipe(
+      switchMap(() =>
+        from(catalog.summary()).pipe(
+          map((summary) => catalogEvents.summaryLoadSuccess(summary)),
+          catchError((error) => of(catalogEvents.summaryLoadFailure(toAppError(error)))),
+        ),
+      ),
+    ),
   })),
 );

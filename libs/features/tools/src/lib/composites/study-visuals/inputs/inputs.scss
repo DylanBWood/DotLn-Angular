@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding-block: 0.2rem;
+  color: var(--dotln-muted);
+}
+summary:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}
+label {
+  display: block;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+label span {
+  display: block;
+}
+input {
+  inline-size: 100%;
+  accent-color: var(--dotln-accent);
+  min-block-size: 2rem;
+  cursor: pointer;
+}
+button {
+  border: 1px solid var(--dotln-border-strong);
+  background: var(--dotln-surface);
+  border-radius: 0.25rem;
+  color: var(--dotln-ink);
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}

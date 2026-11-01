@@ -99,3 +99,39 @@ summary {
   color: var(--dotln-accent);
   margin-block-start: 2rem;
 }
+.retry {
+  border: 1px solid var(--dotln-border-strong);
+  background: var(--dotln-surface);
+  border-radius: 0.25rem;
+  color: var(--dotln-ink);
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.5rem;
+  margin-block: -1rem 1rem;
+  font-size: 0.85rem;
+}
+.jump button {
+  border: 0;
+  padding: 0.2rem 0;
+  background: none;
+  color: var(--dotln-accent);
+  font: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+.jump button:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}
+tools-study:focus {
+  outline: none;
+}

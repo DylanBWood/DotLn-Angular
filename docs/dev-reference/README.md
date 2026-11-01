@@ -31,7 +31,7 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 | What a component may know: the seven roles, the UI, the shell and the board                                      | [Component taxonomy](architecture/component-taxonomy.md)   | `libs/features/board/src/lib/composites/board-row/board-row.ts`   |
 | Where state lives: events, stores, HTTP, persistence and mocks                                                   | [Events, state and HTTP](architecture/events-and-state.md) | `libs/features/board-data-access/src/lib/board-store.ts`          |
 | How the scene works: the pure engine, the renderer seam, the clock, determinism and its own steering rules       | [Scene architecture](architecture/scene.md)                | `libs/shared/scene-engine/src/lib/simulation.ts`                  |
-| How the catalog works: the tool-v1 schema, the join and its digests, the loader and the reading surface          | [Catalog architecture](architecture/catalog.md)            | `tools/scripts/catalog/join-maps.mjs`                             |
+| How the catalog works: the tool-v1 schema, the join and its digests, the loader, the reading surface and studies | [Catalog architecture](architecture/catalog.md)            | `tools/scripts/catalog/join-maps.mjs`                             |
 | How a concept is applied elsewhere: the UIFA engineer's workshop, diagnostic traps, RxJS as a modelling language | [Concept mapping](architecture/concept-mapping.md)         | `libs/shared/models/src/lib/toolbox.ts`                           |
 | The three foundation libraries, the environment and proxy, the test-kit convention                               | [Foundation libraries](architecture/foundation.md)         | `libs/shared/core/src/lib/providers/provide-dotln-core.ts`        |
 | What the board renders and how it treats its contract                                                            | [Recorded actor board](architecture/console.md)            | `libs/features/board/src/lib/containers/board-page/board-page.ts` |
@@ -57,11 +57,11 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 | `libs/shared/utils`                | `R` and `RA` with house declarations and upstream-derived specs                          |
 | `libs/shared/i18n`                 | Transloco loading, missing keys, `TPipe`; `testing` entry point                          |
 | `libs/shared/ui`                   | House components, the plain and field skins, and the lazy `@dotln-angular/ui/menu` entry |
-| `libs/shared/models`               | Shared types and the versioned contracts: the board, the catalog's `tool-v1`             |
+| `libs/shared/models`               | Shared types and the versioned contracts: the board, `tool-v1` and `concept-study-v0`    |
 | `libs/shared/events`               | Every event group, by source tier                                                        |
 | `libs/shared/state`                | App stores: feature flags, errors and navigation                                         |
 | `libs/shared/data-access`          | Commands, persistence, interceptors and the mock-worker start                            |
-| `libs/shared/catalog`              | The catalog's data, schema, loader and reading store                                     |
+| `libs/shared/catalog`              | The catalog's data, studies, schemas, loader and reading store                           |
 | `libs/shared/scene-engine`         | The pure scene engine                                                                    |
 | `eslint.config.mjs`                | Shared lint rules, token-name rule and dependency constraints                            |
 | `tools/scripts`                    | Environment primer, structural checks, translation extraction and the catalog pipeline   |

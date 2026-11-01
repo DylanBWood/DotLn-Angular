@@ -1,0 +1,137 @@
+@use '../study-visuals/tones';
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+.study {
+  border-block-start: 1px solid var(--dotln-border);
+  margin-block: 2.5rem;
+  padding-block-start: 2rem;
+}
+.eyebrow {
+  color: var(--dotln-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+h3 {
+  font-family: var(--dotln-font-reading);
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-block: 0.6rem 1rem;
+}
+h4 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 650;
+  margin-block: 1.5rem 0.5rem;
+}
+p {
+  line-height: 1.8;
+}
+figure {
+  margin: 1.5rem 0;
+}
+.view-choice {
+  display: flex;
+  gap: 0.5rem;
+  margin-block-end: 1rem;
+}
+button {
+  border: 1px solid var(--dotln-border-strong);
+  background: var(--dotln-surface);
+  border-radius: 0.25rem;
+  color: var(--dotln-ink);
+  padding: 0.45rem 0.65rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.view-choice button[aria-pressed='true'] {
+  border-color: var(--dotln-accent);
+  background: var(--dotln-known-bg);
+}
+figcaption p {
+  font-size: 0.75rem;
+  margin-block: 0.35rem;
+}
+.how-to-read {
+  border: 0;
+  padding-block: 0.25rem;
+}
+.how-to-read summary {
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding-block: 0.2rem;
+  color: var(--dotln-muted);
+}
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.legend [data-tone='actual'] {
+  color: var(--dotln-accent);
+}
+.legend [data-tone='desired'] {
+  color: var(--dotln-unknown);
+}
+.example {
+  font-size: 0.85rem;
+}
+.choose,
+.note {
+  color: var(--dotln-muted);
+  font-size: 0.8rem;
+}
+details {
+  border-block-start: 1px solid var(--dotln-border);
+  padding-block: 1rem;
+}
+summary {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 650;
+  padding-block: 0.5rem;
+}
+.section-preview {
+  display: block;
+  margin-block-start: 0.4rem;
+  padding-inline-start: 1.2rem;
+  color: var(--dotln-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.next {
+  font-family: var(--dotln-font-reading);
+  font-size: 1.2rem;
+}
+.next a {
+  color: var(--dotln-accent);
+  text-underline-offset: 0.2em;
+}
+.nearby ul {
+  list-style: none;
+  padding: 0;
+}
+.nearby li {
+  margin-block: 0.8rem;
+  line-height: 1.7;
+}
+.nearby a {
+  display: block;
+  color: var(--dotln-accent);
+  text-underline-offset: 0.2em;
+}
+.nearby span {
+  font-size: 0.9rem;
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}

@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-b:354",
+  "work": "aifg",
+  "slug": "group-movement",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 10",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Lantern squad is told to reach a beacon together. Sending everyone to the same point loses the squad’s shape; assigning moving posts lets each member travel towards a different destination while sharing a group plan. The plan must still respect the people following it: a moving marker can ask more of the medic than the medic can maintain.",
+    "situation": "North and south escorts flank a slower medic on open ground. The squad needs a recognisable line while travelling, then a near and slow arrival at the beacon. Its commander chooses an acceptable slot error rather than assuming the line will stay exact."
+  },
+  "example": {
+    "name": "Lantern squad’s beacon march",
+    "description": "North and South escort the medic in fixed posts on a line abreast. The selected anchor pace is {anchorSpeed} units per planning step: {shapeOutcome}. Followers read the old slots and move together before the anchor reads their new mean. The comparison changes only the anchor pace to {comparisonPace}.",
+    "parameters": {
+      "startX": 0,
+      "goalX": 16,
+      "spacing": 2.5,
+      "anchorSpeed": 0.4,
+      "fastAnchorSpeed": 1.5,
+      "escortSpeed": 5,
+      "medicSpeed": 3,
+      "maxAcceleration": 8,
+      "slowRadius": 3,
+      "targetRadius": 0.2,
+      "responseTime": 0.4,
+      "lagLimit": 2,
+      "slotErrorBudget": 2,
+      "timeStep": 0.1,
+      "steps": 230,
+      "arrivalDistance": 0.9,
+      "arrivalSpeed": 0.15,
+      "radius": 0.25,
+      "velocityArrowSeconds": 0.5,
+      "enginePlanningSeconds": 0.25,
+      "engineAnchorPull": 0.02
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Give each member a different moving post",
+        "text": "Engine patternSlots centres a line with spacing {spacing}. The escorts keep the outer assignments and the medic the middle assignment throughout the march. The rings share the anchor’s forward position and retain those side-to-side offsets."
+      },
+      {
+        "title": "Ask how fast each follower should go",
+        "text": "Every member reads its own old slot. Engine arrive asks for no speed inside stop distance {stopDistance}, full personal speed outside slow radius {slowRadius}, and a linear ramp between. It closes that velocity gap over response time {responseTime}, with acceleration magnitude capped at {accelerationLimit}."
+      },
+      {
+        "title": "Move followers from the same snapshot",
+        "text": "The study-local update adds acceleration × {timeStep} to velocity, caps it at each member’s speed limit, then adds new velocity × {timeStep} to position. Everyone reads the same old snapshot. The medic now moves at {medicSpeedNow} units/s and the escorts at {escortSpeedNow} units/s."
+      },
+      {
+        "title": "Move the plan while keeping contact with the squad",
+        "text": "Engine advanceFormation reads the updated member mean. Anchor pace {anchorSpeed} is distance per {planningSeconds} s planning step, giving cruise request {cruiseRequest} units/s before slowing and acceleration limits. The engine pulls the anchor towards the mean and caps their distance at {lagLimit}; that distance is now {anchorLag}. This does not bound every member’s slot error."
+      },
+      {
+        "title": "Measure shape and arrival separately",
+        "text": "The largest member-to-slot gap is {slotError}, compared with the chosen allowance {budget}. Arrival is a separate study-local test: distance to the final slot at the beacon must be at most {arrivalDistance}, and speed at most {arrivalSpeed}. Close to a moving ring is not enough to call a member arrived; no position is snapped."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "offsets = engine.patternSlots(line, member count, spacing)\nassignment = keep north escort, medic, south escort in their own slots\nplace members at anchor + offsets, all at rest\n\nfor each member, using the old formation:\n  oldSlot = engine.slotPosition(formation, assigned slot)\n  acceleration[member] = engine.arrive(member, oldSlot,\n    { slowRadius, targetRadius, timeToTarget: responseTime })\n\nfor each member, using only its old state:\n  nextVelocity = capLength(velocity + acceleration[member] * timeStep, member.maxSpeed)\n  nextPosition = position + nextVelocity * timeStep\nnextMembers = collect all updated members\n\nnextFormation = engine.advanceFormation(formation, nextMembers, beacon, timeStep)\nstate = { members: nextMembers, formation: nextFormation }\n\nslotError = maximum distance(member, engine.slotPosition(formation, assigned slot))\nfor each member:\n  finalSlot = beacon + assigned offset\n  arrived = distance(member, finalSlot) <= arrivalDistance\n            and speed(member) <= arrivalSpeed\nrecord first sampled arrival per member, without snapping positions",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/group-movement.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/group-movement.model.ts",
+    "textEquivalent": "{memberRelation}. {gapOwner}, at {slotError} units; the anchor is {anchorLag} units from the squad’s mean."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Formation",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "relevance": "gdx-ai is a Java game AI library with a formation manager that supplies individual target locations from a common pattern and anchor.",
+      "explanation": "Formation keeps member-to-slot assignments and delegates their updates to a strategy. In updateSlots it obtains each pattern-relative target, rotates it by the anchor’s orientation, adds the anchor translation with any drift correction, and writes the result to the member’s target location. An optional motion moderator can update the anchor. Members must still move towards those targets in other game code; publishing slots alone does not enforce speed or collision constraints."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games · Chapter 14 Designing Game AI, §14.4 Real-Time Strategy · Group Movement",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers group movement under Chapter 14, section 14.4, Real-Time Strategy."
+    },
+    {
+      "title": "gdx-ai · Formation.java at 1.8.2",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "accessed": "2026-10-31",
+      "supports": "Formation.updateSlots transforms pattern locations by an anchor into member target locations, applies optional drift correction and calls a motion moderator when supplied."
+    }
+  ],
+  "limits": [
+    "The selected run’s largest slot gap is {runPeak} units against an allowance of {budget}: {shapeOutcome}. An anchor kept close to the mean can still leave the medic too far behind.",
+    "A shared anchor does not ensure simultaneous arrival: the selected run’s sampled arrival spread is {arrivalSpread}. The gap chart measures shape during travel; the arrival test measures being near and slow at the destination.",
+    "A medic who cannot move can stop the group short of the beacon. Following the mean provides contact with the squad, not a route around a blocked member. This open-ground model has no terrain or avoidance step."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:177",
+      "why": "Use two-level formation steering to examine the anchor and follower relationship in detail when Lantern squad’s plan is getting ahead of its members."
+    },
+    {
+      "id": "aifg-a:174",
+      "why": "Use a fixed formation when an actual leader should carry the line, with followers inheriting that leader’s motion."
+    },
+    {
+      "id": "aifg-a:186",
+      "why": "Use slot assignment when a medic joins or leaves and the commander must decide which member belongs in each post."
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "Use velocity matching when the main requirement is a shared pace rather than keeping prescribed offsets."
+    }
+  ]
+}

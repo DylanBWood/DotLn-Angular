@@ -93,3 +93,26 @@ section[reading]:focus {
     margin-block: 1rem 2rem;
   }
 }
+.studied-list h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 650;
+}
+.studied-list ul {
+  columns: 2 14rem;
+  padding: 0;
+  list-style: none;
+}
+.studied-list li {
+  break-inside: avoid;
+  padding-block: 0.25rem;
+}
+.studied-list a {
+  color: var(--dotln-accent);
+  text-underline-offset: 0.2em;
+}
+.studied-list a:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 3px;
+}

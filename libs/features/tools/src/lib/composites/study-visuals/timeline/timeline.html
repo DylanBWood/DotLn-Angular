@@ -1,0 +1,66 @@
+<p class="chart-title" translate="no">{{ model().title }}</p>
+@let view = drawing();
+<svg viewBox="-40 0 640 320" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+  <path class="grid" [attr.d]="view.gridPath" />
+  @if (view.referencePath; as reference) {
+    <path class="reference" [attr.d]="reference" />
+  }
+  <path class="axis" [attr.d]="view.axisPath" />
+  @for (line of view.series; track line.id) {
+    <polyline class="line" [attr.points]="line.points" [attr.data-tone]="line.tone" />
+  }
+  @if (view.cursorX !== null) {
+    <line class="cursor" [attr.x1]="view.cursorX" y1="40" [attr.x2]="view.cursorX" y2="250" />
+  }
+  @for (line of view.series; track line.id) {
+    @if (line.dot; as dot) {
+      <circle class="dot" [attr.cx]="dot.x" [attr.cy]="dot.y" r="5" [attr.data-tone]="line.tone" />
+    }
+  }
+  @for (mark of view.marks; track $index) {
+    <circle class="dot" [attr.cx]="mark.x" [attr.cy]="mark.y" r="5" [attr.data-tone]="mark.tone" />
+  }
+  <text x="50" y="20" translate="no">{{ model().yLabel }}</text>
+  <g translate="no">
+    @for (tick of view.yTicks; track tick.label) {
+      <text x="40" [attr.y]="tick.y" text-anchor="end">{{ tick.label }}</text>
+    }
+    @for (tick of view.xTicks; track tick.label) {
+      <text [attr.x]="tick.x" y="277" text-anchor="middle">{{ tick.label }}</text>
+    }
+  </g>
+  <text x="310" y="310" text-anchor="middle" translate="no">{{ model().xLabel }}</text>
+</svg>
+@let moment = step();
+@if (moment !== null) {
+  <tools-study-scrubber
+    [step]="moment"
+    [lastStep]="model().seconds.length - 1"
+    [seconds]="seconds()"
+    [moments]="moments()"
+    [playing]="playing()"
+    (played)="played.emit($event)"
+    (stepped)="stepped.emit($event)"
+  />
+  @if (note(); as text) {
+    <p class="note" translate="no">
+      {{ text }}
+    </p>
+    <details
+      #numbers
+      class="numbers"
+      [open]="numbersOpen()"
+      (toggle)="numbersToggled.emit(numbers.open)"
+    >
+      <summary>{{ 'tools.study.numbers' | t }}</summary>
+      <p class="reading" data-testid="study-reading" translate="no">
+        {{ textEquivalent() }}
+      </p>
+    </details>
+  } @else {
+    <p class="reading" data-testid="study-reading" translate="no">
+      {{ textEquivalent() }}
+    </p>
+  }
+}
+<ng-content />

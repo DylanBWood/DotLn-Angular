@@ -57,6 +57,11 @@ button {
 .concepts {
   padding: 0.25rem 0 0.75rem 0.5rem;
 }
+.concepts li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
 a {
   display: block;
   color: var(--dotln-muted);
@@ -83,4 +88,8 @@ button:focus-visible {
   .chapters {
     max-block-size: 20rem;
   }
+}
+.studied {
+  flex: none;
+  font-size: 0.7rem;
 }

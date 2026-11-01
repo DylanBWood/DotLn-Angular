@@ -78,8 +78,25 @@
   transient. Loading failure is visible and retryable, never an empty success.
 - Develop several ways into a concept: prose, a visual mechanism, ordinary and
   RxJS pseudocode where useful, applications, limitations and public references.
-  Mark authored examples separately from source definitions and check links.
-  Arrive is the first bounded study, not a claim of full catalog enrichment.
+  [A study](../dev-reference/architecture/catalog.md#studies) does this on one example.
+- A study is authored in its author's own words and marked so. It quotes no passage of a work in
+  copyright, and the mined definition keeps its provenance beside it.
+- Every reference carries the claim it supports, and its author opened it. Name the date read. A
+  source that could not be opened is not cited.
+- A representation an idea does not need stays absent: null or an empty list, never filled.
+- Keep one example through the whole study. Numbers a model computes never live in prose: use
+  `{name}` placeholders. Match each mechanism step to one blank-line block of the ordinary
+  pseudocode.
+- A visual has a text equivalent and never autoplays. It moves on command, offers no Play under
+  reduced motion, and keeps a short sentence on screen for each moment.
+- An executable example has a spec, and a model is a pure function of the record's parameters. Call
+  the scene engine's function where it has the behaviour; do not reimplement it.
+- A draft never ships: every committed record is `checked` with at least two reviewers named. A
+  batch's critic findings are disposed in its decisions.
+- A change to the record's shape after it ships is a new schema version, never an edit of
+  `concept-study-v0`.
+- Link to a reading with `buildRoute` and `ChildPaths.Reading`; the address owns the open reading.
+  Composites take `hrefFor` and never the router.
 - Defer closed explanations until first expansion. Native disclosures hide
   content but do not defer Angular creation. Keep deferred component references
   inside `@defer`, test actual download/render behavior, and suspend any future
@@ -90,8 +107,8 @@
   decisions and implementation evidence instead of dormant branches. Preserve
   decided choices in each new pair, and address content and usefulness before
   cosmetic refinement.
-- Run `npm run catalog:check`, `npm run catalog:report`, `npm run test:tooling`,
-  `npx nx test catalog` and `npx nx test tools`, then the workspace checks in
-  [the reference index](README.md).
+- Run `npm run catalog:check`, `npm run catalog:report`, `npm run studies:check`,
+  `npm run studies:report`, `npm run test:tooling`, `npx nx test catalog` and `npx nx test tools`,
+  then the workspace checks in [the reference index](README.md).
 
 See [catalog architecture](../dev-reference/architecture/catalog.md).

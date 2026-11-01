@@ -1,0 +1,116 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:110",
+  "work": "aifg",
+  "slug": "seek",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 1",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mica's courier motor always pulls towards a beacon. That sounds like a move order, but the pull changes velocity gradually: it does not replace the velocity Mica already has. A sideways start survives the approach, carries Mica past the beacon and bends the return into an orbit. Watch the green velocity line and the amber acceleration line separate.",
+    "situation": "Use this steering primitive when Mica needs a persistent pull towards a destination, such as one contribution to a combined movement rule. A delivery that must finish at the beacon also needs a way to shed speed."
+  },
+  "example": {
+    "name": "Mica's courier and the beacon",
+    "description": "Mica starts left of a fixed beacon with sideways speed {startSidewaysSpeed} units/s and an inward acceleration limit of {maxAcceleration} units/s². Set Sideways start to zero to see straight overshoot, then raise it to bend the return into an orbit. The drawing keeps the path; the comparison uses a straight start with the same motor.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "targetX": 24,
+      "targetY": 0,
+      "velocityX": 6,
+      "velocityY": 2,
+      "comparisonVelocityY": 0,
+      "maxSpeed": 8,
+      "maxAcceleration": 4,
+      "timeStep": 0.1,
+      "steps": 220,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Locate the beacon from Mica",
+        "text": "Subtract Mica’s position from the beacon’s position to find the direction of the pull. The remaining distance is {distance} units; this gap says where to accelerate, not how fast Mica is already travelling."
+      },
+      {
+        "title": "Ask the engine for acceleration",
+        "text": "The engine’s seek normalises the target offset and scales it by maxAcceleration, requesting {accelerationMagnitude} units/s² here. A zero offset produces zero acceleration; otherwise a nearby beacon still requests the full pull."
+      },
+      {
+        "title": "Change velocity and enforce the speed cap",
+        "text": "Add acceleration multiplied by timeStep to the current velocity. The trial speed is {trialSpeed} units/s; clipLength limits its magnitude to maxSpeed while keeping its direction. A speed cap bounds motion but does not ask for a slower approach."
+      },
+      {
+        "title": "Move with the updated velocity",
+        "text": "Move for timeStep using that clipped velocity, then measure the beacon again on the next step. This study uses the engine's vector arithmetic and its velocity-before-position update order on an open plane. Nothing snaps Mica onto the beacon or cancels the sideways motion."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "offset = beacon - body.position\ndistance = length(offset)\n\nacceleration = sceneEngine.seek(body, beacon)\n// seek returns normalise(offset) * body.maxAcceleration\n// normalise of a zero vector is a zero vector\n\ntrialVelocity = body.velocity + acceleration * timeStep\nvelocity = clipLength(trialVelocity, body.maxSpeed)\n\nposition = body.position + velocity * timeStep\nbody = body with { position, velocity }\n// Repeat from the new state; there is no arrival condition.",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/seek.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/seek.model.ts",
+    "textEquivalent": "Mica is {distance} units from the beacon and travelling at {speed} units/s. {motionRelation}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Seek",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Seek.java",
+      "relevance": "gdx-ai is a Java game AI library. Its generic Seek behaviour provides an acceleration calculation for steerable owners with a target location.",
+      "explanation": "The calculation subtracts the owner's position from the target's, normalises the resulting vector and scales it by the active limiter's maximum linear acceleration. It sets angular acceleration to zero and returns the steering output. Target access and a replaceable limiter make this a reusable behaviour; applying that output and enforcing a speed cap belong to the caller."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.3.3 Seek and Flee",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers Seek in Chapter 3 Movement, §3.3.3 Seek and Flee."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Seek.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Seek.java",
+      "accessed": "2026-10-31",
+      "supports": "Seek calculates maximum linear acceleration along the normalised target offset and leaves angular acceleration at zero."
+    },
+    {
+      "title": "Craig Reynolds · Seek and Flee steering behaviours",
+      "url": "https://www.red3d.com/cwr/steer/SeekFlee.html",
+      "accessed": "2026-10-31",
+      "supports": "Reynolds distinguishes an inward central acceleration that can orbit from his velocity-correcting seek. The shared name does not make those rules interchangeable."
+    }
+  ],
+  "limits": [
+    "The selected sideways start of {startSidewaysSpeed} units/s produces {pathKind}. Inward acceleration bends or reverses the motion without supplying an arrival rule; being near the beacon has not completed the delivery.",
+    "A straight start removes the orbit but still gives repeated overshoot. The comparison uses the same acceleration limit and speed cap; it coincides with the selected run when Sideways start is zero.",
+    "Even exact coincidence only gives zero acceleration for that step. A moving courier coasts beyond the beacon. Arrive is the next choice when the delivery requires a stop.",
+    "The open plane has no obstacle information. The motor would pull towards a beacon through a wall; a route or an avoidance rule must supply that missing decision. Reynolds' linked seek also uses velocity correction, so its name alone is not evidence for the acceleration rule run here."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:112",
+      "why": "Use Arrive when Mica must finish the delivery at the beacon with little speed remaining. It introduces a desired-speed ramp and braking."
+    },
+    {
+      "id": "aifg-a:100",
+      "why": "Use Kinematic seek when an actor can accept a velocity directly and acceleration history is unnecessary; Mica's sideways momentum would then be a different modelling choice."
+    },
+    {
+      "id": "aifg-a:120",
+      "why": "Use Pursue when the beacon is replaced by a moving recipient and Mica should lead its motion rather than chase its current position."
+    }
+  ]
+}

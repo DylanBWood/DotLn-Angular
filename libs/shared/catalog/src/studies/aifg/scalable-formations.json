@@ -1,0 +1,114 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:175",
+  "work": "aifg",
+  "slug": "scalable-formations",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 8",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "At the Lantern Gate muster, another scout should extend the patrol's wedge without requiring a newly drawn template. Treat the layout as a calculation from member count and spacing. That calculation can accommodate everyone and still produce a group too wide for the lane: accepting a count is not evidence that the result fits its surroundings.",
+    "situation": "A patrol planner needs a recognisable wedge as scouts join. A preview can regenerate the destinations and check the resulting footprint before issuing any movement orders."
+  },
+  "example": {
+    "name": "The Lantern Gate muster",
+    "description": "The Lantern Gate patrol grows from {initialCount} to {targetCount} scouts on a regular joining schedule, using spacing {spacing} units in a {laneWidth}-unit lane. The engine generates a centred wedge for each count. Dots sit on proposed target rings, with circles showing body size, while the anchor stays on the lane's centre line. The chart tracks the full transverse footprint. The comparison changes only the requested membership and checks whether either muster outgrows the lane; the preview does not simulate journeys between layouts.",
+    "parameters": {
+      "initialCount": 3,
+      "targetCount": 5,
+      "comparisonCount": 7,
+      "spacing": 2,
+      "memberRadius": 0.5,
+      "laneWidth": 10,
+      "anchorX": 0,
+      "anchorY": 0,
+      "joinStart": 10,
+      "joinInterval": 10,
+      "timeStep": 0.1,
+      "steps": 50
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read membership before generating geometry",
+        "text": "The local schedule adds a scout at the first joining sample and another after each joining interval, stopping at {targetCount} members. At {seconds} seconds there are {count}. The schedule makes changes easy to inspect; a game would usually receive membership changes from its formation manager."
+      },
+      {
+        "title": "Generate and centre the wedge",
+        "text": "patternSlots places a tip and alternates slots down the arms, extending a row after each pair. Spacing is {spacing} units along each local axis. The engine subtracts the raw slots' mean so that the anchor stays at the mean slot centre. An incomplete row can move earlier offsets sideways as well as forwards; the worked step shows that recentring."
+      },
+      {
+        "title": "Inspect the proposed positions",
+        "text": "Add the stationary anchor to each offset to get the proposed destinations. At this sample the largest shift of a retained slot from the preceding proposal is {retainedShift} units. This is a layout change; deciding which scout should walk where and planning that journey are separate tasks."
+      },
+      {
+        "title": "Check the whole footprint against the lane",
+        "text": "The transverse centre span is {centreSpan} units. Include a body radius of {memberRadius} at both edges: the footprint is {width} units against a lane width of {laneWidth}. The smallest clearance to either edge is {clearance} units: {fitStatus}. Generating more slots does not make the lane wider."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "joins = clamp(1 + floor((step - joinStart) / joinInterval),\n              0, targetCount - initialCount)\ncount = initialCount + joins\n\n// The engine alternates slots along the wedge's arms,\n// then subtracts the mean of all generated offsets.\noffsets = patternSlots(\"wedge\", count, spacing)\n\npositions = offsets.map(offset => anchor + offset)\nretainedShift = max(distance(previous[i], positions[i])\n                    for each retained slot i)\n// Draw positions as proposals; do not integrate any movement.\n\ncentreSpan = max(positions.y) - min(positions.y)\nwidth = centreSpan + 2 * memberRadius\nupperClearance = min(positions.y) - memberRadius - upperLaneEdge\nlowerClearance = lowerLaneEdge - max(positions.y) - memberRadius\nclearance = min(upperClearance, lowerClearance)\nreport(width, clearance >= 0)",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/scalable-formations.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/scalable-formations.model.ts",
+    "textEquivalent": "The tip leads arms of proposed scouts around the stationary anchor. The {count}-member wedge is {width} units wide in a {laneWidth}-unit lane, with minimum edge clearance {clearance} units ({fitStatus})."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · DefensiveCircleFormationPattern",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/patterns/DefensiveCircleFormationPattern.java",
+      "relevance": "gdx-ai is a Java game AI library. Its defensive circle is a concrete scalable pattern that accounts for both membership and member size.",
+      "explanation": "The pattern stores the slot count and sets its radius to memberRadius / sin(pi / count). Slots use evenly spaced angles and face outwards. A lone member is placed at the origin, and supportsSlots accepts every count. The radius calculation keeps neighbouring centres a member diameter apart, so adding members expands the circle rather than adding points to an unchanged circumference."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · 3.7.2 Scalable Formations",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers this topic at Chapter 3 Movement, section 3.7.2 Scalable Formations, as listed in its contents."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · DefensiveCircleFormationPattern.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/patterns/DefensiveCircleFormationPattern.java",
+      "accessed": "2026-10-31",
+      "supports": "This implementation generates count-dependent circle radius, slot angles and outward orientations, with a special case for a lone member."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Formation.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "accessed": "2026-10-31",
+      "supports": "Membership updates set the pattern's slot count through the assignment strategy; updateSlots rotates relative slot positions and adds the anchor to produce member targets."
+    }
+  ],
+  "limits": [
+    "The selected patrol ends with a footprint of {finalWidth} units in a {laneWidth}-unit lane: {finalFitStatus}. The recipe supplies slots even when they cross the lane edges; choosing a narrower pattern or rejecting the muster requires another planning decision.",
+    "Adding a scout can move existing slot targets because the engine centres the newly generated set. Stable slot indices do not guarantee stable destinations; the incomplete-row moment makes that discontinuity visible.",
+    "These proposals say where scouts should end up. They do not assign named scouts to destinations or plan their journeys, so they establish no claim about avoiding collisions while the patrol rearranges."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:174",
+      "why": "Use fixed formations when a settled set of escort offsets should follow a leader. Regenerating a shape for changed membership is a separate concern."
+    },
+    {
+      "id": "aifg-a:181",
+      "why": "Use the formation pattern interface when several layout recipes need the same count, slot-location and capacity contract, including a way to decline unsupported membership."
+    },
+    {
+      "id": "aifg-a:186",
+      "why": "Use slot assignment when the planner must decide which named scout should occupy each generated destination. A list of positions cannot make that choice."
+    }
+  ]
+}

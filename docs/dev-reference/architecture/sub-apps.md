@@ -9,11 +9,11 @@ or more features. They are separate concepts: Machinery contains both its own
 placeholder page and the actor board. A later feature can join a group without
 creating another group or moving the board's URL.
 
-| Menu group | Current routes             | Current content                                     |
-| ---------- | -------------------------- | --------------------------------------------------- |
-| Scene      | `/scene`                   | The soldier scene, see [its architecture](scene.md) |
-| Machinery  | `/board`, `/machinery`     | Actor board and the machinery view's placeholder    |
-| Tools      | `/tools`, `/tools/catalog` | Works, last reading and the catalog reading surface |
+| Menu group | Current routes                                         | Current content                                                            |
+| ---------- | ------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Scene      | `/scene`                                               | The soldier scene, see [its architecture](scene.md)                        |
+| Machinery  | `/board`, `/machinery`                                 | Actor board and the machinery view's placeholder                           |
+| Tools      | `/tools`, `/tools/catalog`, `/tools/catalog/<tool id>` | Works, last reading, the catalog reading surface and one concept's reading |
 
 The root redirects to `/scene`. Unknown paths reach a translated not-found page in
 the main region, with a link home to the scene. The menu's Catalog link opens

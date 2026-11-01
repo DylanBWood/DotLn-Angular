@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 import { TPipe } from '@dotln-angular/i18n';
 import type { Tool, ToolId, WorkSlug } from '@dotln-angular/models';
+import { DotlnIcon } from '@dotln-angular/ui';
+
+import { isPlainClick } from '../../plain-click';
 
 @Component({
   selector: 'tools-catalog-search',
@@ -17,7 +20,10 @@ import type { Tool, ToolId, WorkSlug } from '@dotln-angular/models';
           <ol>
             @for (tool of results(); track tool.id) {
               <li [attr.data-result-work]="tool.work" [attr.data-result-status]="tool.status" [attr.data-result-kind]="tool.kind">
-                <a href="#reading" (click)="$event.preventDefault(); opened.emit(tool.id)" [attr.data-result-id]="tool.id" translate="no">{{ tool.title }}</a>
+                <a [attr.href]="hrefFor()(tool.id)" (click)="open($event, tool.id)" [attr.data-result-id]="tool.id" translate="no">{{ tool.title }}</a>
+                @if (studied().has(tool.id)) {
+                  <dotln-icon class="studied" [glyph]="'tools.contents.studiedGlyph' | t" [label]="'tools.contents.studied' | t" />
+                }
                 <small>{{ 'tools.search.place' | t: { work: workTitles()[tool.work] ?? tool.work, chapter: tool.place.chapter } }}</small>
               </li>
             }
@@ -36,8 +42,9 @@ import type { Tool, ToolId, WorkSlug } from '@dotln-angular/models';
     li { break-inside: avoid; padding-block: .55rem; overflow-wrap: anywhere; }
     a { color: var(--dotln-accent); text-underline-offset: .2em; }
     small { display: block; color: var(--dotln-muted); margin-block-start: .3rem; }
+    .studied { margin-inline-start: .35rem; font-size: .75em; }
   `,
-  imports: [TPipe],
+  imports: [TPipe, DotlnIcon],
 })
 export class CatalogSearch {
   readonly query = input('');
@@ -45,8 +52,15 @@ export class CatalogSearch {
   readonly total = input(0);
   /** Work titles by slug, so each result names its work by title rather than slug. */
   readonly workTitles = input<Readonly<Partial<Record<WorkSlug, string>>>>({});
+  readonly studied = input<ReadonlySet<ToolId>>(new Set());
+  readonly hrefFor = input.required<(id: ToolId) => string>();
   readonly searched = output<string>();
   readonly opened = output<ToolId>();
+  open(event: MouseEvent, id: ToolId) {
+    if (!isPlainClick(event)) return;
+    event.preventDefault();
+    this.opened.emit(id);
+  }
   openFirst() {
     const first = this.results()[0];
     if (first) this.opened.emit(first.id);

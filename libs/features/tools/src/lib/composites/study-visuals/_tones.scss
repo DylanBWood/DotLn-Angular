@@ -1,0 +1,76 @@
+// What each tone of a study's drawing looks like: colour and dash carry the meaning together,
+// so the two lines stay apart without relying on colour alone.
+@mixin stroke-tones {
+  &[data-tone='subject'],
+  &[data-tone='target'] {
+    stroke: var(--dotln-ink);
+  }
+  &[data-tone='actual'] {
+    stroke: var(--dotln-accent);
+  }
+  &[data-tone='desired'] {
+    stroke: var(--dotln-unknown);
+    stroke-dasharray: 5 3;
+  }
+  &[data-tone='other'] {
+    stroke: var(--dotln-muted);
+  }
+  &[data-tone='zone'],
+  &[data-tone='muted'] {
+    stroke: var(--dotln-border-strong);
+  }
+}
+
+@mixin fill-tones {
+  &[data-tone='subject'],
+  &[data-tone='target'] {
+    fill: var(--dotln-ink);
+  }
+  &[data-tone='actual'] {
+    fill: var(--dotln-accent);
+  }
+  &[data-tone='desired'] {
+    fill: var(--dotln-unknown);
+  }
+  &[data-tone='other'] {
+    fill: var(--dotln-muted);
+  }
+  &[data-tone='zone'],
+  &[data-tone='muted'] {
+    fill: var(--dotln-border-strong);
+  }
+}
+
+// Labels inside a drawing shrink with it, so a narrow screen draws them larger.
+@mixin chart-text {
+  text {
+    fill: var(--dotln-muted);
+    font: 15px var(--dotln-font);
+  }
+  @media (max-width: 600px) {
+    text {
+      font-size: 24px;
+    }
+  }
+}
+
+// The sentence under a drawing: the selected moment's values, then what is happening.
+@mixin reading {
+  .reading {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    margin-block-end: 0.3rem;
+  }
+  .note {
+    font-size: 0.85rem;
+    line-height: 1.8;
+    min-block-size: 3.6em;
+    margin-block-start: 0.3rem;
+  }
+  .numbers summary {
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding-block: 0.2rem;
+    color: var(--dotln-muted);
+  }
+}

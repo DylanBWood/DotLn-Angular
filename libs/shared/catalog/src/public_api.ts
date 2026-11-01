@@ -9,6 +9,8 @@ export {
   restoreReading,
   sceneTools,
   searchReadings,
+  studiedIds,
+  summaryShelf,
   workTitle,
 } from './lib/reading';
 export {
@@ -23,4 +25,4 @@ export {
   emptyCatalogFilters,
   isCatalogFilters,
 } from './lib/filters';
-export type { CatalogChunks, CatalogLoader } from './lib/types';
+export type { CatalogChunks, CatalogLoader, StudyChunks, SummaryChunks } from './lib/types';

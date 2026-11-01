@@ -1,3 +1,11 @@
+export { blend, firstActive, type WeightedSteering } from './lib/blending';
+export {
+  advanceFormation,
+  formationPatterns,
+  patternSlotRoles,
+  patternSlots,
+  slotPosition,
+} from './lib/formation';
 export { firstDivergence, hashFrame } from './lib/hash';
 export {
   applyStep,
@@ -21,10 +29,26 @@ export {
   stillSpeed,
 } from './lib/simulation';
 export { assignSlots, type SlotCandidate, type SlotCosts } from './lib/slot-assignment';
+export {
+  type ArrivalTuning,
+  arrive,
+  avoid,
+  flee,
+  keepOnField,
+  matchVelocity,
+  seek,
+  separate,
+  type SeparationTuning,
+  type SteeringBody,
+  wander,
+  type WanderTuning,
+} from './lib/steering';
 export { runBranch, runTrial, type TrialOutcome } from './lib/trial';
 export type {
   Composition,
   CompositionStep,
+  FormationPattern,
+  FormationState,
   MetricName,
   PreviewArrow,
   SceneDefinition,
@@ -41,4 +65,18 @@ export type {
   UnitId,
   Vec2,
 } from './lib/types';
-export { length } from './lib/vectors';
+export {
+  add,
+  alongHeading,
+  centroid,
+  clipLength,
+  cosine,
+  distance,
+  dot,
+  length,
+  normalize,
+  scale,
+  sine,
+  subtract,
+  zero,
+} from './lib/vectors';

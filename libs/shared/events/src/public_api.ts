@@ -5,5 +5,6 @@ export { navigationEvents } from './lib/navigation/navigation-events';
 export { boardHttpEvents } from './lib/data-access/board-http-events';
 export { boardPageEvents } from './lib/ui/board-page-events';
 export { catalogPageEvents } from './lib/ui/catalog-page-events';
+export { toolsHomeEvents } from './lib/ui/tools-home-events';
 export { scenePageEvents } from './lib/ui/scene-page-events';
 export { catalogEvents } from './lib/data-access/catalog-events';

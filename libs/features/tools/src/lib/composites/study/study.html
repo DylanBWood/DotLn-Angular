@@ -1,0 +1,161 @@
+@let vm = study();
+<section class="study" [attr.aria-label]="'tools.study.label' | t">
+  <p class="eyebrow">{{ 'tools.study.authored' | t: { by: vm.authoredBy, on: vm.authoredOn } }}</p>
+  <h3 translate="no">{{ vm.example.name }}</h3>
+  <p class="intro" translate="no">
+    {{ vm.intuition.text }}
+  </p>
+  <p translate="no">{{ vm.intuition.situation }}</p>
+  <details
+    #example
+    class="how-to-read"
+    [open]="vm.expanded.includes('example')"
+    (toggle)="toggled('example', example)"
+  >
+    <summary>{{ 'tools.study.exampleDetails' | t }}</summary>
+    <p class="example" translate="no">
+      {{ vm.example.description }}
+    </p>
+  </details>
+  @if (vm.visual; as visual) {
+    <figure>
+      @if (visual.timeline) {
+        <div class="view-choice" role="group" [attr.aria-label]="'tools.study.views' | t">
+          <button
+            type="button"
+            [attr.aria-pressed]="visual.view === 'motion'"
+            (click)="intent.emit({ kind: 'view', view: 'motion' })"
+          >
+            {{ 'tools.study.motionView' | t }}
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="visual.view === 'timeline'"
+            (click)="intent.emit({ kind: 'view', view: 'timeline' })"
+          >
+            {{ 'tools.study.timelineView' | t }}
+          </button>
+        </div>
+      }
+      <ng-template #caption>
+        @if (visual.inputs.length) {
+          <tools-study-inputs
+            [inputs]="visual.inputs"
+            [open]="vm.expanded.includes('inputs')"
+            (toggled)="intent.emit({ kind: 'expand', section: 'inputs', open: $event })"
+            (changed)="intent.emit({ kind: 'input', name: $event.name, value: $event.value })"
+            (restored)="intent.emit({ kind: 'resetInputs' })"
+          />
+        }
+        <details
+          #legend
+          class="how-to-read"
+          [open]="vm.expanded.includes('legend')"
+          (toggle)="toggled('legend', legend)"
+        >
+          <summary>{{ 'tools.study.howToRead' | t }}</summary>
+          <figcaption translate="no">
+            <p class="legend">
+              @for (entry of visual.legend; track entry.tone) {
+                <span [attr.data-tone]="entry.tone">{{ entry.label }}</span>
+              }
+            </p>
+            <p>{{ visual.caption }}</p>
+          </figcaption>
+        </details>
+      </ng-template>
+      @if (visual.view === 'timeline' && visual.timeline; as timeline) {
+        <tools-study-timeline
+          [model]="timeline"
+          [step]="visual.step"
+          [textEquivalent]="visual.textEquivalent"
+          [moments]="visual.moments"
+          [note]="visual.note"
+          [playing]="visual.playing"
+          [numbersOpen]="vm.expanded.includes('numbers')"
+          (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+          (stepped)="stepped($event)"
+          (played)="intent.emit({ kind: 'play', playing: $event })"
+        >
+          <ng-container [ngTemplateOutlet]="caption" />
+        </tools-study-timeline>
+      } @else {
+        <tools-study-motion
+          [model]="visual.motion"
+          [step]="visual.step"
+          [textEquivalent]="visual.textEquivalent"
+          [moments]="visual.moments"
+          [note]="visual.note"
+          [playing]="visual.playing"
+          [numbersOpen]="vm.expanded.includes('numbers')"
+          (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+          (stepped)="stepped($event)"
+          (played)="intent.emit({ kind: 'play', playing: $event })"
+        >
+          <ng-container [ngTemplateOutlet]="caption" />
+        </tools-study-motion>
+      }
+    </figure>
+  }
+  <p class="choose">{{ 'tools.study.choose' | t }}</p>
+  @for (section of sections(); track section) {
+    <details
+      #disclosure
+      [open]="vm.expanded.includes(section)"
+      (toggle)="toggled(section, disclosure)"
+    >
+      <summary>
+        @switch (section) {
+          @case ('mechanism') {
+            <span>{{ 'tools.study.mechanism' | t }}</span>
+            <span class="section-preview">{{ 'tools.study.previews.mechanism' | t }}</span>
+          }
+          @case ('reactive') {
+            <span>{{ 'tools.study.reactive' | t }}</span>
+            <span class="section-preview">{{ 'tools.study.previews.reactive' | t }}</span>
+          }
+          @case ('limits') {
+            <span>{{ 'tools.study.limits' | t }}</span>
+            <span class="section-preview">{{ 'tools.study.previews.limits' | t }}</span>
+          }
+          @case ('elsewhere') {
+            <span>{{ 'tools.study.elsewhere' | t }}</span>
+            <span class="section-preview">{{ 'tools.study.previews.elsewhere' | t }}</span>
+          }
+        }
+      </summary>
+      @defer (when study().expanded.includes(section)) {
+        <tools-study-explanation
+          [section]="section"
+          [study]="vm"
+          (momentRequested)="showMoment()"
+        />
+      } @loading (after 150ms) {
+        <p role="status">{{ 'tools.study.opening' | t }}</p>
+      } @error {
+        <p role="alert">{{ 'tools.study.loadFailed' | t }}</p>
+      }
+    </details>
+  }
+  <section class="nearby">
+    <h4>{{ 'tools.study.nearby' | t }}</h4>
+    <ul>
+      @for (concept of vm.nearby; track concept.id) {
+        <li translate="no">
+          <a [attr.href]="hrefFor()(concept.id)" (click)="follow($event, concept.id)">{{
+            concept.title
+          }}</a>
+          <span>{{ concept.why }}</span>
+        </li>
+      }
+    </ul>
+  </section>
+  @if (vm.next; as next) {
+    <p class="next">
+      <a translate="no" [attr.href]="hrefFor()(next.id)" (click)="follow($event, next.id)">
+        {{ 'tools.study.nextStudy' | t: { title: next.title } }}
+      </a>
+    </p>
+  }
+  <p class="note">{{ 'tools.study.reviewed' | t: { reviewers: vm.reviewers } }}</p>
+</section>

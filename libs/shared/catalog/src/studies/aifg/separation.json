@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:131",
+  "work": "aifg",
+  "slug": "separation",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 4",
+    "on": "2026-10-31",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mira and Rowan need room at an archive shelf. Each can push away from the other, but that request takes time to change an existing velocity. Asking for space cannot guarantee that their footprints stay apart.",
+    "situation": "Use separation when nearby characters should spread out without assigning each a destination. At the shelf, it supplies an outward push; another controller would be needed to tell the couriers where to finish."
+  },
+  "example": {
+    "name": "Mira and Rowan making room at the archive shelf",
+    "description": "The same pair is shown twice: inverse-square falloff above, linear falloff below. They begin {initialGap} units apart, each with initial inward speed {inwardSpeed} units/s and neighbour range {threshold} units. Both runs call the scene engine's separate function, then a study-local update changes velocity before position. Outer circles show Mira's neighbourhood; inner circles show both footprints. Change inward speed to inspect overlap, or neighbour range to change when repulsion acts.",
+    "parameters": {
+      "centre": 0,
+      "initialGap": 2,
+      "inwardSpeed": 0,
+      "fastInwardSpeed": 4,
+      "radius": 0.5,
+      "threshold": 4,
+      "maxAcceleration": 6,
+      "maxSpeed": 5,
+      "timeStep": 0.1,
+      "steps": 60,
+      "laneOffset": 5,
+      "accelerationScale": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read the pair before either courier moves",
+        "text": "Both couriers read the same positions. Mira ignores herself and only considers Rowan when their centre distance is below {threshold} units. The current inverse-square gap is {squareGap}; the linear run's gap is {linearGap}. Exactly at the threshold there is no push."
+      },
+      {
+        "title": "Choose how the push fades with distance",
+        "text": "With acceleration limit A, threshold R and body diameter c, linear strength is A × (R − d) / R. Inverse-square strength is min(A, A × c² × (1/d² − 1/R²)); subtracting the value at R makes it reach zero at the boundary too. The current pushes are {squareAcceleration} units/s² above and {linearAcceleration} below, so inverse-square need not mean stronger at every distance."
+      },
+      {
+        "title": "Add vectors, then cap their length",
+        "text": "Each contribution points away from its neighbour. There is only a single neighbour here, but a crowd adds all such vectors before the final length cap. The engine supplies opposite directions even for coincident positions, using the couriers' list order. Symmetric contributions from different neighbours can still cancel."
+      },
+      {
+        "title": "Apply the push over a fixed interval",
+        "text": "Update velocity over {timeStep} s, cap speed at {maxSpeed} units/s, then move using that new velocity. Mira's current speed is {squareSpeed} units/s above and {linearSpeed} below. Outside the neighbourhood, zero acceleration preserves velocity: separation supplies no finishing brake."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "before = couriers\nfor each courier i in before:\n  neighbours = all j != i with distance(before[i], before[j]) < R\n  neighbourData = []\n  contributions = []\n\n  for each neighbour j:\n    d = distance(before[i], before[j])\n    if falloff is linear:\n      strength = A * (R - d) / R\n    else if d == 0:\n      strength = A\n    else:\n      strength = min(A, A * (2 * radius)^2 * (1/d^2 - 1/R^2))\n    neighbourData.append(j, d, strength)\n\n  for each (j, d, strength) in neighbourData:\n    away = normalise(before[i].position - before[j].position)\n    if d == 0: away = engineTieDirection(i, j)\n    contributions.append(away * strength)\n  acceleration[i] = capLength(sum(contributions), A)\n  // The preceding neighbour calculation is scene-engine separate().\n\nfor each courier i:\n  nextVelocity = capLength(before[i].velocity + acceleration[i] * dt, maxSpeed)\n  nextPosition = before[i].position + nextVelocity * dt\n  after[i] = courier with nextVelocity and nextPosition",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/separation.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/separation.model.ts",
+    "textEquivalent": "In the upper inverse-square run Mira and Rowan are {squareGap} units apart and {squareMotion}; the lower linear pair is {linearGap} units apart and {linearMotion}. The outer circles mark Mira's {threshold}-unit neighbourhood, and each arrow pushes away from the other courier."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Separation",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Separation.java",
+      "relevance": "gdx-ai is a reusable Java library for game AI. Its Separation behaviour shows how a steering calculation can receive neighbours through a proximity service rather than searching the whole world itself.",
+      "explanation": "Separation asks its Proximity object to report neighbours. Each callback computes an outward unit direction, scales it by decayCoefficient / distanceSquared with a per-neighbour acceleration cap, and accumulates the result. Coincident positions are skipped. The class offers a configurable decay coefficient and works with the library's vector abstraction; applying the returned acceleration belongs to the game's movement code."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, third edition · Chapter 3 Movement, §3.3.13 Separation",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-10-31",
+      "supports": "The book covers separation in Chapter 3 Movement, section 3.3.13 Separation."
+    },
+    {
+      "title": "Craig Reynolds · Steering Behaviors For Autonomous Characters · Separation",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-10-31",
+      "supports": "Separation finds local neighbours and sums outward contributions; distance weighting is a design choice, and spatial partitioning can restrict the neighbour search."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Separation.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Separation.java",
+      "accessed": "2026-10-31",
+      "supports": "The implementation uses a Proximity callback, inverse-square strength, a per-neighbour cap and an explicit skip for coincident positions."
+    }
+  ],
+  "limits": [
+    "At the comparison speed of {fastInwardSpeed} units/s each, the couriers overlap before repulsion turns them apart. Separation reads present distance, so it cannot reserve the stopping distance that a fast approach needs; the comparison changes only initial inward speed.",
+    "Once the couriers leave their {threshold}-unit neighbourhood, the push ends but their outward velocity remains. Add a destination or velocity controller when making room should finish with a stop.",
+    "Equal pushes from opposite neighbours can cancel even at an uncomfortably small spacing. The special direction for exact coincidence does not resolve every crowded arrangement.",
+    "This pair uses an exhaustive neighbour list. Repeating that search for every courier in a large crowd grows quadratically; a spatial index can reduce the search while preserving the same local force rule."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:144",
+      "why": "Reach for weighted blending when Mira and Rowan should keep their distance while also heading somewhere; separation alone supplies no destination or brake."
+    },
+    {
+      "id": "aifg-a:132",
+      "why": "Read decay function when choosing how strongly a near neighbour should matter relative to a farther one; the shelf runs expose that choice directly."
+    },
+    {
+      "id": "aifg-a:133",
+      "why": "Use spatial partitioning for neighbours when the shelf becomes a crowd and finding the local couriers costs more than calculating their pushes."
+    },
+    {
+      "id": "aifg-a:134",
+      "why": "Use collision avoidance when closing velocity must influence the decision before the couriers become close; the fast shelf approach needs anticipation."
+    }
+  ]
+}

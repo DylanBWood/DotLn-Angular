@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotln-angular.invalid/concept-study-v0.schema.json",
+  "$ref": "#/$defs/study",
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https://\\S+$"
+    },
+    "toolId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*:[1-9][0-9]*$"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(apps|libs)/\\S+\\.ts$"
+    },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "id",
+        "work",
+        "slug",
+        "authored",
+        "intuition",
+        "example",
+        "mechanism",
+        "pseudocode",
+        "visual",
+        "implementations",
+        "references",
+        "limits",
+        "nearby"
+      ],
+      "properties": {
+        "schema": {
+          "const": "concept-study-v0"
+        },
+        "id": {
+          "$ref": "#/$defs/toolId"
+        },
+        "work": {
+          "enum": [
+            "aifg",
+            "eip",
+            "poeaa",
+            "rxjs",
+            "geb",
+            "tt",
+            "artofwar",
+            "goal",
+            "marquet",
+            "gladwell",
+            "taleb",
+            "altb",
+            "meadows",
+            "poe",
+            "fives",
+            "pirsig",
+            "poincare"
+          ]
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "authored": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["by", "on", "reviewedBy", "state"],
+          "properties": {
+            "by": {
+              "$ref": "#/$defs/text"
+            },
+            "on": {
+              "$ref": "#/$defs/date"
+            },
+            "reviewedBy": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/text"
+              }
+            },
+            "state": {
+              "enum": ["draft", "checked"]
+            }
+          }
+        },
+        "intuition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "situation"],
+          "properties": {
+            "text": {
+              "$ref": "#/$defs/text"
+            },
+            "situation": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "example": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "description", "parameters"],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/text"
+            },
+            "description": {
+              "$ref": "#/$defs/text"
+            },
+            "parameters": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": ["number", "string"]
+              }
+            }
+          }
+        },
+        "mechanism": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["steps"],
+          "properties": {
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title", "text"],
+                "properties": {
+                  "title": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "text": {
+                    "$ref": "#/$defs/text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pseudocode": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ordinary", "rxjs", "executable"],
+          "properties": {
+            "ordinary": {
+              "$ref": "#/$defs/text"
+            },
+            "rxjs": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/text"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "executable": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "module"],
+                  "properties": {
+                    "kind": {
+                      "enum": ["rxjs", "typescript"]
+                    },
+                    "module": {
+                      "$ref": "#/$defs/path"
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "visual": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["family", "model", "textEquivalent"],
+              "properties": {
+                "family": {
+                  "enum": ["motion", "timeline", "marbles", "flow", "states", "relations"]
+                },
+                "model": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/path"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "textEquivalent": {
+                  "$ref": "#/$defs/text"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "implementations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["project", "url", "relevance", "explanation"],
+            "properties": {
+              "project": {
+                "$ref": "#/$defs/text"
+              },
+              "url": {
+                "$ref": "#/$defs/url"
+              },
+              "relevance": {
+                "$ref": "#/$defs/text"
+              },
+              "explanation": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        },
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "url", "accessed", "supports"],
+            "properties": {
+              "title": {
+                "$ref": "#/$defs/text"
+              },
+              "url": {
+                "$ref": "#/$defs/url"
+              },
+              "accessed": {
+                "$ref": "#/$defs/date"
+              },
+              "supports": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        },
+        "limits": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "nearby": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "why"],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/toolId"
+              },
+              "why": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
