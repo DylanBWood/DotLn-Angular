@@ -1,0 +1,135 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:73",
+  "work": "eip",
+  "slug": "channel-adapter",
+  "authored": {
+    "by": "Claude dotln-worker author-09",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "An application that was never built to send or receive messages still has a way in and a way out: an API it answers, tables it writes, a screen it draws. A channel adapter stands at that edge and speaks for the application on the channel. When a message arrives, it makes the call the application already understands; when the application answers, or fails, it publishes that as a message. Nothing inside the application changes and the application never sees the channel, so everything that knows both sides lives in the adapter, and replacing either side means rewriting the adapter alone.",
+    "situation": "As an analogy, read against DotLn-Angular's events and state guide. The board page talks only in events on the app's one event stream, while the app's HTTP API answers GET requests for uifa-board-v1 and knows nothing of events. The guide traces the path from the board's page events through BoardStore to boardHttpEvents.load, BoardApi and HTTP, with withCommand publishing the load's success or failure. Read withCommand and BoardApi together as the adapter: the board reaches the API's document only through that adapter code, and the API is attached at its edge without any change inside it. And because, as the guide explains, the API's reply keeps the uifa-board-v1 shape, pointing the board at the real API instead of the mock is a configuration change and leaves the facade and rendering alone. The reading is this study's; the app does not call the arrangement a channel adapter."
+  },
+  "example": {
+    "name": "The board loads its document through an adapter",
+    "description": "As an analogy, read against DotLn-Angular's events and state guide: the Board and the Adapter talk over the app's event stream, and the Adapter and the HTTP API serving {route} talk over HTTP. The board publishes load; the adapter turns it into a GET, and turns the 200 reply into loadSuccess with the document, which the board keeps. The reader then refreshes, the API answers {failure}, and the adapter publishes loadFailure, which clears the board's document. Each step moves one message along one line.",
+    "parameters": {
+      "route": "/uifa-board-v1",
+      "failure": "HTTP 500"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Listen on the channel for the application",
+        "text": "The adapter subscribes to the events the application should act on, here load. The application itself never subscribes; it would not know how. The adapter keeps the event it is serving until it has an answer for it."
+      },
+      {
+        "title": "Turn the message into the application's own call",
+        "text": "It makes the call the application understands, GET {route} through BoardApi. Nothing in the request says event: to the API it is one more HTTP client."
+      },
+      {
+        "title": "Turn the answer into a message",
+        "text": "When the reply arrives, the adapter publishes loadSuccess with the document on the channel. Whoever listens, here the board's reducer, learns of the answer only from that message."
+      },
+      {
+        "title": "Turn a failure into a message too",
+        "text": "When the call fails, as it does with {failure}, the adapter publishes loadFailure with an app error. Without this the channel would never hear of the failure, and the board would wait for an answer that is not coming."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each load event on the channel:\n  (the application itself never listens)\n  keep the event as the one being served\n\n  reply = call the application: GET /uifa-board-v1\n  (to the API this is an ordinary HTTP request)\n\n  if the reply succeeds:\n    publish loadSuccess(reply.document) on the channel\n    forget the event being served\n\n  if the call fails:\n    error = describe it: network, timeout, HTTP or unknown\n    publish loadFailure(error) on the channel\n    forget the event being served",
+    "rxjs": "// Illustrative: an adapter's work is a call into an application that knows no streams, which a marble example could only fake; this is the shape the app's command feature gives it.\n// the adapter listens on the channel for load\nloaded$ = events.on(load).pipe(\n  // a newer load cancels the call still in flight\n  switchMap(() =>\n    // the adapter calls the application through its own interface\n    defer(() => boardApi.load()).pipe(\n      // the application's reply becomes a message on the channel\n      map((document) => loadSuccess(document)),\n      // and so does its failure\n      catchError((error) => of(loadFailure(toAppError(error)))),\n    ),\n  ),\n);",
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/channel-adapter.ts",
+    "textEquivalent": "Step {step}: {moves}. Now {states}; {held}. The Board and the Adapter meet on the app's events channel and the Adapter and the HTTP API serving {route} over HTTP; only the Adapter speaks both."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/channel-adapter.html",
+      "relevance": "Apache Camel is the Apache Software Foundation's open-source integration framework; its documentation has a page for this pattern saying how Camel provides it.",
+      "explanation": "Camel has no separate adapter construct, because every component is one: a component hides how it reaches an outside system behind an endpoint URI. The page's route consumes a Kafka topic and hands each record's payload to a method on a plain bean that contains no Camel code, and it shows the same wiring declared instead with a @Consume annotation on that method. In the first form the application's side stays an ordinary object that knows nothing of Kafka or Camel."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/channel-adapter.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging and integration framework; its reference guide gives channel adapters a chapter of their own and treats its transport modules, such as JMS, files, HTTP and mail, as adapters too.",
+      "explanation": "It separates the two directions. An inbound adapter calls a method on an ordinary object each time its poller fires, at a fixed rate or on a cron expression, and sends each non-null result to a channel as a message; an outbound adapter calls a method with the payload of each message sent to its channel. The chapter explains a polling default worth knowing: an inbound adapter takes one message per poll unless told otherwise, so a source method that never returns null cannot trap the poller in an endless loop."
+    },
+    {
+      "project": "Debezium",
+      "url": "https://debezium.io/documentation/reference/3.7/architecture.html",
+      "relevance": "Debezium captures the changes made to databases; its connectors are most commonly deployed in Kafka Connect, as source connectors that send records into Kafka.",
+      "explanation": "It attaches the adapter at the data layer rather than at an API. Its MySQL connector reads the database's binlog through a client library and its PostgreSQL connector reads a logical replication stream, and by default each table's changes go to a Kafka topic named after the table. The connector learns of each change from the database's own log, not from any call the application makes."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Channel Adapter",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/ChannelAdapter.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's catalog entry: an adapter that acts as a client of the messaging system, works through the application's own interface in both directions, and can connect to the application at different architectural layers."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), chapter 4, Messaging Channels: Channel Adapter",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Channel Adapter in chapter 4, Messaging Channels."
+    },
+    {
+      "title": "DotLn-Angular · Events, state and HTTP",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/c0e5a36008828ec5b742d6e740efff619f3cedbe/docs/dev-reference/architecture/events-and-state.md",
+      "accessed": "2026-11-01",
+      "supports": "The board fetches its document, uifa-board-v1, from the app's API along the path BoardPage, BoardFacade, boardPageEvents, BoardStore, boardHttpEvents.load, BoardApi and HTTP; withCommand publishes the load's success or failure; a failed request empties the document and the page says it is unavailable; and because the API's reply keeps that shape, pointing the board at the real API instead of the mock is a configuration change that leaves the facade and rendering alone."
+    },
+    {
+      "title": "DotLn-Angular · with-command.ts",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/c0e5a36008828ec5b742d6e740efff619f3cedbe/libs/shared/data-access/src/lib/with-command.ts",
+      "accessed": "2026-11-01",
+      "supports": "The command feature listens for its trigger event and, through switchMap, runs the call deferred until subscription, mapping the result to the success event and a caught error, converted to an app error, to the failure event."
+    },
+    {
+      "title": "DotLn-Angular · board-store.ts",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/c0e5a36008828ec5b742d6e740efff619f3cedbe/libs/features/board-data-access/src/lib/board-store.ts",
+      "accessed": "2026-11-01",
+      "supports": "BoardStore maps the page's opened and refreshRequested events to load, calls BoardApi through withCommand, keeps the document on loadSuccess, and on loadFailure clears the document and keeps the failure."
+    }
+  ],
+  "limits": [
+    "An adapter can publish only what its layer offers. The board's API answers when it is asked and announces nothing, so a change on the server reaches the event stream only when something publishes load again: the board is as fresh as its last load. If listeners must hear changes as they happen, attach where changes are recorded, as change-data-capture tools do by reading a database's log, or poll on a schedule and accept the delay.",
+    "The adapter decides what overlapping messages do, and that decision can lose answers. The app's command feature runs each call through switchMap, so a load that arrives while an earlier call is in flight cancels the earlier one and only the newer reply is published. For a read like this one that is right; for a write it would drop the confirmation of a change the server may already have made. An adapter for writes needs a queue or an exclusive policy, and a way for the application to recognise a repeated request.",
+    "Nothing makes the call and the publish one step. If the adapter stops after the application has acted but before it publishes, the channel never hears of something that happened; if it retries blindly, the application may act twice. A read can shrug this off; a write needs the call and the publish bound into one transaction.",
+    "The adapter puts the application's own data shape on the channel: loadSuccess carries the uifa-board-v1 document as the API returns it, so every listener depends on that schema. A second source with a different shape needs a translator, or a shared model that every adapter publishes.",
+    "The analogy stretches in one place: the app's event stream lives inside one browser tab, with no queue, no durability and no other application on it, and the API was written for this board. The pattern's usual case is a separate application that predates the messaging system and cannot be changed."
+  ],
+  "nearby": [
+    {
+      "id": "eip:167",
+      "why": "Reach for a gateway when your own code should send and receive through a domain method, such as loadBoard(), without touching the channel's API: a gateway lives inside the caller, where an adapter stands outside an application that cannot be changed."
+    },
+    {
+      "id": "eip:60",
+      "why": "When what the adapter publishes is not the shape the listeners need, a translator after it changes the shape without teaching the adapter about every listener."
+    },
+    {
+      "id": "eip:75",
+      "why": "When the other side is itself a messaging system, join the two channels with a bridge instead; an adapter joins a channel to an application."
+    },
+    {
+      "id": "eip:146",
+      "why": "When several adapters feed one channel, a shared model that all of them publish keeps listeners from depending on each application's own schema."
+    },
+    {
+      "id": "eip:170",
+      "why": "When the adapter writes, so that the call into the application and the publish on the channel must succeed or fail together."
+    }
+  ]
+}

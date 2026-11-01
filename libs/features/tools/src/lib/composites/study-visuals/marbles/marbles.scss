@@ -12,7 +12,7 @@ svg {
 }
 .axis {
   stroke-width: 2;
-  @include tones.stroke-tones;
+  @include tones.stream-stroke-tones;
 }
 .axis[data-tone='other'] {
   stroke: var(--dotln-muted);
@@ -46,8 +46,8 @@ svg.gliding .cursor {
   stroke-width: 2;
   transform-box: fill-box;
   transform-origin: center;
-  @include tones.stroke-tones;
-  @include tones.fill-tones;
+  @include tones.stream-stroke-tones;
+  @include tones.stream-fill-tones;
 }
 // An emission the stepped frame reaches pops, and a soft disc in its lane's tone swells out of it
 // and fades (the tone rules above fill the disc).
@@ -65,7 +65,7 @@ svg.gliding .cursor {
   circle {
     stroke: var(--dotln-surface);
     stroke-width: 2;
-    @include tones.fill-tones;
+    @include tones.stream-fill-tones;
   }
 }
 .marble.landing {
@@ -142,12 +142,12 @@ svg.gliding .cursor {
 }
 .complete {
   stroke-width: 3;
-  @include tones.stroke-tones;
+  @include tones.stream-stroke-tones;
 }
 .error {
   stroke-width: 3;
   fill: none;
-  @include tones.stroke-tones;
+  @include tones.stream-stroke-tones;
 }
 .cut {
   stroke: var(--dotln-muted);

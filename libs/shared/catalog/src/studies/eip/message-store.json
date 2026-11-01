@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:192",
+  "work": "eip",
+  "slug": "message-store",
+  "authored": {
+    "by": "Claude dotln-worker author-06",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Keep a diary of the traffic without stopping it. Each time a record is handed on, a note about it is dropped into a box beside the road, and the hand-over carries on without waiting. Long after the records themselves have been used up and gone, questions about what happened are put to the box, never to the people doing the work. What the box can answer depends on what each note kept, and on every note arriving.",
+    "situation": "As an analogy, read against DotLn's public domain model and its audit document: an order's records pass from the executor to the verifier and on to the reviewer, and each order also owns an append-only control segment in the control log, from which indexes and other views are rebuilt. Read that log, with its indexes, as this pattern's store: the hand-overs are the live flow and the log is the record of it. For each kind of record one then decides whether its entry keeps the whole record or only its envelope, much as the audit document's fidelity levels run from a short receipt up to complete event envelopes. Audit, in turn, reads the log and never the hand-overs in progress, as the document's audit projections are folds over the retained log."
+  },
+  "example": {
+    "name": "The audit reads the control log after the work is done",
+    "description": "As an analogy, read against DotLn's public domain model and audit document: the executor hands the evidence of orders 31 and 32 to the verifier, and the verifier files a report on each with the reviewer. Every hand-over also fires a copy at the control log, which keeps {keptInFull} in full and only the envelope of {envelopeOnly}. The audit questions the log about order 31 once the reviewer has finished with it, and later about order 32. The log is down for one hand-over.",
+    "parameters": {
+      "keptInFull": "verification reports",
+      "envelopeOnly": "evidence"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Fire a copy beside the work",
+        "text": "When a role sends a record on the work channel, it also sends a copy to the store on a channel of its own, and waits for no answer. The hand-over never depends on the copy arriving."
+      },
+      {
+        "title": "Decide what each kind of copy keeps",
+        "text": "For each kind of record the copy keeps either the whole record or only its envelope: which record, on which channel, when. Here the log keeps {keptInFull} in full, because their verdicts answer later questions, and only the envelope of {envelopeOnly}, whose content stays with the roles."
+      },
+      {
+        "title": "Keep what arrives",
+        "text": "The store appends each copy it receives and sends nothing back into the flow. A copy that arrives while the store is down is lost, and nobody in the flow is told."
+      },
+      {
+        "title": "Answer from the store alone",
+        "text": "Questions about the flow go to the store, which can answer them after the records themselves have been consumed. An answer is only as complete as the copies that arrived: a lost copy looks the same as a record that was never sent."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when a role sends a record to the next role on the work channel:\n  send the record on the work channel\n  send copyOf(record) to the store on the copy channel, without waiting\n\ncopyOf(record):\n  if record is a verification report: keep it whole\n  otherwise: keep only its envelope (which record, which channel, which step)\n\nwhen the store receives a copy:\n  if the store is up: append the copy to its entries\n  otherwise: the copy is lost, and no one is told\n\nwhen the audit asks about an order:\n  look up that order's entries in the store\n  answer from those entries alone\n  (a record whose copy was lost is simply missing)",
+    "rxjs": "// Illustrative: the store's point is an archive that outlives the streams and answers questions after they end, which one marble run cannot show.\n// the copy channel: it keeps nothing, so a copy sent while the store is not listening is lost\ncopies$ = new Subject<Copy>();\n\nhanded$ = evidence$.pipe(\n  // the fire-and-forget copy: only the envelope\n  tap((evidence) => copies$.next(envelopeOf(evidence))),\n);\nfiled$ = report$.pipe(\n  // the fire-and-forget copy: the whole report\n  tap((report) => copies$.next(report)),\n);\n\nentries$ = copies$.pipe(\n  // next would run the store at once; this moves its work after the hand-over\n  observeOn(asapScheduler),\n  // the message store: append each copy that arrives\n  scan((entries, copy) => [...entries, copy], [] as readonly Copy[]),\n  // the store's entries, kept for whoever asks later\n  shareReplay(1),\n);\n\nanswer$ = entries$.pipe(\n  // the query: answered from the store alone, never from handed$ or filed$\n  map((entries) => entriesFor(order, entries)),\n);",
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/message-store.ts",
+    "textEquivalent": "At step {step}, {moves}. Work records travel between the roles, copies travel to the control log on a channel of their own, and the audit asks only the log. Now {states}; {held}."
+  },
+  "implementations": [
+    {
+      "project": "Spring Integration, the Message Store",
+      "url": "https://docs.spring.io/spring-integration/reference/message-store.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging and integration framework. Its reference has a Message Store page in its System Management part, and the name means something different there that a reader of Spring code will meet first.",
+      "explanation": "Spring Integration reads the pattern as durable buffering. Components that hold messages for a while, such as a QueueChannel or an aggregator, take a message-store attribute, so what they hold can survive a failure; behind one MessageStore interface sit an in-memory default and JDBC, Redis, MongoDB and Hazelcast stores. That is a store of messages still in flight rather than an archive of copies for reporting. The page is plain about what persistence costs: payloads and headers are serialised, the JDBC store by default drops headers that cannot be serialised, and a temporary reply channel carried in a header does not survive the trip through a persistent queue."
+    },
+    {
+      "project": "NServiceBus, auditing messages",
+      "url": "https://docs.particular.net/nservicebus/operations/auditing",
+      "relevance": "NServiceBus is a .NET messaging framework from Particular Software. Its auditing feature is close to the pattern as the catalog draws it: copies of the traffic gathered in one place for later diagnosis.",
+      "explanation": "An endpoint set up to audit forwards a copy of every message it has processed successfully to a central audit queue, with added headers giving the processing start and end times, the host and the endpoint; a message that fails goes to the error queue instead and is not copied. ServiceControl reads the audit queue to serve the platform's diagnostic and visual tools. The page is frank about the costs: turning auditing on for every endpoint sends twice as many messages through the system, some message types can be left out with a custom pipeline behaviour, and an audit queue nobody drains can fill until no endpoint that audits into it can process messages."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Message Store",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageStore.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page sets the problem of reporting on what messages carried without disturbing a messaging system whose parts are loosely joined and whose messages do not last, and answers it with one central store: each message is duplicated onto a separate channel, by the component that sends it or by a wire tap, and the page treats that channel as part of the Control Bus. Sending the duplicate without waiting keeps the main flow at its pace but adds network traffic, which is why the page suggests keeping only a few key fields, such as the message's id, its channel and a timestamp."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003), chapter 11, System Management, section Message Store",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Message Store pattern in chapter 11, System Management; the publisher's page lists the book and that chapter in its table of contents."
+    },
+    {
+      "title": "DotLn domain model · Actors and episodes",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md#actors-and-episodes-the-edge",
+      "accessed": "2026-11-01",
+      "supports": "In the platform every order has its own append-only control segment; one shared fold works out lifecycle legality and evidence separately for each order, and selection picks the order to look at; and each completion records who performed it, with the harness, model and effort used."
+    },
+    {
+      "title": "DotLn · Audit, records, resilience, and privacy",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/09-audit-resilience-privacy.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform's audit document, in its Fidelity levels section, ranges from an M0 beacon and an L0 receipt up to L4 governed raw, which keeps the complete event envelopes, and warns that more fidelity is not better in itself, because every level serves its own readers under its own access and retention rules. Its Audit projections section builds the audit views by folding one kept JSONL log without reading or writing anything else, so they can be rebuilt at will, and its Persistence and recovery classes section treats the event log as the authoritative record and Markdown, dashboards and indexes as derived views that can be thrown away and rebuilt from it."
+    }
+  ],
+  "limits": [
+    "A copy fired and forgotten can be lost, and the flow never notices. When the log is down, the evidence of order 32 still reaches the verifier but its copy does not, so the audit later finds a passing report with nothing behind it, and from the log alone it cannot tell a lost copy from evidence that was never handed over. Where the store must be complete, send the copies with guaranteed delivery and pay for it in storage and acknowledgements, or reconcile the store against counts the flow keeps for itself.",
+    "Keeping only the envelope saves traffic and keeps sensitive content out of a second place, but some questions then have no answer: here the log can say that evidence 31 was handed over and never what it contained. Keeping every record whole doubles what is stored and copies whatever the records hold into a store with its own access and retention duties. DotLn's audit document makes the same point: more detail is not better in itself, since each level of detail serves its own readers under its own access and retention rules. When content is needed later but should not travel twice, a claim check keeps it once and passes a key.",
+    "The copies are not free. Each record sent becomes two messages, and if the store stops reading, its channel fills: NServiceBus's documentation warns that an audit queue nobody drains can grow until no endpoint auditing into it can process messages, so a stalled store can halt the very flow it was meant to leave alone. Size the copy channel, and watch the store's own backlog on the control bus.",
+    "The store sees only what crosses channels. It records that the executor handed evidence 31 to the verifier, not what the verifier did with it or whether it dropped it inside; a component's own decisions need its own reports, or a smart proxy or a pair of taps around it.",
+    "Here the analogy breaks: DotLn's control log is not a side copy. Each order's control segment is append-only, the shared fold derives the order's lifecycle legality from it, and indexes and Markdown views are projections rebuilt from that canonical log. Losing a message store leaves the flow running with a blind spot; losing DotLn's log would lose the order's recorded state. The platform's log is closer to an event-sourced record than to this pattern's archive, and a gap like this example's would be a defect there rather than an accepted cost."
+  ],
+  "nearby": [
+    {
+      "id": "eip:188",
+      "why": "Reach for a wire tap when a channel's senders cannot be changed to send copies themselves: the tap copies every message on the channel to the store's channel and leaves the flow as it was."
+    },
+    {
+      "id": "eip:190",
+      "why": "Use a message history when a message should carry its own path, for debugging it while it travels, with no central store and no extra channel."
+    },
+    {
+      "id": "eip:191",
+      "why": "Read this comparison when choosing between history carried in the message, gone once the message is consumed, and a central store, which keeps everything but needs copies and storage."
+    },
+    {
+      "id": "eip:143",
+      "why": "Use a claim check when the content itself must be kept for later but should not travel with every message or be stored twice: it is kept once and a key travels instead."
+    },
+    {
+      "id": "eip:184",
+      "why": "The copy channel is management traffic: read the control bus for the separate channels it rides on, and for keeping watch on the store itself."
+    },
+    {
+      "id": "eip:71",
+      "why": "Reach for guaranteed delivery on the copy channel when a lost copy is not acceptable, at the price of storing and acknowledging every copy at each hop."
+    }
+  ]
+}

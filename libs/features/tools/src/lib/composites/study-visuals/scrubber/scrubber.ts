@@ -29,6 +29,8 @@ export class StudyScrubber {
   readonly seconds = input<string | null>(null);
   /** Or the frame of a marble diagram, named out of the last step, which is its last frame. */
   readonly frame = input<number | null>(null);
+  /** Whether that count names frames, as a marble diagram's does, or the steps of a flow. */
+  readonly counting = input<'frame' | 'step'>('frame');
   readonly moments = input<readonly StudyMoment[]>([]);
   /** Null hides the control, as it does for a reader who asked for reduced motion. */
   readonly playing = input<boolean | null>(null);

@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { ConceptStudy } from '@dotln-angular/models';
 
+import { flowDrawing } from '../composites/study-visuals/flow/flow-drawing';
 import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
 import { placeholdersIn } from './study-text';
@@ -38,6 +39,57 @@ it('runs every model from its record in the family the record declares, and each
     for (const tick of ticks)
       for (const name of names) expect(tick.values[name], `${record.slug}: ${name}`).toBeDefined();
   }
+});
+
+it('draws a token for each message moving at a step of a flow, and none where nothing moves, both ways', async () => {
+  for (const record of await records()) {
+    if (record.visual?.family !== 'flow' || !record.visual.model) continue;
+    const { model } = await studyModels[record.visual.model]();
+    const run = model(record.example.parameters);
+    if (run.family !== 'flow') continue;
+    for (const frame of run.flow.frames)
+      for (const direction of ['across', 'down'] as const) {
+        const where = `${record.slug}, step ${frame.step}, ${direction}`;
+        const moving = flowDrawing(run.flow, frame.step, direction).tokens.filter(
+          ({ state }) => state === 'moving',
+        );
+        expect(
+          moving.every(({ key }) => key !== ''),
+          where,
+        ).toBe(true);
+        // A capsule names every message it carries, one word each.
+        expect(moving.flatMap(({ key }) => key.split(' ')).sort(), where).toEqual(
+          frame.hops.map(({ key }) => key).sort(),
+        );
+      }
+  }
+});
+
+it('rests every moving message on its line clear of every box, both ways', async () => {
+  const overlaps: string[] = [];
+  for (const record of await records()) {
+    if (record.visual?.family !== 'flow' || !record.visual.model) continue;
+    const { model } = await studyModels[record.visual.model]();
+    const run = model(record.example.parameters);
+    if (run.family !== 'flow') continue;
+    for (const frame of run.flow.frames)
+      for (const direction of ['across', 'down'] as const) {
+        const { nodes, tokens } = flowDrawing(run.flow, frame.step, direction);
+        for (const token of tokens.filter(({ state }) => state === 'moving'))
+          for (const node of nodes) {
+            const apart =
+              token.x + token.width / 2 <= node.x ||
+              token.x - token.width / 2 >= node.x + node.width ||
+              token.y + token.r <= node.y ||
+              token.y - token.r >= node.y + node.height;
+            if (!apart)
+              overlaps.push(
+                `${record.slug}, step ${frame.step}, ${direction}: ${token.key} on ${node.id}`,
+              );
+          }
+      }
+  }
+  expect(overlaps).toEqual([]);
 });
 
 it('stays a sound example across the whole range of every input a model offers', async () => {

@@ -19,6 +19,24 @@
   </details>
   @if (vm.visual; as visual) {
     <figure>
+      @if (visual.family === 'flow' && visual.marbles) {
+        <div class="view-choice" role="group" [attr.aria-label]="'tools.study.views' | t">
+          <button
+            type="button"
+            [attr.aria-pressed]="visual.view === 'flow'"
+            (click)="intent.emit({ kind: 'view', view: 'flow' })"
+          >
+            {{ 'tools.study.flowView' | t }}
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="visual.view === 'marbles'"
+            (click)="intent.emit({ kind: 'view', view: 'marbles' })"
+          >
+            {{ 'tools.study.marblesView' | t }}
+          </button>
+        </div>
+      }
       @if (visual.family === 'motion' && visual.timeline) {
         <div class="view-choice" role="group" [attr.aria-label]="'tools.study.views' | t">
           <button
@@ -65,6 +83,39 @@
         </details>
       </ng-template>
       @switch (visual.family) {
+        @case ('flow') {
+          @if (visual.view === 'marbles' && visual.marbles; as marbles) {
+            <tools-study-marbles
+              [model]="marbles"
+              [step]="visual.step"
+              [textEquivalent]="visual.textEquivalent"
+              [moments]="visual.moments"
+              [note]="visual.note"
+              [playing]="visual.playing"
+              [numbersOpen]="vm.expanded.includes('numbers')"
+              (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+              (stepped)="stepped($event)"
+              (played)="intent.emit({ kind: 'play', playing: $event })"
+            >
+              <ng-container [ngTemplateOutlet]="caption" />
+            </tools-study-marbles>
+          } @else {
+            <tools-study-flow
+              [model]="visual.flow"
+              [step]="visual.step"
+              [textEquivalent]="visual.textEquivalent"
+              [moments]="visual.moments"
+              [note]="visual.note"
+              [playing]="visual.playing"
+              [numbersOpen]="vm.expanded.includes('numbers')"
+              (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+              (stepped)="stepped($event)"
+              (played)="intent.emit({ kind: 'play', playing: $event })"
+            >
+              <ng-container [ngTemplateOutlet]="caption" />
+            </tools-study-flow>
+          }
+        }
         @case ('marbles') {
           <tools-study-marbles
             [model]="visual.marbles"

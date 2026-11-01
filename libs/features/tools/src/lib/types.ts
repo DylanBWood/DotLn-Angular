@@ -8,6 +8,7 @@ import type {
 } from '@dotln-angular/models';
 
 import type {
+  FlowModel,
   MarblesModel,
   MotionModel,
   StudyComparison,
@@ -21,7 +22,8 @@ import type {
 export type StudySection = 'mechanism' | 'reactive' | 'limits' | 'elsewhere';
 /** Every disclosure of a study: its explanations and the smaller ones around the drawing. */
 export type StudyDisclosure = StudySection | 'example' | 'numbers' | 'inputs' | 'legend';
-export type StudyVisualView = 'motion' | 'timeline';
+/** Which drawing of the example shows: movement or its chart, or a flow or its marble diagram. */
+export type StudyVisualView = 'motion' | 'timeline' | 'flow' | 'marbles';
 export type StudyStatus = 'none' | 'loading' | 'failed' | 'ready';
 
 /** What a reader does to a study; one output carries them all up to the facade. */
@@ -65,8 +67,16 @@ export interface MarblesDrawingView extends StudyDrawingViewBase {
   readonly marbles: MarblesModel;
 }
 
+/** A flow at the selected step, with the marble diagram of the same run when it executes. */
+export interface FlowDrawingView extends StudyDrawingViewBase {
+  readonly family: 'flow';
+  readonly view: 'flow' | 'marbles';
+  readonly flow: FlowModel;
+  readonly marbles: MarblesModel | null;
+}
+
 /** The drawing at the selected moment; the family says which composite draws it. */
-export type StudyDrawingView = MotionDrawingView | MarblesDrawingView;
+export type StudyDrawingView = MotionDrawingView | MarblesDrawingView | FlowDrawingView;
 
 /** A mechanism step with the lines of pseudocode it explains. */
 export interface StudyStepView {

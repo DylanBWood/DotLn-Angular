@@ -43,7 +43,7 @@
         <button type="button" (click)="momentRequested.emit()">
           {{ 'tools.study.worked.show' | t }}
         </button>
-        @if (vm.visual?.family !== 'marbles') {
+        @if (rounded()) {
           <p class="note">{{ 'tools.study.worked.precision' | t }}</p>
         }
       </section>

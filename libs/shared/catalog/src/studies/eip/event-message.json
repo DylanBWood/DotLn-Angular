@@ -1,0 +1,134 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:80",
+  "work": "eip",
+  "slug": "event-message",
+  "authored": {
+    "by": "Claude dotln-worker author-10",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "An event message reports a change and stops there. The sender does not know who is listening or what they will do with the news; each receiver decides for itself, and another can start listening without the sender changing at all. What the message mostly carries is a moment, often no more than which change and when, so a receiver's first question is how old it is: an announcement that was true when it was sent says less about the present with every minute that passes.",
+    "situation": "As an analogy, read against DotLn's public domain model: an Event there is an unchangeable record that something happened, stamped with the time it occurred; the event store keeps every one and leaves its meaning to whoever reacts, and watchers, read-only views of that store, each tell their own story from the same events. Each work order also has a control beacon, a small record of the order's phase and latest verdict, stamped with the time of its last transition; an agent's sweep reads it and labels it fresh, or stale once its age reaches a threshold of twenty minutes by default. So the entries recording each step of an order, and the beacons, both read as time-stamped announcements that others react to. Here order 41 passes verification and later moves to final review, and the second beacon write fails, as DotLn's execution guide allows a beacon write to do while the change itself stays recorded."
+  },
+  "example": {
+    "name": "Order 41's beacon through verification and final review",
+    "description": "As an analogy to DotLn's records of a work order: at 10:00 order {order} passes verification, and the lifecycle, the part of DotLn that records each step of an order, sends the news to the event store and then writes it to the order's beacon. Both watchers read the entry and each draws its own conclusion, and the sweep at 10:05 finds the beacon fresh. At 10:12 the order moves to final review: the news reaches the event store, but the beacon write fails. The sweep at 10:30 reads the old announcement, now past the {staleAfter}-minute threshold, and labels it stale.",
+    "parameters": {
+      "order": 41,
+      "staleAfter": 20
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Announce it as it happens",
+        "text": "When the change happens, the sender records what changed and when and sends it straight away, here to the event store and to the order's beacon. It names no receiver and asks for nothing."
+      },
+      {
+        "title": "Each receiver decides what it means",
+        "text": "Every reader of the event store gets the same entry and draws its own conclusion. The sender neither knows nor cares who they are, and a new reader changes nothing at the sender."
+      },
+      {
+        "title": "Judge the age before believing it",
+        "text": "A reader compares the event's time with its own clock. Younger than {staleAfter} minutes, the announcement is fresh; at or past that it is stale, kept as history but not taken as the present."
+      },
+      {
+        "title": "A missing announcement leaves the last one standing",
+        "text": "If a later change never reaches a channel, that channel's readers go on seeing the earlier event. Nothing in the old message is false; only its age shows that it may be out of date."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when order 41 passes verification:\n  event = { change: verified, verdict: pass, at: now }\n  append event to the event store\n  write event to the order's beacon\n\nfor each watcher of the event store:\n  on each new entry: update its own account of the order\n  (the entry carries no instruction)\n\nwhen a sweep reads the beacon:\n  age = time of the sweep - beacon.at\n  if age >= staleAfter: label it stale, keep it as history\n  otherwise: label it fresh\n\nwhen order 41 moves to final review:\n  append the new event to the event store\n  write it to the beacon\n  (if that write fails, the beacon goes on showing the old event)",
+    "rxjs": "// Illustrative: an event message is a kind of message, not an operator; this only maps the flow onto RxJS, and the copying and the age check belong to other patterns.\ninterface Transition {\n  readonly order: number;\n  readonly phase: string;\n  // the event's time, most of what it says\n  readonly at: number;\n}\n\n// the channel the lifecycle announces on, naming no reader\nconst transitions$ = new Subject<Transition>();\n// the event message, sent as the change happens\nconst announce = (transition: Transition) => transitions$.next(transition);\n\n// a subscriber decides for itself what the news means\ntransitions$.subscribe((transition) => quality.note(transition));\n// another subscriber decides differently\ntransitions$.subscribe((transition) => intent.expect(transition));\n\n// the beacon: replays the last announcement it was given, however old\nconst beacon$ = new ReplaySubject<Transition>(1);\n// the beacon write, one more subscriber to the announcements\ntransitions$.subscribe((transition) => beacon$.next(transition));\n\nconst sweep = (now: number) =>\n  beacon$.pipe(\n    // the sweep reads whatever the beacon holds now\n    take(1),\n    // the age check: the reader judges expiry by its own clock\n    map(({ at }) => (now - at >= staleAfter ? 'stale' : 'fresh')),\n  );",
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/event-message.ts",
+    "textEquivalent": "Order {order}, step {step}: {moves}. On the event store and the beacon, and at the watchers and the sweep, whose threshold is {staleAfter} minutes: {states}. Held: {held}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel · Event Message",
+      "url": "https://camel.apache.org/components/latest/eips/event-message.html",
+      "relevance": "Apache Camel is the Apache Software Foundation's integration framework for Java, and its documentation gives each integration pattern it supports a page of its own; this is the Event Message page, read at the 4.22 long-term-support release the address leads to.",
+      "explanation": "Camel treats an event message as a matter of direction rather than content: an exchange marked InOnly tells the producing endpoint that no reply is expected. Components that can work both ways, such as JMS, SEDA and AMQP, then send and move on, and many, JMS, File and SEDA among them, are one-way by default. The pattern can be set on a consuming endpoint's address or switched part way through a route with setExchangePattern, and the JMS consumer infers it from whether a JMSReplyTo header is present. The page warns that a synchronous component such as Direct still makes the caller wait, whatever the exchange says."
+    },
+    {
+      "project": "Spring Integration · Spring ApplicationEvent support",
+      "url": "https://docs.spring.io/spring-integration/reference/event.html",
+      "relevance": "Spring Integration is the Spring project for message-based integration in Java. It has no page called Event Message; this page is where events raised inside a Spring application are wrapped as messages on a channel and messages are published back as events, the pattern's wrapping step in working form.",
+      "explanation": "An ApplicationEventListeningMessageProducer listens to the application context and sends each event it hears to a channel, optionally only the event types it is configured for; the page's example uses a publish-subscribe channel, so every subscriber gets each one. An event whose source is already a message passes through unchanged, an expression can choose the payload, and a failure downstream can go to an error channel. In the other direction an ApplicationEventPublishingMessageHandler publishes each message it receives to the context's listeners as an event."
+    },
+    {
+      "project": "MassTransit · Messages",
+      "url": "https://masstransit.io/documentation/concepts/messages",
+      "relevance": "MassTransit is a messaging framework for .NET. Its page on messages names commands, events, requests and responses as the four kinds, and puts a message's timing in the envelope every message travels in.",
+      "explanation": "An event is published, through Publish, rather than sent to an address, and is named in the past tense, as OrderSubmitted is. The envelope's headers include SentTime, set automatically in UTC, and an optional ExpirationTime after which the transport may remove a message no consumer has taken, so the timing an event depends on travels beside its content."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Event Message",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/EventMessage.html",
+      "accessed": "2026-11-01",
+      "supports": "The catalogue places Event Message under Message Construction and separates it from a document message by timing and content: an event often carries nothing at all, should be sent as soon as the change happens and handled while it still matters, and is helped more by Message Expiration than by Guaranteed Delivery."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), Chapter 5: Message Construction, Event Message",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the pattern in Chapter 5, Message Construction, in the section Event Message."
+    },
+    {
+      "title": "DotLn product documents · 02 Domain model, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's domain model defines an Event as an immutable observation that occurred, with occurredAt in its envelope; keeps events in an append-only event store that leaves payload meaning to reactors; describes watchers that each tell their own story from one set of events; defines a control beacon whose size is a code for the order's phase and latest verdict and whose modification time is the appended transition's recordedAt; and labels a swept beacon stale once its age reaches staleAfterMs, twenty minutes by default, or clock-skew when its time is after the sweep, and notes that a beacon's age never alters what an actor may do or which transitions are legal."
+    },
+    {
+      "title": "DotLn product documents · 07 Execution guide, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's execution guide has every recorded state change rewrite the order's beacon, keeps the change recorded even when that rewrite only warns, and sweeps with a twenty-minute age limit unless told otherwise."
+    }
+  ],
+  "limits": [
+    "A missed announcement leaves the last one standing. From 10:12 the event store has the move to final review while the beacon still says verified at 10:00, and only its age gives it away. Had the threshold been an hour instead of {staleAfter} minutes, the 10:30 sweep would have reported as fresh a phase the order had already left. Expiry protects only as well as its threshold matches how often the source should speak; a reader that must be right reads the full record, here the event store.",
+    "Nobody is obliged to act. An event names no receiver, so if the one party that had to respond is not listening, the change is announced, nothing happens and nothing reports an error. When exactly one party must do something, send it a Command Message, and the event as well if others should know.",
+    "A receiver that is not listening misses the event. On a plain publish-subscribe channel, a watcher that starts late or is down never sees what was sent meanwhile. DotLn's event store keeps every entry for replay, so the analogy hides this failure; where receivers come and go, reach for a Durable Subscriber or a store that can be replayed.",
+    "A thin event sends its receivers back for the facts. An event that says only that something changed makes every interested receiver fetch the details, multiplying the load on the source and racing any change made in between; when receivers need the content, a Document Message, or an event that carries the new state, serves better.",
+    "Times from different clocks can disagree. An event stamped by a clock that runs ahead looks younger than it is, and one stamped in the reader's future would pass any age check; DotLn's domain model labels such a beacon clock-skew rather than fresh. Compare ages only where the clocks are trusted, or order events by a sequence from a single source.",
+    "The analogy bends: DotLn's beacon is read when a sweep looks rather than delivered to anyone, and it keeps only the order's latest state, so it behaves like a polled channel holding one message, not a stream of events. A reader that sweeps rarely sees the newest phase and none of those in between."
+  ],
+  "nearby": [
+    {
+      "id": "eip:78",
+      "why": "Reach for a command message when one receiver must carry out a particular action, rather than whoever listens choosing how to react."
+    },
+    {
+      "id": "eip:79",
+      "why": "Reach for a document message when the content matters more than the moment, such as a verification report that its receivers read in full."
+    },
+    {
+      "id": "eip:65",
+      "why": "The publish-subscribe channel is what hands each listener its own copy of an announcement; read it for how that fan-out behaves on its own."
+    },
+    {
+      "id": "eip:178",
+      "why": "A durable subscriber is the answer when a receiver that was offline must still get every event sent while it was away."
+    },
+    {
+      "id": "eip:91",
+      "why": "Message expiration lets the sender stamp when an event stops being worth delivering, instead of leaving every reader to judge its age."
+    },
+    {
+      "id": "eip:172",
+      "why": "A polling consumer checks a channel when it chooses, as the beacon's sweeps do, instead of being called when a message arrives."
+    }
+  ]
+}

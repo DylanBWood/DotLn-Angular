@@ -227,7 +227,9 @@ beside it. The operator's direction for what a study is lives in the launchpad's
 serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
 RxJS reading and executable module, the visual, implementations, references, limits and nearby
 concepts. A stream study's `pseudocode.executable` is `{ kind: 'rxjs', module }`, its RxJS reading
-is the pipeline that module runs, and its visual is the `marbles` family over the same module. A change to the record's shape after it has shipped is a new schema version, never an
+is the pipeline that module runs, and its visual is the `marbles` family over the same module. A
+messaging study's visual is the `flow` family; when its example runs, its `pseudocode.executable`
+is `{ kind: 'rxjs', module }` as well, and the flow is drawn from that same module. A change to the record's shape after it has shipped is a new schema version, never an
 edit of `concept-study-v0`.
 
 A representation an idea does not need is null or an empty list, never filled. The mechanism's
@@ -269,9 +271,28 @@ is what the output delivered, frame for frame, and a cold input the example does
 subscribed at frame 0, where the model draws it. The model names where each output value comes
 from, for the courier that rides down while playing: the example's `origins` where it names one (a
 stream id, or null for a value a scheduler held back), else the inner stream, then the input, that
-emits at that frame, else the one that errors or completes there. `study-model.ts` discriminates a model by
-its family, `motion` with a chart beside it or `marbles`, and the mapper, playback and the study
-composite read the moments every family shares through `ticksOf`.
+emits at that frame, else the one that errors or completes there.
+
+A messaging study's module, `libs/features/tools/src/lib/studies/eip/<slug>.ts` with a spec beside
+it, exports `model` built by one of the two builders in `studies/flow.ts`. `flowModel` reads a flow
+written step by step: its nodes, each an endpoint or a channel drawn as a place of its own and each
+standing in a column by its stage; the links messages travel along; the messages by id; and each
+step's moves, the states that change and what each node holds, which carry forward until a later
+step changes them. `flowFromMarbles` reads a `MarbleExample` that runs and routes each line's
+delivered emissions onto a link, one link for the line or one for each letter, so each frame of the
+diagram is a step of the flow and the flow, the marble drawing and the spec read the same strings;
+the model carries that diagram, with its own legend and caption, for the reader to switch to. Each
+step offers `{step}`, `{moves}`, `{states}` and `{held}` to the prose, with the parameters and,
+over marbles, `{frame}`, `{now}` and `{delivered}`. Both builders refuse a flow that names a node,
+link, message, moment or step it does not have, and `flowFromMarbles` one that routes a line the
+example does not run, so the spec fails at once. A variant of an example that changes what is
+delivered gives its flow the holdings that variant delivers. The spec loads its record
+through `loadFlowStudy` in the tools test kit, checks that the record names its module and asserts
+each claim the prose makes; one whose example runs also calls `expectMarbleExample`.
+
+`study-model.ts` discriminates a model by its family, `motion` with a chart beside it, `marbles`,
+or `flow` with its marble diagram beside it when its example runs, and the mapper, playback and the
+study composite read the moments every family shares through `ticksOf`.
 
 A model that throws, or a record naming a model the list lacks, fails that study alone: the reading
 stays open and offers the study again, from the record's own inputs.
@@ -294,20 +315,34 @@ whole run; its output lanes show only what has been emitted by the selected fram
 back, or pressing Play, which runs from the first frame when the last is selected, watches the
 outputs arrive: an emission the frame reaches pops and a soft disc swells out of it, and an output
 value rides down from the emission it comes from, through the operator's band, and pops as it
-lands. Under a reduced-motion preference nothing glides or animates. `scrubber` and `inputs` are the
-controls they share. The other names in `visualFamilies`, `flow`, `states` and `relations`, land with the
-batch that first needs each.
+lands. Under a reduced-motion preference nothing glides or animates. `flow` draws a messaging
+example. On a wide screen its stages stand in columns, left to right; below 600 pixels they run top
+to bottom, a row each, laid out for a phone's width. Endpoints are boxes and channels are pipes whose
+round ends keep their size; each box holds its name, its state in short prose and the messages it
+holds, outlined, and the pattern's own node has a dark outline and a bold name. A message moving at
+the selected step is a green token with its letter, resting a little past the middle of its line,
+and the nodes it leaves or reaches are outlined in green; messages that cannot sit apart on one line
+share one capsule naming them all, and a line that skips a stage runs round the boxes through a
+gutter. A node keeps room for the longest state it ever has, so the drawing keeps one shape from
+step to step, and a name too wide for its box is scaled to fit. A message moving at the selected
+step glides in from its sender; under a reduced-motion preference it is simply there. The slider
+names the step out of the last. The look was chosen in eight rendered rounds that the operator ended
+on 2026-11-01 (the launchpad's `docs/evidence/WO-022/design/`). A flow whose example runs offers a switch between Flow and Marbles, the marble
+diagram of the same run at the same step, which then shows its own legend and caption. `scrubber`
+and `inputs` are the controls they share. The other names in `visualFamilies`, `states` and
+`relations`, land with the batch that first needs each.
 
 Nothing runs by itself. A reader moves through the example by the slider, Step back, Step forward
 and the named moments, or presses Play, which runs from the selected moment at the example's own
 pace and stops on any hand step, on leaving the reading and at the end. A reader who asks for
 reduced motion is not offered Play, and asking while the example runs stops it. The moment's short
 sentence stays on screen; its full text is the drawing's accessible name and sits behind Show the
-numbers (Show the emissions on a marble study). A slider under Try another value reruns the whole
+numbers (Show the emissions on a marble study, Show the messages on a flow). A slider under Try another value reruns the whole
 model with one input changed, and Back to the example restores it. A movement study opens on the
 moment its author chose as the most telling, and its switch's two views are always Movement and
 Chart, with the chart's own title above it; a marble study opens on its last frame and has no
-switch.
+switch; a messaging study opens at its start, before anything moves, so a reader steps through the
+flow in order, and its switch, when its example runs, is Flow and Marbles.
 
 ### The composite
 
@@ -340,17 +375,19 @@ is reported and stops the check before anything counts it, so nothing is written
 named on the command line that does not parse is reported the same way. For an executable RxJS
 reading the check requires the record's `pseudocode.rxjs` to be in the module it names, whitespace,
 trailing commas and comments aside (a comment cannot stand in for the code on either side), the
-spec beside that module to call `expectMarbleExample`, and a `marbles` drawing to read that same
-module; in the RxJS work a reading either runs or begins with `// Illustrative:` and its reason.
+spec beside that module to call `expectMarbleExample`, and a `marbles` drawing, or a `flow` drawn
+over that example, to read that same module; in the RxJS and messaging works a reading either runs
+or begins with `// Illustrative:` and its reason.
 `npm run studies:report`
 prints each work's studied, checked and total rows, and `npm run studies:links` opens every cited
 address once; it reaches the network, so a batch runs it by hand and records the result, and no
 gate does.
 
-| Work         | Studied | The batch                                                                                             |
-| ------------ | ------- | ----------------------------------------------------------------------------------------------------- |
-| AI for Games | twenty  | the movement concepts the soldier scene runs, drawn by `motion` and `timeline`                        |
-| RxJS         | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles` |
+| Work                            | Studied | The batch                                                                                                                                                             |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI for Games                    | twenty  | the movement concepts the soldier scene runs, drawn by `motion` and `timeline`                                                                                        |
+| RxJS                            | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles`                                                                 |
+| Enterprise Integration Patterns | twenty  | the messaging patterns of agents handing records through channels, each a `flow` that steps its messages, the stream patterns drawn from an executable marble example |
 
 ### Writing a batch
 
@@ -359,7 +396,10 @@ reference and implementation and checks each supports its claim, and a reading c
 the operator would. Each author receives the record contract, its catalog rows, a decided study as
 the worked example and the rules; a rewrite continues the same author. A stream batch's authors
 deliver an executable module and its spec beside each record, and the factual critic runs each spec
-and records the result beside its findings. The batch's decisions dispose of every critic finding,
+and records the result beside its findings. A batch whose examples come from the platform or from
+this app states each as an analogy and names the public record it reads, and its factual critic
+checks that every analogy is marked as one and that no study claims the platform implements the
+pattern that way. The batch's decisions dispose of every critic finding,
 then the records are set to `checked` with the reviewers named. Link rot after a batch merges is a
 content defect the next batch's link check reports.
 

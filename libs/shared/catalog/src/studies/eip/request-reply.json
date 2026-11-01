@@ -1,0 +1,139 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:83",
+  "work": "eip",
+  "slug": "request-reply",
+  "authored": {
+    "by": "Claude dotln-worker author-03",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A request and its reply are two separate messages, and nothing in messaging promises the second one. A function call always comes back, if only with an error; a request may be answered once, late, twice or never. So before it sends, a requestor has to settle how it will pick its work up again, how long it will wait, and what a reply that comes after it has stopped waiting means.",
+    "situation": "As an analogy, read against DotLn's public domain model. DotLn is the operator's platform for running AI agents on pieces of work, and its kernel is the part that decides what happens next. When the kernel needs something done, it records a command with an id of its own, a commandId; an adapter picks the command up and hands it to a worker; the adapter's acknowledgement (a CommandReceipt) and later its result (a CommandResult) come back as events; and instead of blocking, the kernel keeps what remains to do once the result arrives as data it can resume from. The same pairing recurs whenever DotLn hands a piece of work to a worker: the worker's answer is a small result record, designed to answer the work it was given."
+  },
+  "example": {
+    "name": "Two commands: one answered, one late",
+    "description": "As an analogy, read against DotLn's domain model. The Kernel, the requestor, puts command {first} on the Outbox, the request channel. The Adapter, the replier, takes it, has a worker carry it out and puts the result on the Event log, the reply channel, and the Kernel takes the result and resumes the work it set aside. The Kernel then sends {second} and waits at most {timeoutSteps} steps. The Adapter sends back only a receipt saying the command was accepted, so the Kernel keeps waiting; when the deadline passes it gives up, and the result that arrives afterwards finds nothing waiting for it.",
+    "parameters": {
+      "first": "cmd_1",
+      "second": "cmd_2",
+      "timeoutSteps": 5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Set the waiting work aside before sending",
+        "text": "Before the request leaves, the requestor decides how it will continue for each kind of reply, and how long it will wait. A reply can only reach a requestor that is already listening for it. Here the Kernel sets aside what to do with the result of {first} before sending it."
+      },
+      {
+        "title": "Send on the request channel",
+        "text": "The request goes on a channel that carries requests to the replier and nothing back. The Outbox plays that part here; once the command is on it, the Kernel carries on instead of blocking."
+      },
+      {
+        "title": "Answer on the reply channel",
+        "text": "The replier takes the request, does the work and writes on a second channel that leads back to the requestor. For {first} the Adapter writes the result; for {second} it first writes a receipt, which says only that the command was accepted."
+      },
+      {
+        "title": "Resume on the reply, not on the receipt",
+        "text": "The requestor reads the reply channel. A receipt only says the request arrived, so it keeps waiting; the result is the reply, and the requestor resumes the work it set aside for that outcome."
+      },
+      {
+        "title": "Give up at the deadline",
+        "text": "If no reply comes within {timeoutSteps} steps, as for {second}, the requestor stops waiting and takes its timeout path. A reply that turns up later finds nothing waiting, so it has to be recognised as late and must not be taken for the answer to anything else."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "requestor, before asking:\n  save what to do with each kind of reply\n  set a deadline for the reply\n\nrequestor, to ask:\n  put the request on the request channel\n  carry on with other work; do not block\n\nreplier, for each request on the request channel:\n  put a receipt on the reply channel (optional)\n  do the work\n  put the reply on the reply channel\n\nrequestor, for each message on the reply channel:\n  if it is a receipt:\n    note that the request was accepted and keep waiting\n  if it is the reply to a request still awaited:\n    clear the deadline\n    continue with the saved work for that reply\n\nrequestor, when a deadline passes with no reply:\n  stop waiting and take the timeout path\n  a reply that arrives later is awaited by nobody: ignore it",
+    "rxjs": "// Illustrative: Request-Reply is an exchange between two parties over two channels, not a transformation of one stream, so this sketch does not run.\nconst reply$ = replies$.pipe(\n  // The reply channel is replies$: receipts are skipped, and any result counts as the reply.\n  filter(isResult),\n  // The wait: the requestor takes one reply, then stops listening.\n  first(),\n  // The deadline: no reply in time is an error, and the error is the timeout path.\n  timeout({ first: deadline }),\n);\n\n// Asynchronous callback: listen on the reply channel, send on the request channel, carry on.\nreply$.subscribe({ next: resume, error: takeTimeoutPath });\nrequests$.next(command);\n\n// Synchronous block, the other choice: listen, send, then stop until the reply or the deadline.\nconst pending = firstValueFrom(reply$);\nrequests$.next(command);\nconst result = await pending;",
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/request-reply.ts",
+    "textEquivalent": "Step {step}: {moves}. The Kernel sends commands to the Adapter on the Outbox, the request channel, and receipts and results come back to it on the Event log, the reply channel. Holding: {held}. Now {states}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/requestReply-eip.html",
+      "relevance": "Apache Camel is an open-source integration framework built around these patterns. Its Request Reply page shows a framework turning the pattern into a property of each exchange rather than code the route writes.",
+      "explanation": "An exchange marked InOut tells the producing endpoint that the caller expects a reply. Over JMS the component then creates a temporary reply queue, sets JMSReplyTo and JMSCorrelationID on the request, sends it, matches the incoming reply to its request by the correlation id, since many exchanges may be waiting at once, and continues the route once the reply is on the exchange. With a component that already runs in the caller's thread, such as Direct, the pattern makes no practical difference."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/gateway.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging framework. Its messaging gateway puts a request-reply exchange behind an ordinary Java interface, which makes the question of what a missing reply does impossible to ignore.",
+      "explanation": "Calling a gateway method sends a message on the request channel and waits on a temporary, anonymous point-to-point reply channel that the gateway puts in the message's replyChannel header. The page gives a whole section to replies that never come: a reply timeout bounds the wait and then returns null or throws, a reply produced after the method has returned still goes to a reply channel, and a method that returns a Future or a Mono makes the exchange asynchronous instead of blocking. A Mono sends nothing until something subscribes to it, so the listener is in place before the request leaves."
+    },
+    {
+      "project": "NATS",
+      "url": "https://docs.nats.io/learn/core-nats/request-reply",
+      "relevance": "NATS is an open-source messaging system. Its documentation builds request-reply out of plain publish-subscribe, so both channels stay visible.",
+      "explanation": "The client invents a private reply subject, an inbox, subscribes to it and publishes the request with that subject attached; the responder publishes its answer there. A client keeps one wildcard subscription for all its inboxes and routes each reply to the waiting request by the inbox's last token. Because replies are delivered at most once, every request carries a timeout; the server answers at once with a no-responders signal when nothing subscribes to the request subject; and a plain request keeps the first reply and silently discards any others."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Request-Reply",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/RequestReply.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's public summary: a request and a reply each travel on a channel of their own, the reply channel is nearly always point-to-point, and the requestor either blocks for the reply or sets up a callback that a separate listener invokes when the reply arrives."
+    },
+    {
+      "title": "InformIT · Enterprise Integration Patterns (Gregor Hohpe and Bobby Woolf, Addison-Wesley, 2003), chapter 5, Message Construction: Request-Reply",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Request-Reply in chapter 5, Message Construction; the publisher's page gives the authors, the 2003 publication and the chapter in its table of contents."
+    },
+    {
+      "title": "DotLn · product document 02, Domain model, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform's kernel vocabulary: a Command carries a stable commandId; Invoke names a commandId, a command and a continuation for each result; Await waits for an event matching a commandId or correlationId and carries a timeout; a CommandReceipt acknowledges an accepted dispatch and a CommandResult is matched on payload.commandId; a continuation is the remaining program, stored as data so it can be resumed once the result is in; conditions are data, never closures; and the host returns only a small result envelope to the session that dispatched the work."
+    },
+    {
+      "title": "DotLn · product document 03, Architecture, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform's outbox protocol: the kernel persists the command with its continuation, the adapter receives the persisted command, the result correlates by commandId and a command whose result never arrives stays pending and can be recovered; in its failure matrix, a result arriving after authority expiry is persisted but causes no state change."
+    }
+  ],
+  "limits": [
+    "A reply may never come, and the exchange itself never says so. A requestor that blocks with no deadline waits for ever, and one that saved its work keeps it for ever. Give every wait a deadline, as {second} has here, and decide beforehand what the timeout path does: retry, report or fail. NATS asks for a timeout on every request for the same reason.",
+    "A late reply still reports work that happened. The result for {second} arrives after the deadline, and the work did complete. Ignoring it is safe for a question; after a command with effects the requestor has to reconcile what the late reply says rather than assume nothing was done. DotLn's architecture keeps such evidence: a result that arrives after the permission its work ran under has expired is still recorded, though it changes nothing.",
+    "A receipt is not a reply. The receipt for {second} proves the command was accepted, and no result follows in time; a requestor that counted acceptance as success would mark the work done before anything was known. Keep the acknowledgement and the answer as different messages, as DotLn does with its CommandReceipt and CommandResult.",
+    "A reply channel that serves one request at a time needs no help. As soon as several requests are out at once, or several requestors share a replier, each reply has to say which request it answers and the replier has to be told where to send it; without that, a late reply such as the one for {second} can be taken for the answer to a newer request.",
+    "Blocking is the simpler requestor, but it ties up a thread and loses its place if the requestor crashes, while a callback has to restore the context it set aside. DotLn's kernel keeps what remains to do as data beside the command, a serialisable continuation, so it can resume after a restart, at the price of writing every condition as data rather than as a closure. When both sides are always up together and waiting costs nothing, a remote procedure call is simpler.",
+    "Where the analogy breaks: in DotLn the persisted command and its result are both recorded as events in the kernel's log, so the Outbox and the Event log here are two roles of one store rather than two separate pipes, and the kernel tells a result apart by its commandId rather than by the channel it came on."
+  ],
+  "nearby": [
+    {
+      "id": "eip:87",
+      "why": "Reach for it as soon as more than one request can be outstanding. The request carries an id and the reply copies it back, so each reply says which request it answers: replies can then share one channel, and a late reply, like the result for cmd_2 here, is recognised as belonging to a request nobody awaits instead of being taken for the answer to a newer one."
+    },
+    {
+      "id": "eip:86",
+      "why": "When several requestors share one replier, the request names the channel its reply should go to, so the replier needs no fixed reply channel."
+    },
+    {
+      "id": "eip:84",
+      "why": "The trade-off this example settles on the callback side: what a blocked requestor costs and what a callback has to restore."
+    },
+    {
+      "id": "eip:47",
+      "why": "When both sides are always up together and the caller can afford to block, a direct call is simpler; it hides the two channels, and with them the late or missing reply."
+    },
+    {
+      "id": "eip:91",
+      "why": "When a request or a reply that has grown too old should be discarded by the messaging system, not merely ignored by the requestor after its own deadline."
+    },
+    {
+      "id": "eip:78",
+      "why": "The request in this example is a command: a message asking the replier to do something rather than only to report."
+    }
+  ]
+}

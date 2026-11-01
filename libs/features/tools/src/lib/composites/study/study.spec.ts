@@ -2,7 +2,12 @@ import { TestBed } from '@angular/core/testing';
 
 import { provideToolsTestKit } from '../../../../testing/src';
 import type { StudyIntent, StudyView } from '../../types';
-import { marblesStudyViewFixture, studyViewFixture } from './fixtures';
+import {
+  flowStudyViewFixture,
+  marbleFlowStudyViewFixture,
+  marblesStudyViewFixture,
+  studyViewFixture,
+} from './fixtures';
 import { Study } from './study';
 
 function render(study: StudyView = studyViewFixture) {
@@ -161,6 +166,47 @@ it('draws a marble diagram for a marbles study, with no view switch and the fram
   });
   fixture.detectChanges();
   expect(element.querySelector('label')?.textContent).toContain('Frame 5 of 9');
+});
+
+it('draws a flow for a messaging study, its steps as its clock, with no switch when nothing runs', () => {
+  const { fixture, element } = render(flowStudyViewFixture);
+  expect(element.querySelector('tools-study-flow')).not.toBeNull();
+  expect(element.querySelector('tools-study-marbles')).toBeNull();
+  expect(element.querySelector('.view-choice')).toBeNull();
+  expect(element.querySelector('figure svg')?.getAttribute('aria-label')).toBe(
+    'Step 2: b (order 32) moves from Planner to Work queue.',
+  );
+  expect(element.querySelector('label')?.textContent).toContain('Step 2 of 3');
+  const intents: StudyIntent[] = [];
+  fixture.componentInstance.intent.subscribe((intent) => intents.push(intent));
+  // The scrubber's buttons are Play, Step back, Step forward and the named moments.
+  element.querySelectorAll<HTMLButtonElement>('tools-study-scrubber button')[2].click();
+  expect(intents).toEqual([{ kind: 'step', step: 3 }]);
+  // Without an RxJS reading there is no streams section to open.
+  expect(summaries(element)).not.toContain('Think in streams');
+});
+
+it('switches a flow whose example runs to its marble diagram at the same step', () => {
+  const { fixture, element } = render(marbleFlowStudyViewFixture);
+  const intents: StudyIntent[] = [];
+  fixture.componentInstance.intent.subscribe((intent) => intents.push(intent));
+  const [flow, marbles] = element.querySelectorAll<HTMLButtonElement>('.view-choice button');
+  expect(flow.textContent).toContain('Flow');
+  expect(flow.getAttribute('aria-pressed')).toBe('true');
+  expect(marbles.textContent).toContain('Marbles');
+  marbles.click();
+  expect(intents).toEqual([{ kind: 'view', view: 'marbles' }]);
+  const visual = marbleFlowStudyViewFixture.visual;
+  fixture.componentRef.setInput('study', {
+    ...marbleFlowStudyViewFixture,
+    visual: visual && { ...visual, view: 'marbles' },
+  });
+  fixture.detectChanges();
+  expect(element.querySelector('tools-study-flow')).toBeNull();
+  expect(element.querySelector('tools-study-marbles')).not.toBeNull();
+  // The diagram counts frames, and its frame is the flow's step.
+  expect(element.querySelector('label')?.textContent).toContain('Frame 1 of');
+  expect(summaries(element)).toContain('Think in streams');
 });
 
 it('names the spec that ran an executable RxJS reading, once the section opens', async () => {

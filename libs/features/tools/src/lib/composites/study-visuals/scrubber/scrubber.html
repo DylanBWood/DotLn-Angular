@@ -1,6 +1,9 @@
 <label [attr.for]="sliderId">
   @if (frame() !== null) {
-    {{ 'tools.study.frameOf' | t: { frame: frame(), last: lastStep() } }}
+    {{
+      (counting() === 'step' ? 'tools.study.stepOf' : 'tools.study.frameOf')
+        | t: { frame: frame(), last: lastStep() }
+    }}
   } @else {
     {{ 'tools.study.time' | t: { seconds: seconds() } }}
   }

@@ -1,0 +1,137 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:91",
+  "work": "eip",
+  "slug": "message-expiration",
+  "authored": {
+    "by": "Claude dotln-worker author-05",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Expiration turns waiting into a decision. The sender says how long a message stays worth acting on, and the age is judged against that limit later, by whoever would hand the message on or read it, not when it was written. A message that is too old is set aside where someone can see it, instead of being acted on late and passing for current work.",
+    "situation": "As an analogy, read against DotLn's public execution guide: there the operator starts a role's work with a short instruction the guide calls a dispatch, and every dispatch has limits on how long its work may run. Picture requests to verify orders queued for one verifier. A request that has waited too long would check work that may have moved on since, so it is better kept, unverified, in a dead letter record than run late. DotLn's domain model shows the same kind of judgement made by whoever reads: it treats a beacon, a status file whose size and modification time the platform reads as a signal, as stale once its age at the moment of reading reaches a set threshold, so the reader decides what is too old, not the writer."
+  },
+  "example": {
+    "name": "Requests to verify, with a time limit",
+    "description": "As an analogy, read against DotLn's public execution guide, where the operator, the person directing the work, starts each piece of work with one short instruction that the guide calls a dispatch. Here the operator sends three requests to a queue in front of one verifier: a, b and c ask for orders 31, 32 and 33 to be verified, and are sent at steps 1, 3 and 5. Each is worth starting only within {timeToLive} steps of being sent. The verifier receives a at step 2 and is busy with it until step 8, so b and c wait. When the verifier is free again, b is past its limit and goes to the dead letter channel instead; c is still within its limit and reaches the verifier at step 9.",
+    "parameters": {
+      "timeToLive": 4
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Set the limit as the request is sent",
+        "text": "Each request carries the step after which it is no longer worth starting: {timeToLive} steps after the operator sent it, however long anyone takes to look at it."
+      },
+      {
+        "title": "Wait in line while the verifier is busy",
+        "text": "One verifier works on one request at a time. The others wait in the queue in the order they were sent, and their time runs out while they wait."
+      },
+      {
+        "title": "Check the limit when a request's turn comes",
+        "text": "When the verifier is free, the queue looks at the oldest request. If its limit has passed, the request goes to the dead letter channel and never reaches the verifier, and the queue looks at the next one straight away."
+      },
+      {
+        "title": "Hand on what is still fresh",
+        "text": "A request still within its limit reaches the verifier on the next step and keeps it busy until it is verified. Nothing checks the limit again once the verifier has it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each request from the operator:\n  expires = now + time to live\n  add the request, with its expiry, to the back of the queue\n\nwhenever the verifier is free and the queue is not empty:\n  take the oldest request from the queue\n\n  if now > its expiry:\n    send it to the dead-letter channel\n    (the verifier is still free: take the next one)\n\n  otherwise:\n    hand it to the verifier on the next step\n    the verifier is busy until it has verified it",
+    "rxjs": "// verification(request): the verifier's work on one request, busy until it completes\n// deadLetter$ hears of an expiry only while toVerifier$ is subscribed\nconst deadLetter$ = new Subject<unknown>();\nconst toVerifier$ = request$.pipe(\n  // The time to live is set here: each request carries the step after which it is useless.\n  map((request) => ({ request, expires: scheduler.now() + timeToLive })),\n  // The queue: one request at a time, oldest first, each when the verifier is free.\n  concatMap(({ request, expires }) => {\n    // The expiry check, made when the request's turn comes, not when it was sent.\n    if (scheduler.now() > expires) {\n      // An expired request goes to the dead letter channel and never reaches the verifier.\n      deadLetter$.next(request);\n      return EMPTY;\n    }\n    // A fresh request reaches the verifier on the next step and keeps it busy until verified.\n    return concat(of(request).pipe(delay(1)), verification(request));\n  }),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/message-expiration.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/message-expiration.ts",
+    "textEquivalent": "Step {step}: {moves}; {held}; {states}. The Request queue hands the Verifier only requests still within {timeToLive} steps of being sent, and moves older ones to the Dead letter channel."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/message-expiration.html",
+      "relevance": "Apache Camel is a Java integration framework whose routes are assembled from the book's patterns; its documentation has a page for this one.",
+      "explanation": "The page says Camel provides the pattern through components that carry an expiry, such as JMS, where a timeToLive option in milliseconds on the endpoint sets how long each message sent there stays valid. Its example sends to a JMS queue with a five-second limit, in Java, XML and YAML routes, and it warns that expiry across systems depends on their clocks being kept in step."
+    },
+    {
+      "project": "Apache Artemis",
+      "url": "https://artemis.apache.org/components/artemis/documentation/latest/message-expiry.html",
+      "relevance": "Apache Artemis is a message broker. Its user manual, at version 2.57.0 when read, documents expiry as a broker enforces it, which is where most systems put this pattern.",
+      "explanation": "A sender gives a message a time-to-live, through the JMS producer or as an absolute expiration time through the core API, and once that time has passed the broker no longer offers the message to consumers. An address can name an expiry address where expired messages are kept to be read later; without one they are dropped. Address settings can turn expiry off, supply a delay for messages that have none or hold delays within a range, expired messages can be given a limit of their own, and a reaper thread looks through the queues for expired messages, every thirty seconds unless configured otherwise."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Message Expiration",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageExpiration.html",
+      "accessed": "2026-11-01",
+      "supports": "A message past the time limit its sender gave it counts as never sent: most systems move it to a dead letter channel and some drop it, and a receiver that cannot finish a message in time drops it too."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), Chapter 5: Message Construction, Message Expiration",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The publisher's page for the book, which covers Message Expiration in Chapter 5, Message Construction."
+    },
+    {
+      "title": "DotLn execution guide (docs/product/07-execution-guide.md) at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "In DotLn the operator's resume phrase is the dispatch that starts a role's work; when the router drives an order it starts each phase in a new worker session given only that phase's phrase; a dispatch is refused while another session holds the work; and each role dispatch is bounded by limits on elapsed time and complete runs, past which further gates and launches are refused until the operator accepts an overrun."
+    },
+    {
+      "title": "DotLn domain model (docs/product/02-domain-model.md) at commit 9139d91 · Beacon perception and age",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md#beacon-perception-and-age",
+      "accessed": "2026-11-01",
+      "supports": "A beacon reading calls a beacon stale once its age at the reading reaches the set threshold, twenty minutes unless changed, labels a beacon whose modification time is later than the reading as clock skew, and the age it reads never changes what anyone is permitted to do."
+    },
+    {
+      "title": "concatMap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/concatMap.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version concatMap is mergeMap with a concurrency of one."
+    },
+    {
+      "title": "mergeInternals.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/mergeInternals.ts",
+      "accessed": "2026-11-01",
+      "supports": "When the concurrency limit is reached, a source value is pushed onto a buffer, and the projection is called for it only when an inner subscription completes and the value is taken off the buffer; so in this example the age is read at the moment of taking."
+    }
+  ],
+  "limits": [
+    "Expiration decides which waiting request is lost; it does not shorten the wait. Raise the limit until b is still within it at step 8, and b holds the verifier for its whole verification while c, which arrived young, waits behind it and can expire in its place. When requests expire because one consumer cannot keep up, more consumers on the same channel help; tuning the limit only moves the loss.",
+    "The limit is checked only when the verifier is free, so an expired request sits in the queue until its turn comes and the dead letter channel learns of it late. Brokers that also sweep their queues, as Apache Artemis does every thirty seconds by default, narrow that gap; neither removes a message at the instant it expires.",
+    "An expiry time compares two clocks: the one that set it and the one that reads it. Skew makes a fresh message look stale or a stale one fresh, which is why Camel's page asks for clocks kept in step and why DotLn labels a beacon whose time lies after the reading as clock skew rather than fresh or stale. Setting and checking on one clock, the channel's own, as this example does, avoids skew, at the price of not counting the time a message took to reach the channel.",
+    "The limit governs waiting, not working: once the verifier has a request nothing checks the limit again, and a long verification overruns freely. Bounding the work needs a timeout on the work itself. Here the analogy breaks: DotLn bounds how long a running piece of work may take and refuses to start more until the operator accepts the overrun, and it refuses a second dispatch outright while another session holds the work, instead of queueing it, so a request there is refused rather than left waiting to expire.",
+    "A dead letter channel is only a record if someone reads it. Unread, it turns expiry into silent loss and grows without bound; Artemis, for one, can let expired messages expire in their turn, which trades the record for the space."
+  ],
+  "nearby": [
+    {
+      "id": "eip:70",
+      "why": "Dead Letter Channel is where expired messages go here; read it when deciding who watches that channel and what happens to a message once it lands there."
+    },
+    {
+      "id": "eip:92",
+      "why": "The expiration mechanics are the next question once the limit matters: an absolute expiry time or a time-to-live, skewed clocks, and replies that expire."
+    },
+    {
+      "id": "eip:211",
+      "why": "Competing Consumers is the choice when messages expire because one consumer cannot keep up: several consumers on the channel shorten the wait instead of moving the loss."
+    },
+    {
+      "id": "eip:83",
+      "why": "Request-Reply is where the late message is a reply: a requester that has stopped waiting needs its reply to expire too, or it acts on an answer nobody still wants."
+    },
+    {
+      "id": "eip:71",
+      "why": "Guaranteed Delivery is the opposite pressure, keeping every message until it is acknowledged; reach for it when losing a message is worse than acting on it late, and pair the two when a kept message can outlive its use."
+    }
+  ]
+}

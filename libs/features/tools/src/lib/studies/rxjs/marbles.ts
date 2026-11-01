@@ -109,6 +109,9 @@ const legendByRole: Readonly<Record<MarbleLine['role'], StudyLegendEntry>> = {
   output: { tone: 'actual', label: 'Green · the output' },
 };
 
+/** How to read a marble diagram: the example's own words, or the family's. */
+export const marbleCaption = (example: MarbleExample) => example.caption ?? defaultCaption;
+
 /** A value as the text equivalent names it; the spec names what it received the same way. */
 export const nameOf = (value: unknown): string => {
   if (value === undefined) return 'undefined';
@@ -380,6 +383,6 @@ export function marbleModel(
     legend: (['input', 'inner', 'output'] as const)
       .filter((role) => lines.some((line) => line.role === role))
       .map((role) => legendByRole[role]),
-    caption: `${example.caption ?? defaultCaption} ${openingSentence}`,
+    caption: `${marbleCaption(example)} ${openingSentence}`,
   };
 }

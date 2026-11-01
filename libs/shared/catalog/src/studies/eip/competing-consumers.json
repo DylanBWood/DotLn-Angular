@@ -1,0 +1,148 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:211",
+  "work": "eip",
+  "slug": "competing-consumers",
+  "authored": {
+    "by": "Claude dotln-worker author-02",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A queue read by several sessions shares its work out instead of copying it. An order waits in the queue until some session is free, and that session alone receives it. Which session that is depends on who is free at the moment of handing out, not on whose turn it is: a session that finishes a short order comes back before one still busy with a long one, and an order that finds every session busy simply waits.",
+    "situation": "As an analogy, read against DotLn's public execution guide. DotLn is the operator's agentic platform, where agent sessions take roles such as planning and execution on work orders. The guide runs several work orders side by side, each in its own worktree, a separate checkout of the repository, and lets only one session at a time write in a worktree: when two sessions race to take over a worktree whose writer has died, only one of them becomes its writer. Picture instead the planner, the role that files work orders, sending its orders into one Order queue and three agent sessions drawing from it, so each order is worked by exactly one session and an order that arrives while all three are busy waits for the first to finish. The Publish-Subscribe Channel study sends the same orders to the same sessions over a topic, where every session hears every order."
+  },
+  "example": {
+    "name": "Four orders shared by three sessions",
+    "description": "The planner sends orders {orders} to the Order queue at frames 1, 3, 5 and 7: the same orders, at the same frames, to the same three sessions as in the Publish-Subscribe Channel study. The queue has {consumers} consumers, Sessions 1, 2 and 3, all listening from frame 0, and can hand an order out from the frame after it arrives. Working orders 31, 32, 33 and 34 takes {work} frames respectively, and a session is free again the moment its work completes.",
+    "parameters": {
+      "orders": "31 to 34",
+      "consumers": 3,
+      "work": "9, 5, 4 and 3"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Queue each order",
+        "text": "The planner sends an order to the queue and carries on. It neither waits for a session nor knows which one will take the order; the order joins the back of the queue."
+      },
+      {
+        "title": "Line up the free sessions",
+        "text": "A session is free when it starts listening and again each time it finishes an order. Free sessions wait for work in the order they became free."
+      },
+      {
+        "title": "Hand the oldest order to the first free session",
+        "text": "Whenever an order is waiting and a session is free, the queue takes the oldest order off and gives it to the session that has been free longest. The order leaves the queue as it is handed over, so no other session can receive it. With no session free, orders wait; with no order waiting, sessions wait."
+      },
+      {
+        "title": "Work alone, then come back",
+        "text": "The session works on its order without telling the others. When the work is done it rejoins the line of free sessions, and may be handed the next waiting order at once, as Session 2 is given order 34."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the planner sends an order:\n  put it at the back of the queue\n  hand out work\n\nwhen a session starts listening, or finishes its order:\n  put it at the back of the line of free sessions\n  hand out work\n\nhand out work:\n  while an order is waiting and a session is free:\n    take the oldest order off the queue\n    give it to the session that has been free longest\n    (the order is no longer in the queue for anyone else)\n\nwhen a session is given an order:\n  work on it, telling no other session\n  when the work is done, the session has finished its order",
+    "rxjs": "// A session is free when it starts listening and again each time its work completes.\nconst finished$ = new Subject<string>();\nconst free$ = finished$.pipe(startWith('Session 1', 'Session 2', 'Session 3'));\n// delay(1): the queue hands an order on no sooner than one step after it arrives.\nconst queued$ = orders$.pipe(delay(1));\n// zip is the queue: it pairs the oldest waiting order with the oldest free session.\nconst taken$ = zip(queued$, free$).pipe(share());\n// mergeMap is each consumer at work; endWith frees that session when its work completes.\ntaken$\n  .pipe(mergeMap(([order, session]) => work(order).pipe(endWith(session))))\n  .subscribe(finished$);\n\n// filter is the delivery: a session receives only the orders paired with its name.\nconst takenBy = (session: string) =>\n  taken$.pipe(\n    filter(([, by]) => by === session),\n    map(([order]) => order),\n  );",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/competing-consumers.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/competing-consumers.ts",
+    "textEquivalent": "Step {step} on the Order queue: {moves}. Where the orders are: {held}. What each box is doing: {states}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/4.22.x/eips/competing-consumers.html",
+      "relevance": "Apache Camel is the Apache Software Foundation's open-source integration framework, and its documentation describes how Camel expresses many of the book's patterns, this one among them. Its page for this pattern is read here at the 4.22.x long-term-support release.",
+      "explanation": "Camel takes the pattern from components that can consume concurrently, naming SEDA, JMS, Kafka and AWS components: on a JMS endpoint the concurrentConsumers option sets how many consumers read one queue, five in its example. For a component that cannot consume concurrently, the page shows one consumer handing each message to a pool of threads with the Threads EIP, which it calls a simulation of competing consumers. In its file example the pooled thread, not the polling one, moves a file to the backup folder once the file is processed, so a file that fails is not moved too early."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/channel/implementations.html#channel-implementations-queuechannel",
+      "relevance": "Spring Integration is the Spring project's implementation of the book's messaging model inside a Spring application. Its page of channel implementations does not name this pattern, but its point-to-point channels are how several consumers share one channel's messages there.",
+      "explanation": "A QueueChannel wraps a queue with point-to-point semantics: however many consumers read the channel, each message is meant for just one of them. A send returns at once while the queue has room, even with no receiver ready, and blocks once it is full; a receive on an empty queue waits for a message or a timeout. A DirectChannel, also point-to-point, instead calls one of its subscribed handlers in the sender's own thread, chosen by a load-balancing strategy whose built-in option is round-robin, and falls over to the next handler when one throws."
+    },
+    {
+      "project": "RabbitMQ",
+      "url": "https://www.rabbitmq.com/tutorials/tutorial-two-javascript",
+      "relevance": "RabbitMQ is an open-source message broker. The second of its getting-started tutorials builds a work queue that distributes time-consuming tasks among several workers.",
+      "explanation": "Out of the box RabbitMQ deals messages to its consumers in rotation, round-robin, as they enter the queue and without looking at how many each consumer has yet to acknowledge; with two workers and alternating heavy and light tasks, one stays busy while the other idles. A prefetch of one stops it giving a worker a new message until that worker has acknowledged its last, so the next message goes to a worker that is not busy. With manual acknowledgement, a message whose worker dies before acknowledging it is re-queued and delivered to another worker."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Competing Consumers",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/CompetingConsumers.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page in the public catalog: several consumers are created to receive from one point-to-point channel, the messaging system decides which of them receives each message, and the arrangement does not work on a publish-subscribe channel, where more consumers only make more copies. Its Kafka example notes that partitions settle in advance which consumer reads a message, so a consumer whose partition runs dry cannot help the others, and a consumer group cannot hold more competing consumers than the topic has partitions."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003) · Chapter 10: Messaging Endpoints, Competing Consumers",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Competing Consumers in chapter 10, Messaging Endpoints; the publisher's page lists that chapter in its contents."
+    },
+    {
+      "title": "DotLn · Execution guide (commit 9139d91)",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "Under independent workflows, the guide lets each work order's implementation and verification move on independently, with two orders routinely running side by side, each in its own worktree, and how much runs at once limited by the actors on hand and by a single writer per worktree. Under its discipline, a reservation tied to the session and its harness process turns away a second live writer, and when two sessions race to take over a dead holder's reservation only one becomes the writer."
+    },
+    {
+      "title": "zip.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/observable/zip.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version zip keeps one buffer per source and pushes each value onto its own source's buffer; once every buffer holds a value it takes the oldest from each and emits them together, and it completes when a completed source's buffer is empty."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams (source at 7.8.2)",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/testing/marble-testing.md",
+      "accessed": "2026-11-01",
+      "supports": "The marble syntax this example and its spec share: a dash is one frame, a letter an emission and a bar completion, and in subscription marbles a caret and an exclamation mark give the frames a subscription starts and ends, which is how each work stream is placed from the frame a session takes its order to the frame it finishes."
+    }
+  ],
+  "limits": [
+    "It needs a point-to-point channel and interchangeable consumers. On a topic the three sessions would each receive every order, as the companion study shows; and if some orders can be worked only by some sessions, a free session may be handed one it cannot work. Route such orders first, with a Content-Based Router, to a queue for each kind.",
+    "Taking turns is not the same as being free. When order 34 is handed out, Session 1, which took the first order and so would be next in a strict rotation through the three sessions, is still busy with the longest order, and the queue gives order 34 to Session 2 because Session 2 is free. RabbitMQ deals in turn by default, which would leave order 34 waiting behind order 31 while Session 2 sat idle; giving each consumer at most one unacknowledged message at a time, as its prefetch of one does, is what sends the next order to a session that is free.",
+    "Sequence is lost across consumers. Orders leave the queue in the order they were sent but are finished in whatever order their work allows: here order 33 is finished before order 31. When related messages must be handled in sequence, send them all to one consumer, as a broker partitioned by key does, or put the results back in order with a Resequencer.",
+    "A queue absorbs a burst, not a lasting excess. Order 34 waits until a session is free; if orders kept arriving faster than the sessions finish them, the queue would grow without end. Add consumers until they keep up, or slow the sender; RabbitMQ's tutorial warns that its queue fills up when every worker is busy.",
+    "Handing over is not finishing. Once an order is given to a session no other session can have it, so if that session fails partway the order is lost, unless the queue waits for an acknowledgement and hands an unacknowledged order to another session. Then the same order may be worked twice, so its work should be safe to repeat: see Transactional Client and Idempotent Receiver.",
+    "The analogy breaks at how exactly one is reached. In DotLn each order is worked in a checkout of its own, and a lock lets only one session write there, turning a second one away; nothing hands orders out to whichever session is free. A lock refuses the session that arrives second, where a queue never offers the order to it at all."
+  ],
+  "nearby": [
+    {
+      "id": "eip:65",
+      "why": "A Publish-Subscribe Channel is the choice when every session needs every order, a copy each, rather than a share of them; the companion study runs these same orders over a topic."
+    },
+    {
+      "id": "eip:64",
+      "why": "A Point-to-Point Channel is the channel this pattern stands on: read it for what a queue promises one receiver before several compete for it."
+    },
+    {
+      "id": "eip:175",
+      "why": "A Message Dispatcher is the choice when one consumer should take every message off the channel and hand each to a performer it picks, so the application, not the broker, decides who works what."
+    },
+    {
+      "id": "eip:170",
+      "why": "A Transactional Client is the choice when an order a session took but failed to finish must go back on the queue rather than be lost."
+    },
+    {
+      "id": "eip:180",
+      "why": "An Idempotent Receiver is the choice when redelivery can hand the same order to a second session and working it twice must do no harm."
+    },
+    {
+      "id": "eip:120",
+      "why": "A Resequencer is the choice when the results of orders worked at the same time must come out in the order the orders were sent."
+    },
+    {
+      "id": "eip:99",
+      "why": "A Content-Based Router is the choice when the sessions are not interchangeable, so each kind of order must go to the queue of the sessions that can work it."
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+@use '../tones';
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+svg {
+  display: block;
+  inline-size: 100%;
+  overflow: hidden;
+}
+// The drawing measures its words at these sizes, and a name too wide for its box carries the scale
+// that fits it.
+text {
+  font: 15px var(--dotln-font);
+}
+.name {
+  fill: var(--dotln-ink);
+  font-size: calc(15px * var(--flow-scale, 1));
+}
+.name[data-tone='subject'] {
+  font-weight: 650;
+}
+.channel {
+  fill: var(--dotln-muted);
+  font-size: 13px;
+  font-style: italic;
+}
+.state {
+  fill: var(--dotln-ink);
+  font-size: 13px;
+}
+.node {
+  fill: var(--dotln-surface);
+  stroke-width: 2;
+  @include tones.stroke-tones;
+}
+// A node a moving message leaves or reaches takes the moving message's colour.
+.node.acting {
+  stroke: var(--dotln-accent);
+  stroke-width: 3;
+}
+// A channel drawn as a place of its own is a pipe, tinted so it reads apart from an endpoint.
+.node[data-kind='channel'] {
+  fill: var(--dotln-known-bg);
+}
+.link {
+  line,
+  polyline {
+    fill: none;
+    stroke: var(--dotln-border-strong);
+    stroke-width: 2;
+  }
+  polygon {
+    fill: var(--dotln-border-strong);
+  }
+}
+.link.active {
+  line,
+  polyline {
+    stroke: var(--dotln-accent);
+    stroke-width: 3;
+  }
+  polygon {
+    fill: var(--dotln-accent);
+  }
+}
+.token {
+  circle,
+  rect {
+    stroke-width: 2;
+  }
+  text {
+    font-family: var(--dotln-font-mono, ui-monospace, monospace);
+    font-size: 13px;
+    font-weight: 650;
+  }
+}
+.token[data-state='moving'] {
+  circle,
+  rect {
+    fill: var(--dotln-accent);
+    stroke: var(--dotln-surface);
+  }
+  text {
+    fill: var(--dotln-surface);
+  }
+  // A message moving at the stepped moment sets out from its sender and comes to rest on its line.
+  animation: flow-arrive 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.token[data-state='held'] {
+  circle,
+  rect {
+    fill: var(--dotln-surface);
+    stroke: var(--dotln-ink);
+  }
+  text {
+    fill: var(--dotln-ink);
+  }
+}
+@keyframes flow-arrive {
+  from {
+    transform: translate(var(--flow-from-x, 0), var(--flow-from-y, 0));
+    opacity: 0.5;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .token[data-state='moving'] {
+    animation: none;
+  }
+}
+// A wide screen shows the stages across, a column each; a phone shows them down, a row each, laid
+// out for its width so the words keep their size.
+.down {
+  display: none;
+}
+@media (max-width: 600px) {
+  .across {
+    display: none;
+  }
+  .down {
+    display: block;
+  }
+}
+@include tones.reading;

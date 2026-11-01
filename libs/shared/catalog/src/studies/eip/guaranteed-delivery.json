@@ -1,0 +1,123 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:71",
+  "work": "eip",
+  "slug": "guaranteed-delivery",
+  "authored": {
+    "by": "Claude dotln-worker author-05",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Guaranteed delivery makes ‘sent’ a promise about disks rather than about memory. Every hand-over has two halves: the next holder writes the message down and says so, and only then does the previous holder let go. The price is that a crash between a hand-over and its acknowledgement repeats the hand-over, so a message may arrive twice, but no crash the stores survive can make it vanish.",
+    "situation": "As an analogy, read against DotLn's architecture document. It describes a host program that writes each event to its log on disk, and syncs the disk, before its decision logic moves on; a command reaches the program that carries it out only once the command is in that log; and a worker's finished result is saved as a receipt, never changed afterwards, before the result is recorded. A crash between those writes leaves a command still open, for a later recovery to finish, rather than a lost one. The rule worth carrying into any hand-off between agents follows: write to the log before acknowledging, and treat a receipt as the acknowledgement, never as the only copy."
+  },
+  "example": {
+    "name": "A command that survives a crash",
+    "description": "As an analogy, read against DotLn's architecture document: a host sends command 7 to a worker on another machine. Each side keeps a store on disk, the host's outbox and the worker's inbox. The outbox forwards the command and lets go of it only when the inbox says it has saved it; the inbox hands it to the worker and keeps it until the worker's receipt. The worker's machine crashes at step {crashStep}, after the command arrived and before the receipt, so after the restart the inbox delivers it again. The document names an outbox, receipts and recovery but no store on the worker's side: the inbox is the pattern's, not the platform's.",
+    "parameters": {
+      "crashStep": 5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Save before the send returns",
+        "text": "The host writes the command to its outbox and syncs the disk before sending returns to it. From this moment a copy is always on some disk."
+      },
+      {
+        "title": "Let go only when the next store has saved it",
+        "text": "The outbox forwards a copy to the inbox and keeps its own until the inbox confirms that it has written the command down. Between the forward and the confirmation, two disks hold it."
+      },
+      {
+        "title": "Delete only on the receiver's receipt",
+        "text": "The inbox hands the command to the worker and keeps its copy until the worker acknowledges. When the worker's machine crashes at step {crashStep}, the worker loses what it held in memory and the inbox's copy is untouched."
+      },
+      {
+        "title": "Send again what is still held after a restart",
+        "text": "On restart each store sends again whatever it still holds. The worker can therefore receive the same command twice, and must recognise it by its id wherever doing the work twice would be wrong."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "send(command):\n  write command to the outbox\n  sync the outbox's disk\n  return (only now is the send done)\n\nfor each command in the outbox:\n  copy it to the inbox\n  wait until the inbox says it is saved\n  delete the outbox's copy\n\nfor each command in the inbox:\n  hand it to the worker\n  wait for the worker's receipt\n  delete the inbox's copy\n\nafter any restart:\n  each store sends again what it still holds\n  the worker skips a command id it has already finished",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/guaranteed-delivery.ts",
+    "textEquivalent": "Step {step}: {moves}; {held}; {states}. From the send to the receipt a copy of the command stays on the Outbox's or the Inbox's disk; the worker's copy is only in memory."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/guaranteed-delivery.html",
+      "relevance": "Apache Camel is a Java integration framework whose routes are assembled from the book's patterns; its documentation has a page for this one.",
+      "explanation": "The page names the components through which Camel provides the guarantee: File, which keeps messages in the file system, JMS and Kafka with persistent delivery, JPA, and database components such as SQL, JDBC and MyBatis. Its JMS example adds nothing to the route: with JMS's default persistent delivery, delivery is reported only once the receiving side has written the message to its own storage."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/channel/configuration.html#persistent-queuechannel-configuration",
+      "relevance": "Spring Integration is Spring's implementation of the book's patterns inside an application. It has no page named for Guaranteed Delivery; this section, on persistent queue channels, is where the guarantee is configured, for a channel inside one application.",
+      "explanation": "A QueueChannel keeps its messages in memory by default, so a failure can lose them. Given a persistent message store, such as JdbcChannelMessageStore, the channel writes each message to the store when it arrives and takes it out when a consumer polls it. With a transactional store and a poller running in a transaction, taking a message out is undone if that transaction fails, so the message is still in the store to be tried again."
+    },
+    {
+      "project": "RabbitMQ",
+      "url": "https://www.rabbitmq.com/docs/confirms",
+      "relevance": "RabbitMQ is a message broker; its guide to consumer acknowledgements and publisher confirms (version 4.4 when read) documents both halves of the hand-over this pattern needs.",
+      "explanation": "With publisher confirms, the broker confirms a message marked persistent, sent to a queue that survives restarts, only once the message is on disk. It writes to disk in batches, to keep fsync calls few, so under steady load a confirm can take a few hundred milliseconds. The guide shows how, without confirms, a message the client assumed safe is lost when a node fails before writing it to disk. On the consumer side, under manual acknowledgement, a delivery not yet acknowledged goes back into the queue when its channel or connection closes, marked as a redelivery, so consumers must be ready to see a message twice."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Guaranteed Delivery",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/GuaranteedMessaging.html",
+      "accessed": "2026-11-01",
+      "supports": "Each hop keeps its own durable copy of a message until the next hop has stored it and, at the end, the receiver has acknowledged it; a send is complete once the sender's own store has the message."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), Chapter 4: Messaging Channels, Guaranteed Delivery",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The publisher's page for the book, which covers Guaranteed Delivery in Chapter 4, Messaging Channels."
+    },
+    {
+      "title": "DotLn architecture (docs/product/03-architecture.md) at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's outbox protocol writes a command to the log before the program that carries it out receives it, matches the result to the command by its id, ignores a duplicate the same way every time, and keeps a command open, to be recovered, while its result has not arrived. Its inspection host writes and syncs each event to disk before moving on and saves each finished result as a receipt filed under its command and never changed; if it crashes between saving a receipt and recording the result, the command stays open and a later recovery reads the receipt. The document disclaims exactly-once effects on outside systems."
+    }
+  ],
+  "limits": [
+    "This is at-least-once delivery, not exactly-once. The crash at step {crashStep} falls between delivery and receipt, so the worker receives command 7 twice; had the worker finished the work and crashed before its receipt left, the work would run twice. Make the receiver recognise a repeat, or make receiving, working and acknowledging one transaction. DotLn's architecture document says the same of its own outbox: results are matched to commands by id and duplicates ignored, and nothing promises that an effect on an outside system happens only once.",
+    "Every hand-over waits for a disk write, so latency and throughput pay for the guarantee; RabbitMQ, for one, syncs persistent messages in batches and documents confirms taking a few hundred milliseconds under load. For messages whose loss costs little, such as frequent readings that the next one replaces, skip it.",
+    "A receiver that stays down lets its store, and then the stores behind it, grow until a disk fills, and the guarantee turns into failed sends. Give messages that can outlive their use a time limit, and watch the stores' depth.",
+    "The guarantee ends where the acknowledgement is given. A worker that sends its receipt on arrival, before doing the work, hands the risk back to memory: a crash after that receipt loses the work with no copy left to send again. Acknowledge after the work's effects are saved.",
+    "An in-memory buffer only looks similar. A ReplaySubject or a retry keeps or resends values while the process lives and loses them all when it dies; nothing in a stream library survives the crash this pattern is about, which is why this study is drawn step by step rather than run.",
+    "The analogy breaks at both ends. DotLn keeps its receipts immutable and treats a command as pending until its result is recorded, end to end, rather than deleting each copy hop by hop, and its document describes no store on the worker's side that holds a command before the worker takes it, as the inbox does here."
+  ],
+  "nearby": [
+    {
+      "id": "eip:180",
+      "why": "Idempotent Receiver is the choice when the duplicates this pattern allows would do harm: the receiver recognises a message it has already handled and does nothing the second time."
+    },
+    {
+      "id": "eip:170",
+      "why": "Transactional Client is the choice when receiving, working and acknowledging must succeed or fail together, so a crash cannot split the receipt from the work."
+    },
+    {
+      "id": "eip:178",
+      "why": "Durable Subscriber is the publish-subscribe counterpart: when the receiver is a subscriber that may be offline, the channel keeps its messages until it returns."
+    },
+    {
+      "id": "eip:91",
+      "why": "Message Expiration is the choice when a kept message can become worse than none: a limit lets a store set it aside instead of delivering it late."
+    },
+    {
+      "id": "eip:72",
+      "why": "The costs of guaranteed delivery, and when to skip it, are the question to settle before paying for a disk write on every hand-over."
+    }
+  ]
+}

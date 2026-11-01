@@ -1,0 +1,124 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:146",
+  "work": "eip",
+  "slug": "canonical-data-model",
+  "authored": {
+    "by": "Claude dotln-worker author-08",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Instead of every pair of parties agreeing a format between them, all of them agree one, owned by none of them. Each party then keeps two translators, its own format into the shared one and back out, and knows nothing about anyone else's format. Every message is translated twice, once on the way in and once on the way out, and in exchange a party can join, leave or change its own format without touching anyone else's code. The shared form is a decision about meaning: whatever it has no place for does not survive the trip.",
+    "situation": "As an analogy, read against DotLn's interfaces document at its pinned commit: the editable views of a loadout behave like the parties to a canonical data model, translating to one shared form and never to each other. A loadout is a configuration that DotLn compiles into a program, and it can be edited in three views: as typed code, as a function table or as statechart JSON. No view is the master copy: each converts its own format into one normalised loadout graph and back, and the document requires that converting out and back in returns the normalised graph. The compiler builds from that graph, so a sample loadout gives the same program, with the same hash, from any of the three views; a view that cannot convert back, such as a narrative, is labelled lossy."
+  },
+  "example": {
+    "name": "One loadout, three editable views",
+    "description": "As an analogy, read against DotLn's interfaces document: a sample loadout is shown in {views}. The operator changes its objective in the function table, then reorders the table's rows, and finally a narrative view is attached that can only read. Every message passes through the Loadout graph channel in the shared, normalised form: the editing view's decoder translates it in, each other view's encoder translates it out, and the compiler builds from the graph itself.",
+    "parameters": {
+      "views": "the code view, the function table and the statechart view"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Agree one form that no view owns",
+        "text": "The shared form is the normalised loadout graph: keys in order, set-like collections sorted, and no view's name or formatting in it. It belongs to none of {views}, so none of them is the others' master."
+      },
+      {
+        "title": "Give each view its own pair of translators",
+        "text": "Each view has a decoder from its format into the shared form and an encoder back out. These two are the only code that knows that view's format, and nothing joins two views directly."
+      },
+      {
+        "title": "Translate twice on every trip",
+        "text": "An edit made in one view is decoded once into the graph, then encoded once for each other view. The compiler reads the graph itself, so what it builds does not depend on which view the edit came from."
+      },
+      {
+        "title": "Lose what the shared form does not carry",
+        "text": "Anything the graph has no place for is dropped on the way in. Reordering the function table's rows leaves the graph, and so the program and its hash, as they were, and encoding the graph back gives the rows in the graph's order."
+      },
+      {
+        "title": "Join with one pair, or one encoder",
+        "text": "A new participant writes its own encoder, and a decoder if its format can round-trip. A view with no decoder, such as a narrative, can only read: an edit made in it reaches no one, so it is labelled lossy."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "shared form = the loadout graph, normalised:\n  object keys in order, set-like collections sorted,\n  no view's name or formatting\n\nfor each view in code DSL, function table, statechart JSON:\n  decode: view text -> shared form\n  encode: shared form -> view text\n  (only these two know the view's format)\n\non an edit in one view:\n  graph = normalise(decode(edit))\n  for each other view: show encode(graph)\n  compiler builds from graph alone\n\nif the edit changes only what the shared form drops,\nsuch as the order of the table's rows:\n  graph is unchanged, so the program and hash are too\n  encode(graph) shows the rows in the graph's order\n\nto add a participant:\n  write its encode, and its decode if it can round-trip\n  without a decode it can only read, and is labelled lossy",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/canonical-data-model.ts",
+    "textEquivalent": "Step {step}: {moves}. Each view reaches the others only through the Loadout graph channel, by its own decode line in and its own encode line out, and the compiler and the narrative only read from it. Now: {states}. Held: {held}."
+  },
+  "implementations": [
+    {
+      "project": "CloudEvents",
+      "url": "https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md",
+      "relevance": "CloudEvents is a specification, owned by no vendor, of the common attributes an event should carry, written so that producers, consumers and the tooling between them stop re-learning each producer's own way of describing events. It is a shared format that every party maps to instead of to each other, applied to events.",
+      "explanation": "Version 1.0.2 fixes the context attributes every event must carry, id, source, specversion and type, and optional ones such as datacontenttype, dataschema, subject and time, with event formats such as JSON for writing an event as bytes. What it standardises is the description of the event, not its payload: the specification places no restriction on the data, which is domain-specific and labelled by datacontenttype and dataschema. So it is a canonical model of the envelope only; the body still needs a model the parties agree among themselves."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Canonical Data Model",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/CanonicalDataModel.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page in the authors' public catalogue, in its Message Transformation section: it compares the translators needed with and without a shared model for two, three and six applications, finding the shared model costlier for two, equal for three and cheaper beyond, and notes that a new application then needs a mapping to the shared model only."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 8: Message Transformation, Canonical Data Model",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Canonical Data Model in Chapter 8, Message Transformation."
+    },
+    {
+      "title": "DotLn · Interfaces, the isomorphic views",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/04-interfaces.md",
+      "accessed": "2026-11-01",
+      "supports": "Three editable views of a loadout, the typed code DSL, the function table and the statechart JSON, are each a complete representation of one LoadoutGraphV1 with its own encode and decode and the law decode(encode(x)) = normalize(x). Normalisation orders keys and sorts set-like collections, function-table rows among them by kind and key, keeps an explicit pipeline's order and repeats, and includes no view formatting or name; the Seiri fixture's three views give one semantic hash; and views that cannot round-trip, such as narrative, are labelled lossy projections."
+    },
+    {
+      "title": "DotLn · IR verification, lineage and compatibility",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/10-ir-compatibility.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform provides a verifier over its canonical JSON IR; an outside rule source is not presumed to be canonical IR, and each proposed mapping into it is labelled exact, adapted, lossy, unmapped, blocked or unverified, as provisional vocabulary; unknown compatibility fails visibly rather than being inferred."
+    }
+  ],
+  "limits": [
+    "Until there are enough participants, the shared form costs more than it saves: the worked step at the start counts the translators both ways for this example's views and finds no saving, and every edit now pays two translations instead of one. Two parties that only ever talk to each other are better served by a direct Message Translator each way.",
+    "The shared form drops whatever it has no place for. Here the order of the function table's rows does not survive the trip, which is right only because nothing means anything by it; DotLn's normalisation keeps an explicit pipeline's order, repeats included, because there order changes the program. Designing the model is deciding, field by field, what counts as meaning, and every participant has to agree to the answer.",
+    "Every participant depends on the shared form, so changing it touches every translator at once. Give the form a version that each message carries, a Format Indicator, and let a reader that meets a version it does not know refuse visibly rather than guess, as DotLn's IR compatibility rules require of its artifacts.",
+    "A participant that cannot round-trip, such as the narrative here, can only read: it has an encoder and no decoder, and an edit made in it reaches no one. Label it lossy, as DotLn's interfaces document does, so nobody mistakes it for a view they can edit in.",
+    "Where the analogy breaks: DotLn's views do not send messages through a channel. The views and the compiler meet in function calls over one normalised value, so the canonical model there is that value's shape; the Loadout graph channel and the steps here are the messaging reading of it."
+  ],
+  "nearby": [
+    {
+      "id": "eip:60",
+      "why": "Each participant's decoder and encoder is a Message Translator; with only two parties, one direct translator each way is simpler than a shared form."
+    },
+    {
+      "id": "eip:147",
+      "why": "Read the costs row when deciding whether a shared form is worth it: double translation, agreeing a model, keeping it to the message body and letting it evolve."
+    },
+    {
+      "id": "eip:93",
+      "why": "A Format Indicator is what lets the shared form change: each message says which version it is in, so a reader can map or refuse it."
+    },
+    {
+      "id": "eip:145",
+      "why": "A Normalizer is the inbound half at a single receiver: when one kind of message arrives in several formats, it routes each to its own translator into the one form."
+    },
+    {
+      "id": "eip:76",
+      "why": "A Message Bus is the structure a shared form usually serves: common channels, a common command set and an adapter for each system, so systems can come and go."
+    },
+    {
+      "id": "eip:45",
+      "why": "A Shared Database is the choice when the parties can share storage rather than exchange messages: one schema and no translators, at the price of every party depending on that schema directly."
+    }
+  ]
+}

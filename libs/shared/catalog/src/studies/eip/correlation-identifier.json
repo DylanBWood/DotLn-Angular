@@ -1,0 +1,136 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:87",
+  "work": "eip",
+  "slug": "correlation-identifier",
+  "authored": {
+    "by": "Claude dotln-worker author-03",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A correlation identifier is how a requestor tells replies apart. Requests leave in one order, the work finishes in another, and the replies share one channel, so a reply's position says nothing about which request caused it. The only reliable link is a value the reply carries back. With it a requestor can keep many requests open at once, give each reply to the one piece of work waiting for it, and recognise a reply that belongs to nobody.",
+    "situation": "As an analogy, read against DotLn's public domain model. DotLn is the operator's platform for running AI agents on pieces of work, and its kernel is the part that decides what happens next and sends commands out. Each command carries an id of its own, a commandId; an adapter hands the command to a worker; and the result that comes back (a CommandResult) is matched to its command by the commandId it carries. Even the acknowledgement that a command was accepted (a CommandReceipt) names the commandId it answers. Here the kernel sends out three commands at once, and their results come back in the order the workers finish. The need grows wherever work fans out: the domain model's OpinionCohort, a set of opinions gathered on one question, groups its results under one cohort id while each opinion keeps its own command, so gathering them depends on every answer naming what it answers."
+  },
+  "example": {
+    "name": "Three commands out at once",
+    "description": "As an analogy, read against DotLn's domain model. The Kernel sends {commands} to three workers, one per step, each command carrying its id, and opens one wait, an Await, for each. The workers answer on one shared Results channel in the order they finish, {replyOrder}, and each result carries the id of the command it answers. A result sits on the channel for one step, and then the Await whose id it names takes it; the other Awaits leave it alone. At the end Worker 2 sends a second copy of its result, and the copy finds no Await open.",
+    "parameters": {
+      "commands": "cmd_1, cmd_2 and cmd_3",
+      "replyOrder": "cmd_3, cmd_1 and cmd_2"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Stamp each request with its own id",
+        "text": "The requestor gives every request an id that no other pending request shares, and remembers it until the reply comes. Here the kernel sends {commands}, each with its commandId, and opens an Await for each."
+      },
+      {
+        "title": "Copy the id into the reply",
+        "text": "The replier does not make up an id: it copies the one from the request into its reply. Each worker's result names the commandId it answers, so the result can be placed without knowing who sent it or when."
+      },
+      {
+        "title": "Match on the id, never on the order",
+        "text": "Results share one channel and arrive in the order the work finishes, {replyOrder} here. Each pending request takes only the result carrying its own id and leaves the rest. In the RxJS reading each pending command is one subscription to result$, which first() ends at the result naming it; the delay(1) after it only lets taking the result show as a step of its own."
+      },
+      {
+        "title": "Forget the id once it is answered",
+        "text": "A request that has its reply stops waiting. A second copy of that reply, or a reply for a request nobody waits for, then matches nothing and is dropped, as the repeated result for cmd_2 is."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "to send a request:\n  id = a new id that no pending request uses\n  pending[id] = the work waiting for this reply\n  send the request with id\n\nreplier, on each request:\n  do the work\n  send the reply with correlation id = the request's id\n\non each reply, in whatever order replies arrive:\n  waiter = pending[the reply's correlation id]\n  if there is a waiter:\n    give the reply to that waiter only\n\nonce a waiter has its reply:\n  delete pending[its id]\n  a later reply with that id finds no waiter: drop it",
+    "rxjs": "// commandId(command) is the request id; commandId(result), copied from it, is the correlation id.\nresumed$ = command$.pipe(\n  // Each command is a pending request, with its own wait on the shared reply channel.\n  mergeMap((command) =>\n    // The match: the first result whose correlation id equals the request id ends the wait.\n    result$.pipe(first((result) => commandId(result) === commandId(command))),\n  ),\n  // Not part of the pattern: a matched result is handed on a frame later, as a step of its own.\n  delay(1),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/correlation-identifier.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/correlation-identifier.ts",
+    "textEquivalent": "Frame {frame}: {moves}. The workers answer on the shared Results channel, and an Await takes only the result naming its commandId. Holding: {held}. Now {states}. Results handed to the waiting work so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/correlation-identifier.html",
+      "relevance": "Apache Camel is an open-source integration framework built around these patterns. Its Correlation Identifier page shows where the id lives in a framework that mostly sets it for you.",
+      "explanation": "A correlation id is a header on the message. Over JMS the JMSCorrelationID header is set and matched automatically, so a route rarely needs its own; a route can still add one to tie a whole conversation together, which the page connects to distributed tracing. The patterns that spin off new messages, Enrich, Multicast, Recipient List, Split and Wire Tap, put the source exchange's id on each new exchange as a CORRELATION_ID property, so every part can be traced back to the exchange it came from."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/jms.html#gateway-reply-correlation",
+      "relevance": "Spring Integration is the Spring portfolio's messaging framework. Its JMS outbound gateway sends a request to a JMS destination and waits for the reply, and its reference lists how each configuration makes sure a gateway receives only replies to its own requests.",
+      "explanation": "With no correlation key, the gateway expects the replier to copy the request's JMSMessageID into the reply's JMSCorrelationID and selects the reply on that; with a key, the gateway generates a unique id, puts it in the named property and selects on it. With a shared reply listener the id is the gateway's own id plus an incrementing number, so several gateways can share one reply destination and each picks out its own replies. The page warns that the gateway cannot ensure a supplied correlation id is unique and that a repeated one can have unexpected side effects."
+    },
+    {
+      "project": "RabbitMQ",
+      "url": "https://www.rabbitmq.com/tutorials/tutorial-six-javascript",
+      "relevance": "RabbitMQ is an open-source message broker. Its sixth tutorial builds a remote procedure call over queues and explains why that call needs a correlation id.",
+      "explanation": "The client receives every reply on one reply pseudo-queue, so it sets a unique correlation_id on each request and the server copies it into its response. The client hands a response back only when the id matches, and quietly discards one with an unknown id rather than failing: a server that dies after answering but before acknowledging the request will process it again after a restart, so duplicate responses are expected and the call should ideally be idempotent."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Correlation Identifier",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/CorrelationIdentifier.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's public summary: a reply names the request it answers through an identifier, and the pattern has six parts, in which the value the replier puts in the reply's correlation ID is the request's own ID."
+    },
+    {
+      "title": "InformIT · Enterprise Integration Patterns (Gregor Hohpe and Bobby Woolf, Addison-Wesley, 2003), chapter 5, Message Construction: Correlation Identifier",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Correlation Identifier in chapter 5, Message Construction; the publisher's page gives the authors, the 2003 publication and the chapter in its table of contents."
+    },
+    {
+      "title": "DotLn · product document 02, Domain model, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform's kernel vocabulary: a Command carries a stable, kernel-computed commandId; a CommandResult is matched on payload.commandId, and a CommandReceipt carries the commandId it acknowledges; the commandId hash is namespace-tagged because without the tag two distinct commands could collide and the outbox's idempotence guard would silently swallow one; replay keeps a result that comes before its command was recorded and completes the command once that record arrives; Await waits for an event matching a commandId or correlationId and carries a timeout; and an OpinionCohort is a set of result envelopes correlated by a cohort id, each opinion keeping its own command."
+    },
+    {
+      "title": "DotLn · product document 03, Architecture, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md",
+      "accessed": "2026-11-01",
+      "supports": "The platform's outbox protocol correlates a result by commandId; its failure matrix ignores a duplicate result deterministically by commandId, leaves state unchanged and records the dedup in the trace; and after a lease expires a fresh attempt gets a new episode id but keeps the stable command id."
+    }
+  ],
+  "limits": [
+    "Matching by arrival order instead of by id works only while one request is out at a time or the replier answers strictly in turn. With three commands out here, pairing results with commands in the order they were sent would give cmd_1 the failure of cmd_3, cmd_2 the completion of cmd_1 and cmd_3 the blocked status of cmd_2, and nothing would look wrong.",
+    "The id matches a reply; it does not make one arrive. In this pipeline first() has no deadline, so a command whose result is lost holds its wait open for ever. Give each wait a deadline, as the kernel's Await carries a timeout beside its pattern, and decide what a reply arriving after it means: by then it matches nothing, just like the repeated result for cmd_2.",
+    "Dropping a reply nobody waits for is silent. That is right for a harmless repeat, such as a retried worker's result with the same commandId, but it hides a fault when the copy disagrees with the first answer or when replies are going astray. Count unmatched replies rather than discarding them unseen, or put an idempotent receiver in front that records what it has already accepted. DotLn's architecture ignores a repeated result by its commandId and notes in its trace that it did, where this pipeline drops the copy only because nobody is listening any more.",
+    "An id has to be unique among pending requests and must not be reused while an old reply could still arrive. DotLn's domain model records why its commandId hash is namespace-tagged: without the tag, two different commands could share an id, and the check that stops a command running twice would silently drop one of them. Spring Integration's JMS gateway likewise warns that it cannot ensure a supplied correlation id is unique.",
+    "A wait has to exist before its reply arrives. result$ here is hot and keeps nothing, so a result that came before its command's Await opened would be missed and the Await would wait for ever. DotLn's replay handles that order explicitly: it keeps a result that arrives before its command has been recorded, and completes the command once the record arrives."
+  ],
+  "nearby": [
+    {
+      "id": "eip:83",
+      "why": "The exchange the identifier serves: one request and one reply on two channels. While a single request is out at a time, the reply channel alone tells the requestor what a reply is for, and no id is needed yet."
+    },
+    {
+      "id": "eip:88",
+      "why": "When choosing what the id should be, a generated id as commandId is here or a business key such as the order the work is for, and how to follow a chain of requests in which each answer starts the next request."
+    },
+    {
+      "id": "eip:86",
+      "why": "The id says which request a reply answers; a return address says where the reply should go. A replier that serves several requestors usually needs both."
+    },
+    {
+      "id": "eip:177",
+      "why": "When each requestor should receive only its own replies from a shared channel, so the filtering on the id happens at the channel rather than in every waiting request."
+    },
+    {
+      "id": "eip:110",
+      "why": "When several replies belong together and should become one result, grouped by a shared id, as DotLn's OpinionCohort groups its opinions under a cohort id."
+    },
+    {
+      "id": "eip:180",
+      "why": "When a repeated reply has to be recognised and recorded, not just dropped because nothing waits for it any more."
+    }
+  ]
+}

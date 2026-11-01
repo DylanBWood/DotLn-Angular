@@ -1,0 +1,138 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:99",
+  "work": "eip",
+  "slug": "content-based-router",
+  "authored": {
+    "by": "Claude dotln-worker author-04",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Picture a sorting desk with a short list of rules pinned above it. Each message is read once, the rules are tried from the top, and the first one that fits names the single channel the message leaves on. The sender never learns where its message went, the message is neither changed nor copied, and because sooner or later a message fits no rule, the list ends with a default.",
+    "situation": "As an analogy, read against DotLn's public execution guide: a verifier reviewing a change files findings, and the guide sends each finding one of three ways according to what it shows. A finding that leaves one of the work's acceptance criteria unmet, or that a test probe shows breaking something the main branch already did, is blocking: the verification fails and the change goes back to the executor to be repaired. A decision that belongs to the operator, the person directing the work, goes to the operator, and any other defect becomes a follow-up, written up on the board of later work. One level up, the verification's result routes the change the same way: a failure sends it back for repair, a pass lets it go on to final review. The rule table is two tests and a default, written down in one place, and keeping it that small and that visible is what keeps a router maintainable."
+  },
+  "example": {
+    "name": "Five findings from one verification",
+    "description": "As an analogy, read against DotLn's public execution guide. The verifier files five findings, {findings}, one every other step from step 1 to step 9, and the findings end at step 10. The finding router tries its routes in the order {rules}. F1 leaves acceptance criterion 2 unmet; F2 is a stale line in an index; F3 asks to widen the scope of the work, a decision for the operator alone; F4 is a regression, something the main branch already did that test probe 3 shows broken; F5 leaves criterion 4 unmet and also asks whether to waive it. The router holds each finding for one step while it chooses, then sends it, unchanged, on the one channel its first passing rule names.",
+    "parameters": {
+      "findings": "F1 to F5",
+      "rules": "blocking, then operator, then follow-up"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Keep a short rule table, in order",
+        "text": "The router holds its rules as an ordered list: blocking when a finding has an unmet criterion or a regression, operator when it names a decision for the operator. The order is part of the rules, because one finding can pass more than one test."
+      },
+      {
+        "title": "Try the rules from the top",
+        "text": "For each finding, test the rules in order and stop at the first that passes; that rule names the route. F5 passes both tests and is blocking, because the blocking rule is tried first."
+      },
+      {
+        "title": "Fall back to the default",
+        "text": "A finding that passes no test, as F2 does, takes the default route, follow-up. Without a default it would have nowhere to go."
+      },
+      {
+        "title": "Send it on one channel, unchanged",
+        "text": "The finding leaves on the channel its route names, exactly as it arrived: nothing is added, removed or copied, so each finding reaches one destination."
+      },
+      {
+        "title": "End with the findings",
+        "text": "When the verifier's findings end, every channel ends too. The router keeps nothing between one finding and the next, so it has nothing left to send."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "rules, tried in this order:\n  blocking   if the finding has an unmet criterion or a regression\n  operator   if the finding names a decision for the operator\n\non each finding from the verifier:\n  route = the first rule in the list whose test the finding passes\n\n  if no rule passed:\n    route = follow-up\n\n  send the finding, unchanged, on the channel that route names\n\nwhen the verifier's findings end:\n  end the blocking, operator and follow-up channels",
+    "rxjs": "const routed$ = findings$.pipe(\n  // The router reads each finding's own fields and names its one route.\n  map((finding) => ({ finding, route: routeOf(finding) })),\n  // It sends the finding on one step after reading it.\n  delay(1),\n  // One decision per finding, however many channels are listening.\n  share(),\n);\nconst on = (route: Route) =>\n  routed$.pipe(\n    // A channel takes only the findings routed to it, unchanged.\n    filter((routed) => routed.route === route),\n    map((routed) => routed.finding),\n  );\n// The three routes; follow-up is the default for a finding no rule fits.\nconst blocking$ = on('blocking');\nconst operator$ = on('operator');\nconst followUp$ = on('follow-up');",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/content-based-router.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/content-based-router.ts",
+    "textEquivalent": "Step {step}: {moves}. The finding router's channels are blocking to the executor, operator to the operator and follow-up to the board. {states}. Delivered so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel · Choice",
+      "url": "https://camel.apache.org/components/4.22.x/eips/choice-eip.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are assembled from the integration patterns by name. Its Choice EIP is its content-based router, and this page documents it for the 4.22 long-term-support line.",
+      "explanation": "A choice holds an ordered list of when clauses, each a predicate, often a Simple-language test on a header, with the steps to run when it holds, and an optional otherwise. The first when that matches picks the branch and otherwise runs when none does; the page notes that otherwise is optional and that, without it, a message no predicate matches selects no branch. It adds a precondition mode that evaluates the predicates once at start-up, from property placeholders, system properties or environment variables, so every message takes the same branch: a router configured by deployment rather than by content."
+    },
+    {
+      "project": "Spring Integration · Router implementations",
+      "url": "https://docs.spring.io/spring-integration/reference/router/implementations.html",
+      "relevance": "Spring Integration is the Spring portfolio's implementation of the integration patterns for Java applications. This page describes the routers it ships for content-based routing, and the page itself says most real cases delegate the decision to a plain Java object.",
+      "explanation": "A PayloadTypeRouter maps the payload's type to a channel and a HeaderValueRouter maps the value of one named header to a channel, configured in XML or in the Java DSL. A message whose header value has no mapping goes to the default output channel. By default a router must deliver each message to at least one channel, and dropping messages has to be asked for by pointing the default output channel at nullChannel. For its exception-type router, which matches the causes of an error against its mappings, the page notes that the order of the mappings matters."
+    },
+    {
+      "project": "Apache Kafka Streams · BranchedKStream",
+      "url": "https://kafka.apache.org/39/javadoc/org/apache/kafka/streams/kstream/BranchedKStream.html",
+      "relevance": "Kafka Streams is the stream-processing library of Apache Kafka. BranchedKStream, which KStream.split() returns, is how it sends each record of a stream to one of several branches; this is its API documentation for version 3.9.",
+      "explanation": "Branches are declared in order, each with a predicate, and each record goes to the first branch whose predicate is true and to that branch only. A record that matches none goes to the default branch, or is dropped when no default branch was declared, and the routing is stateless and record by record. To send one record to several streams, the page says to apply one filter per predicate to the same stream instead of branching."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Content-Based Router",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/ContentBasedRouter.html",
+      "accessed": "2026-11-01",
+      "supports": "The router looks inside each message, at which fields it carries or what they contain, and chooses from that the channel it goes out on; the page cautions that this routing logic will keep being changed, so it has to stay easy to maintain, and that in complex cases it may grow into a configurable rules engine."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003) · Chapter 7: Message Routing, Content-Based Router",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Content-Based Router in Chapter 7, Message Routing."
+    },
+    {
+      "title": "DotLn execution guide · Verification review and attack",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#verification-review-and-attack",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's execution guide sorts every verification finding onto one of three routes: blocking, which fails the verification, for an unmet acceptance criterion or for a behaviour of main that the change breaks and a probe or fixture demonstrates; operator, for a written decision only the operator can take; and follow-up, reproduced and put on the board, for any other defect. The verifier may send a finding down the blocking route without asking anyone, and may not use the operator route to seek permission for a repair within the order's criteria."
+    }
+  ],
+  "limits": [
+    "Every destination is written into the router. A fourth route, such as a security review, means changing the rule table and everything that tests it. When destinations come and go, or each receiver knows best what it wants, a Publish-Subscribe Channel with a Message Filter on each receiver, or a Dynamic Router that receivers register with, moves that knowledge out of the router.",
+    "Overlapping rules make their order a decision. F5 passes both tests and is blocking only because that rule is tried first; with the two lines swapped it would go to the operator as a request to authorise a repair inside the criteria, the very route the guide rules out. A table grown large enough that nobody can see its overlaps is the point where a rules engine, or a split into smaller routers, earns its cost.",
+    "A default route hides format drift. If the verifier began filing an unmet criterion under a renamed field, F1 would pass no test and reach the board as a follow-up: a blocking finding quietly made harmless, with nothing failing. Where no default is safe, send what matches nothing to an Invalid Message Channel and watch it. The guide's final review guards the same seam: a finding with a route outside the three, or a failed review that lists no blocking finding, leaves the review's counts unmeasured and draws an advisory naming the cause.",
+    "The router sees one message at a time and keeps nothing. A rule that needs history is not content-based: DotLn's drive, the loop that takes an order through its phases, stops after three failed verifications, which takes a count kept across reports, and that belongs in a stateful component such as a Process Manager, not in the router.",
+    "The analogy breaks where the platform routes by judgement. The verifier decides each route while it writes its immutable report, from evidence it has reproduced; nothing reads a field and nothing travels on a channel per route. The pattern needs the destination to be computable from the message alone, which is why each finding in this example carries the field its route depends on."
+  ],
+  "nearby": [
+    {
+      "id": "eip:101",
+      "why": "Reach for a Message Filter when there is one destination and the only question is whether a message goes there at all."
+    },
+    {
+      "id": "eip:105",
+      "why": "Reach for a Recipient List when one message must go to several destinations at once, not to exactly one."
+    },
+    {
+      "id": "eip:103",
+      "why": "Reach for a Dynamic Router when the destinations change at run time and each announces which messages it wants, so the rule table is built from their registrations."
+    },
+    {
+      "id": "eip:68",
+      "why": "Reach for an Invalid Message Channel as the destination of messages no rule should accept, instead of a default route that treats them as ordinary."
+    },
+    {
+      "id": "eip:65",
+      "why": "Reach for a Publish-Subscribe Channel with a filter on each receiver when receivers should decide for themselves and no central rule table is wanted."
+    },
+    {
+      "id": "eip:58",
+      "why": "Read the router trade-offs when weighing a central rule table that every change touches against routing spread across receivers, where the dependencies are harder to see."
+    },
+    {
+      "id": "eip:129",
+      "why": "Reach for a Routing Slip when a message must visit several steps in an order decided at the start, rather than one destination."
+    }
+  ]
+}

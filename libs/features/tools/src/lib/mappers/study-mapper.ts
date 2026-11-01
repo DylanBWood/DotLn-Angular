@@ -49,15 +49,27 @@ function drawingOf(
       value: reader.inputs[input.name] ?? Number(record.example.parameters[input.name]),
     })),
   };
-  return model.family === 'motion'
-    ? {
-        ...shared,
-        family: 'motion',
-        view: model.timeline ? reader.view : 'motion',
-        motion: model.motion,
-        timeline: model.timeline,
-      }
-    : { ...shared, family: 'marbles', marbles: model.marbles };
+  if (model.family === 'motion')
+    return {
+      ...shared,
+      family: 'motion',
+      view: model.timeline && reader.view === 'timeline' ? 'timeline' : 'motion',
+      motion: model.motion,
+      timeline: model.timeline,
+    };
+  if (model.family === 'flow') {
+    // The marble diagram, when the reader switches to it, says how to read its own lanes.
+    const diagram = reader.view === 'marbles' ? model.diagram : null;
+    return {
+      ...shared,
+      ...(diagram ? { legend: diagram.legend, caption: diagram.caption } : {}),
+      family: 'flow',
+      view: diagram ? 'marbles' : 'flow',
+      flow: model.flow,
+      marbles: model.diagram?.marbles ?? null,
+    };
+  }
+  return { ...shared, family: 'marbles', marbles: model.marbles };
 }
 
 /** One view of a study: the record's prose, read through the model at the selected moment. */

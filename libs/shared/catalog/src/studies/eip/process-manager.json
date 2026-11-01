@@ -1,0 +1,132 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:131",
+  "work": "eip",
+  "slug": "process-manager",
+  "authored": {
+    "by": "Claude dotln-worker author-07",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A process manager is the one place that knows how far each run of a process has got. The steps never address each other: each answers the manager, and the manager reads that answer against everything it has recorded for the run before it picks the next step. Keeping that record in one place is what lets a route branch on a result, go round a loop and stop at a limit; it is also why every message has to pass through the manager.",
+    "situation": "As an analogy, read against DotLn's public execution guide, in its section on the operator's resume phrases. An order passes from an executor, which builds it, to a verifier, which checks it, and on to a reviewer for a final review; a failed verification sends it back to the executor for repair before it is checked again. Each worker is started by a phrase, a short command such as resume: verify. When the operator types each phrase by hand, the operator is the manager, looking at the order's status and choosing what comes next. drive: WO-NNN hands that role to a router: it consults nothing but the order's status, starts a fresh worker for the single phrase that status calls for, and looks at status once more after that worker finishes. The order's progress is already kept in a record, its append-only log, rather than in anyone's head, so whoever reads that record can take the manager's place."
+  },
+  "example": {
+    "name": "Driving one order through a repair loop",
+    "description": "As an analogy, read against DotLn's public execution guide. The operator drives {order} at frame 1. Each worker reports to the router one frame after the phrase that started it, and the router sends its next phrase one frame after reading a report, so one message moves at each step: the executor builds the order, the first verification fails, the executor repairs it, the second verification passes and the final review passes. The router counts failed verifications against a limit of {failureLimit} and, after the final review, stops and asks the operator to merge. The reports are scripted at the frames a worker would finish; the router only ever sees them arrive.",
+    "parameters": {
+      "order": "WO-031",
+      "failureLimit": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start an instance on the trigger",
+        "text": "The drive names an order. A record of that order starts, with no step done and no failures, and the router sends the first phrase, resume: next, to the executor."
+      },
+      {
+        "title": "Fold each report into the record",
+        "text": "Every report that reaches the router is folded into the order's record: which step has just finished and how many verifications have failed so far."
+      },
+      {
+        "title": "Decide the next phrase from the record",
+        "text": "The record, not the report alone, picks the next step. The executor's reports that the order is built (implementation-ready) or repaired (repair-complete) both send it to the verifier; a passed verification sends it on to final review; a failed one sends it back to the executor for repair while fewer than {failureLimit} verifications have failed."
+      },
+      {
+        "title": "Stop the route",
+        "text": "A passed final review ends the route, and so does a failed verification that reaches the limit of {failureLimit}. The router sends its stop to the operator and reads no more reports for this order."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on drive for an order:\n  record = { order, failures: 0 }\n  send resume: next to the executor\n\non each report for that order:\n  update the record with the report\n  if the report is a failed verification:\n    record.failures = record.failures + 1\n\ndecide the next phrase from the record:\n  implementation-ready or repair-complete: send resume: verify to the verifier\n  failed verification, failures below the limit: send resume: fix to the executor\n  passed verification: send resume: final review to the reviewer\n\nif the final review passed, or failures reached the limit:\n  send the stop to the operator\n  read no more reports for this order",
+    "rxjs": "// The manager's inbox: the trigger message and every step's reply.\nphrases$ = merge(drive$, outcomes$).pipe(\n  // The process instance's state, kept by the manager; fold also decides the next step from it.\n  scan(fold, opened),\n  // Where the process ends: the final message still goes out, then nothing more is read.\n  takeWhile(({ stopped }) => !stopped, true),\n  // The command to the step that fold chose.\n  map(({ phrase }) => phrase),\n  // Pacing only: each command leaves one frame after the reply that called for it.\n  delay(1),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/process-manager.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/process-manager.ts",
+    "textEquivalent": "Step {step} of driving {order}: {moves}. {states}. Every report comes to the Router and every phrase leaves it, each phrase decided from the Router's record of the order. Phrases sent so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/process-manager.html",
+      "relevance": "Apache Camel, the open-source Java integration framework, has a page for the pattern, and it answers by pointing to another of its patterns.",
+      "explanation": "Camel's page for the pattern says it builds a process manager from its Dynamic Router, which keeps track of how far the message has got and works out each next step as it goes. The Dynamic Router's own page, cited among the references, gives the mechanics: unlike a routing slip, which is worked out once at the start, the router's expression is evaluated again after every step until it returns null; one that never returns null keeps routing for ever; and state kept between evaluations belongs in the exchange's properties, so that concurrent messages do not share it. In Camel the record therefore travels with the exchange rather than sitting in a store of its own."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/router/process-manager.html",
+      "relevance": "Spring Integration, which brings these patterns to Spring applications, gives the pattern a page among its routers.",
+      "explanation": "It builds a process manager on its routing slip: the custom logic sits in a RoutingSlipRouteStrategy, which receives the request message and the previous step's reply and returns where the message goes next. Because the strategy may return any MessageChannel, including one created on the spot rather than declared as a bean, the next step can be chosen when nothing could have predicted it; the page's example returns a channel whose handler differs with the type of the payload."
+    },
+    {
+      "project": "NServiceBus sagas",
+      "url": "https://docs.particular.net/nservicebus/sagas/",
+      "relevance": "NServiceBus, Particular Software's service bus for .NET, calls its process managers sagas, and its page sets out what holding a long-running process's state involves.",
+      "explanation": "A saga is a message-driven state machine: a class with separately declared data that is persisted between messages. Named message types start an instance when no existing one matches, and every handled message is mapped to its instance through a correlation property such as the order's id. The page warns that messages can arrive out of order and that a saga not designed for that will discard some of them, and a handler marks the saga complete when the process is over."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Process Manager",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/ProcessManager.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's catalog entry, filed under Message Routing, describes the hub-and-spoke flow from a trigger message through each processing unit's reply back to the central unit, warns that the central unit can become a performance bottleneck and that using one for every problem is overkill, and names AWS Step Functions and GCP Workflows as the process managers of its serverless loan broker examples."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 7: Message Routing, Process Manager",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-and-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Process Manager in its chapter 7, Message Routing; the publisher's page lists that chapter in the book's contents."
+    },
+    {
+      "title": "DotLn execution guide, pinned · Operator resume phrases — how you get dispatched",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's execution guide describes drive: WO-NNN as handing an order to a router that consults only canonical status, starts a fresh worker for the phrase status calls for and rereads status afterwards, holding no writer; it lists, among the ends of a drive, the operator's merge, a third failed verification and a second failed final review; it has resume: fix repair the order and repair-complete recorded before the order is verified again; it computes status by folding the order's append-only event records; and it turns away a transition the lifecycle does not allow without writing anything."
+    },
+    {
+      "title": "Apache Camel · Dynamic Router",
+      "url": "https://camel.apache.org/components/latest/eips/dynamicRouter-eip.html",
+      "accessed": "2026-11-01",
+      "supports": "Camel's Dynamic Router works out the next endpoint again after every step until its expression yields null, warns that an expression that never yields null makes it repeat without end, contrasts this with a routing slip computed once at the start, and advises keeping state between calls on the exchange for thread safety."
+    }
+  ],
+  "limits": [
+    "Every step depends on the manager. If its record of an order lived only in memory, a crash would forget how far every order had got; here the record is a fold of the order's log, so a fresh router can read it again, and a process manager without such a store needs one before it can be trusted with long processes. Every message also passes through it, so it is where load gathers.",
+    "A loop needs a bound counted in the record. Without the limit of {failureLimit} failed verifications, a verifier that never passes would keep the order cycling between fix and verify for ever; once {failureLimit} have failed, the next phrase is a stop, not another fix.",
+    "The manager has to match each report to its instance and to the step it is waiting for. Read without that check, a late or repeated report would set off a second dispatch. DotLn's lifecycle turns away a transition it does not allow without recording anything, so a stray report never reaches status; a process manager over plain messages makes the check itself, with a correlation identifier and its own note of the step in flight.",
+    "When the steps are known before the message sets out and never depend on results, a process manager is more machinery than the job needs: a routing slip or a fixed pipeline does the same without central state. Reach for the manager when results choose the route, as the failed verification does at frame 5.",
+    "The analogy breaks in two places. DotLn's router keeps no record of its own: it reads status afresh each time, so the state lives in the log and the decision in the router, where the pattern keeps both in one component. And one drive runs one order, one phase at a time, while a process manager usually runs many instances at once and may send work down parallel legs."
+  ],
+  "nearby": [
+    {
+      "id": "eip:129",
+      "why": "A routing slip is the choice when the sequence of steps is fixed before the message sets out: the list travels with the message and no central record is needed."
+    },
+    {
+      "id": "eip:133",
+      "why": "For the trade-off between the two directly: what each can express, and where each is cheaper to run and to change."
+    },
+    {
+      "id": "eip:87",
+      "why": "A correlation identifier is what a manager running many orders at once needs to tell whose report has just arrived."
+    },
+    {
+      "id": "eip:134",
+      "why": "For what the central record costs: the bottleneck, the single point of control, and recovering its state after a crash."
+    },
+    {
+      "id": "eip:110",
+      "why": "An aggregator joins parallel legs: when a process sends work to several steps at once, it collects their answers before the manager decides."
+    }
+  ]
+}

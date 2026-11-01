@@ -14,6 +14,7 @@ import type { ToolId } from '@dotln-angular/models';
 import { isPlainClick } from '../../plain-click';
 import type { StudyDisclosure, StudyIntent, StudySection, StudyView } from '../../types';
 import { StudyExplanation } from '../study-explanation/study-explanation';
+import { StudyFlow } from '../study-visuals/flow/flow';
 import { StudyInputs } from '../study-visuals/inputs/inputs';
 import { StudyMarbles } from '../study-visuals/marbles/marbles';
 import { StudyMotion } from '../study-visuals/motion/motion';
@@ -33,6 +34,7 @@ import { StudyTimeline } from '../study-visuals/timeline/timeline';
     NgTemplateOutlet,
     TPipe,
     StudyExplanation,
+    StudyFlow,
     StudyInputs,
     StudyMarbles,
     StudyMotion,
@@ -52,13 +54,14 @@ export class Study {
   protected readonly motion = viewChild(StudyMotion);
   protected readonly timeline = viewChild(StudyTimeline);
   protected readonly marbles = viewChild(StudyMarbles);
+  protected readonly flow = viewChild(StudyFlow);
 
   stepped(step: number) {
     this.intent.emit({ kind: 'step', step });
   }
   /** Returns the keyboard to the drawing after a worked step asks to show its moment. */
   showMoment() {
-    (this.motion() ?? this.timeline() ?? this.marbles())?.focus();
+    (this.motion() ?? this.timeline() ?? this.marbles() ?? this.flow())?.focus();
   }
   toggled(section: StudyDisclosure, details: HTMLDetailsElement) {
     this.intent.emit({ kind: 'expand', section, open: details.open });

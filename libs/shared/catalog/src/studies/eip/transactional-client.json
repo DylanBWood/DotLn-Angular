@@ -1,0 +1,128 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:170",
+  "work": "eip",
+  "slug": "transactional-client",
+  "authored": {
+    "by": "Claude dotln-worker author-07",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Treat everything a worker does with the messaging system between begin and commit as a draft that only commit publishes. A crash in the middle then costs nothing on the channels: the message it took is still there to be taken again, and nothing half-sent has escaped to a reader. The draft holds only what the messaging system controls, though. Work done anywhere else in the meantime is real as soon as it is done, and that is where the duplicates of a retried transaction come from.",
+    "situation": "As an analogy, read against DotLn's public architecture document, in its section on session lifecycle and resilience: a pending command waits in an outbox, a worker carries it out, a receipt of the result is published under the command's id, and a result entry, which DotLn calls CommandResult, is appended to the event log. A receipt and its log entry ought to commit together or not at all, and taking the command ought to be undone if the worker dies before both are done. The document describes DotLn reaching that end another way. The receipt goes out first; if the host crashes before the log entry is written, the command stays pending and recovery looks the receipt up. And each worker holds a five-second lease: when it runs out, the command is kept for a new attempt. That lease plays the part a visibility timeout plays for a cloud queue, the delay after which an unfinished message is offered again, since nothing commits the receipt and the log entry as one."
+  },
+  "example": {
+    "name": "One command, a crash, a retry and a commit",
+    "description": "As an analogy, read against DotLn's public architecture document. Command {command} waits in the outbox. The worker takes it inside a transaction, makes one write to a store the transaction does not cover, stages its receipt and its result entry, and crashes before committing. A fresh attempt, the last of {attempts}, does the same and commits, so the receipt and the result entry appear and the command leaves the outbox at one step, while the outside store has been written once per attempt.",
+    "parameters": {
+      "command": 7,
+      "attempts": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Open a transaction and receive",
+        "text": "The worker begins a transaction and takes command {command} from the outbox. The outbox stops offering the command to other workers but keeps it, because a receive inside a transaction can still be undone."
+      },
+      {
+        "title": "Work outside the transaction",
+        "text": "Anything the worker does that the messaging system does not control, such as a write to another store, happens now and for real. The transaction has no way to take it back."
+      },
+      {
+        "title": "Stage the sends",
+        "text": "The receipt and the result entry go into the transaction, not onto their channels. A reader of Receipts or Event log sees neither of them yet."
+      },
+      {
+        "title": "Roll back on failure",
+        "text": "If the worker crashes or gives up before committing, the messaging system discards the staged sends and makes command {command} visible in the outbox again, ready for another attempt."
+      },
+      {
+        "title": "Commit",
+        "text": "Commit is the single moment at which the receive and both sends become real: the command leaves the outbox in the same step as the receipt and the result entry appear."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "transaction = begin()\ncommand = receive from outbox within transaction\n  (hidden from other workers, still in the outbox)\n\nwrite to the outside store\n  (not part of the transaction: done now, whatever happens next)\n\nsend receipt for command to receipts within transaction\nsend result entry for command to event log within transaction\n  (staged: neither channel shows them yet)\n\non a crash or an error before commit:\n  rollback(transaction)\n  (staged sends discarded; command visible in the outbox again)\n\ncommit(transaction)\n  (command removed, receipt and result entry visible, all at once)",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/transactional-client.ts",
+    "textEquivalent": "Step {step}, round the worker's transaction on the Outbox, Receipts and Event log channels: {moves}. {states}. {held}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/transactional-client.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are assembled from these patterns. Its page for the pattern shows how a route opts in to a transaction and what that takes underneath.",
+      "explanation": "A route becomes transactional when it is marked transacted straight after the endpoint it consumes from; Camel then finds a Spring or JTA transaction manager instead of implementing one of its own, and its JMS and SQL components take part. The page separates local transactions over one resource, such as a single broker, from global ones that span a broker and a database and need an XA-capable transaction manager, with the resources themselves set up for it. It also shows propagation policies, such as an audit insert in a transaction of its own that can commit while the main one rolls back, and advises using as few of them as possible."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/transactions.html",
+      "relevance": "Spring Integration brings these patterns to Spring applications as channels and endpoints. Its transaction support page says which parts of a message flow a transaction covers.",
+      "explanation": "A flow started by a caller simply joins Spring's ordinary transaction management. A poller is the special case: it can put its receive inside the transaction, so a failed task rolls the receive back. Because the transaction is bound to the thread, handing a message to a pollable or executor channel ends it and commits even if a later step fails, unless that hand-off is itself transactional, such as a queue backed by a transactional message store or by JMS. Transaction synchronisation attaches actions to commit and rollback, such as moving a polled file to a success or a failure directory, and a pseudo-transaction manager offers those hooks where no real transaction exists."
+    },
+    {
+      "project": "NServiceBus",
+      "url": "https://docs.particular.net/transports/transactions",
+      "relevance": "NServiceBus is Particular Software's service bus for .NET. Its transport transactions page sets out the guarantee levels under which a message handler can run, and one of them is this pattern in all but name.",
+      "explanation": "An endpoint picks one of four modes, limited by what its transport supports. Under sends atomic with receive, the incoming message and every message the handler sends commit or roll back together, so a handler that fails puts its message back on the queue with nothing sent; database work in the handler stays outside that transaction. Receive only keeps the message until an attempt succeeds but can leave ghost messages and zombie records, so handlers must be idempotent. The page's table shows Amazon SQS and RabbitMQ offering only receive-level transactions, and it recommends an outbox stored with the business data for exactly-once processing without a distributed transaction."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Transactional Client",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/TransactionalClient.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's catalog entry, filed under Messaging Endpoints, gives its problem and solution and adds a cloud example: Amazon SQS does not offer transactional clients but hides a consumed message from other consumers until the consumer deletes it, making it visible again when a timeout expires."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 10: Messaging Endpoints, Transactional Client",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-and-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Transactional Client in its chapter 10, Messaging Endpoints; the publisher's page lists that chapter in the book's contents."
+    },
+    {
+      "title": "DotLn product architecture, pinned · Session lifecycle & resilience",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's architecture describes an outbox protocol in which each command is stored before an adapter picks it up and results are matched to commands by id; an inspection host that publishes each finished result as a receipt, never rewritten, filed under its command's id, and that, if it crashes between publishing a receipt and appending CommandResult, leaves the command pending for recovery to look the receipt up; five-second worker leases after whose expiry the command is kept for a fresh attempt; and it disclaims exactly-once effects on writes outside its store."
+    }
+  ],
+  "limits": [
+    "A transaction covers only what the messaging system controls. The write to the outside store happened before the crash and again on the retry, once for each of {attempts} attempts at command {command}. Make that write harmless to repeat, keyed by the command, or move it into the same store and transaction as the messages and publish it after commit, which is what an outbox does.",
+    "A command that fails every time is rolled back every time and comes straight back to the outbox: a poison message that keeps a worker busy for ever. The messaging system needs a redelivery count that moves such a message to a dead letter channel after a few attempts.",
+    "A request and the reply to it cannot share one transaction. The request is not sent until commit, so a client that waits for the reply inside the same transaction waits for ever. Commit the request in one transaction and receive the reply in the next.",
+    "Keep transactions short. Until commit or rollback the message taken is invisible to every other worker, so on a queue that must keep its order nothing behind it moves while one long transaction stays open.",
+    "Spanning the broker and another resource, such as a database, needs a distributed two-phase commit, which is slow and often unavailable, cloud queues included. Their substitute, a visibility timeout or a lease, returns the message only after the timeout and undoes nothing already sent, so delivery becomes at least once and the receiver must tolerate duplicates.",
+    "The analogy breaks where DotLn has no transaction at all. Its record describes the receipt being published before the result entry is appended, with recovery reconciling the two after a crash, and leases bringing a command back after its worker vanishes: reconciliation after the fact, not one commit."
+  ],
+  "nearby": [
+    {
+      "id": "eip:180",
+      "why": "Reach for an idempotent receiver when an effect cannot join the transaction, as the outside write here cannot: make doing it twice harmless instead of trying to prevent it."
+    },
+    {
+      "id": "eip:71",
+      "why": "Guaranteed delivery answers a different crash, the messaging system's own: persistence keeps the message, while a transaction decides when it counts as received."
+    },
+    {
+      "id": "eip:211",
+      "why": "Competing consumers is the usual setting for this pattern: several workers on one queue, where a transactional receive is what lets a dying worker's message go back to the others."
+    },
+    {
+      "id": "eip:171",
+      "why": "For the shapes a transaction bounds well, such as a receive with its sends or a receive with a database update, and why a request and its reply cannot share one."
+    },
+    {
+      "id": "eip:70",
+      "why": "A dead letter channel is where a message that keeps rolling back should end up, instead of returning to the queue for ever."
+    }
+  ]
+}
