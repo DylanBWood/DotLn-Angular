@@ -1,0 +1,159 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:234",
+  "work": "rxjs",
+  "slug": "timeout",
+  "authored": {
+    "by": "Claude dotln-worker author-08",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "timeout is a deadline on silence, not on duration. Its clock starts when it subscribes and starts again with every value, so a slow source that keeps talking passes and a quick one that goes quiet fails. When the clock runs out it stops listening before it reports the failure, so a page the server sends after the deadline, page 4 here, never reaches the reader.",
+    "situation": "A request to a server that may hang. Without a deadline a stalled request leaves a spinner turning for ever; with one, the page can say that the request failed and offer Retry."
+  },
+  "example": {
+    "name": "A report that stalls",
+    "description": "A slow server sends a report in pages, and a frame here is a virtual millisecond. pages$ allows {startup} frames for the first page, because the server needs time to start a report, and {gap} frames between pages after that. The first page comes just inside the startup wait and {pagesShown} pages arrive in time; then the server stalls, the gap wait runs out and pages$ fails with a TimeoutError.",
+    "parameters": {
+      "startup": 6,
+      "gap": 4,
+      "pagesShown": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start the startup wait",
+        "text": "When pages$ is subscribed, listen to the report and start a timer for the startup wait. Had no first wait been given, the gap wait would time the first page too."
+      },
+      {
+        "title": "Start the wait again on each page",
+        "text": "A page that arrives before the timer runs out is passed on at once, counted and kept as the last page. The timer is cancelled and started again for the gap wait, so each deadline is measured from the previous page, not from the start of the report."
+      },
+      {
+        "title": "Give up when a wait runs out",
+        "text": "If the timer runs out first, stop listening to the report, which also forgets the last page, and fail pages$ with a TimeoutError whose info counts the pages seen. Given a with factory instead, timeout passes the factory the same info and switches to the stream it returns rather than failing."
+      },
+      {
+        "title": "Stand down when the report ends",
+        "text": "If the report completes or fails before a timer runs out, cancel the timer and pass the completion or failure on."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the reader starts listening for pages:\n  listen to the report\n  start a timer for the startup wait\n    (or for the gap wait when no startup wait is given)\n\non each page from the report:\n  cancel the timer\n  pass the page on\n  count it and keep it as the last page\n  start a timer for the gap wait\n\nwhen the timer runs out:\n  stop listening to the report\n    (which forgets the last page)\n  tell the reader the report timed out\n    (with the count of pages seen)\n\nwhen the report completes or fails:\n  cancel the timer\n  pass the completion or failure on",
+    "rxjs": "pages$ = report$.pipe(\n  timeout({ first: startup, each: gap }),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/timeout.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/timeout.ts",
+    "textEquivalent": "Frame {frame}: {now}. Shown so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the HTTP timeout interceptor",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/shared/data-access/src/lib/interceptors.ts",
+      "relevance": "Where this app uses it: libs/shared/data-access/src/lib/interceptors.ts puts a timeout on the stream of events of every HTTP request.",
+      "explanation": "timeoutInterceptor reads a duration from the request's context, falling back to the environment's requestTimeoutMs, and pipes the request through timeout({ each: duration }). With each alone the same wait times the first event and every gap after it. Angular's fetch backend, HttpClient's default, emits a Sent event as soon as it starts the request and before it awaits the response, so in practice the wait runs from Sent to the response, and from one progress event to the next when progress is reported: a slow download that keeps arriving is not cut off, and a stalled one is. When the wait runs out, timeout unsubscribes, and the fetch backend's teardown aborts the unfinished request."
+    },
+    {
+      "project": "NgRx Data, DefaultDataService",
+      "url": "https://github.com/ngrx/platform/blob/a4995391ef631f1bd60d539f436a1aa5c23c4fe5/modules/data/src/dataservices/default-data.service.ts",
+      "relevance": "NgRx Data is the NgRx library that keeps entity collections in sync with a REST back end; DefaultDataService, in modules/data/src/dataservices/default-data.service.ts of the ngrx/platform repository, makes each collection's HTTP calls.",
+      "explanation": "When its configuration sets a timeout in milliseconds, execute() pipes each HttpClient call through timeout(this.timeout + this.saveDelay), a bare number and so a wait between values, and then through catchError, which wraps whatever failed, the TimeoutError included, in a DataServiceError. HttpClient's calls emit only the response unless a caller asks for events, so here the one wait runs from subscription to the response and bounds the whole request; the app's interceptor, which sees the Sent event first, measures from Sent instead. The file is pinned to the 22.0.1 release commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · timeout",
+      "url": "https://rxjs.dev/api/index/function/timeout",
+      "accessed": "2026-10-31",
+      "supports": "first times only the arrival of the first value, from subscription or until a Date; each times the wait between values, and times the first value too when first is not given; without a with factory the operator fails with a TimeoutError, which the page suggests telling apart with instanceof, and with one it switches to the stream the factory returns."
+    },
+    {
+      "title": "timeout.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/timeout.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version each value cancels the timer and starts it again for each; when a timer runs out the operator unsubscribes from its source, whose teardown sets the last value to null, and only then builds the info of meta, seen and lastValue for the with factory or the TimeoutError; with no each, no timer follows the first value; meta comes from the operator's configuration; and TimeoutError's documentation recommends a project's own error class over building or subclassing it."
+    },
+    {
+      "title": "Angular guide · Making HTTP requests, Timeouts",
+      "url": "https://angular.dev/guide/http/making-requests",
+      "accessed": "2026-10-31",
+      "supports": "HttpClient has its own timeout option, a number of milliseconds after which the backend request is aborted and an error emitted, covering the backend request alone and not the interceptor chain; such a timeout reaches the caller as an HttpErrorResponse of status 0 whose error is a DOMException named TimeoutError."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "In run mode the TestScheduler is used automatically by operators that use the AsyncScheduler, as timeout does by default, and one frame is one virtual millisecond, so the spec's frames stand for the waits' milliseconds."
+    },
+    {
+      "title": "ReactiveX/rxjs issue 7324 · TimeoutInfo.lastValue is null when it shouldn't be",
+      "url": "https://github.com/ReactiveX/rxjs/issues/7324",
+      "accessed": "2026-10-31",
+      "supports": "A lastValue of null in the info a timeout hands to its with factory, whatever the source emitted before the wait ran out, was reported against RxJS 7.8.1; the issue was closed as not planned on 2026-07-22, without a fix."
+    },
+    {
+      "title": "fetch.ts in Angular v22.2.3",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/common/http/src/fetch.ts",
+      "accessed": "2026-10-31",
+      "supports": "Angular's fetch backend emits the Sent event before it awaits the response, emits download progress events when progress is reported, aborts an unfinished request when it is unsubscribed, and implements a request's own timeout option by aborting the request when that time has passed."
+    },
+    {
+      "title": "backend.ts in Angular v22.2.3",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/common/http/src/backend.ts",
+      "accessed": "2026-10-31",
+      "supports": "HttpBackend is provided in root as the fetch backend, so the fetch backend is what HttpClient uses unless an application configures another."
+    },
+    {
+      "title": "client.ts in Angular v22.2.3",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/common/http/src/client.ts",
+      "accessed": "2026-10-31",
+      "supports": "Unless a call asks to observe events, HttpClient filters the request's event stream down to the response before handing it to the caller."
+    }
+  ],
+  "limits": [
+    "A timeout stops listening; it does not undo work. When the wait runs out, timeout unsubscribes from its source, and what follows is up to the source: Angular's fetch backend aborts the request, a promise-based call runs on unheard, and a server that has already received a save may still apply it. Retrying a timed-out write can apply it twice.",
+    "Each wait measures silence, not total time. A source that keeps sending a value just inside the gap wait never times out, however long it runs. For a budget on the whole request, takeUntil with a timer ends it quietly, or HttpClient's own timeout option aborts the backend request; that option fails with an HttpErrorResponse whose error is a DOMException named TimeoutError, which an instanceof check against RxJS's TimeoutError does not catch.",
+    "With each alone, the first value is held to the same wait; with first alone, nothing is timed after the first value. In this example the gap wait alone fails pages$ before the server has sent its first page, and the startup wait alone never reports the stall.",
+    "The error does not name the wait that ran out, and it does not keep the last value. Its info has a lastValue field, but at RxJS 7.8.2 the operator has set it to null by the time it builds the info, so a handler that needs the last page must keep it itself, with tap for instance. The count of values seen is right: a count of zero means the first wait ran out. meta is fixed when the operator is configured, so it can name the request but not the wait.",
+    "A timeout is an error, and an error ends the stream. To show it and offer Retry, follow timeout with catchError; to fall back to other values instead, give timeout a with factory."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:356",
+      "why": "TimeoutError is what timeout fails with. Check for it with instanceof; RxJS recommends a project's own error class for a timeout of its own."
+    },
+    {
+      "id": "rxc:346",
+      "why": "TimeoutInfo is what the error and the with factory receive: meta, the count of values seen, and a lastValue that at RxJS 7.8.2 is already null when a wait runs out."
+    },
+    {
+      "id": "rxc:220",
+      "why": "catchError turns the TimeoutError into a failure the page can show and offer Retry for."
+    },
+    {
+      "id": "rxc:221",
+      "why": "retry subscribes again after a timeout, which sends the request again: right for a read, risky for a write the server may already have applied."
+    },
+    {
+      "id": "rxc:235",
+      "why": "timeoutWith was the way to switch to a fallback on timeout; it is deprecated in favour of timeout's with option."
+    },
+    {
+      "id": "rxc:192",
+      "why": "takeUntil with a timer is a budget on the whole stream that ends it quietly instead of failing it."
+    },
+    {
+      "id": "rxc:172",
+      "why": "debounceTime also measures silence, but it waits for silence and then emits, where timeout treats silence as a failure."
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:161",
+  "work": "rxjs",
+  "slug": "scan",
+  "authored": {
+    "by": "Claude dotln-worker author-07",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "scan lets a stream keep a running answer without anyone keeping a variable. The answer lives inside the subscription and is rebuilt from each event as it arrives, so what is shown is always the history folded so far, and no other code can change it behind the stream's back. It is reduce that reports after every step rather than once at the end, and its state belongs to the subscription that built it, not to the stream.",
+    "situation": "A bank statement's balance column: each line is a deposit or a withdrawal, and the balance beside it is the one above plus that amount. The same shape fits any state built from events, such as a basket total, a score or a game's state built from commands. It goes wrong when several readers must share one balance, because each subscription keeps its own."
+  },
+  "example": {
+    "name": "A statement and a phone reading one account",
+    "description": "A bank's live feed sends the amounts {amounts} at frames 1, 4 and 8 and completes at frame 11. The balance stream folds them into a balance that opens at {opening}. A statement subscribes to it from the start; a phone app subscribes to the same stream at frame 5, after the first two amounts have gone by.",
+    "parameters": {
+      "opening": 10,
+      "amounts": "5, -3 and 4"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start each subscriber from the seed",
+        "text": "When something subscribes, scan gives that subscription its own state, set to the seed: the opening of {opening}. Nothing is sent yet. The phone, subscribing at frame 5, starts from the opening too, not from the balance the statement has reached."
+      },
+      {
+        "title": "Fold each amount into the state",
+        "text": "When an amount arrives, each subscription's reducer receives that subscription's state and the amount, and its result replaces the state. Without a seed, the first amount would become the state unchanged and the reducer would first run on the second."
+      },
+      {
+        "title": "Send the new state",
+        "text": "The new state goes out at once, on every amount, so the statement's balance column fills line by line. reduce would keep the same state but send only the last one, when the feed completes."
+      },
+      {
+        "title": "Finish with the feed",
+        "text": "When the feed completes, each balance stream completes and sends nothing more. An error from the feed, or one the reducer throws, ends the stream with that error, and the state goes with the subscription."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when a reader starts listening:\n  give that reader its own balance, set to the opening\n  (a reader who starts late still starts from the opening)\n  send nothing yet\n\non each amount from the feed, for each reader:\n  if the reader has no balance yet (no opening was given):\n    balance = amount\n  otherwise:\n    balance = balance + amount\n\n  send the reader's new balance\n\nwhen the feed finishes:\n  finish each reader's balances\n  (the last balance has already been sent)\nif the feed fails, or the addition throws:\n  fail the reader's balances with that error",
+    "rxjs": "balance$ = amount$.pipe(\n  scan((balance, amount) => balance + amount, opening),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/scan.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/scan.ts",
+    "textEquivalent": "Frame {frame}: {now}. Sent so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the soldier scene's facade",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "Where this app uses it: libs/features/scene/src/lib/facades/scene.facade.ts folds every clock tick and every command into the soldier scene's current run.",
+      "explanation": "The clock's ticks are mapped to commands and merged with the commands the page sends. Each command is a function from one run to the next, so the reducer only applies it, and the seed is the run the facade holds when it starts. Each folded run is pushed into a BehaviorSubject, so the painter and the page read one shared current run instead of each subscribing to the fold and starting their own, which is the phone's mistake in this example."
+    },
+    {
+      "project": "NgRx Store",
+      "url": "https://github.com/ngrx/platform/blob/19.0.0/modules/store/src/state.ts",
+      "relevance": "NgRx is a Redux-style state library for Angular; modules/store/src/state.ts in the ngrx/platform repository, read at the 19.0.0 tag, holds the store's current state.",
+      "explanation": "Dispatched actions are paired with the current reducer by withLatestFrom and folded by scan(reduceState, seed), where the seed holds the initial state and reduceState runs the reducer on the previous state and the action. The State class is itself a BehaviorSubject and pushes each folded state into itself, so the fold runs once and every consumer, early or late, reads the same current state."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · scan",
+      "url": "https://rxjs.dev/api/index/function/scan",
+      "accessed": "2026-10-31",
+      "supports": "With a seed every value passes through the accumulator; without one the first value becomes the state and is sent on without passing through it. The state is sent after each update, and an accumulator that throws ends the output with an error."
+    },
+    {
+      "title": "scan.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/scan.ts",
+      "accessed": "2026-10-31",
+      "supports": "Whether a seed was given is decided by counting the arguments, so a seed of undefined passed explicitly counts as a seed."
+    },
+    {
+      "title": "scanInternals.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/scanInternals.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the state, the seed flag and the index are created inside the function that runs for each subscriber, so every subscription folds on its own. Each value increments the index and replaces the state with the accumulator's result, or with the value itself when there is no state yet. Completion and errors pass straight through."
+    },
+    {
+      "title": "RxJS guide · Overview",
+      "url": "https://rxjs.dev/guide/overview",
+      "accessed": "2026-10-31",
+      "supports": "The guide counts clicks with scan from a seed of 0 and contrasts it with a counter kept in a global variable, presenting scan as a way to keep that state inside the stream."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, a hash an error, and a caret and an exclamation mark the start and end of a subscription."
+    }
+  ],
+  "limits": [
+    "Each subscription folds on its own, and nothing warns a late one. The phone subscribes at frame 5, starts from the opening and ends on a balance the account never had. When several readers need one running state, fold once and share it: shareReplay(1) after scan gives a late subscriber the current balance at once, and NgRx and this app's scene facade push each state into a BehaviorSubject.",
+    "The seed is one value shared by every subscription. A reducer that mutates an object or array seed, rather than returning a new state, changes the seed itself, so the next subscription or a retry starts from the mutated state. Return a new state from the reducer.",
+    "Without a seed, the first value becomes the state unchanged and the reducer first runs on the second value, with index 1. That is right only when a value already is a state: leaving out the opening here would take the first deposit for the whole balance. At the installed version a seed of undefined passed explicitly still counts as a seed, because scan counts its arguments.",
+    "scan never sends the seed. The statement is blank until the first amount, and the phone shows nothing from subscribing until the next amount arrives. Add startWith(opening) after scan when a fresh fold must show its starting balance at once.",
+    "The reducer must be synchronous and should be pure. A reducer that needs a request for each value belongs in mergeScan or switchScan. One with side effects repeats them for every subscription, since each subscription runs its own fold."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:249",
+      "why": "reduce is the same fold when only the final balance matters: it sends once, when the source completes."
+    },
+    {
+      "id": "rxc:155",
+      "why": "mergeScan is the choice when computing the next state needs a stream, such as a request per value; each inner result becomes the next state."
+    },
+    {
+      "id": "rxc:156",
+      "why": "switchScan is mergeScan that cancels the computation still in flight when the next value arrives, so only the newest one becomes the state."
+    },
+    {
+      "id": "rxc:216",
+      "why": "shareReplay is how several readers share one fold, so a late subscriber receives the current balance instead of starting a new fold from the seed."
+    },
+    {
+      "id": "rxc:62",
+      "why": "A BehaviorSubject holds the current state where other code reads it or subscribes late; a folded stream often feeds one, as in NgRx."
+    },
+    {
+      "id": "rxc:199",
+      "why": "startWith puts the seed on screen before the first value, which scan itself never does."
+    }
+  ]
+}

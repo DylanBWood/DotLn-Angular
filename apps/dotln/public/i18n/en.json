@@ -335,6 +335,7 @@
       "views": "Views of the same example",
       "motionView": "Movement",
       "time": "Time · {{seconds}} seconds",
+      "frameOf": "Frame {{frame}} of {{last}}",
       "previous": "Step back",
       "next": "Step forward",
       "choose": "Choose another way into the idea.",
@@ -362,7 +363,8 @@
       "rxjs": {
         "label": "RxJS pseudocode",
         "illustrative": "Illustrative: this shows the shape of the stream. Nothing here runs or is tested.",
-        "executable": "Executable: this code runs and a spec tests it."
+        "executable": "Executable: this code runs and a spec tests it.",
+        "spec": "This exact code ran in the test suite against the marbles drawn above, in {{spec}}."
       },
       "implementations": "In public projects",
       "references": "References",
@@ -370,6 +372,7 @@
       "play": "Play",
       "pause": "Pause",
       "numbers": "Show the numbers",
+      "emissions": "Show the emissions",
       "jump": "Jump to the study",
       "inputs": {
         "title": "Try another value",

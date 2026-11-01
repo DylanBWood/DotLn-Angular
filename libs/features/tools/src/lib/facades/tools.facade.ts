@@ -21,7 +21,7 @@ import { translateSignal } from '@dotln-angular/i18n';
 import type { CatalogFilters, ConceptStudy, ToolId, WorkSlug } from '@dotln-angular/models';
 
 import { clampStep, mapStudy } from '../mappers/study-mapper';
-import type { StudyModel, StudyModelFunction } from '../studies/study-model';
+import { type StudyModel, type StudyModelFunction, ticksOf } from '../studies/study-model';
 import { studyModels } from '../studies/study-models';
 import type { StudyDisclosure, StudyIntent, StudyView, StudyVisualView } from '../types';
 
@@ -270,19 +270,19 @@ export class ToolsFacade {
     this.#stopPlaying();
     const model = this.#studyModel();
     if (!playing || !model || this.#reducedMotion()) return;
-    const { frames } = model.motion;
-    const last = frames.length - 1;
+    const ticks = ticksOf(model);
+    const last = ticks.length - 1;
     const current = clampStep(model, this.#studyStep());
     const start = current === last ? 0 : current;
     this.#studyStep.set(start);
-    let clock = frames[start].seconds;
+    let clock = ticks[start].seconds;
     let step = start;
     this.#playing.set(true);
     this.#playback = animationFrames()
       .pipe(pairwise())
       .subscribe(([before, now]) => {
         clock += Math.min(now.timestamp - before.timestamp, longestFrameMs) / 1000;
-        while (step < last && frames[step + 1].seconds <= clock) step++;
+        while (step < last && ticks[step + 1].seconds <= clock) step++;
         this.#studyStep.set(step);
         if (step === last) this.#stopPlaying();
       });

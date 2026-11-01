@@ -1,0 +1,145 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:150",
+  "work": "rxjs",
+  "slug": "merge-map",
+  "authored": {
+    "by": "Claude dotln-worker author-05",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Everything at once, answers as they come. mergeMap starts the work for a value as soon as the value arrives, lets any number of those pieces of work run side by side, and passes on each result the moment it appears, so the output follows the order in which work finishes, not the order in which it was asked for. Given a cap as its second argument, it runs at most that many and makes the rest wait their turn.",
+    "situation": "The same shared album, once each photo carries its own place, such as the date it was taken. The uploads are then independent and there is no reason for a small photo to wait behind a large one: all of them can run at once, the album is complete sooner, and each answer is matched to its photo by name, whatever order the answers come back in."
+  },
+  "example": {
+    "name": "Three photos uploaded to a shared album",
+    "description": "The user adds three photos, {photos}, at frames 1, 3 and 5, and is done adding at frame 8. The server answers cat's upload {catUpload} frames after it starts, dog's after {dogUpload} and owl's after {owlUpload}, and each upload completes on the frame after its answer. cat is a large photo and dog a small one, so dog's upload, started second, is answered first. The concatMap study runs these same uploads one at a time.",
+    "parameters": {
+      "photos": "cat, dog and owl",
+      "catUpload": 5,
+      "dogUpload": 1,
+      "owlUpload": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start every upload at once",
+        "text": "When the user adds a photo, its upload is prepared and started straight away, whatever else is running. Nothing waits: dog's upload begins while cat's is still going."
+      },
+      {
+        "title": "Pass on each answer as it arrives",
+        "text": "Whichever upload the server answers first goes out first. The output keeps no note of which photo was added first, which is how dog's answer comes out ahead of cat's; the value itself has to say which photo it belongs to."
+      },
+      {
+        "title": "Stop everything on a failure",
+        "text": "If any upload fails, the failure goes to the output, every other upload still running is cut off and photos added later are no longer listened to."
+      },
+      {
+        "title": "Finish when the user is done and every upload has completed",
+        "text": "The output completes once the user has finished adding photos and no upload is still running. A user who stops adding while uploads are still going leaves the output open until the last of them completes."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each photo the user adds:\n  prepare and start the upload for photo at once\n  (uploads already running carry on beside it)\n\non each answer from any running upload:\n  pass it on at once, whichever photo was added first\n\nif any upload fails:\n  pass the failure on\n  cut off every other running upload\n  stop listening for new photos\n\nwhen the user is done adding and no upload is running:\n  complete the output",
+    "rxjs": "stored$ = photo$.pipe(\n  mergeMap((photo) => upload(photo)),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/merge-map.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/merge-map.ts",
+    "textEquivalent": "Frame {frame}: {now}. Stored so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Angular's router, its resolvers",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/operators/resolve_data.ts",
+      "relevance": "Angular's router runs the resolvers of the routes being activated in resolve_data.ts of the angular/angular repository.",
+      "explanation": "resolveNode turns one route's resolver keys into a stream with from and passes it through mergeMap with no cap, so no resolver of the route waits for another to finish. Each resolver is cut to its first value with first(), so one that would go on emitting cannot hold the merge open, and each answer is written into a data object under its own key, which makes the order the answers arrive in irrelevant. takeLast(1) then waits for the last of them before the collected data is passed on; any failure other than a resolver that completes without a value is rethrown and fails the resolution. Across routes the same file uses concatMap, because a child's data is built from its parent's. The file is pinned to the commit read on 2026-10-31."
+    },
+    {
+      "project": "Angular's router, its guard checks",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/operators/check_guards.ts",
+      "relevance": "Angular's router runs a navigation's guards in check_guards.ts of the angular/angular repository.",
+      "explanation": "runCanDeactivateChecks passes every canDeactivate check of the navigation through mergeMap with no cap, so no check waits for another to finish, and first takes the first result that is not true. Whichever guard refuses first decides; taking its result unsubscribes the guards still running, so they are cut off unheard. If every guard answers true, first emits its default, true, once all have completed. runCanActivateChecks in the same file runs the activation guards route by route with concatMap instead. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · mergeMap",
+      "url": "https://rxjs.dev/api/index/function/mergeMap",
+      "accessed": "2026-10-31",
+      "supports": "mergeMap's optional concurrent argument is the largest number of inner sources subscribed at once, and it defaults to Infinity."
+    },
+    {
+      "title": "mergeMap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/mergeMap.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version mergeMap takes a number given as its second argument as the concurrency limit and hands the source, the projection and that limit to mergeInternals."
+    },
+    {
+      "title": "mergeInternals.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/mergeInternals.ts",
+      "accessed": "2026-10-31",
+      "supports": "While the limit is reached a new value is pushed onto a buffer and its projection is not yet called; when an inner completes, rather than errors or is cut off, buffered values are subscribed oldest first until the limit is reached again; an inner's error goes to the output; and the output completes once the source has completed, the buffer is empty and no inner is active."
+    },
+    {
+      "title": "RxJS guide · Higher-order Observables",
+      "url": "https://rxjs.dev/guide/higher-order-observables",
+      "accessed": "2026-10-31",
+      "supports": "The guide describes mergeMap as subscribing to each inner as it arrives and passing each value on as it comes, set beside concatMap, switchMap and exhaustMap."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS Code with Marble Diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The syntax the diagram and its spec are written in: a dash for each frame, a character for each emission, a bar for completion, a hash for an error, and in subscription marbles a caret where a subscription starts and an exclamation mark where it ends."
+    }
+  ],
+  "limits": [
+    "Nothing limits how many run. Each photo starts uploading the moment it is added, so a user who drops two hundred photos opens two hundred uploads at once, and nothing in the stream pushes back. Pass a cap as the second argument, mergeMap((photo) => upload(photo), 3), and the rest wait in a queue; the queue itself has no ceiling, and a cap of one is concatMap.",
+    "Order is lost. Answers come out in the order the uploads finish, dog's before cat's here, so code that takes the latest answer to be the answer for the latest value is wrong: a search whose older query answers last overwrites the newer result. Keep the identity in the value, as each answer here names its photo; use concatMap when results must follow the order of the values, and switchMap when only the newest value's answer matters.",
+    "One failed upload fails them all. The error reaches the output, the other uploads still running are cut off part-way and photos added later are not heard. Catch inside the projection, upload(photo).pipe(catchError(() => of(failed))), so that one broken upload stays one broken upload.",
+    "An upload that never completes keeps the output open for ever, and under a cap it holds its slot for ever too, so with a cap of one everything behind it waits. An inner that goes on emitting, such as one that keeps listening for the server's processing updates, needs first(), take(1) or a timeout before it is merged."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:147",
+      "why": "concatMap runs these same uploads one at a time: the album fills later, but in the order the photos were added. Reach for it when the order of the work matters."
+    },
+    {
+      "id": "rxc:197",
+      "why": "mergeAll is the same merging over a stream that already carries the inner streams, when nothing is left to project."
+    },
+    {
+      "id": "rxc:449",
+      "why": "The concurrent parameter is the cap this example leaves out, as it works across the operators that accept it; read it when choosing a cap, or to see why a cap of one is concatMap."
+    },
+    {
+      "id": "rxp:89",
+      "why": "Concurrency limits is the pattern for giving mergeMap a cap, with the ways a capped merge still fails: a backlog that grows and a stuck inner that keeps its slot."
+    },
+    {
+      "id": "rxc:152",
+      "why": "switchMap is the choice when only the newest value's answer matters and older work may be abandoned, such as a search box."
+    },
+    {
+      "id": "rxc:149",
+      "why": "exhaustMap is the choice when values that arrive during the work should be ignored rather than started, such as repeated clicks on a submit button."
+    },
+    {
+      "id": "rxc:136",
+      "why": "forkJoin is the choice when a fixed set of requests is known up front and the reader needs all of their answers together, once, rather than each as it lands."
+    },
+    {
+      "id": "rxp:118",
+      "why": "Catching inside the inner stream is how one failed upload stays one failed photo instead of ending them all."
+    }
+  ]
+}

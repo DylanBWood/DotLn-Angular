@@ -514,10 +514,10 @@ test('the shelf and the home count the studies, and contents and results mark th
     if (response.request().resourceType() === 'script') scripts.push(response.url());
   });
   await page.goto('/tools');
-  await expect(page.getByText('20 studied')).toBeVisible();
-  await expect(page.getByRole('listitem').filter({ hasText: 'AI for Games' })).toContainText(
-    '768 concepts',
-  );
+  const home = (title: string) => page.getByRole('listitem').filter({ hasText: title });
+  await expect(home('AI for Games')).toContainText('768 concepts');
+  await expect(home('AI for Games')).toContainText('20 studied');
+  await expect(home('RxJS')).toContainText('20 studied');
   expect(scripts.some((url) => url.includes('tools-aifg'))).toBe(false);
   await page.getByRole('link', { name: 'Read the catalog', exact: true }).click();
   const shelf = page.getByRole('navigation', { name: 'The works' });
@@ -569,10 +569,10 @@ test('the studied facet narrows the results to the concepts with a study', async
   await search(page).fill('a');
   const all = Number(await page.getByTestId('search-count').getAttribute('data-count'));
   await choose(page, 'Study', 'Has a study');
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '20');
-  expect(all).toBeGreaterThan(20);
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '40');
+  expect(all).toBeGreaterThan(40);
   await choose(page, 'Study', 'No study yet');
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 20));
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 40));
 });
 
 test('keyboard menu scrolling holds focus under a stationary pointer and pointer input resumes', async ({
@@ -670,6 +670,40 @@ for (const width of [360, 768, 1440]) {
     },
   );
 
+  test(`switchMap's study fits ${width}px at the board accessibility threshold`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    const serious = async () =>
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations.filter(
+        (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+      );
+    await page.goto('/tools/catalog/rxc:152');
+    await expect(page.locator('tools-study-marbles')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+    const study = page.locator('tools-study');
+    await study.locator('.numbers summary').click();
+    await study.locator('.how-to-read summary').filter({ hasText: 'How to read' }).click();
+    for (const section of [
+      'Follow the mechanism',
+      'Think in streams',
+      'Where this breaks down',
+      'See it elsewhere',
+    ])
+      await summary(page, section).press('Enter');
+    await expect(study.getByTestId('rxjs-spec')).toBeVisible();
+    await expect(study.locator('.references a').first()).toBeVisible();
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+  });
+
   test(`Flocking's study and the home fit ${width}px at the board accessibility threshold`, async ({
     page,
   }) => {
@@ -702,6 +736,95 @@ for (const width of [360, 768, 1440]) {
     expect(await serious()).toEqual([]);
   });
 }
+
+test('RxJS has twenty studied concepts, and switchMap’s study steps its marbles with each emission named', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  const shelf = page.getByRole('navigation', { name: 'The works' });
+  await expect(shelf.getByRole('button', { name: /RxJS/ })).toContainText('20 studied');
+  await shelf.getByRole('button', { name: /RxJS/ }).click();
+  const list = page.locator('.studied-list');
+  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
+  await expect(list.getByRole('link')).toHaveCount(20);
+  await list.getByRole('link', { name: 'switchMap', exact: true }).click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('switchMap');
+  await expect(page).toHaveURL(/\/tools\/catalog\/rxc:152$/);
+  const study = page.locator('tools-study');
+  const marbles = study.locator('tools-study-marbles');
+  // The example opens on its last frame, the whole run: every output value is drawn.
+  await expect(marbles.getByRole('img')).toHaveAccessibleName(/^Frame 14: .*shown\$ completes/);
+  await expect(marbles.locator('.marble')).toHaveCount(9);
+  // The default browser context asks for reduced motion: nothing runs and Play is not offered.
+  const time = study.getByRole('slider', { name: 'Frame 14 of 14' });
+  await expect(time).toHaveValue('14');
+  await page.waitForTimeout(300);
+  await expect(time).toHaveValue('14');
+  await expect(study.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+  // Back at a moment, the output lane shows only what has been emitted by then.
+  await study.getByRole('button', { name: 'bee cancels ant', exact: true }).click();
+  await expect(study.getByRole('slider', { name: 'Frame 5 of 14' })).toHaveValue('5');
+  await expect(marbles.getByRole('img')).toHaveAccessibleName(/^Frame 5: query\$ emits b \(bee\)/);
+  await expect(marbles.locator('.marble')).toHaveCount(7);
+  // Under reduced motion no value rides down: the courier of frame 4 is drawn but not shown.
+  await study.getByRole('button', { name: 'Step back', exact: true }).click();
+  await expect(study.getByRole('slider', { name: 'Frame 4 of 14' })).toHaveValue('4');
+  await expect(marbles.locator('.courier')).toHaveCount(1);
+  await expect(marbles.locator('.courier')).toBeHidden();
+  await expect(marbles.locator('.marble.landing')).toBeVisible();
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(study.getByRole('slider', { name: 'Frame 5 of 14' })).toHaveValue('5');
+  await study.locator('.numbers summary').click();
+  await expect(page.getByTestId('study-reading')).toContainText(
+    'results(ant) is cut off; results(bee) is opened',
+  );
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(study.getByRole('slider', { name: 'Frame 6 of 14' })).toHaveValue('6');
+  await expect(page.getByTestId('study-reading')).toContainText('Frame 6: nothing new happens');
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(page.getByTestId('study-reading')).toContainText(
+    'Frame 7: query$ emits c (cat); results(bee) is cut off; results(cat) is opened',
+  );
+  await expect(marbles.locator('.marble.current')).toHaveCount(1);
+  await expect(marbles.locator('.cut')).toHaveCount(2);
+  await summary(page, 'Think in streams').press('Enter');
+  await expect(study.getByTestId('rxjs-label')).toContainText('Executable');
+  await expect(study.getByTestId('rxjs-spec')).toContainText(
+    'libs/features/tools/src/lib/studies/rxjs/switch-map.spec.ts',
+  );
+  await expect(study.locator('.algorithm-guide')).toHaveCount(0);
+  await summary(page, 'Where this breaks down').press('Enter');
+  await expect(study).toContainText('A cut-off request is a lost request');
+  await study.locator('.nearby a', { hasText: 'exhaustMap' }).click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('exhaustMap');
+  await expect(page.locator('tools-study-marbles')).toBeVisible();
+});
+
+test('share and shareReplay open side by side from the nearby links', async ({ page, context }) => {
+  await page.goto('/tools/catalog/rxc:215');
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('share');
+  await expect(page.locator('tools-study-marbles')).toBeVisible();
+  const link = page.locator('tools-study .nearby a', { hasText: 'shareReplay' });
+  await expect(link).toHaveAttribute('href', /\/tools\/catalog\/rxc:216$/);
+  const beside = await context.newPage();
+  await beside.goto((await link.getAttribute('href')) ?? '');
+  await expect(reading(beside).getByRole('heading', { level: 2 })).toHaveText('shareReplay');
+  await expect(beside.locator('tools-study-marbles')).toBeVisible();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('share');
+  // Each diagram draws two readers of one source, so the two studies can be compared lane by lane,
+  // and frame 7 is where they differ: the late reader hears the last quote only under shareReplay.
+  for (const opened of [page, beside]) {
+    expect(await opened.locator('tools-study-marbles .axis').count()).toBeGreaterThanOrEqual(3);
+    await opened.locator('tools-study').getByRole('slider').fill('7');
+  }
+  await expect(page.locator('tools-study-marbles').getByRole('img')).toHaveAccessibleName(
+    /^Frame 7: chart\$ subscribes\./,
+  );
+  await expect(beside.locator('tools-study-marbles').getByRole('img')).toHaveAccessibleName(
+    /^Frame 7: chart\$ subscribes; chart\$ emits b \(104\)/,
+  );
+  await beside.close();
+});
 
 test('a long unbroken title wraps in search results and the history at 360px', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });

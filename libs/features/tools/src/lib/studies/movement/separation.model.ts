@@ -15,7 +15,7 @@ import {
 
 import { namedBoundsOf } from '../drawing';
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel } from '../study-model';
+import type { MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface SeparationParameters {
   readonly centre: number;
@@ -179,7 +179,7 @@ function frameOf(
   linear: ShelfPair,
   step: number,
   example: SeparationParameters,
-): StudyFrame {
+): MotionFrame {
   const squareStep = calculateSeparationStep(square, example, 2);
   const linearStep = calculateSeparationStep(linear, example, 1);
   const lanes = [
@@ -270,7 +270,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const square = separationFrames(example, 2);
   const linear = separationFrames(example, 1);
@@ -298,6 +298,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const linearExit = exit(linearGaps);
   const squareExit = exit(squareGaps);
   return {
+    family: 'motion',
     motion: { bounds: namedBoundsOf(frames, 2 * example.radius), frames, trail: true },
     timeline: {
       title: 'Space made at the shelf',

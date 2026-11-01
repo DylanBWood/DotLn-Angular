@@ -50,7 +50,11 @@ it('labels the RxJS reading from the record', () => {
   TestBed.resetTestingModule();
   const executable = render('reactive', {
     ...studyViewFixture,
-    rxjs: { code: 'frames$', executable: true },
+    rxjs: {
+      code: 'frames$',
+      executable: true,
+      spec: 'libs/features/tools/src/lib/studies/rxjs/switch-map.spec.ts',
+    },
   }).element;
   expect(executable.querySelector('[data-testid="rxjs-label"]')?.textContent).toContain(
     'Executable',

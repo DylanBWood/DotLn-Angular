@@ -25,7 +25,10 @@ let scrubbers = 0;
 export class StudyScrubber {
   readonly step = input.required<number>();
   readonly lastStep = input.required<number>();
-  readonly seconds = input.required<string>();
+  /** The slider's name on the example's own clock: the seconds of a motion or timeline study. */
+  readonly seconds = input<string | null>(null);
+  /** Or the frame of a marble diagram, named out of the last step, which is its last frame. */
+  readonly frame = input<number | null>(null);
   readonly moments = input<readonly StudyMoment[]>([]);
   /** Null hides the control, as it does for a reader who asked for reduced motion. */
   readonly playing = input<boolean | null>(null);

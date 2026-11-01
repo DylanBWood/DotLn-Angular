@@ -1,0 +1,123 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:238",
+  "work": "rxjs",
+  "slug": "repeat",
+  "authored": {
+    "by": "Claude dotln-worker author-09",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "repeat starts a finished stream over. When the source completes, repeat does not pass the completion on: it subscribes to the source again, so whatever the source does on subscription, such as sending a request, happens again. It does this a set number of times or without end, and it can wait between runs.",
+    "situation": "A page waiting for a build asks the server for the build's status, waits after each answer and asks again, so the page follows the build from queued to passed without anyone pressing refresh."
+  },
+  "example": {
+    "name": "A build's status, asked three times",
+    "description": "The page reads the build's status through check$, which is cold: each subscription sends a new request, whose answer arrives {answerAfter} frames later, and then the request completes. repeat asks {checks} times and waits {wait} frames after each finished check before asking again. The answers are {answers}.",
+    "parameters": {
+      "checks": 3,
+      "answerAfter": 2,
+      "wait": 2,
+      "answers": "queued, running and passed"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start the check",
+        "text": "When the page subscribes to status$, repeat subscribes to check$, which sends the first request, and starts counting finished runs from none."
+      },
+      {
+        "title": "Pass on what the run delivers",
+        "text": "Each answer goes straight to the output, unchanged. An error goes straight through as well and ends the output there: repeat starts over only after a completion, never after a failure."
+      },
+      {
+        "title": "Hold back the completion and count it",
+        "text": "When a run completes, the output does not. repeat counts the finished run, and once the count reaches {checks} it completes the output instead of going on."
+      },
+      {
+        "title": "Wait, then start the check again",
+        "text": "Otherwise repeat starts a timer for its delay, {wait} frames here. When the timer fires it subscribes to the source again, which sends a new request, and the next run begins."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the page starts listening:\n  finished = 0\n  start the check\n\non each answer from the check:\n  pass it to the page\nif the check fails:\n  pass the failure to the page and stop there\n\nwhen the check finishes:\n  finished = finished + 1\n  if finished = count:\n    tell the page there are no more answers\n\n  otherwise:\n    wait for the delay\n    then start the check again",
+    "rxjs": "status$ = check$.pipe(\n  repeat({ count: 3, delay: 2 }),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/repeat.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/repeat.ts",
+    "textEquivalent": "Frame {frame}: {now}. Answers so far: {delivered}."
+  },
+  "implementations": [],
+  "references": [
+    {
+      "title": "RxJS API reference · repeat",
+      "url": "https://rxjs.dev/api/index/function/repeat",
+      "accessed": "2026-10-31",
+      "supports": "On the source's completion repeat subscribes to it again; called with nothing it never stops, a count of zero gives an empty result, the delay may be milliseconds or a function of the repetition count, and errors are left to retry."
+    },
+    {
+      "title": "RxJS API reference · RepeatConfig",
+      "url": "https://rxjs.dev/api/index/interface/RepeatConfig",
+      "accessed": "2026-10-31",
+      "supports": "count is unlimited when left out; delay is either a number of milliseconds or a function that is given the subscription count and returns the notifier to wait for, and a notifier that ends without a value ends the result."
+    },
+    {
+      "title": "repeat.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/repeat.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the operator increments its count of finished runs before calling a delay function with it, waits on timer(delay) for a number, resubscribes only from its completion handler and gives the source no error handler of its own, and returns EMPTY without subscribing for a count of zero or less."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share, a dash for a frame, a letter for an emission, a bar for completion and a caret and an exclamation mark for the start and end of a subscription, and run mode's virtual time of one millisecond a frame, which makes the example's delay count in frames."
+    }
+  ],
+  "limits": [
+    "repeat starts over only after a completion. An error goes straight through and ends status$ with no new run; to try again after a failure, reach for retry, the same loop for errors.",
+    "A fixed count rarely fits a real poll, which should stop when the answer says so. Put takeWhile after repeat, so that the passed answer completes the output and unsubscribes the loop before another request goes out, or have a delay function return EMPTY, which completes the output instead of repeating.",
+    "repeat repeats only what the source does on subscription. A promise-based call made before the pipe, as in from(fetch(url)), is made once, and every repetition reads the same settled answer; wrap the call in defer so that each subscription makes it again. A hot source that has completed completes again at once, so repeating it asks for nothing new.",
+    "Over a source that completes as soon as it is subscribed, such as of(...), with no delay, each run starts inside the one before it. A long or endless repeat then runs out of call stack, and the output either fails with a RangeError or simply stops, neither completing nor failing. A timer delay starts each run afresh; a small count, or a take downstream, ends the loop first.",
+    "Each wait starts when a run completes, so the time between requests is the answer's time plus the delay, and a fixed delay never backs off: a slow or struggling server is asked as often as ever. For back-off, pass a function as delay; it is given the number of finished runs, so (finished) => timer(finished * wait) waits longer each time. For a fixed beat whatever the answers do, use timer with switchMap instead."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:221",
+      "why": "Reach for retry when a run should start again after it fails: it is the same loop, subscribing again on an error where repeat does so on completion."
+    },
+    {
+      "id": "rxc:344",
+      "why": "Read RepeatConfig when the delay must be a function rather than a number, as back-off needs: it sets out count and delay, notifier form included."
+    },
+    {
+      "id": "rxc:239",
+      "why": "repeatWhen is what older code uses to say when to repeat; it is deprecated, and meeting it means rewriting it as repeat with a delay function."
+    },
+    {
+      "id": "rxc:193",
+      "why": "Reach for takeWhile after repeat when a poll should stop on an answer rather than after a count."
+    },
+    {
+      "id": "rxc:116",
+      "why": "Reach for defer when the source does its work once, at creation, such as a promise: wrapped in defer, each repetition does the work again."
+    },
+    {
+      "id": "rxc:135",
+      "why": "Reach for concat when the runs differ, such as one request followed by another; over a cold source, repeat with a count is concat of the source with itself."
+    },
+    {
+      "id": "rxp:81",
+      "why": "Reach for timer with switchMap when requests must go out on a fixed beat whatever the answers do; repeat waits for each answer before its next wait."
+    }
+  ]
+}

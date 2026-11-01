@@ -226,7 +226,8 @@ beside it. The operator's direction for what a study is lives in the launchpad's
 `concept-study-v0.schema.json`. It carries the authored state, the intuition with a situation it
 serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
 RxJS reading and executable module, the visual, implementations, references, limits and nearby
-concepts. A change to the record's shape after it has shipped is a new schema version, never an
+concepts. A stream study's `pseudocode.executable` is `{ kind: 'rxjs', module }`, its RxJS reading
+is the pipeline that module runs, and its visual is the `marbles` family over the same module. A change to the record's shape after it has shipped is a new schema version, never an
 edit of `concept-study-v0`.
 
 A representation an idea does not need is null or an empty list, never filled. The mechanism's
@@ -254,6 +255,24 @@ worked numbers are pinned. `studies/drawing.ts` holds what the models share abou
 out: the width it is drawn at, the box round a run's frames and the rule that drops a name which
 would collide with one already placed.
 
+A stream study's module, `libs/features/tools/src/lib/studies/rxjs/<slug>.ts` with a spec beside
+it, exports `example`, a `MarbleExample`: its input streams, the inner streams an operator opens,
+the outputs and their subscriptions as marble strings in the TestScheduler's syntax, the operator's
+line, the named moments and the notes, and `run`, the pipeline over those streams. Its `model`
+builds the drawing from that same example through `marbleModel` in `studies/rxjs/marbles.ts`, which
+parses the strings with the TestScheduler's own parser in run mode, so a frame in the drawing is a
+frame in the test. The spec calls `expectMarbleExample` from `marble-testing.ts`, which runs the
+pipeline under the TestScheduler, asserts every output's marbles, every inner stream's subscription
+marbles (an inner stream must declare them, since they place it in the drawing) and every input's
+declared ones, then holds the drawing to the run: what the model draws as delivered on each output
+is what the output delivered, frame for frame, and a cold input the example does not place was first
+subscribed at frame 0, where the model draws it. The model names where each output value comes
+from, for the courier that rides down while playing: the example's `origins` where it names one (a
+stream id, or null for a value a scheduler held back), else the inner stream, then the input, that
+emits at that frame, else the one that errors or completes there. `study-model.ts` discriminates a model by
+its family, `motion` with a chart beside it or `marbles`, and the mapper, playback and the study
+composite read the moments every family shares through `ticksOf`.
+
 A model that throws, or a record naming a model the list lacks, fails that study alone: the reading
 stays open and offers the study again, from the record's own inputs.
 
@@ -264,17 +283,31 @@ composite that takes a declarative model and a step index and draws an SVG with 
 Geometry derives from the model in a pure `*-drawing.ts` module with its own spec. `motion` draws the
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
 dimensions. `timeline` draws series over time with the moment marked, or a still chart when it has
-no step. `scrubber` and `inputs` are the controls they share. The other names in `visualFamilies`,
-`marbles`, `flow`, `states` and `relations`, land with the batch that first needs each.
+no step. `marbles` draws a marble diagram: the input streams and the streams the operator opens
+above the operator's band, the outputs below it, time in frames left to right with every frame
+numbered, the stepped frame as a dotted line down every lane with its emissions ringed, a stream
+opened later than frame 0 dotted before its opening, and a cut-off lane ending in a small hollow
+ring where the operator stopped listening, with nothing it would have delivered afterwards drawn.
+Every frame is a step, the slider names the frame out of the last, and Play lingers 1.2 seconds on
+each while the line of the frame glides to the next. A marble example opens on its last frame, the
+whole run; its output lanes show only what has been emitted by the selected frame, so stepping
+back, or pressing Play, which runs from the first frame when the last is selected, watches the
+outputs arrive: an emission the frame reaches pops and a soft disc swells out of it, and an output
+value rides down from the emission it comes from, through the operator's band, and pops as it
+lands. Under a reduced-motion preference nothing glides or animates. `scrubber` and `inputs` are the
+controls they share. The other names in `visualFamilies`, `flow`, `states` and `relations`, land with the
+batch that first needs each.
 
 Nothing runs by itself. A reader moves through the example by the slider, Step back, Step forward
 and the named moments, or presses Play, which runs from the selected moment at the example's own
 pace and stops on any hand step, on leaving the reading and at the end. A reader who asks for
-reduced motion is not offered Play, and asking while the example runs stops it. The moment's short sentence stays on screen; its full text is
-the drawing's accessible name and sits behind Show the numbers. A slider under Try another value
-reruns the whole model with one input changed, and Back to the example restores it. A study opens on
-the moment its author chose as the most telling, and the switch's two views are always Movement and
-Chart, with the chart's own title above it.
+reduced motion is not offered Play, and asking while the example runs stops it. The moment's short
+sentence stays on screen; its full text is the drawing's accessible name and sits behind Show the
+numbers (Show the emissions on a marble study). A slider under Try another value reruns the whole
+model with one input changed, and Back to the example restores it. A movement study opens on the
+moment its author chose as the most telling, and its switch's two views are always Movement and
+Chart, with the chart's own title above it; a marble study opens on its last frame and has no
+switch.
 
 ### The composite
 
@@ -303,18 +336,32 @@ checks that a model or executable module exists with a spec beside it, matches t
 to the pseudocode's blocks, refuses a draft and a record with fewer than two different reviewers, and
 compares `studies-summary.json` with the records. `--write-summary` rewrites the summary, a stale
 one fails, and a work's chunk must import and export each of its records. A record the schema refuses
-is reported and stops the check before anything counts it, so nothing is written from it. `npm run studies:report` prints each work's studied,
-checked and total rows, and `npm run studies:links` opens every cited address once; it reaches the
-network, so a batch runs it by hand and records the result, and no gate does.
+is reported and stops the check before anything counts it, so nothing is written from it; a file
+named on the command line that does not parse is reported the same way. For an executable RxJS
+reading the check requires the record's `pseudocode.rxjs` to be in the module it names, whitespace,
+trailing commas and comments aside (a comment cannot stand in for the code on either side), the
+spec beside that module to call `expectMarbleExample`, and a `marbles` drawing to read that same
+module; in the RxJS work a reading either runs or begins with `// Illustrative:` and its reason.
+`npm run studies:report`
+prints each work's studied, checked and total rows, and `npm run studies:links` opens every cited
+address once; it reaches the network, so a batch runs it by hand and records the result, and no
+gate does.
+
+| Work         | Studied | The batch                                                                                             |
+| ------------ | ------- | ----------------------------------------------------------------------------------------------------- |
+| AI for Games | twenty  | the movement concepts the soldier scene runs, drawn by `motion` and `timeline`                        |
+| RxJS         | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles` |
 
 ### Writing a batch
 
 A batch is authored by a fan-out: authors with two concepts each, a factual critic who opens every
 reference and implementation and checks each supports its claim, and a reading critic who reads as
 the operator would. Each author receives the record contract, its catalog rows, a decided study as
-the worked example and the rules; a rewrite continues the same author. The batch's decisions dispose
-of every critic finding, then the records are set to `checked` with the reviewers named. Link rot
-after a batch merges is a content defect the next batch's link check reports.
+the worked example and the rules; a rewrite continues the same author. A stream batch's authors
+deliver an executable module and its spec beside each record, and the factual critic runs each spec
+and records the result beside its findings. The batch's decisions dispose of every critic finding,
+then the records are set to `checked` with the reviewers named. Link rot after a batch merges is a
+content defect the next batch's link check reports.
 
 ## Evidence
 

@@ -12,7 +12,9 @@ import {
   coverage,
   createSummary,
   readStudies,
+  squeezedCode,
   studyProblems,
+  withoutComments,
 } from './scripts/catalog/check-studies.mjs';
 
 const fixture = (name) =>
@@ -31,6 +33,7 @@ const checked = () => ({
 const tools = new Map([
   ['aifg-a:110', { id: 'aifg-a:110', work: 'aifg' }],
   ['aifg-a:112', { id: 'aifg-a:112', work: 'aifg' }],
+  ['rxc:152', { id: 'rxc:152', work: 'rxjs' }],
 ]);
 const run = (...args) =>
   spawnSync(process.execPath, ['tools/scripts/catalog/check-studies.mjs', ...args], {
@@ -48,6 +51,20 @@ for (const [name, message] of [
     assert.match(result.stderr, /FAIL check-studies/);
     assert.match(result.stderr, message);
   });
+
+test('a named file that does not parse is a schema problem, not a crash', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'studies-named-'));
+  try {
+    const path = join(directory, 'broken.json');
+    writeFileSync(path, '{ not json');
+    const result = run(path);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /FAIL check-studies: .*broken\.json: at \/: schema type/);
+    assert.doesNotMatch(result.stderr, /SyntaxError/);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
 
 test('a complete checked record passes, and a null representation stays legal', () => {
   assert.deepEqual(studyProblems(checked(), tools), []);
@@ -134,6 +151,122 @@ test('a model or executable module exists with a spec beside it', () => {
       ).join(),
       /does not exist/,
     );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+
+const rxjsStudy = (root, changes = {}) => {
+  const module = 'libs/switch-map.ts';
+  mkdirSync(join(root, 'libs'), { recursive: true });
+  writeFileSync(
+    join(root, module),
+    'export const run = () => {\n  const shown$ = query$.pipe(\n    switchMap((query) => results(query)),\n  );\n  return { shown$ };\n};\n',
+  );
+  writeFileSync(join(root, 'libs/switch-map.spec.ts'), 'expectMarbleExample(example);\n');
+  return {
+    ...checked(),
+    id: 'rxc:152',
+    work: 'rxjs',
+    slug: 'switch-map',
+    pseudocode: {
+      ordinary: checked().pseudocode.ordinary,
+      rxjs: 'shown$ = query$.pipe(switchMap((query) => results(query)));',
+      executable: { kind: 'rxjs', module },
+    },
+    visual: { family: 'marbles', model: module, textEquivalent: 'Frame {frame}: {now}.' },
+    ...changes,
+  };
+};
+
+test('an executable RxJS reading shows the code its module runs, whitespace and trailing commas aside', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studies-rxjs-'));
+  try {
+    assert.deepEqual(studyProblems(rxjsStudy(root), tools, root), []);
+    assert.equal(squeezedCode('a(\n  b,\n)'), squeezedCode('a(b)'));
+    const study = rxjsStudy(root);
+    const changed = {
+      ...study,
+      pseudocode: { ...study.pseudocode, rxjs: 'shown$ = query$.pipe(mergeMap(results));' },
+    };
+    assert.match(
+      studyProblems(changed, tools, root).join(),
+      /RxJS code is not in its executable module/,
+    );
+    const silent = { ...study, pseudocode: { ...study.pseudocode, rxjs: null } };
+    assert.match(studyProblems(silent, tools, root).join(), /has no code to show/);
+    // The code must run: the same text inside a comment does not count.
+    writeFileSync(
+      join(root, 'libs/switch-map.ts'),
+      '// shown$ = query$.pipe(switchMap((query) => results(query)));\nexport const run = () => ({});\n',
+    );
+    assert.match(
+      studyProblems(study, tools, root).join(),
+      /RxJS code is not in its executable module/,
+    );
+    assert.equal(
+      withoutComments("a('https://x') // gone\n/* also\ngone */b"),
+      "a('https://x') \nb",
+    );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+
+test('an executable RxJS reading’s spec runs the example through expectMarbleExample', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studies-rxjs-'));
+  try {
+    const study = rxjsStudy(root);
+    assert.deepEqual(studyProblems(study, tools, root), []);
+    writeFileSync(join(root, 'libs/switch-map.spec.ts'), "it('runs', () => {});\n");
+    assert.match(
+      studyProblems(study, tools, root).join(),
+      /spec does not run the example through expectMarbleExample/,
+    );
+    // A call left inside a comment does not count either.
+    writeFileSync(join(root, 'libs/switch-map.spec.ts'), '// expectMarbleExample(example);\n');
+    assert.match(
+      studyProblems(study, tools, root).join(),
+      /spec does not run the example through expectMarbleExample/,
+    );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+
+test('a marbles drawing reads the executable module, and an RxJS reading that runs nowhere says so', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studies-rxjs-'));
+  try {
+    const study = rxjsStudy(root);
+    const elsewhere = {
+      ...study,
+      visual: { ...study.visual, model: 'libs/other.ts' },
+    };
+    writeFileSync(join(root, 'libs/other.ts'), '');
+    writeFileSync(join(root, 'libs/other.spec.ts'), '');
+    assert.match(
+      studyProblems(elsewhere, tools, root).join(),
+      /marbles drawing does not read its executable module/,
+    );
+    const unmarked = {
+      ...study,
+      visual: null,
+      pseudocode: { ...study.pseudocode, executable: null },
+    };
+    assert.match(
+      studyProblems(unmarked, tools, root).join(),
+      /neither runs nor is marked illustrative/,
+    );
+    const marked = {
+      ...unmarked,
+      pseudocode: {
+        ...unmarked.pseudocode,
+        rxjs: '// Illustrative: the scheduler hop has no frame in a marble diagram.\nsource$.pipe(observeOn(asyncScheduler))',
+      },
+    };
+    assert.deepEqual(studyProblems(marked, tools, root), []);
+    // The movement batch's illustrative readings stay legal: the rule is the RxJS work's.
+    assert.deepEqual(studyProblems(checked(), tools, root), []);
   } finally {
     rmSync(root, { recursive: true });
   }
@@ -286,7 +419,10 @@ test('the summary sorts a work by source line, and coverage counts every work', 
     createSummary(records).works[0].studies.map(({ id }) => id),
     ['aifg-a:110', 'aifg-a:112'],
   );
-  assert.deepEqual(coverage(records, tools), [{ work: 'aifg', studied: 2, checked: 2, total: 2 }]);
+  assert.deepEqual(coverage(records, tools), [
+    { work: 'aifg', studied: 2, checked: 2, total: 2 },
+    { work: 'rxjs', studied: 0, checked: 0, total: 1 },
+  ]);
 });
 
 test('the link check lists each cited address once, with the studies that cite it', () => {
@@ -338,6 +474,37 @@ test('the movement batch is exactly the concepts its order names', () => {
       'aifg-a:186',
       'aifg-b:354',
       'aifg-b:373',
+    ],
+  );
+});
+
+test('the RxJS batch is exactly the concepts its order names', () => {
+  assert.deepEqual(
+    readStudies()
+      .filter(({ study }) => study.work === 'rxjs')
+      .map(({ study }) => study.id)
+      .sort(),
+    [
+      'rxc:134',
+      'rxc:147',
+      'rxc:149',
+      'rxc:150',
+      'rxc:152',
+      'rxc:161',
+      'rxc:192',
+      'rxc:199',
+      'rxc:215',
+      'rxc:216',
+      'rxc:220',
+      'rxc:221',
+      'rxc:229',
+      'rxc:230',
+      'rxc:234',
+      'rxc:237',
+      'rxc:238',
+      'rxc:5',
+      'rxc:62',
+      'rxc:63',
     ],
   );
 });

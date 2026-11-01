@@ -15,10 +15,10 @@ import {
 import { drawingWidth } from '../drawing';
 import { numberParameter } from '../parameters';
 import type {
+  MotionFrame,
   MotionLink,
   MotionMark,
-  StudyFrame,
-  StudyModel,
+  MotionStudyModel,
   StudyWorkedStep,
 } from '../study-model';
 
@@ -197,7 +197,7 @@ function frameOf(
   angle: number,
   states: readonly SeekState[],
   example: SeekParameters,
-): StudyFrame {
+): MotionFrame {
   const calculation = calculateSeekStep(state, example);
   const acceleration = scale(calculation.acceleration, example.accelerationSecondsSquared);
   const velocity = scale(state.velocity, example.velocitySeconds);
@@ -241,7 +241,7 @@ function frameOf(
 }
 
 /** Put close names in a separated row, with connectors routed below the motion. */
-function labelFrame(frame: StudyFrame, left: number, span: number, rowY: number): StudyFrame {
+function labelFrame(frame: MotionFrame, left: number, span: number, rowY: number): MotionFrame {
   const mica = frame.bodies[0];
   const beacon = frame.marks?.[0];
   if (!beacon) return frame;
@@ -292,7 +292,7 @@ function labelFrame(frame: StudyFrame, left: number, span: number, rowY: number)
   };
 }
 
-function comparison(example: SeekParameters): NonNullable<StudyModel['comparison']> {
+function comparison(example: SeekParameters): NonNullable<MotionStudyModel['comparison']> {
   const changed = { ...example, velocityY: example.comparisonVelocityY };
   const normal = seekFrames(example);
   const straight = seekFrames(changed);
@@ -342,7 +342,7 @@ function comparison(example: SeekParameters): NonNullable<StudyModel['comparison
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = seekFrames(example);
   const beacon = beaconOf(example);
@@ -388,6 +388,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const initialStep = overshoot < 0 ? 0 : overshoot;
   const gaps = states.map(({ position }) => distance(position, beacon));
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: left,

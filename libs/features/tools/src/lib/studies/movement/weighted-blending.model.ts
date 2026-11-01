@@ -17,7 +17,7 @@ import {
 
 import { namedBoundsOf } from '../drawing';
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel } from '../study-model';
+import type { MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface WeightedBlendingParameters {
   readonly startX: number;
@@ -220,7 +220,7 @@ function frameOf(
   step: number,
   example: WeightedBlendingParameters,
   reading: RunReading,
-): StudyFrame {
+): MotionFrame {
   const robot = robotOf(example);
   const target = targetOf(example);
   const scaleForDrawing = example.accelerationScale;
@@ -329,7 +329,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = blendingFrames(example);
   const aligned = blendingFrames(example, example.alignedRobotY);
@@ -368,6 +368,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const normalDistances = states.map((state) => distance(state.position, target));
   const alignedDistances = aligned.map((state) => distance(state.position, target));
   return {
+    family: 'motion',
     motion: { bounds: namedBoundsOf(frames, 2 * example.radius), frames, trail: true },
     timeline: {
       title: 'The request and the acceleration Nia can apply',

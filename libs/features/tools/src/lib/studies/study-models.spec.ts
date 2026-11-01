@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { ConceptStudy } from '@dotln-angular/models';
 
+import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
 import { placeholdersIn } from './study-text';
 
@@ -18,23 +19,24 @@ it('lists a model for exactly the paths the records name', async () => {
   expect(Object.keys(studyModels).sort()).toEqual([...new Set(named)].sort());
 });
 
-it('runs every model from its record, and each moment supplies the values the prose reads', async () => {
+it('runs every model from its record in the family the record declares, and each moment supplies the values the prose reads', async () => {
   for (const record of await records()) {
     if (!record.visual?.model) continue;
     const { model } = await studyModels[record.visual.model]();
     const run = model(record.example.parameters);
-    expect(run.motion.frames.length, record.slug).toBeGreaterThan(1);
-    expect(run.initialStep, record.slug).toBeLessThan(run.motion.frames.length);
-    for (const moment of run.moments)
-      expect(moment.step, record.slug).toBeLessThan(run.motion.frames.length);
+    expect(run.family, record.slug).toBe(record.visual.family);
+    const ticks = ticksOf(run);
+    expect(ticks.length, record.slug).toBeGreaterThan(1);
+    expect(run.initialStep, record.slug).toBeLessThan(ticks.length);
+    for (const moment of run.moments) expect(moment.step, record.slug).toBeLessThan(ticks.length);
     const names = [
       ...placeholdersIn(record.visual.textEquivalent),
       ...placeholdersIn(record.example.description),
       ...record.limits.flatMap(placeholdersIn),
       ...record.mechanism.steps.flatMap(({ text }) => placeholdersIn(text)),
     ];
-    for (const frame of run.motion.frames)
-      for (const name of names) expect(frame.values[name], `${record.slug}: ${name}`).toBeDefined();
+    for (const tick of ticks)
+      for (const name of names) expect(tick.values[name], `${record.slug}: ${name}`).toBeDefined();
   }
 });
 
@@ -46,7 +48,8 @@ it('stays a sound example across the whole range of every input a model offers',
       for (const value of [input.min, input.max]) {
         const run = model({ ...record.example.parameters, [input.name]: value });
         const where = `${record.slug}: ${input.name} = ${value}`;
-        expect(run.motion.frames.length, where).toBeGreaterThan(1);
+        expect(ticksOf(run).length, where).toBeGreaterThan(1);
+        if (run.family !== 'motion') continue;
         const { minX, maxX, minY, maxY } = run.motion.bounds;
         for (const { bodies } of run.motion.frames)
           for (const { x, y } of bodies) {

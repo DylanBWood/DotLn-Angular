@@ -85,6 +85,91 @@
           "state": "checked"
         }
       ]
+    },
+    {
+      "work": "rxjs",
+      "studies": [
+        {
+          "id": "rxc:5",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:62",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:63",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:134",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:147",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:149",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:150",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:152",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:161",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:192",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:199",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:215",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:216",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:220",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:221",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:229",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:230",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:234",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:237",
+          "state": "checked"
+        },
+        {
+          "id": "rxc:238",
+          "state": "checked"
+        }
+      ]
     }
   ]
 }

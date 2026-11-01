@@ -7,7 +7,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyPoint } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyPoint } from '../study-model';
 
 const candidates: readonly SlotCandidate[] = [
   { id: 'Ari', unitClass: 'reserve' },
@@ -147,7 +147,7 @@ function frameOf(
   example: SlotExample,
   assignment: readonly SlotAssignment[],
   stage: number,
-): StudyFrame {
+): MotionFrame {
   const committed = assignment.slice(0, stage);
   const decision = stage === 0 ? null : assignment[stage - 1];
   const previously = new Set(assignment.slice(0, Math.max(0, stage - 1)).map(({ slot }) => slot));
@@ -243,7 +243,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readSlotExample(parameters);
   const assignment = allocate(example);
   const frames = Array.from({ length: assignment.length + 1 }, (_unused, stage) =>
@@ -262,6 +262,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const margin = example.spacing;
   const sameCost = slotCost(example.costs, 'reserve', 'flank') === example.comparisonFlankCost;
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: Math.min(example.unitX, example.slotX) - margin,

@@ -91,6 +91,11 @@
   reduced motion, and keeps a short sentence on screen for each moment.
 - An executable example has a spec, and a model is a pure function of the record's parameters. Call
   the scene engine's function where it has the behaviour; do not reimplement it.
+- An RxJS study's code is executable with a marble spec: the module exports the example's marble
+  strings and its pipeline, the spec runs them under the TestScheduler through
+  `expectMarbleExample` (the record check requires the call), the record's `pseudocode.rxjs` is that
+  pipeline outside any comment, and the `marbles` drawing reads the same module. The one exception is a record that marks its reading illustrative, with
+  `// Illustrative: <reason>` as the code's first line and the reason in the batch's decisions.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A
   batch's critic findings are disposed in its decisions.
 - A change to the record's shape after it ships is a new schema version, never an edit of

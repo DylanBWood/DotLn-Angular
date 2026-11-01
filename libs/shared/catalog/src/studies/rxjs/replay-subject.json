@@ -1,0 +1,138 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:63",
+  "work": "rxjs",
+  "slug": "replay-subject",
+  "authored": {
+    "by": "Claude dotln-worker author-03",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A plain Subject is a live broadcast: tune in late and what went before is gone. A ReplaySubject keeps a short recording beside the broadcast. A newcomer is played the recording first, all in one go and oldest first, and then joins the live feed, without the source being asked to run again. How much is recorded is set when the subject is made: a number of values, an age, or both.",
+    "situation": "A verifier who joins a run partway through needs the latest reports to make sense of what comes next, and the run cannot be repeated for their benefit. A log that keeps the last few reports and plays them to each newcomer gives the verifier a bounded recent history in place of a rerun."
+  },
+  "example": {
+    "name": "A run's report log with a late verifier",
+    "description": "An executor posts its reports, {reports}, whether or not anyone is listening, into a log that keeps the newest {bufferSize}. A dashboard subscribes before the first report. A verifier subscribes at frame {verifierJoins}, just after tests ok has been posted, and an auditor at frame {auditorJoins}, after the run has completed.",
+    "parameters": {
+      "reports": "lint ok, types ok, tests ok, build ok and docs ok",
+      "bufferSize": 2,
+      "verifierJoins": 6,
+      "auditorJoins": 18
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Record each value, keeping the newest few",
+        "text": "When the source emits, add the value to the end of the buffer. If the buffer now holds more than {bufferSize}, let the oldest go: here lint ok leaves the log when tests ok arrives."
+      },
+      {
+        "title": "Pass it to everyone listening",
+        "text": "Every current subscriber receives the value at once, exactly as it would from a plain Subject. The buffer exists only for those who come later."
+      },
+      {
+        "title": "Hand a newcomer the buffer, then go live",
+        "text": "When someone subscribes, add them to the listeners and immediately send them every value still in the buffer, oldest first, inside the subscribe call. The verifier, subscribing at frame {verifierJoins}, receives types ok and tests ok together, then build ok and docs ok as they are posted."
+      },
+      {
+        "title": "Keep replaying after the end",
+        "text": "When the source completes or errors, end every current subscriber the same way but keep the buffer. Anyone who subscribes afterwards is handed the buffer and then ended at once, which is how the auditor, at frame {auditorJoins}, still sees the last reports of a finished run."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each value from the source:\n  add value to the end of buffer\n  if buffer holds more values than its size allows:\n    let the oldest go\n\n  send value to every current listener\n\nwhen someone starts listening:\n  add them to the current listeners\n  send them each value in buffer, oldest first\n\nwhen the source finishes or fails:\n  keep buffer, and remember how the source ended\n  tell every current listener the same way\n  (a later listener is sent buffer, then told at once)",
+    "rxjs": "log = new ReplaySubject(2);\nreport$.subscribe(log);\n// The dashboard, the verifier and the auditor each subscribe to the log itself.",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/replay-subject.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/replay-subject.ts",
+    "textEquivalent": "The log keeps the newest {bufferSize} reports. Frame {frame}: {now}."
+  },
+  "implementations": [
+    {
+      "project": "RxJS, the shareReplay operator",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/shareReplay.ts",
+      "relevance": "RxJS itself, the library this app runs on: shareReplay.ts at 7.8.2, the installed version, builds the shareReplay operator on a ReplaySubject.",
+      "explanation": "shareReplay is share with a ReplaySubject as the connector between a source and its subscribers. Every subscriber subscribes to that one subject, and only the subject subscribes to the source, so an expensive source such as an HTTP request runs once and a later subscriber is replayed its values instead of starting it again. The buffer size and window time pass straight to the ReplaySubject. The subject is kept after the source completes, so a completed result stays cached, but replaced after an error, so a later subscriber retries; with refCount false, the default, the source stays subscribed after the last subscriber leaves."
+    },
+    {
+      "project": "Angular, toObservable in the RxJS interop package",
+      "url": "https://github.com/angular/angular/blob/v22.2.3/packages/core/rxjs-interop/src/to_observable.ts",
+      "relevance": "Angular's bridge from signals to observables, in the angular/angular repository: to_observable.ts at v22.2.3, the installed version.",
+      "explanation": "An effect reads the signal and pushes each value it sees into a ReplaySubject that keeps one value; the function returns that subject as a plain observable and completes it when its injector is destroyed. Because the subject keeps the latest value, a subscriber that arrives long after the signal last changed is handed the current value at once instead of waiting for the next change: the verifier's catch-up, with a history one value deep."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · ReplaySubject",
+      "url": "https://rxjs.dev/api/index/class/ReplaySubject",
+      "accessed": "2026-10-31",
+      "supports": "The buffer size and window time both default to unbounded and a timestamp provider measures age; a new subscriber is sent the buffer synchronously in first-in first-out order; a subject that has completed or errored still replays and then completes or errors the newcomer; unlike a BehaviorSubject it starts empty and keeps replaying after an error."
+    },
+    {
+      "title": "ReplaySubject.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/ReplaySubject.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version next appends the value to the buffer, with an expiry time beside it when the window is finite, and trims the buffer to its size and age; subscribing adds the subscriber, then sends it a copy of the buffer oldest first, then checks whether the subject has already stopped."
+    },
+    {
+      "title": "Subject.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/Subject.ts",
+      "accessed": "2026-10-31",
+      "supports": "A subscriber that arrives after the subject has stopped is not added to its observers and is errored or completed at once, which is what ends the auditor after its replay."
+    },
+    {
+      "title": "RxJS guide · Subject",
+      "url": "https://rxjs.dev/guide/subject",
+      "accessed": "2026-10-31",
+      "supports": "The guide's treatment of the subject family: its ReplaySubject examples show an observer that subscribes late receiving only the recent values, bounded first by a count and then by an age in milliseconds, before the live ones; it sets this beside BehaviorSubject's single current value and AsyncSubject's last value on completion."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, parentheses values emitted in the same frame with the group taking as many frames as it has characters, and a caret and an exclamation mark the start and end of a subscription."
+    }
+  ],
+  "limits": [
+    "Without a bound it remembers everything. new ReplaySubject() with neither a buffer size nor a window time keeps every value for as long as the subject lives, so a long-running log grows without limit and every newcomer is replayed all of it. Give it a size, an age, or both.",
+    "Replay arrives in one burst, inside the subscribe call. The verifier is handed {bufferSize} reports at frame {verifierJoins} before its subscribe call returns, so its handler runs for every replayed value before the line after subscribe does. Anything the handler needs must be ready before subscribing.",
+    "A replayed value carries no sign that it is old. The verifier cannot tell from types ok alone that it was posted before it joined. Put the time in the value when its age matters, or bound the replay with a window time, which the subject measures with the timestamp provider given to its constructor.",
+    "It never forgets an ending. The auditor at frame {auditorJoins} is still handed the last reports and the completion, and a subject that errored goes on replaying its buffer followed by the error. That suits the record of a finished run; to start over, make a new subject, as shareReplay does after an error but not after completion.",
+    "Keeping the last value is not holding a current one. A ReplaySubject that keeps one value has nothing to give a subscriber before the first value is posted, and no value to read synchronously. When there is always a current state, a BehaviorSubject says so."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:64",
+      "why": "bufferSize is the bound this example sets: how many recent values a newcomer is handed."
+    },
+    {
+      "id": "rxc:65",
+      "why": "windowTime bounds the replay by age instead of, or as well as, by count, when a report stops mattering after a while rather than after newer ones arrive."
+    },
+    {
+      "id": "rxc:5",
+      "why": "A plain Subject has no memory: a newcomer hears only what is posted after it subscribes, so the verifier here would miss every report before build ok."
+    },
+    {
+      "id": "rxc:62",
+      "why": "BehaviorSubject is the choice when there is always a current value: it starts with one, hands a newcomer only that one, exposes it synchronously, and stops replaying after an error."
+    },
+    {
+      "id": "rxc:66",
+      "why": "AsyncSubject hands a newcomer only the last value, and only once the source has completed: a final result rather than a recent history."
+    },
+    {
+      "id": "rxc:216",
+      "why": "shareReplay puts a ReplaySubject between a source and its subscribers, so a cold source runs once and every latecomer is replayed what it produced."
+    }
+  ]
+}

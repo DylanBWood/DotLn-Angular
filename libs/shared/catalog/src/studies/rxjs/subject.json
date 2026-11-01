@@ -1,0 +1,131 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:5",
+  "work": "rxjs",
+  "slug": "subject",
+  "authored": {
+    "by": "Claude dotln-worker author-02",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Of the subjects, this is the one with no memory. It keeps a list of who is listening and whether it has ended, and nothing else: a value exists only in the instant it is pushed, so whoever is on the list then hears it and whoever arrives later never will. Subscribing costs nothing and starts nothing; the work that produces the values happens once, outside the subject, however many listen.",
+    "situation": "The scene's Step button, heard by two parts of the page: the painter, which redraws on every step, and a step log opened partway through. Each press should happen once and reach both, and the log, like a browser's network panel opened after the page has loaded, shows steps from the moment it opens."
+  },
+  "example": {
+    "name": "A Step button, a log opened late and a latecomer",
+    "description": "The Step button is pressed three times, {presses}, at frames 2, 6 and 10, and the page closes at frame 14, which ends the presses. Every press goes into one subject. The painter listens from frame 0, the step log subscribes at frame {logOpensAt}, between the first press and the second, and a summary panel subscribes at frame {latecomerArrivesAt}, after the page has closed. In the app a press calls next on the subject; here the presses are an input stream the subject subscribes to, which makes the same calls.",
+    "parameters": {
+      "presses": "press 1, press 2 and press 3",
+      "logOpensAt": 4,
+      "latecomerArrivesAt": 16
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Feed the subject once",
+        "text": "The subject is subscribed to the presses a single time. However many parts of the page listen, each press is produced once and goes into the subject once; a cold stream would instead run its work again for every subscriber."
+      },
+      {
+        "title": "Put each listener on the list",
+        "text": "Subscribing adds the listener to the subject's list and does nothing else: no work starts for it, and nothing earlier is replayed, because nothing earlier was kept. The log, which subscribes at frame {logOpensAt}, has missed press 1 for good. A listener that arrives after the end is told of the end instead, at once."
+      },
+      {
+        "title": "Hand each value to everyone on the list",
+        "text": "When a press arrives, the subject hands it to each listener on its list at that moment, one after another within the same frame, so the painter and the log both hear press 2 in the frame it is pressed. The press is not kept once it has been handed round."
+      },
+      {
+        "title": "End everyone together",
+        "text": "When the presses complete, or fail with an error, the subject passes that ending to every listener, empties its list and stays closed, so a later press would be ignored. The summary panel, subscribing at frame {latecomerArrivesAt}, is told at once that it is over and hears no press."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "steps holds a list of listeners and whether it has ended, and no values\nconnect steps to the presses, once\n\nwhen a part of the page starts listening to steps:\n  if steps has ended: pass on that ending at once, and add nothing\n  otherwise: add the listener to the list\n  (nothing is replayed: no earlier press was kept)\n\nwhen a press arrives:\n  for each listener on the list at this moment:\n    hand it the press\n  keep nothing of the press\n\nwhen the presses end, normally or with an error:\n  pass that ending to every listener on the list\n  empty the list, and remember that steps has ended\n  ignore any press that comes later",
+    "rxjs": "const steps = new Subject<string>();\npresses$.subscribe(steps);\n\nconst painter$ = steps.asObservable(); // subscribed at frame 0\nconst log$ = steps.asObservable(); // subscribed at frame 4\nconst latecomer$ = steps.asObservable(); // subscribed at frame 16",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/subject.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/subject.ts",
+    "textEquivalent": "Frame {frame}: {now}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the soldier scene's clock",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/clock/scene-clock.ts",
+      "relevance": "Where this app uses it: libs/features/scene/src/lib/clock/scene-clock.ts takes the scene's hand-made steps through a Subject.",
+      "explanation": "SceneClock keeps a private Subject, #stepped, and its tick method calls next on it; ticks$ merges those steps with the running clock's frames, so a step taken by hand and a step from the driver reach the scene through one stream. A step taken before the scene subscribed is not one it should take, so a subject's lack of memory is what is wanted, while whether the clock is running, which a late reader does need, is kept beside it in a BehaviorSubject. manualDriver, which drives the scene in specs, hands its own Subject out only through asObservable, beside a tick function for pushing, so no listener can complete it for the others."
+    },
+    {
+      "project": "Angular's EventEmitter",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/core/src/event_emitter.ts",
+      "relevance": "Angular's EventEmitter, which components have long used for their outputs, is declared in event_emitter.ts of the angular/angular repository as an extension of RxJS's Subject.",
+      "explanation": "emit hands the value to the Subject's next, so every subscriber registered on the emitter hears it, and subscribe passes its handlers on to the Subject's own subscribe, wrapping them to run later only when the emitter was made asynchronous. The catalog calls a Subject the EventEmitter analogue; in Angular the analogue is literal. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · Subject",
+      "url": "https://rxjs.dev/api/index/class/Subject",
+      "accessed": "2026-10-31",
+      "supports": "A Subject is both a stream to subscribe to and a receiver of next, error and complete calls, sharing what it receives among all its subscribers; asObservable keeps that receiving side out of reach of the code it is handed to."
+    },
+    {
+      "title": "Subject.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/Subject.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version next hands the value to a snapshot of the current observers; complete and error notify and remove every observer; a subscriber arriving after either is told at once; unsubscribe on the subject closes it, so later use throws; and asObservable returns an Observable whose source is the subject."
+    },
+    {
+      "title": "RxJS guide · Subject, at RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/subject.md",
+      "accessed": "2026-10-31",
+      "supports": "Subscribing to a Subject only adds the observer to its listeners and starts no run of its own, so all its observers share one run where a plain Observable gives each subscriber its own; and a Subject can be handed to a source's subscribe to share that source among its observers."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams, at RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/testing/marble-testing.md",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, and a caret the frame a subscription starts."
+    }
+  ],
+  "limits": [
+    "A Subject remembers nothing. A listener that subscribes late has missed everything before it, as the log misses press 1, and one that subscribes after the end hears only the ending, as the summary panel does. When a late listener needs how things stand rather than what happens next, use a BehaviorSubject; when it needs the last few events, a ReplaySubject with a bounded buffer.",
+    "Handing out the subject itself lets any listener call next, error or complete for everyone, so one consumer's complete ends the stream for all the others. Keep it private and expose asObservable, with methods for pushing, as the scene clock does with tick.",
+    "A completed or errored subject stays closed: later next calls are dropped without a word, so something that is created again needs a new subject. Calling unsubscribe on the subject itself, rather than on a subscription to it, drops every listener without telling them it is over and makes any later next throw ObjectUnsubscribedError.",
+    "Delivery is synchronous and in subscription order. A listener that pushes into the same subject from inside its handler starts a nested round of delivery, so the listeners after it hear the new value before the one it was answering.",
+    "A hand-wired subject is state someone must own. Where a creation function already says it, such as fromEvent for a DOM event or from for a promise, prefer it; to share one execution of an existing observable, share makes and manages the subject itself. A subject earns its place where ordinary code pushes values in, as the scene facade's step method does through the clock's tick."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:56",
+      "why": "Unicast against multicast is the distinction this study rests on: a plain observable runs once for each subscriber, a subject once for all of them."
+    },
+    {
+      "id": "rxc:62",
+      "why": "BehaviorSubject is the next memory up: it keeps one value and hands it to each new subscriber, for a state rather than a stream of events."
+    },
+    {
+      "id": "rxc:63",
+      "why": "ReplaySubject keeps a bounded number of recent values and replays them to late subscribers, for a listener that needs some of what it missed."
+    },
+    {
+      "id": "rxc:66",
+      "why": "AsyncSubject hands over only the last value, and only on completion, for a result computed once."
+    },
+    {
+      "id": "rxc:215",
+      "why": "share creates and manages the subject when the aim is to share one execution of an existing observable among its subscribers."
+    },
+    {
+      "id": "rxp:195",
+      "why": "Subjects as public API is the rule behind keeping the subject private and exposing asObservable."
+    }
+  ]
+}

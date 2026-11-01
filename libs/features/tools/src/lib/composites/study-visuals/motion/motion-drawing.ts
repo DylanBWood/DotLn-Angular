@@ -1,8 +1,8 @@
 import { drawingWidth } from '../../../studies/drawing';
 import type {
   MotionBody,
+  MotionFrame,
   MotionModel,
-  StudyFrame,
   StudyPoint,
   StudyTone,
 } from '../../../studies/study-model';
@@ -88,7 +88,7 @@ function vectorHead(x1: number, y1: number, x2: number, y2: number) {
 }
 
 const trailOf = (
-  frames: readonly StudyFrame[],
+  frames: readonly MotionFrame[],
   step: number,
   scale: (point: StudyPoint) => StudyPoint,
 ) =>

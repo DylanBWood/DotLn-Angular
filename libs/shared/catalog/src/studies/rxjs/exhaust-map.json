@@ -1,0 +1,118 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:149",
+  "work": "rxjs",
+  "slug": "exhaust-map",
+  "authored": {
+    "by": "Claude dotln-worker author-06",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "One job at a time, with an engaged tone rather than a waiting line. A request that arrives while the job is running is turned away at the door: it is not held for later and it does not interrupt the job. What frees the line is the job completing, not its first answer, so a job that has replied but not yet finished still counts as busy. Nothing is remembered of the requests turned away; once free, the operator waits for the next one to arrive.",
+    "situation": "A Save button that a person double-clicks, or presses again because nothing seemed to happen. The first press should save the form; a second save of the same form must not start alongside it, and the first must not be abandoned halfway."
+  },
+  "example": {
+    "name": "A Save button pressed four times",
+    "description": "The button is pressed four times, at frames 1, 3, 8 and 10, and each press carries the form's draft at that moment: {drafts}. The form closes at frame 11, which completes the presses. A save answers {answersAfter} frames after it starts and completes {completesAfter} frames after it starts. The second and fourth presses arrive while a save is running.",
+    "parameters": {
+      "drafts": "draft 1, draft 2, draft 3 and draft 4",
+      "answersAfter": 4,
+      "completesAfter": 5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start a save when none is running",
+        "text": "When a press arrives and no save is running, call save with its draft and keep that save as the one running."
+      },
+      {
+        "title": "Turn a press away while a save runs",
+        "text": "When a press arrives while a save is running, turn it away. save is never called for its draft, nothing waits in a queue, and the running save carries on untouched."
+      },
+      {
+        "title": "Pass on what the running save delivers",
+        "text": "Each answer the running save returns goes straight to the output."
+      },
+      {
+        "title": "Free the slot when the save completes",
+        "text": "The slot frees when the running save completes, not when it answers. The next press to arrive then starts a new save; presses turned away earlier are not brought back."
+      },
+      {
+        "title": "Finish only when both are done",
+        "text": "The output completes once the presses have completed and no save is running. Presses that complete while a save runs leave the output open until that save completes."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each draft from the button:\n  if no save is running:\n    running = start saving the draft\n\n  otherwise:\n    turn the draft away\n    (save is never called for it, and nothing is queued)\n\non each answer from the running save:\n  pass the answer on\n\nwhen the running save completes:\n  running = none\n  (the next press starts a new save; drafts turned away stay lost)\n\nwhen the button has completed and no save is running:\n  complete the output",
+    "rxjs": "saved$ = press$.pipe(\n  exhaustMap((draft) => save(draft)),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/exhaust-map.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/exhaust-map.ts",
+    "textEquivalent": "Frame {frame}: {now}. Saved so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "NgRx, the example app's sign-in effects",
+      "url": "https://github.com/ngrx/platform/blob/4b310dd1e73d7335483e919d8ac909bf2638a8f9/projects/example-app/src/app/auth/effects/auth.effects.ts",
+      "relevance": "The ngrx/platform repository holds NgRx's libraries, among them @ngrx/effects, and an example application built on them; this file holds that application's sign-in and sign-out effects.",
+      "explanation": "The login$ effect takes the credentials of each login action through exhaustMap into authService.login, so a second submission while the first is still being checked is ignored instead of starting a second sign-in. The catchError that turns a failure into a loginFailure action sits inside the inner stream, so a refused attempt ends only that attempt and the effect goes on taking new ones. The logoutConfirmation$ effect uses exhaustMap the same way: it opens one confirmation dialog and ignores further requests until that dialog closes. The file is pinned to the last commit that changed it, read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · exhaustMap",
+      "url": "https://rxjs.dev/api/index/function/exhaustMap",
+      "accessed": "2026-10-31",
+      "supports": "The operator's documented behaviour: a value that arrives before the current inner observable has completed gets no inner observable of its own, and the first value after that completion is flattened as usual."
+    },
+    {
+      "title": "exhaustMap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/exhaustMap.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the projection runs only when no inner subscriber is held, so a value turned away never reaches it; the inner's completion clears the slot, and the output completes once the source has completed with no inner left."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "Defines the notation the diagram and its spec are written in: one dash for each frame of virtual time, a bar for completion, and in a subscriptions string a caret where a subscription begins and an exclamation mark where it is unsubscribed."
+    }
+  ],
+  "limits": [
+    "A press turned away is a value lost. exhaustMap discards the draft along with the request, so if the form changed between two presses only the earlier draft is saved: in this example draft 2 and draft 4 are never saved, and draft 4 is what the form held when it closed. That fits a button whose presses all mean the same thing. Where every value must be kept, concatMap saves each in turn; where only the newest matters and the running job may be abandoned, switchMap does that.",
+    "A save that never completes locks the button. Every press is turned away until the running inner stream completes, so a request that hangs, or an inner stream that keeps listening for more, leaves the button dead for good. Bound the inner stream, for example with timeout or take, so that it always ends.",
+    "A failed save ends the whole output. An error from the inner stream reaches the output and terminates it, so later presses go nowhere. Catch the error inside the inner stream, as the NgRx sign-in effect does, so that a failure ends only its own attempt.",
+    "Turning a press away is silent. Nothing tells the person that the second press did nothing, so the screen should say it too: disable or mark the button while a save runs."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:152",
+      "why": "switchMap makes the opposite choice: the newest value wins and cancels the one running. That suits a search, where a stale answer is worthless, and never a save."
+    },
+    {
+      "id": "rxc:147",
+      "why": "concatMap keeps every value and runs the inner streams one after another in order, the choice when each draft must be saved."
+    },
+    {
+      "id": "rxc:150",
+      "why": "mergeMap runs every inner stream at once, the choice when overlapping saves are harmless and the order of their answers does not matter."
+    },
+    {
+      "id": "rxc:196",
+      "why": "exhaustAll applies the same rule to a stream whose values are already streams, when the projection has been done elsewhere."
+    },
+    {
+      "id": "rxc:175",
+      "why": "throttle also ignores values for a while after one passes, but its quiet window is a duration it is given rather than the work itself, and the value passes through unprojected: it limits how often, where exhaustMap waits for a job to finish."
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import type {
 } from '@dotln-angular/models';
 
 import type {
+  MarblesModel,
   MotionModel,
   StudyComparison,
   StudyInput,
@@ -37,11 +38,8 @@ export interface StudyInputView extends StudyInput {
   readonly value: number;
 }
 
-/** The drawing at the selected moment, with the record's prose filled from that moment. */
-export interface StudyDrawingView {
-  readonly view: StudyVisualView;
-  readonly motion: MotionModel;
-  readonly timeline: TimelineModel | null;
+/** What every family's drawing shows at the selected moment, with the record's prose filled. */
+interface StudyDrawingViewBase {
   readonly step: number;
   readonly moments: readonly StudyMoment[];
   readonly legend: readonly StudyLegendEntry[];
@@ -53,11 +51,36 @@ export interface StudyDrawingView {
   readonly inputs: readonly StudyInputView[];
 }
 
+/** A movement drawing, with the chart it switches to when the model has one. */
+export interface MotionDrawingView extends StudyDrawingViewBase {
+  readonly family: 'motion';
+  readonly view: StudyVisualView;
+  readonly motion: MotionModel;
+  readonly timeline: TimelineModel | null;
+}
+
+/** A marble diagram at the selected frame. */
+export interface MarblesDrawingView extends StudyDrawingViewBase {
+  readonly family: 'marbles';
+  readonly marbles: MarblesModel;
+}
+
+/** The drawing at the selected moment; the family says which composite draws it. */
+export type StudyDrawingView = MotionDrawingView | MarblesDrawingView;
+
 /** A mechanism step with the lines of pseudocode it explains. */
 export interface StudyStepView {
   readonly title: string;
   readonly text: string;
   readonly code: string;
+}
+
+/** The RxJS reading: its code, and the spec that ran it when the record says it is executable. */
+export interface StudyRxjsView {
+  readonly code: string;
+  readonly executable: boolean;
+  /** The repository path of the spec beside the executable module; null for an illustrative reading. */
+  readonly spec: string | null;
 }
 
 export interface StudyView {
@@ -72,7 +95,7 @@ export interface StudyView {
   readonly worked: StudyWorkedStep | null;
   readonly pseudocode: string;
   readonly steps: readonly StudyStepView[];
-  readonly rxjs: { readonly code: string; readonly executable: boolean } | null;
+  readonly rxjs: StudyRxjsView | null;
   readonly limits: readonly string[];
   readonly comparison: StudyComparison | null;
   readonly implementations: readonly StudyImplementation[];

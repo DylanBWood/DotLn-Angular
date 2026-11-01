@@ -45,3 +45,14 @@ it('gives each instance its own ids, tied to its label', () => {
   expect(one.querySelector('input')?.id).not.toBe(two.querySelector('input')?.id);
   expect(one.querySelector('label')?.getAttribute('for')).toBe(one.querySelector('input')?.id);
 });
+
+it('names a marble diagram’s frame out of its last', () => {
+  TestBed.configureTestingModule({ providers: [...provideToolsTestKit().providers] });
+  const fixture = TestBed.createComponent(StudyScrubber);
+  fixture.componentRef.setInput('step', 3);
+  fixture.componentRef.setInput('lastStep', 10);
+  fixture.componentRef.setInput('frame', 3);
+  fixture.detectChanges();
+  const label = (fixture.nativeElement as HTMLElement).querySelector('label');
+  expect(label?.textContent).toContain('Frame 3 of 10');
+});

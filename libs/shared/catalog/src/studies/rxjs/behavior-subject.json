@@ -1,0 +1,126 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:62",
+  "work": "rxjs",
+  "slug": "behavior-subject",
+  "authored": {
+    "by": "Claude dotln-worker author-02",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Of the subjects, this one remembers exactly one thing: the last value it was given. That makes it a state rather than a stream of news. Anyone who asks, by subscribing or by reading it directly, learns how things stand now and nothing about how they got there, and since it compares nothing, a repeated value is passed on as if it were new.",
+    "situation": "A Play and Pause button whose label must say whether the scene is running, and a status panel that can be opened at any moment. The panel has to show the current status the instant it opens, not stay blank until someone next presses a button."
+  },
+  "example": {
+    "name": "Play, Pause and a panel opened late",
+    "description": "The status starts as {initial}. Play is pressed at frames 3 and 7 and Pause at frame 10, and each press pushes the status it sets into one BehaviorSubject; the second Play comes while the scene is already running. The button's label listens from frame 0 and the status panel subscribes at frame {panelOpensAt}, while the scene runs. In the app play() and pause() call next on the subject with true or false; here the presses are an input stream the subject subscribes to, and the status is named, {initial} or running, so the drawing can say it.",
+    "parameters": {
+      "initial": "paused",
+      "panelOpensAt": 5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start with a value",
+        "text": "The subject cannot be made without one: the status is {initial} before anything is pressed, so a listener always has something to show."
+      },
+      {
+        "title": "Give each new subscriber the held value at once",
+        "text": "Subscribing adds the listener to the list and, within the same call, hands it the value the subject holds. The button hears {initial} the moment it subscribes, and the panel subscribing at frame {panelOpensAt} hears running then, without waiting for the next press. A subject that has already completed or failed hands a newcomer only that ending, and no value."
+      },
+      {
+        "title": "Keep the newest value and pass it on",
+        "text": "A pushed value replaces the one held and is then handed to every listener. Nothing is compared: the second Play sets running again, and both listeners hear it again."
+      },
+      {
+        "title": "Answer a direct question",
+        "text": "Code can also read the held value without subscribing. It gets that value, even after completion, but the read fails once the subject has errored or been torn down."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "status holds one value, given when it is made, and a list of listeners\nstatus keeps nothing older than that value\nconnect status to the presses, once\n\nwhen a part of the page starts listening to status:\n  if status has ended: pass on that ending at once, and no value\n  otherwise:\n    add the listener to the list\n    hand it the held value, at once\n\nwhen a press pushes a value in:\n  replace the held value with it\n  hand it to every listener, even if it equals the last\n\nwhen code reads the held value directly:\n  if status ended with an error: fail with that error\n  if status has been torn down: fail\n  otherwise: answer the held value, even after completion",
+    "rxjs": "const status = new BehaviorSubject('paused');\npresses$.subscribe(status);\n\nconst button$ = status.asObservable(); // subscribed at frame 0\nconst panel$ = status.asObservable(); // subscribed at frame 5",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/behavior-subject.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/behavior-subject.ts",
+    "textEquivalent": "Frame {frame}: {now}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the soldier scene's clock",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/clock/scene-clock.ts",
+      "relevance": "Where this app uses it: libs/features/scene/src/lib/clock/scene-clock.ts keeps whether the scene is running in a BehaviorSubject.",
+      "explanation": "SceneClock starts #running at false, and play and pause push true and false into it. Because the subject hands its held value to whoever subscribes, ticks$ learns that the clock is paused the moment it is subscribed, before anything is pressed. The subject does not compare, so Play pressed while playing would push true again and the switchMap behind it would reopen the driver's frames; the distinctUntilChanged in front of that switchMap drops the repeat, which is this example's second Play. Beside it, hand-taken steps go through a plain Subject: whether the clock runs is a state a late reader needs, while a step is an event it should not be handed again."
+    },
+    {
+      "project": "Angular's router",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/router_state.ts",
+      "relevance": "In router_state.ts of the angular/angular repository, ActivatedRoute is constructed from BehaviorSubjects for its url, params, query params, fragment and data, and exposes them as observables.",
+      "explanation": "A component that subscribes to its route's query params is handed the current ones at once, rather than waiting for the next navigation; this app's link mapper reads them that way through toSignal. When a navigation reuses a route, advanceActivatedRoute pushes a new value into each subject only when it differs from the old one, the comparison a BehaviorSubject does not make itself. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · BehaviorSubject",
+      "url": "https://rxjs.dev/api/index/class/BehaviorSubject",
+      "accessed": "2026-10-31",
+      "supports": "A BehaviorSubject must be built with a value and hands the value it holds to each new subscription, and it exposes that value through a read-only value property and getValue()."
+    },
+    {
+      "title": "BehaviorSubject.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/BehaviorSubject.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version next stores the value before passing it on; a new subscription is handed the stored value only when it is not already closed, so a subscriber after completion gets the completion alone; and getValue, behind the value getter, throws the stored error after an error and ObjectUnsubscribedError after unsubscribe, and otherwise returns the stored value."
+    },
+    {
+      "title": "RxJS guide · Subject, at RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/subject.md",
+      "accessed": "2026-10-31",
+      "supports": "The guide's section on BehaviorSubject: it starts from a value given when it is made, keeps whatever was pushed into it last and gives that straight away to each new subscriber; it sets a person's age, which always has a value, against their birthdays, which are events."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams, at RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/testing/marble-testing.md",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, and a caret the frame a subscription starts."
+    }
+  ],
+  "limits": [
+    "It keeps one value, not a history: the panel subscribing at frame {panelOpensAt} learns that the scene is running, not that it was {initial} before. For the last few values use a ReplaySubject with a bounded buffer; for a single value delivered when the work completes, an AsyncSubject.",
+    "It needs a value before there is one. When nothing sensible exists yet, an invented placeholder such as null or an empty list reaches every subscriber, and each must treat it as not yet known. A ReplaySubject with a buffer of one also hands late subscribers the latest value, but emits nothing until a real one arrives.",
+    "It passes on every value, equal or not: the second Play reaches both listeners again. When a repeat would restart work downstream, put distinctUntilChanged after it, as the scene clock does before its switchMap.",
+    "After it completes, a new subscriber hears only the completion and not the last value, although value still returns it. A status that can end is better kept in a ReplaySubject with a buffer of one, which replays the last value before the completion.",
+    "Reading value pulls the current value outside the stream: nothing tells the reader when it changes, so code that reads it at the wrong moment acts on a stale value, and the read throws once the subject has errored or been unsubscribed. Subscribe, or keep the state in a signal, and read value only at a moment the code controls, as the scene facade does when it seeds its scan."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:5",
+      "why": "Subject is the memory below: it keeps no value, so a late subscriber hears nothing until the next one, which suits a stream of events rather than a state."
+    },
+    {
+      "id": "rxc:63",
+      "why": "ReplaySubject with a buffer of one is the near twin: it needs no initial value and still replays its last value after completion."
+    },
+    {
+      "id": "rxc:178",
+      "why": "distinctUntilChanged drops the repeats a BehaviorSubject passes on, as the scene clock does before switching its frames."
+    },
+    {
+      "id": "rxp:196",
+      "why": "Reading BehaviorSubject.value is the rule against pulling the value where a subscription would keep the reader current."
+    },
+    {
+      "id": "rxp:223",
+      "why": "toSignal turns a stream into a signal; a BehaviorSubject's value on subscribing is the synchronous first emission toSignal can require."
+    }
+  ]
+}

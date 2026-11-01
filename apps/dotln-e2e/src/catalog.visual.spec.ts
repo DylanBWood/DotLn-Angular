@@ -14,6 +14,14 @@ for (const width of [360, 768, 1440]) {
     await expect(page).toHaveScreenshot(`catalog-${width}.png`);
   });
 
+  test(`a marbles study at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/tools/catalog/rxc:152');
+    await expect(page.locator('tools-study-marbles')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('tools-study')).toHaveScreenshot(`marbles-study-${width}.png`);
+  });
+
   test(`a study at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/tools/catalog/aifg-a:145');

@@ -75,9 +75,57 @@ export function studyProblems(study, tools, root = workspaceRoot) {
     if (!existsSync(resolve(root, path.replace(/\.ts$/, '.spec.ts'))))
       problems.push(`${path} has no spec beside it`);
   }
+  problems.push(...rxjsProblems(study, root));
   if (study.authored.state !== 'checked') problems.push('it is a draft, which never ships');
   else if (new Set(study.authored.reviewedBy).size < requiredReviewers)
     problems.push(`it names fewer than ${requiredReviewers} reviewers`);
+  return problems;
+}
+
+/** Code with its whitespace and trailing commas gone, so a formatter's choices do not count. */
+export const squeezedCode = (code) => code.replace(/\s+/g, '').replace(/,(?=[)\]}])/g, '');
+
+/** A module's source without its comments, so a comment cannot stand in for the code that runs. */
+export const withoutComments = (source) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+
+/** A reading that runs nowhere says so, with its reason, at the top of its code. */
+const illustrativeMark = /^\/\/ Illustrative: \S/;
+
+/**
+ * The rules of an RxJS reading. An executable reading's code is in the module its spec runs, and
+ * a marble drawing reads that same module; in the RxJS work a reading either runs or is marked
+ * illustrative with its reason, since every operator there could run.
+ */
+function rxjsProblems(study, root) {
+  const problems = [];
+  const { rxjs, executable } = study.pseudocode;
+  const runs = executable?.kind === 'rxjs';
+  if (runs) {
+    if (rxjs === null) problems.push('its executable RxJS reading has no code to show');
+    else {
+      const path = resolve(root, executable.module);
+      if (
+        existsSync(path) &&
+        !squeezedCode(withoutComments(readFileSync(path, 'utf8'))).includes(
+          squeezedCode(withoutComments(rxjs)),
+        )
+      )
+        problems.push('its RxJS code is not in its executable module');
+      // The spec beside the module runs the example through the family's helper, which asserts
+      // the strings the drawing reads.
+      const spec = path.replace(/\.ts$/, '.spec.ts');
+      if (
+        existsSync(spec) &&
+        !withoutComments(readFileSync(spec, 'utf8')).includes('expectMarbleExample(')
+      )
+        problems.push('its spec does not run the example through expectMarbleExample');
+    }
+  }
+  if (study.visual?.family === 'marbles' && study.visual.model !== executable?.module)
+    problems.push('its marbles drawing does not read its executable module');
+  if (study.work === 'rxjs' && !runs && !(rxjs === null || illustrativeMark.test(rxjs)))
+    problems.push('its RxJS reading neither runs nor is marked illustrative with a reason');
   return problems;
 }
 
@@ -241,13 +289,12 @@ function main(argv) {
       console.log(`${row.work}: ${row.studied} studied, ${row.checked} checked, ${row.total} rows`);
     return;
   }
-  // A named file is checked alone, as the negative fixtures are.
+  // A named file is checked alone, as the negative fixtures are. One that does not parse is read
+  // as null, which the schema then refuses, so it is reported like any other problem.
   if (paths.length) {
     const tools = catalogTools();
     const problems = paths.flatMap((path) =>
-      studyProblems(JSON.parse(readFileSync(resolve(path), 'utf8')), tools).map(
-        (problem) => `${path}: ${problem}`,
-      ),
+      studyProblems(readRecord(resolve(path)), tools).map((problem) => `${path}: ${problem}`),
     );
     for (const problem of problems) console.error(`FAIL check-studies: ${problem}`);
     process.exitCode = problems.length ? 1 : 0;

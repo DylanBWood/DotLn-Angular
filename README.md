@@ -7,11 +7,11 @@ Playwright end-to-end tests.
 
 The shell's menu has three groups:
 
-| Menu group | Routes                     | What is there                                                                                  |
-| ---------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| Scene      | `/scene`, the app's root   | The soldier scene: twenty units, the steering and formation tools the engine runs, instruments |
-| Machinery  | `/board`, `/machinery`     | The actor board over the app's own mocked HTTP API, and a placeholder for the machinery view   |
-| Tools      | `/tools/catalog`, `/tools` | A catalog of works, read concept by concept, and the home page above it                        |
+| Menu group | Routes                                                 | What is there                                                                                                                     |
+| ---------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Scene      | `/scene`, the app's root                               | The soldier scene: twenty units, the steering and formation tools the engine runs, instruments                                    |
+| Machinery  | `/board`, `/machinery`                                 | The actor board over the app's own mocked HTTP API, and a placeholder for the machinery view                                      |
+| Tools      | `/tools`, `/tools/catalog`, `/tools/catalog/<tool id>` | Works and the last reading, the catalog read concept by concept, and one concept's reading with its study where a concept has one |
 
 Use Node 26 and npm:
 

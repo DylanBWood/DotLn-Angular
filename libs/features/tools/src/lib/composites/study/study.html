@@ -19,7 +19,7 @@
   </details>
   @if (vm.visual; as visual) {
     <figure>
-      @if (visual.timeline) {
+      @if (visual.family === 'motion' && visual.timeline) {
         <div class="view-choice" role="group" [attr.aria-label]="'tools.study.views' | t">
           <button
             type="button"
@@ -64,36 +64,56 @@
           </figcaption>
         </details>
       </ng-template>
-      @if (visual.view === 'timeline' && visual.timeline; as timeline) {
-        <tools-study-timeline
-          [model]="timeline"
-          [step]="visual.step"
-          [textEquivalent]="visual.textEquivalent"
-          [moments]="visual.moments"
-          [note]="visual.note"
-          [playing]="visual.playing"
-          [numbersOpen]="vm.expanded.includes('numbers')"
-          (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
-          (stepped)="stepped($event)"
-          (played)="intent.emit({ kind: 'play', playing: $event })"
-        >
-          <ng-container [ngTemplateOutlet]="caption" />
-        </tools-study-timeline>
-      } @else {
-        <tools-study-motion
-          [model]="visual.motion"
-          [step]="visual.step"
-          [textEquivalent]="visual.textEquivalent"
-          [moments]="visual.moments"
-          [note]="visual.note"
-          [playing]="visual.playing"
-          [numbersOpen]="vm.expanded.includes('numbers')"
-          (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
-          (stepped)="stepped($event)"
-          (played)="intent.emit({ kind: 'play', playing: $event })"
-        >
-          <ng-container [ngTemplateOutlet]="caption" />
-        </tools-study-motion>
+      @switch (visual.family) {
+        @case ('marbles') {
+          <tools-study-marbles
+            [model]="visual.marbles"
+            [step]="visual.step"
+            [textEquivalent]="visual.textEquivalent"
+            [moments]="visual.moments"
+            [note]="visual.note"
+            [playing]="visual.playing"
+            [numbersOpen]="vm.expanded.includes('numbers')"
+            (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+            (stepped)="stepped($event)"
+            (played)="intent.emit({ kind: 'play', playing: $event })"
+          >
+            <ng-container [ngTemplateOutlet]="caption" />
+          </tools-study-marbles>
+        }
+        @default {
+          @if (visual.view === 'timeline' && visual.timeline; as timeline) {
+            <tools-study-timeline
+              [model]="timeline"
+              [step]="visual.step"
+              [textEquivalent]="visual.textEquivalent"
+              [moments]="visual.moments"
+              [note]="visual.note"
+              [playing]="visual.playing"
+              [numbersOpen]="vm.expanded.includes('numbers')"
+              (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+              (stepped)="stepped($event)"
+              (played)="intent.emit({ kind: 'play', playing: $event })"
+            >
+              <ng-container [ngTemplateOutlet]="caption" />
+            </tools-study-timeline>
+          } @else {
+            <tools-study-motion
+              [model]="visual.motion"
+              [step]="visual.step"
+              [textEquivalent]="visual.textEquivalent"
+              [moments]="visual.moments"
+              [note]="visual.note"
+              [playing]="visual.playing"
+              [numbersOpen]="vm.expanded.includes('numbers')"
+              (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+              (stepped)="stepped($event)"
+              (played)="intent.emit({ kind: 'play', playing: $event })"
+            >
+              <ng-container [ngTemplateOutlet]="caption" />
+            </tools-study-motion>
+          }
+        }
       }
     </figure>
   }

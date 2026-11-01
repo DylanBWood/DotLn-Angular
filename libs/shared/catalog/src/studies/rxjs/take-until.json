@@ -1,0 +1,129 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:192",
+  "work": "rxjs",
+  "slug": "take-until",
+  "authored": {
+    "by": "Claude dotln-worker author-06",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A subscription with an end date written as an event rather than a count. What ends is this one listener: the source is not told to stop, it only loses a subscriber, so a source shared with others runs on for them. The end also travels downstream as an ordinary completion, so whatever comes after sees a stream that finished rather than one that was cut off.",
+    "situation": "A page that shows a clock the whole app shares. While the page is open it shows each tick; once it closes it must let go of the clock, or every page ever opened would leave a listener behind, doing work for a screen nobody can see."
+  },
+  "example": {
+    "name": "A shared clock watched until the page closes",
+    "description": "The clock was already running before the page opened and ticks every {tickEvery} frames for anyone listening. The page subscribes to it through takeUntil, with its closed signal as the notifier. That signal emits once, at frame {closesAt}, when the page closes.",
+    "parameters": {
+      "tickEvery": 2,
+      "closesAt": 7
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Listen to the stop signal first",
+        "text": "When the page starts listening, takeUntil subscribes to the closed signal before the clock. If the signal emits as it is subscribed, as takeUntilDestroyed's does for a context already destroyed, the output completes at once and the clock is never subscribed. A plain Subject that fired before this moment stops nothing: takeUntil hears only what is sent after it subscribes."
+      },
+      {
+        "title": "Pass the clock through",
+        "text": "Every tick goes to the output unchanged. If the clock completes or fails first, the output does the same, and the signal is no longer needed."
+      },
+      {
+        "title": "Stop at the first signal",
+        "text": "The first value from the closed signal completes the output. In the same frame takeUntil unsubscribes from the clock and from the signal, so nothing of this page stays attached to either."
+      },
+      {
+        "title": "Ignore a signal that ends silently",
+        "text": "A closed signal that completes without ever emitting changes nothing: the ticks keep coming. One that fails passes its error to the output."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the page starts listening:\n  listen to closed\n  if closed signals as soon as it is listened to:\n    complete the output and never listen to the clock\n  (a signal sent before this moment is not heard and stops nothing)\n\nlisten to the clock\non each tick:\n  pass the tick on\nwhen the clock completes or fails:\n  do the same to the output\n\non the first value from closed:\n  complete the output\n  stop listening to the clock and to closed\n\nwhen closed completes without a value:\n  change nothing; the ticks keep coming\nwhen closed fails:\n  fail the output with its error",
+    "rxjs": "shown$ = tick$.pipe(\n  takeUntil(closed$),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/take-until.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/take-until.ts",
+    "textEquivalent": "Frame {frame}: {now}. Shown so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the soldier scene's facade",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "Where this app uses it: libs/features/scene/src/lib/facades/scene.facade.ts ends the stream that folds the scene's run with takeUntilDestroyed, Angular's operator built on takeUntil.",
+      "explanation": "In its constructor the facade merges the clock's ticks with the commands the page sends, folds them into the current run with scan, and ends the pipe with takeUntilDestroyed given the DestroyRef it injected. When whatever provides the facade is destroyed, that notifier fires, the fold completes and the facade's subscription to the clock's ticks and to its commands is released; a separate onDestroy callback pauses the clock itself. takeUntilDestroyed is the last operator in the pipe, so no operator after it keeps a subscription of its own."
+    },
+    {
+      "project": "Angular, takeUntilDestroyed",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/core/rxjs-interop/src/take_until_destroyed.ts",
+      "relevance": "Angular's rxjs-interop package, @angular/core/rxjs-interop, from which this app imports takeUntilDestroyed and toSignal, defines the operator in take_until_destroyed.ts of the angular/angular repository.",
+      "explanation": "The operator builds its notifier from a DestroyRef, the one passed in or the current injection context's: an observable that emits when the DestroyRef's onDestroy callbacks run, or emits at once if it is already destroyed, and whose teardown unregisters the callback. It then returns source.pipe(takeUntil(destroyed$)). The early emission meets the first step of this study: takeUntil listens to the notifier first, so a stream piped through an already-destroyed context is never subscribed. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · takeUntil",
+      "url": "https://rxjs.dev/api/index/function/takeUntil",
+      "accessed": "2026-10-31",
+      "supports": "The operator's documented contract: the output follows the source up to the notifier's first value and then completes, while a notifier that completes without any value leaves every source value passing."
+    },
+    {
+      "title": "takeUntil.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/takeUntil.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the notifier is subscribed before the source, and the source only if the output is still open after that; the notifier's next handler completes the output and its complete handler does nothing."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "Defines the notation the diagram and its spec are written in: one dash for each frame of virtual time, a bar for completion, a caret marking frame zero of a hot observable, where the test subscribes, and in a subscriptions string a caret and an exclamation mark where a subscription begins and is unsubscribed."
+    },
+    {
+      "title": "eslint-plugin-rxjs · no-unsafe-takeuntil",
+      "url": "https://github.com/cartant/eslint-plugin-rxjs/blob/e3e8fedb676f9d0f1a11a6d2c4d3ad72994d07e8/docs/rules/no-unsafe-takeuntil.md",
+      "accessed": "2026-10-31",
+      "supports": "The rule flags takeUntil placed ahead of operators that subscribe to further streams, such as combineLatest, because those subscriptions can outlive the notifier; its correct example moves takeUntil to the end of the pipe."
+    }
+  ],
+  "limits": [
+    "takeUntil ends only what comes before it. An operator placed after it that subscribes to streams of its own, such as switchMap or combineLatest, keeps those subscriptions alive when the notifier fires, so the leak takeUntil was meant to prevent remains. Put it last in the pipe, as the scene facade does.",
+    "Letting go is not stopping the work. Here the shared clock keeps ticking after the page closes and the page simply hears none of it, which is right for a clock other pages use; whether a producer stops when its last listener leaves depends on that producer's own teardown, not on takeUntil.",
+    "The output completes, which is a notification downstream code will act on. A complete handler or finalize runs when the page closes, so code that treats completion as the work being finished, rather than abandoned, misreads a close as a success.",
+    "The notifier must actually emit while the page listens. A closed signal that only completes, such as a Subject someone completes without calling next, stops nothing; so does a plain Subject that emitted before the page started listening, as when a late subscription is made after the page's destroy signal has fired; and one that never fires leaves the subscription open for as long as the source runs. A notifier that fails fails the output with its error."
+  ],
+  "nearby": [
+    {
+      "id": "rxp:137",
+      "why": "takeUntilDestroyed is Angular's packaged form of this study, with the notifier built from a DestroyRef; it is what this app's scene facade uses."
+    },
+    {
+      "id": "rxp:142",
+      "why": "The anti-pattern of placing takeUntil before a subscribing operator, the first of the limits here, with the lint rule that catches it."
+    },
+    {
+      "id": "rxc:460",
+      "why": "The leak takeUntil exists to prevent: a subscription to a source that never completes lives until something ends it."
+    },
+    {
+      "id": "rxc:457",
+      "why": "Complete is not cancellation: takeUntil turns a stop into a completion that downstream sees, which a bare unsubscribe never sends."
+    },
+    {
+      "id": "rxc:190",
+      "why": "take bounds a subscription by a count of values rather than by an outside event; takeWhile, rxc:193, bounds it by a test of each value."
+    },
+    {
+      "id": "rxc:188",
+      "why": "skipUntil is the mirror image: it ignores values until a notifier emits and passes them afterwards."
+    }
+  ]
+}

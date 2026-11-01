@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { provideToolsTestKit } from '../../../../testing/src';
 import type { StudyIntent, StudyView } from '../../types';
-import { studyViewFixture } from './fixtures';
+import { marblesStudyViewFixture, studyViewFixture } from './fixtures';
 import { Study } from './study';
 
 function render(study: StudyView = studyViewFixture) {
@@ -141,4 +141,36 @@ it('reports a step, and passes a nearby concept up on a plain click only', () =>
   link.dispatchEvent(newTab);
   expect(newTab.defaultPrevented).toBe(false);
   expect(followed).toEqual(['sample:2']);
+});
+
+it('draws a marble diagram for a marbles study, with no view switch and the frame as its clock', () => {
+  const { fixture, element } = render(marblesStudyViewFixture);
+  expect(element.querySelector('tools-study-marbles')).not.toBeNull();
+  expect(element.querySelector('tools-study-motion')).toBeNull();
+  expect(element.querySelector('.view-choice')).toBeNull();
+  expect(element.querySelector('figure svg')?.getAttribute('aria-label')).toContain('Frame 4');
+  expect(element.querySelector('label')?.textContent).toContain('Frame 4 of 9');
+  const intents: StudyIntent[] = [];
+  fixture.componentInstance.intent.subscribe((intent) => intents.push(intent));
+  // The scrubber's buttons are Play, Step back, Step forward and the named moments.
+  element.querySelectorAll<HTMLButtonElement>('tools-study-scrubber button')[2].click();
+  expect(intents).toEqual([{ kind: 'step', step: 5 }]);
+  fixture.componentRef.setInput('study', {
+    ...marblesStudyViewFixture,
+    visual: { ...marblesStudyViewFixture.visual, step: 5 },
+  });
+  fixture.detectChanges();
+  expect(element.querySelector('label')?.textContent).toContain('Frame 5 of 9');
+});
+
+it('names the spec that ran an executable RxJS reading, once the section opens', async () => {
+  const { fixture, element } = render({ ...marblesStudyViewFixture, expanded: ['reactive'] });
+  await vi.waitFor(() => {
+    fixture.detectChanges();
+    expect(element.querySelector('[data-testid="rxjs-label"]')).not.toBeNull();
+  });
+  expect(element.querySelector('[data-testid="rxjs-label"]')?.textContent).toContain('Executable');
+  expect(element.querySelector('[data-testid="rxjs-spec"]')?.textContent).toContain(
+    'libs/features/tools/src/lib/studies/rxjs/switch-map.spec.ts',
+  );
 });

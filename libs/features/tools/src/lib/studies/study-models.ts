@@ -1,6 +1,7 @@
 import type { StudyModelModule } from './study-model';
 
 const movement = 'libs/features/tools/src/lib/studies/movement';
+const rxjs = 'libs/features/tools/src/lib/studies/rxjs';
 
 // Each drawing's model loads with the study that reads it. The key is the path the record names
 // in `visual.model`, and a spec keeps the two lists equal.
@@ -30,4 +31,24 @@ export const studyModels: Readonly<Record<string, () => Promise<StudyModelModule
   [`${movement}/velocity-matching.model.ts`]: () => import('./movement/velocity-matching.model'),
   [`${movement}/wander.model.ts`]: () => import('./movement/wander.model'),
   [`${movement}/weighted-blending.model.ts`]: () => import('./movement/weighted-blending.model'),
+  [`${rxjs}/behavior-subject.ts`]: () => import('./rxjs/behavior-subject'),
+  [`${rxjs}/catch-error.ts`]: () => import('./rxjs/catch-error'),
+  [`${rxjs}/combine-latest.ts`]: () => import('./rxjs/combine-latest'),
+  [`${rxjs}/concat-map.ts`]: () => import('./rxjs/concat-map'),
+  [`${rxjs}/exhaust-map.ts`]: () => import('./rxjs/exhaust-map'),
+  [`${rxjs}/finalize.ts`]: () => import('./rxjs/finalize'),
+  [`${rxjs}/materialize.ts`]: () => import('./rxjs/materialize'),
+  [`${rxjs}/merge-map.ts`]: () => import('./rxjs/merge-map'),
+  [`${rxjs}/observe-on.ts`]: () => import('./rxjs/observe-on'),
+  [`${rxjs}/repeat.ts`]: () => import('./rxjs/repeat'),
+  [`${rxjs}/replay-subject.ts`]: () => import('./rxjs/replay-subject'),
+  [`${rxjs}/retry.ts`]: () => import('./rxjs/retry'),
+  [`${rxjs}/scan.ts`]: () => import('./rxjs/scan'),
+  [`${rxjs}/share.ts`]: () => import('./rxjs/share'),
+  [`${rxjs}/share-replay.ts`]: () => import('./rxjs/share-replay'),
+  [`${rxjs}/start-with.ts`]: () => import('./rxjs/start-with'),
+  [`${rxjs}/subject.ts`]: () => import('./rxjs/subject'),
+  [`${rxjs}/switch-map.ts`]: () => import('./rxjs/switch-map'),
+  [`${rxjs}/take-until.ts`]: () => import('./rxjs/take-until'),
+  [`${rxjs}/timeout.ts`]: () => import('./rxjs/timeout'),
 };

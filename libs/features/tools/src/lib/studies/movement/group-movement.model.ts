@@ -16,7 +16,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 const memberIds = ['north', 'medic', 'south'] as const;
 const memberNames = ['North escort', 'Medic', 'South escort'] as const;
@@ -312,7 +312,7 @@ function frameOf(
   step: number,
   example: GroupExample,
   runValues: Readonly<Record<string, string>>,
-): StudyFrame {
+): MotionFrame {
   const slots = state.formation.assignment.map(({ slot }) => slotPosition(state.formation, slot));
   const errors = slotErrors(state);
   const error = Math.max(...errors);
@@ -393,7 +393,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readGroupExample(parameters);
   const states = groupStates(example);
   const changed = { ...example, anchorSpeed: example.fastAnchorSpeed };
@@ -427,6 +427,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   ]);
   const samePace = example.anchorSpeed === changed.anchorSpeed;
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: Math.min(...positions.map(({ x }) => x)) - example.spacing,

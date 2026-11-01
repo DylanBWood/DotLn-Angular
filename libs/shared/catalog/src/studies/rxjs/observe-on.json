@@ -1,0 +1,148 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:230",
+  "work": "rxjs",
+  "slug": "observe-on",
+  "authored": {
+    "by": "Claude dotln-worker author-10",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Think of observeOn as a hand-off desk between the source and everything after it. The source keeps working at its own pace; what moves is the moment the next stage is told. Name animationFrameScheduler and the news waits for the browser's next paint; asapScheduler, for the code running now to finish; queueScheduler, for a delivery already under way to end. Nothing is merged or reordered at the desk: things are heard in the order they happened, only later.",
+    "situation": "An upload's progress bar. The upload reports progress whenever the network does, sometimes twice between two paints of the screen, and its stream is not yours to change. Drawing the bar is only useful just before the browser paints, so you choose when the bar hears a report rather than when the upload makes one."
+  },
+  "example": {
+    "name": "An upload that fails, heard at each paint",
+    "description": "The upload reports {reports} at frames 1, 2 and 5, and fails at frame 6 with {failure}. The browser paints every {paintEvery} frames, starting at frame 3. The bar subscribes through observeOn(animationFrameScheduler), so it hears the reports only at a paint, and hears the failure after the last report rather than before it.",
+    "parameters": {
+      "reports": "10%, 30% and 60%",
+      "failure": "connection lost",
+      "paintEvery": 4
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Hand each notification to the scheduler",
+        "text": "When the upload reports progress, fails or completes, observeOn does not call the bar. It schedules a task on animationFrameScheduler that will pass that notification on."
+      },
+      {
+        "title": "Wait for the next paint",
+        "text": "animationFrameScheduler keeps its tasks in a queue. The first task asks the browser for an animation frame; a task that arrives before that frame joins the same queue and asks for nothing more."
+      },
+      {
+        "title": "Deliver the queue in order",
+        "text": "Just before the browser paints, the scheduler runs every task queued for that frame, oldest first. Reports that arrived between two paints reach the bar together, one after the other, and the screen shows only the last."
+      },
+      {
+        "title": "An error waits its turn",
+        "text": "The upload's failure is one more task in the queue, so it reaches the bar after the reports before it, at the next paint. The upload's own subscription ended when it failed: observeOn changes when the bar hears, never when the upload runs."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each report, error or completion from the upload:\n  schedule a task that passes it to the bar\n  (the bar hears nothing yet)\n\nif no animation frame has been requested:\n  request the next one from the browser\notherwise:\n  the task joins the queue for that frame\n\nwhen the frame comes, just before the paint:\n  run every queued task, oldest first\n  (reports that arrived together are heard together)\n\nan error is one more task in the queue:\n  the bar hears it after the reports queued before it\n  (the upload itself stopped when it failed)",
+    "rxjs": "bar$ = progress$.pipe(\n  observeOn(animationFrameScheduler),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/observe-on.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/observe-on.ts",
+    "textEquivalent": "Frame {frame}: {now}. The bar has heard {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "NgRx Store",
+      "url": "https://github.com/ngrx/platform/blob/22.0.1/modules/store/src/state.ts",
+      "relevance": "NgRx Store computes its state by passing the stream of dispatched actions through observeOn(queueScheduler) before the reducer, in modules/store/src/state.ts of the ngrx/platform repository.",
+      "explanation": "The State class pipes the actions through observeOn(queueScheduler), then withLatestFrom(reducer$) and scan, which folds each action into the state. queueScheduler runs a task at once unless another of its tasks is running, in which case the new task waits for that one to finish. So when code that hears a new state dispatches another action straight away, that action is reduced after the current one has been delivered rather than in the middle of it, one action at a time in the order dispatched. This is the author's reading of the pipeline from queueScheduler's documented behaviour; the file does not state its reason. It is the same operator as the study's with another scheduler: the phase it chooses is after the delivery under way, not before the next paint. The file is pinned to tag 22.0.1, read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · observeOn",
+      "url": "https://rxjs.dev/api/index/function/observeOn",
+      "accessed": "2026-10-31",
+      "supports": "observeOn reschedules every notification of the source, errors and completion included, on the scheduler it is given, with an optional delay; the source keeps its own scheduler; using it to split a synchronous burst is an anti-pattern, for which the scheduler belongs in the source; delay, unlike observeOn, passes errors on at once; and the page's own example observes an interval on animationFrameScheduler to update an element just before the browser repaints."
+    },
+    {
+      "title": "observeOn.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/observeOn.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the operator hands each next, complete and error alike to executeSchedule with the same scheduler and delay, so no notification bypasses the scheduler."
+    },
+    {
+      "title": "AnimationFrameAction.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/scheduler/AnimationFrameAction.ts",
+      "accessed": "2026-10-31",
+      "supports": "Without a delay a task joins the scheduler's queue and only the first task queued before a frame requests that animation frame, whose flush runs the queue; with a delay above zero the task is scheduled as an ordinary async action instead."
+    },
+    {
+      "title": "RxJS API reference · animationFrameScheduler",
+      "url": "https://rxjs.dev/api/index/const/animationFrameScheduler",
+      "accessed": "2026-10-31",
+      "supports": "animationFrameScheduler runs a task without a delay just before the browser's next repaint and behaves like asyncScheduler when a delay is given."
+    },
+    {
+      "title": "RxJS guide · Scheduler",
+      "url": "https://rxjs.dev/guide/scheduler",
+      "accessed": "2026-10-31",
+      "supports": "observeOn places a proxy observer between the source and the final observer that schedules each notification, so with asyncScheduler the values arrive after the synchronous subscribe call has returned; and the scheduler types: queueScheduler as a trampoline in the current event frame, asapScheduler on the microtask queue, asyncScheduler on timers, animationFrameScheduler before the next repaint."
+    },
+    {
+      "title": "RxJS API reference · queueScheduler",
+      "url": "https://rxjs.dev/api/index/const/queueScheduler",
+      "accessed": "2026-10-31",
+      "supports": "queueScheduler runs a task without a delay synchronously, but a task scheduled while another of its tasks is running is queued until that one finishes; the reading of NgRx Store rests on this."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share, including a group in parentheses for emissions in one frame, and the animate run helper, whose marbles mark the paints at which queued animation-frame callbacks run, as the repaint line does here."
+    }
+  ],
+  "limits": [
+    "observeOn delivers every report; it merges none. Reports that arrive between two paints all reach the bar in one frame, so the bar is drawn more than once and only the last drawing is seen. When only the newest value per frame matters, auditTime(0, animationFrameScheduler) keeps just that one, but it treats the error differently: audit passes an error on the moment it arrives, so on this upload the failure would reach the bar before the next paint and the report waiting for that paint would never be drawn.",
+    "It cannot pace a synchronous burst. Had the upload produced all of {reports} at once, observeOn would queue them all before the first paint and deliver them together in it. Spreading them one per paint needs the scheduler inside the source, as scheduled(reports, animationFrameScheduler) does; observeOn only makes deliveries later, never further apart.",
+    "It changes when the bar hears, not when the upload runs. The upload's work, its timers and any side effect inside it keep the source's own timing and scheduler; only the hand-off downstream moves. To move the moment the source is subscribed, use subscribeOn instead.",
+    "A delay changes the scheduler's character. With a delay above zero, animationFrameScheduler schedules each task on a timer, as asyncScheduler would, so delivery no longer waits for a paint and every notification, the error included, is simply held that long. To shift values later, RxJS recommends delay; observeOn is for choosing the scheduler that delivers.",
+    "Unsubscribing cancels what is still queued. Each scheduled task belongs to the bar's subscription, so a bar torn down between a report and the next paint never hears that report.",
+    "A marble diagram shows the move only when the scheduler moves time. With asapScheduler, or asyncScheduler without a delay, the delivery lands in the same virtual frame as the report, so the marbles match the source's exactly although the bar hears only after the code that subscribed has finished. That order needs an ordinary asynchronous test, which is why this example uses animation frames."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:231",
+      "why": "subscribeOn moves the subscription itself, so the source starts later; observeOn leaves the start alone and moves each delivery."
+    },
+    {
+      "id": "rxc:226",
+      "why": "delay is the tool for shifting values later in time; it passes an error on at once, where observeOn holds the error behind the values before it."
+    },
+    {
+      "id": "rxc:170",
+      "why": "auditTime with animationFrameScheduler keeps only the newest value per frame, where observeOn delivers every one."
+    },
+    {
+      "id": "rxc:127",
+      "why": "scheduled puts the scheduler inside the source, which is how a synchronous burst is spread over frames; observeOn cannot do that."
+    },
+    {
+      "id": "rxc:295",
+      "why": "animationFrameScheduler is the scheduler this example names: a task without a delay runs just before the next repaint, and one frame serves every task queued before it."
+    },
+    {
+      "id": "rxc:294",
+      "why": "queueScheduler is the scheduler NgRx Store pairs with observeOn: a task scheduled while another runs waits for it to finish."
+    },
+    {
+      "id": "rxp:175",
+      "why": "The rendering pattern this example follows, with auditTime as its alternative when only the last value per frame counts."
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:237",
+  "work": "rxjs",
+  "slug": "finalize",
+  "authored": {
+    "by": "Claude dotln-worker author-08",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "finalize ties a clean-up to the life of a subscription rather than to any message on it. Values pass untouched while it waits; it acts only when the subscription is over, and only after whatever ending there was has been passed on, so the code that hears that the stream is done runs before the code that tidies up after it.",
+    "situation": "A spinner shown while a download runs. It must go when the download finishes and when it fails, and also when the reader leaves the page halfway and the view unsubscribes. Leaving sends no completion and no error, so only a clean-up tied to the subscription catches all three."
+  },
+  "example": {
+    "name": "A download the reader abandons",
+    "description": "The reader starts a download and the page shows a spinner. Two clean-ups are attached with finalize: releasing the connection, nearer the source, then hiding the spinner. After {partsShown} parts the reader leaves the page and the view unsubscribes from shown$. The download neither completes nor fails, so the view is told nothing, yet both clean-ups run at that moment, the connection's first.",
+    "parameters": {
+      "partsShown": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Note the clean-ups when subscribed",
+        "text": "When the view subscribes to shown$, each finalize subscribes to what is above it and adds its callback to the subscription's finalizers. Nothing runs yet, and every part passes through unchanged."
+      },
+      {
+        "title": "End for any of three reasons",
+        "text": "The subscription ends when the download completes, when it fails, or when the view unsubscribes, as it does here when the reader leaves. The clean-ups are not told which."
+      },
+      {
+        "title": "Tell the view what it is owed",
+        "text": "A completion or a failure is passed to the view before anything is cleaned up. An unsubscription tells the view nothing: it is the one that left."
+      },
+      {
+        "title": "Tear down from the source outward",
+        "text": "The finalizers run in the order they were added: the download's own teardown, which cuts it off, then each clean-up in the order the pipe lists them. The connection is released before the spinner hides, and neither runs again."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the view starts listening:\n  start listening to the download\n  add each clean-up to the things to run at the end\n  (pass every part through unchanged)\n\nwhen the download completes or fails, or the view stops listening:\n  stop listening to the download\n  (the clean-ups are not told which of these it was)\n\nif the end was a completion or a failure:\n  pass it to the view first\notherwise:\n  tell the view nothing\n\nthen run the things to run at the end, oldest first:\n  the download's own clean-up, which cuts it off\n  each clean-up, in the order they were attached",
+    "rxjs": "shown$ = download$.pipe(\n  finalize(release),\n  finalize(hideSpinner),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/finalize.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/finalize.ts",
+    "textEquivalent": "Frame {frame}: {now}. On the output lines so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Angular's HttpClient",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/common/http/src/backend.ts",
+      "relevance": "Angular's HttpClient hands every request to HttpInterceptorHandler, in backend.ts of the angular/angular repository, which counts the request as a pending task until finalize removes it.",
+      "explanation": "When requests contribute to stability, the default, handle() adds a task to PendingTasks, which holds the application unstable while the task is pending, and pipes the request's events through finalize(removeTask). The task is removed whether the response arrives, the request fails or the request is unsubscribed, as a switchMap or a timeout does, so an abandoned request never leaves the application waiting. The file is pinned to the v22.2.3 release commit read on 2026-10-31."
+    },
+    {
+      "project": "Angular's router",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/router/src/navigation_transition.ts",
+      "relevance": "Angular's router runs each navigation inside a switchMap, in navigation_transition.ts of the angular/angular repository, and ends each navigation's pipeline with finalize.",
+      "explanation": "The finalize aborts the navigation's AbortController and, while a completedOrAborted flag is still unset, reports the navigation cancelled as superseded by a new one. finalize is not told why the pipeline ended, so the router sets that flag itself: when activation finishes, in a tap's complete handler and in catchError. A pipeline that ends with the flag unset was cut off from outside, typically by the switchMap when a newer navigation arrives; the source's comment calls this check a catch-all. The file is pinned to the v22.2.3 release commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · finalize",
+      "url": "https://rxjs.dev/api/index/function/finalize",
+      "accessed": "2026-10-31",
+      "supports": "finalize calls its callback when the source completes or errors, and also when the subscriber explicitly unsubscribes."
+    },
+    {
+      "title": "finalize.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/finalize.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version finalize subscribes the downstream subscriber to its source and only then adds the callback to that subscriber, so the callback is a finalizer added after the source's own teardown."
+    },
+    {
+      "title": "RxJS guide · Glossary and semantics, Finalization",
+      "url": "https://rxjs.dev/guide/glossary-and-semantics",
+      "accessed": "2026-10-31",
+      "supports": "The glossary treats finalization as cleaning up a producer's resources, guaranteed on error, completion or unsubscription and always part of unsubscription without being the same thing, and places a completion, when there is one, before finalization."
+    },
+    {
+      "title": "Subscription.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/Subscription.ts",
+      "accessed": "2026-10-31",
+      "supports": "unsubscribe runs a subscription's finalizers in the order they were added, catching what each throws, and once all have run throws those errors together as an UnsubscriptionError."
+    },
+    {
+      "title": "Subscriber.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/Subscriber.ts",
+      "accessed": "2026-10-31",
+      "supports": "A subscriber passes complete or error to its destination and only then unsubscribes, so the observer hears the end before any finalizer runs."
+    },
+    {
+      "title": "CHANGELOG.md in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/CHANGELOG.md",
+      "accessed": "2026-10-31",
+      "supports": "Under 7.0.0-beta.1 the changelog lists the fix that made finalize's callback run after the source observable is torn down."
+    },
+    {
+      "title": "tap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/tap.ts",
+      "accessed": "2026-10-31",
+      "supports": "tap calls its unsubscribe handler only when the subscription ends without a completion or failure passing through it, and its finalize handler on every end."
+    },
+    {
+      "title": "pending_tasks.ts in Angular v22.2.3",
+      "url": "https://github.com/angular/angular/blob/d9514bbe66f86f4799cbeadac896c39488bf7cae/packages/core/src/pending_tasks.ts",
+      "accessed": "2026-10-31",
+      "supports": "PendingTasks.add() adds a task that blocks the application's stability and returns the function that removes it."
+    }
+  ],
+  "limits": [
+    "The callback is not told why the subscription ended: completing, failing and being unsubscribed all look the same to it. To act on the reason, use tap's handlers, whose unsubscribe handler runs only when no completion or failure passed through the tap, or keep a flag as Angular's router does.",
+    "It runs after the view has heard a completion or a failure, so code in the view's complete handler still sees the spinner showing, and the callback cannot send anything more into the stream it is cleaning up after.",
+    "Where it sits in the pipe decides what it cleans up after. Above a retry or repeat it runs at the end of every attempt; below one it runs once, when the last attempt ends.",
+    "A clean-up that throws never reaches the view's error handler. RxJS gathers the error into an UnsubscriptionError and throws it at the code that ended the subscription, so keep clean-ups from throwing.",
+    "Pipeline order is RxJS 7's behaviour. Since 7.0.0-beta.1 the callback has run after its source is torn down; an RxJS 6 codebase being upgraded may rely on its clean-ups running in another order."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:225",
+      "why": "tap's subscribe, unsubscribe and finalize handlers sit at the same boundary as finalize, and its unsubscribe handler is the way to tell a reader leaving from the source's own end."
+    },
+    {
+      "id": "rxc:457",
+      "why": "Complete is not cancellation: the abandoned download sends no completion, so a tap complete handler on it never fires, while finalize does."
+    },
+    {
+      "id": "rxc:128",
+      "why": "using makes a resource for each subscription and disposes of it when the subscription ends, for a clean-up that belongs to something the stream itself creates."
+    },
+    {
+      "id": "rxc:152",
+      "why": "switchMap's cut-off ends an inner stream by unsubscription; a finalize inside the inner stream is how it notices, as Angular's router does."
+    },
+    {
+      "id": "rxc:192",
+      "why": "takeUntil ends the subscription from inside the pipe instead of from the view: placed last, it completes the view and unsubscribes everything above it, so every finalize above it runs."
+    }
+  ]
+}

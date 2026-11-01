@@ -15,19 +15,29 @@ import { isPlainClick } from '../../plain-click';
 import type { StudyDisclosure, StudyIntent, StudySection, StudyView } from '../../types';
 import { StudyExplanation } from '../study-explanation/study-explanation';
 import { StudyInputs } from '../study-visuals/inputs/inputs';
+import { StudyMarbles } from '../study-visuals/marbles/marbles';
 import { StudyMotion } from '../study-visuals/motion/motion';
 import { StudyTimeline } from '../study-visuals/timeline/timeline';
 
 /**
- * A concept studied from several sides. The drawing is always there; each explanation sits in a
- * native disclosure and is only created the first time it is opened.
+ * A concept studied from several sides. The drawing is always there, in the family the model
+ * names; each explanation sits in a native disclosure and is only created the first time it is
+ * opened.
  */
 @Component({
   selector: 'tools-study',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './study.html',
   styleUrl: './study.scss',
-  imports: [NgTemplateOutlet, TPipe, StudyExplanation, StudyInputs, StudyMotion, StudyTimeline],
+  imports: [
+    NgTemplateOutlet,
+    TPipe,
+    StudyExplanation,
+    StudyInputs,
+    StudyMarbles,
+    StudyMotion,
+    StudyTimeline,
+  ],
 })
 export class Study {
   readonly study = input.required<StudyView>();
@@ -41,13 +51,14 @@ export class Study {
   );
   protected readonly motion = viewChild(StudyMotion);
   protected readonly timeline = viewChild(StudyTimeline);
+  protected readonly marbles = viewChild(StudyMarbles);
 
   stepped(step: number) {
     this.intent.emit({ kind: 'step', step });
   }
   /** Returns the keyboard to the drawing after a worked step asks to show its moment. */
   showMoment() {
-    (this.motion() ?? this.timeline())?.focus();
+    (this.motion() ?? this.timeline() ?? this.marbles())?.focus();
   }
   toggled(section: StudyDisclosure, details: HTMLDetailsElement) {
     this.intent.emit({ kind: 'expand', section, open: details.open });

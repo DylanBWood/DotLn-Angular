@@ -2,7 +2,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { matchVelocity, type SteeringBody } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 export interface VelocityMatchingParameters {
   readonly courierStart: number;
@@ -165,7 +165,7 @@ function frameOf(
   state: VelocityMatchingState,
   step: number,
   example: VelocityMatchingParameters,
-): StudyFrame {
+): MotionFrame {
   const calculation = calculateVelocityMatchingStep(state, example);
   const lane = example.radius * 5;
   return {
@@ -223,7 +223,7 @@ function frameOf(
 function shortResponseComparison(
   states: readonly VelocityMatchingState[],
   example: VelocityMatchingParameters,
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   const short = velocityMatchingFrames(example, example.shortResponseTime);
   const last = states[states.length - 1];
   const tail = short.slice(-2).map(({ courierVelocity }) => courierVelocity);
@@ -265,7 +265,7 @@ function shortResponseComparison(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = velocityMatchingFrames(example);
   const frames = states.map((state, step) => frameOf(state, step, example));
@@ -300,6 +300,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const last = states[states.length - 1];
 
   return {
+    family: 'motion',
     motion: {
       bounds: { minX, maxX, minY: -height / 2, maxY: height / 2 },
       frames,

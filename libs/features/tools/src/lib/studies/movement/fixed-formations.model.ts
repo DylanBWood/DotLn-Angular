@@ -14,7 +14,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyInput, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyInput, StudyWorkedStep } from '../study-model';
 
 export interface FixedFormationParameters {
   readonly members: number;
@@ -201,7 +201,7 @@ function frameOf(
   sample: FixedFormationSample,
   example: FixedFormationParameters,
   peakSpeed: number,
-): StudyFrame {
+): MotionFrame {
   const { anchor, slots } = sample.formation;
   const escorts = sample.targets.slice(1);
   const preceding = sample.previousTargets.slice(1);
@@ -257,7 +257,7 @@ function frameOf(
 function comparison(
   normal: readonly FixedFormationSample[],
   example: FixedFormationParameters,
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   const fast = fixedFormationSamples(example, example.fastTurnSteps);
   const normalPeak = Math.max(...normal.map(({ requiredSpeed }) => requiredSpeed));
   const fastPeak = Math.max(...fast.map(({ requiredSpeed }) => requiredSpeed));
@@ -300,7 +300,7 @@ function comparison(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const samples = fixedFormationSamples(example);
   const peakSpeed = Math.max(...samples.map(({ requiredSpeed }) => requiredSpeed));
@@ -310,6 +310,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const extent = radius + drawingSpacing;
   const finish = example.turnStart + example.turnSteps;
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: example.leaderX - extent,
