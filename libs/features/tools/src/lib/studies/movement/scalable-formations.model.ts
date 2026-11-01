@@ -11,9 +11,9 @@ import {
 import { numberParameter } from '../parameters';
 import type {
   MotionBounds,
-  StudyFrame,
+  MotionFrame,
+  MotionStudyModel,
   StudyInput,
-  StudyModel,
   StudyWorkedStep,
 } from '../study-model';
 
@@ -210,7 +210,7 @@ function frameOf(
   example: ScalableFormationParameters,
   bounds: MotionBounds,
   finalSample: ScalableFormationSample,
-): StudyFrame {
+): MotionFrame {
   const anchor = anchorOf(example);
   const upperEdge = anchor.y - example.laneWidth / 2;
   const lowerEdge = anchor.y + example.laneWidth / 2;
@@ -289,7 +289,7 @@ function frameOf(
 function comparison(
   normal: readonly ScalableFormationSample[],
   example: ScalableFormationParameters,
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   // Always compare different memberships, including when the reader requests the reference count.
   const referenceCount =
     example.targetCount === example.comparisonCount
@@ -349,13 +349,14 @@ function comparison(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const samples = scalableFormationSamples(example);
   const bounds = boundsOf(samples, example);
   const fullStep =
     example.joinStart + (example.targetCount - example.initialCount - 1) * example.joinInterval;
   return {
+    family: 'motion',
     motion: {
       bounds,
       frames: samples.map((sample) =>

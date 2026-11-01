@@ -45,9 +45,13 @@ it('is the one source of each section’s open state and of the view, reset with
   expect(facade.vm().study?.expanded).toEqual(['limits', 'mechanism']);
   facade.studyIntent({ kind: 'expand', section: 'limits', open: false });
   expect(facade.vm().study?.expanded).toEqual(['mechanism']);
+  const drawing = () => {
+    const visual = facade.vm().study?.visual;
+    return visual?.family === 'motion' ? visual : null;
+  };
   facade.studyIntent({ kind: 'view', view: 'timeline' });
   facade.studyIntent({ kind: 'step', step: 3 });
-  expect(facade.vm().study?.visual?.view).toBe('timeline');
+  expect(drawing()?.view).toBe('timeline');
   facade.open('aifg-a:112');
   expect(facade.vm().study?.expanded).toEqual(['mechanism']);
   expect(facade.vm().study?.visual?.step).toBe(3);
@@ -56,7 +60,7 @@ it('is the one source of each section’s open state and of the view, reset with
   expect(facade.arrive('aifg-a:112')).toBe(true);
   await vi.waitFor(() => expect(facade.vm().study).not.toBeNull());
   expect(facade.vm().study?.expanded).toEqual([]);
-  expect(facade.vm().study?.visual?.view).toBe('motion');
+  expect(drawing()?.view).toBe('motion');
   expect(facade.vm().study?.visual?.step).toBe(75);
 });
 
@@ -136,6 +140,28 @@ it('says a concept has no study, loads one on opening, and retries a failure', a
   facade.open('sample:2');
   await vi.waitFor(() => expect(facade.vm().studyStatus).toBe('none'));
   expect(facade.vm().study).toBeNull();
+});
+
+it('draws a study whose family has no motion frames, and scrubs it by frame', async () => {
+  const record = await createCatalogLoader().study('rxc:152');
+  if (!record) throw new Error('The switchMap record is missing.');
+  const kit = provideToolsFacadeTestKit([{ ...catalogFixture[0], id: 'rxc:152' }], [record]);
+  TestBed.configureTestingModule({ providers: [...kit.providers] });
+  const facade = TestBed.inject(ToolsFacade);
+  await vi.waitFor(() => expect(facade.vm().catalogTotal).toBe(1));
+  facade.open('rxc:152');
+  await vi.waitFor(() => expect(facade.vm().study).not.toBeNull());
+  const visual = () => facade.vm().study?.visual;
+  expect(visual()?.family).toBe('marbles');
+  // A marble example opens on its last frame, the whole run.
+  expect(visual()?.textEquivalent).toContain('Frame 14');
+  facade.studyIntent({ kind: 'step', step: 0 });
+  expect(visual()?.textEquivalent).toContain('Frame 0');
+  expect(facade.vm().study?.worked?.title).toBe('Frame 0');
+  facade.studyIntent({ kind: 'step', step: 9999 });
+  expect(visual()?.textEquivalent).toContain('Frame 14');
+  facade.studyIntent({ kind: 'view', view: 'timeline' });
+  expect(visual()?.family).toBe('marbles');
 });
 
 it('keeps a model that throws to its own study, and the reading stays open', async () => {

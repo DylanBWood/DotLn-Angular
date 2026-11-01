@@ -1,5 +1,6 @@
 import type { ConceptStudy, Tool } from '@dotln-angular/models';
 
+import { marbleModel } from '../studies/rxjs/marbles';
 import type { StudyModel } from '../studies/study-model';
 import { clampStep, mapStudy } from './study-mapper';
 
@@ -33,6 +34,7 @@ const frame = (seconds: number, distance: string) => ({
   worked: { title: `Worked ${distance}`, lines: [] },
 });
 const model: StudyModel = {
+  family: 'motion',
   motion: {
     bounds: { minX: 0, maxX: 10, minY: -1, maxY: 1 },
     frames: [frame(0, 'far'), frame(1, 'near')],
@@ -53,6 +55,69 @@ const record = {
     ],
   },
 };
+
+const marbles = marbleModel(
+  {
+    inputs: {
+      source$: { label: 'source$', marbles: '-a-b|', values: { a: 'first', b: 'second' } },
+    },
+    operator: 'map((value) => value)',
+    outputs: { out$: { label: 'out$', marbles: '-a-b|', values: { a: 'first', b: 'second' } } },
+    run: ({ inputs }) => ({ out$: inputs['source$'] }),
+    moments: [{ label: 'Second', frame: 3 }],
+  },
+  { sheep: 3 },
+);
+
+it('draws a marbles model in its own family, with the frame’s sentence in the prose', () => {
+  const view = mapStudy(
+    {
+      record: {
+        ...record,
+        visual: { family: 'marbles', model: 'libs/m.ts', textEquivalent: 'Frame {frame}: {now}.' },
+      },
+      model: marbles,
+    },
+    reader,
+    catalogFixture,
+  );
+  expect(view.visual?.family).toBe('marbles');
+  expect(view.visual?.family === 'marbles' && view.visual.marbles.lines).toHaveLength(2);
+  // The example opens on its last frame.
+  expect(view.visual?.textEquivalent).toBe('Frame 4: source$ completes; out$ completes.');
+  expect(view.visual?.moments).toEqual([{ label: 'Second', step: 3 }]);
+  // No stream was opened by the operator, so the legend names no grey line.
+  expect(view.visual?.legend.map(({ tone }) => tone)).toEqual(['subject', 'actual']);
+  const later = mapStudy(
+    {
+      record: {
+        ...record,
+        visual: { family: 'marbles', model: 'libs/m.ts', textEquivalent: '{now}' },
+      },
+      model: marbles,
+    },
+    { ...reader, step: 4 },
+    catalogFixture,
+  );
+  expect(later.visual?.step).toBe(4);
+  expect(later.visual?.textEquivalent).toBe('source$ completes; out$ completes');
+  expect(later.worked?.title).toBe('Frame 4');
+  // Every frame is a step, so a quiet frame has its own sentence.
+  expect(
+    mapStudy(
+      {
+        record: {
+          ...record,
+          visual: { family: 'marbles', model: 'libs/m.ts', textEquivalent: '{now}' },
+        },
+        model: marbles,
+      },
+      { ...reader, step: 2 },
+      catalogFixture,
+    ).visual?.textEquivalent,
+  ).toBe('nothing new happens');
+  expect(clampStep(marbles, 99)).toBe(4);
+});
 
 it('fills the record’s prose from the selected moment', () => {
   const view = mapStudy({ record, model }, reader, catalogFixture);
@@ -128,9 +193,10 @@ it('leaves out what the record does not carry', () => {
   expect(view.comparison).toBeNull();
 });
 
-it('labels the RxJS reading from the record', () => {
+it('labels the RxJS reading from the record, and names the spec that ran an executable one', () => {
   const illustrative = mapStudy({ record: studyFixture, model: null }, reader, catalogFixture);
   expect(illustrative.rxjs?.executable).toBe(false);
+  expect(illustrative.rxjs?.spec).toBeNull();
   const executable = mapStudy(
     {
       record: {
@@ -146,6 +212,7 @@ it('labels the RxJS reading from the record', () => {
     catalogFixture,
   );
   expect(executable.rxjs?.executable).toBe(true);
+  expect(executable.rxjs?.spec).toBe('libs/m.spec.ts');
 });
 
 it('names nearby concepts by title and drops one the catalog no longer has', () => {

@@ -1,0 +1,135 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:221",
+  "work": "rxjs",
+  "slug": "retry",
+  "authored": {
+    "by": "Claude dotln-worker author-04",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "retry is a bet that the failure was passing. It treats an error as a reason to begin again rather than an ending, and it keeps the bet out of sight: the subscriber sees the values of every attempt but none of the errors until the bet is lost. Whether beginning again means asking the server again depends on the source, not on retry.",
+    "situation": "A departures board asking a server over a weak mobile connection. A request that times out often succeeds a moment later, so the board should ask again a couple of times, pausing between tries, before it tells the reader it has failed."
+  },
+  "example": {
+    "name": "A departures board that asks up to three times",
+    "description": "The board's request is defer(() => load()), so every subscription calls load() and starts a new attempt. retry allows {count} retries and waits {delay} frames before each. The first attempt times out two frames after it starts, having sent nothing. The second sends the 10:02 a frame after it starts and fails two frames later when its connection is reset. The third sends {departures} and completes.",
+    "parameters": {
+      "count": 2,
+      "delay": 2,
+      "departures": "the 10:02 and the 10:15"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start an attempt",
+        "text": "Subscribing calls load(), so the first attempt begins as soon as the board subscribes. Everything retry does later is another subscription to the same deferred request."
+      },
+      {
+        "title": "Pass on what the attempt sends",
+        "text": "Each value an attempt emits goes to the board at once, whether or not that attempt fails later. retry cannot know yet, and it never takes a value back."
+      },
+      {
+        "title": "On a failure with retries left, wait and ask again",
+        "text": "retry keeps the error from the board, counts one retry used, waits {delay} frames and subscribes again. The new attempt starts from its beginning."
+      },
+      {
+        "title": "On a failure with none left, give up",
+        "text": "Once all {count} retries are used, the next error goes to the board and the board fails with it. Only that last error is passed on."
+      },
+      {
+        "title": "Finish with the attempt that finishes",
+        "text": "When an attempt completes, the board completes. The errors before it were absorbed, and nothing downstream records that they happened."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "retries used = 0\nstart an attempt\n\non each value from the attempt:\n  pass it on\n  (even if this attempt fails later)\n\nwhen the attempt fails and retries used < count:\n  retries used = retries used + 1\n  wait delay\n  start a new attempt\n  (the error goes no further)\n\nwhen the attempt fails and retries used = count:\n  fail the output with this error\n\nwhen the attempt completes:\n  complete the output",
+    "rxjs": "board$ = defer(() => load()).pipe(\n  retry({ count, delay }),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/retry.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/retry.ts",
+    "textEquivalent": "Frame {frame}: {now}. Shown so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Angular CLI, the architect package's TestProjectHost",
+      "url": "https://github.com/angular/angular-cli/blob/v22.2.3/packages/angular_devkit/architect/testing/test-project-host.ts",
+      "relevance": "The Angular CLI's architect package ships TestProjectHost, a deprecated testing helper in test-project-host.ts of the angular/angular-cli repository, which copies a template project into a fresh folder for a test and deletes that folder afterwards.",
+      "explanation": "Its restore() checks whether the folder exists, waits 50 ms, deletes it, and puts retry(10) after the delete, with a comment that the wait and up to ten retries give file locks time to clear. retry resubscribes to the whole chain, so each retry checks, waits and deletes afresh. That repeats real work because TestProjectHost extends NodeJsSyncHost, whose exists and delete are built with new Observable and touch the disk on each subscription. The wait sits inside the retried chain rather than in retry's delay option, so the first attempt waits too. The file is the v22.2.3 tag, the CLI version installed here, read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · retry",
+      "url": "https://rxjs.dev/api/index/function/retry",
+      "accessed": "2026-10-31",
+      "supports": "retry resubscribes to the source on error, up to count times and without limit when count is omitted, and passes on every value the source emits, including values from subscriptions that later failed."
+    },
+    {
+      "title": "RxJS API reference · RetryConfig",
+      "url": "https://rxjs.dev/api/index/interface/RetryConfig",
+      "accessed": "2026-10-31",
+      "supports": "delay is a number of milliseconds or a function returning a notifier whose emission triggers the retry; a notifier that completes without emitting completes the result, one that errors passes its error on, and resetOnSuccess resets the counter when a retried subscription emits."
+    },
+    {
+      "title": "retry.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/retry.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version a number delay becomes timer(delay), the counter is reset only when resetOnSuccess is set, and once the count is used up the error goes to the subscriber."
+    },
+    {
+      "title": "Angular guide · Making HTTP requests, Handling request failure",
+      "url": "https://angular.dev/guide/http/making-requests",
+      "accessed": "2026-10-31",
+      "supports": "Angular's guide presents retry() as a way to resubscribe a failed HttpClient request a set number of times, for failures such as network interruptions that may clear on their own."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "Inside run, one frame is one virtual millisecond, so retry's delay in milliseconds counts frames in this drawing and its spec."
+    }
+  ],
+  "limits": [
+    "retry repeats a subscription, not a call. It starts the work over only when subscribing starts it: an HttpClient request does, and so does a source built with defer, as the board's request is. A promise created once and wrapped with from has already failed, so every retry receives the same rejection at once and the server is never asked again.",
+    "A failed attempt's values stay delivered: here the 10:02 reaches the board twice. A consumer that counts, appends or acts on each value must tolerate repeats. Upstream it is worse: a write whose answer was lost may already have happened, and retrying it does it again. Retry only what is safe to repeat.",
+    "Every error is retried alike. A missing page or a refused request fails the same way each time, and retrying it only delays the failure by {count} waits of {delay} frames. A delay function can tell errors apart: it can return throwError for a permanent error, which then fails at once, and a timer for a transient one. A notifier that completes without emitting stops quietly instead.",
+    "The count covers the whole subscription unless resetOnSuccess is set. The 10:02 that the second attempt delivered did not give back the retry it used. On a long-lived feed that fails now and then, the retries run down over its life until one day the error gets through; resetOnSuccess: true restores the count whenever an attempt delivers a value.",
+    "Only the last error is passed on; the ones retry absorbed leave no trace, so here the timeout and the reset are invisible to the board. Report each error, in the delay function or with tap before retry, if the evidence matters. Where the reader should decide whether to try again, retry is the wrong tool: show the failure and offer a button, as this app's Tools home does with a Retry button whose press starts a fresh load."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:220",
+      "why": "catchError replaces a failed source where retry starts it again. Placed after retry, it decides what the reader sees once the retries run out."
+    },
+    {
+      "id": "rxc:238",
+      "why": "repeat resubscribes after completion as retry does after an error: polling a request that succeeded is repeat, not retry."
+    },
+    {
+      "id": "rxc:116",
+      "why": "defer is what makes each subscription a new attempt, and so what gives retry something to repeat."
+    },
+    {
+      "id": "rxc:222",
+      "why": "retryWhen is the older, deprecated form that builds the policy from the stream of errors; code that still uses it moves to retry with a delay function."
+    },
+    {
+      "id": "rxp:126",
+      "why": "Retry only what is transient classifies errors before retrying, the delay-function pattern the third limit describes."
+    },
+    {
+      "id": "rxp:80",
+      "why": "Retry with exponential backoff and jitter grows the wait with each attempt and spreads clients apart, where this example waits the same delay every time."
+    }
+  ]
+}

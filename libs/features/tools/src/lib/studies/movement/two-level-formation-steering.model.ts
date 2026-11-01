@@ -21,7 +21,7 @@ import {
 
 import { withSpacedLabels } from '../drawing';
 import { numberParameter, textParameter } from '../parameters';
-import type { MotionBounds, StudyFrame, StudyModel } from '../study-model';
+import type { MotionBounds, MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface EscortParameters {
   readonly pattern: FormationPattern;
@@ -229,7 +229,7 @@ function noteOf(state: EscortState, step: number, example: EscortParameters): st
   return 'The slots are still drawing away from the robots, while the pull towards their mean restrains the anchor.';
 }
 
-function frameOf(state: EscortState, step: number, example: EscortParameters): StudyFrame {
+function frameOf(state: EscortState, step: number, example: EscortParameters): MotionFrame {
   const calculation = calculateEscortStep(state, example);
   const mean = meanOf(state);
   const formation = state.formation;
@@ -341,7 +341,7 @@ function frameOf(state: EscortState, step: number, example: EscortParameters): S
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readEscortParameters(parameters);
   const states = escortStates(example);
   const loose = escortStates({ ...example, lagLimit: example.comparisonLagLimit });
@@ -368,6 +368,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   };
   const frames = rawFrames.map((frame) => withSpacedLabels(frame, bounds));
   return {
+    family: 'motion',
     motion: { frames, bounds },
     timeline: {
       title: 'Anchor lag and mean slot error',

@@ -2,7 +2,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { cosine, sine } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyPoint, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyPoint, StudyWorkedStep } from '../study-model';
 import type { AlignStep, AngularState, AngularTuning } from './align.model';
 import { calculateAlignStep, radians, wrapDegrees } from './align.model';
 
@@ -174,7 +174,7 @@ function frameOf(
   step: number,
   example: FaceParameters,
   parameterValues: Readonly<Record<string, string>>,
-): StudyFrame {
+): MotionFrame {
   const seconds = step * example.timeStep;
   const target = beaconAt(seconds, example);
   const calculation = calculateFaceStep(state, target, example);
@@ -257,7 +257,7 @@ function frameOf(
 function slowMotor(
   example: FaceParameters,
   current: readonly AngularState[],
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   const slow = faceFrames(example, example.slowMotorSpeed);
   const seconds = current.map((_state, step) => step * example.timeStep);
   const errorOf = (state: AngularState, step: number) =>
@@ -305,7 +305,7 @@ function slowMotor(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = faceFrames(example);
   const calculations = states.map((state, step) =>
@@ -338,6 +338,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   };
   const padding = example.directionLength / 2;
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: Math.min(example.cameraX - example.directionLength, start.x, end.x) - padding,

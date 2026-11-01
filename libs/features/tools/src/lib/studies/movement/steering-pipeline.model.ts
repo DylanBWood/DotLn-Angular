@@ -16,7 +16,7 @@ import {
 
 import { drawingWidth } from '../drawing';
 import { numberParameter } from '../parameters';
-import type { MotionBounds, StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionBounds, MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 export interface PipelineParameters {
   readonly startX: number;
@@ -369,7 +369,7 @@ function frameOf(
   result: PipelineStep,
   step: number,
   example: PipelineParameters,
-): StudyFrame {
+): MotionFrame {
   const last = result.attempts.at(-1);
   const route = last?.route ?? state.route;
   const waypoint = route[0];
@@ -462,7 +462,7 @@ function frameOf(
   };
 }
 
-function boundsOf(frames: readonly StudyFrame[], example: PipelineParameters): MotionBounds {
+function boundsOf(frames: readonly MotionFrame[], example: PipelineParameters): MotionBounds {
   const radius = exclusionRadius(example);
   const points = frames.flatMap((frame) => [
     ...frame.bodies,
@@ -488,7 +488,7 @@ function boundsOf(frames: readonly StudyFrame[], example: PipelineParameters): M
 }
 
 /** Keep the courier's name when it reaches a named mark, instead of writing both names together. */
-function spaceLabels(frames: readonly StudyFrame[], bounds: MotionBounds): readonly StudyFrame[] {
+function spaceLabels(frames: readonly MotionFrame[], bounds: MotionBounds): readonly MotionFrame[] {
   const drawingScale = drawingWidth / (bounds.maxX - bounds.minX);
   return frames.map((frame) => {
     const occupied = frame.bodies.flatMap((body) =>
@@ -516,7 +516,7 @@ function spaceLabels(frames: readonly StudyFrame[], bounds: MotionBounds): reado
   });
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = pipelineFrames(example);
   const calculations = states.map((state) => calculatePipelineStep(state, example));
@@ -541,6 +541,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     .filter((calculation) => !calculation.accepted).length;
   const blocked = refused === example.steps;
   return {
+    family: 'motion',
     motion: { bounds, frames, trail: true },
     timeline: {
       title: 'Delivery goal and active waypoint',

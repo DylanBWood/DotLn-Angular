@@ -15,7 +15,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter, textParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 export interface WanderParameters {
   readonly startX: number;
@@ -265,7 +265,7 @@ function frameOf(
   step: number,
   calculation: WanderStep,
   example: WanderParameters,
-): StudyFrame {
+): MotionFrame {
   const heading = Math.atan2(state.heading.y, state.heading.x);
   // Keep Nia at the origin and her forward direction to the right as the patrol moves.
   const intoView = (vector: Vec2) =>
@@ -366,7 +366,7 @@ function frameOf(
 function narrowCircleComparison(
   states: readonly WanderState[],
   example: WanderParameters,
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   const narrow = wanderFrames(example, example.narrowRadius);
   const spread = (run: readonly WanderState[]) => {
     const ys = run.map(({ position }) => position.y);
@@ -407,7 +407,7 @@ function narrowCircleComparison(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = wanderFrames(example);
   const calculations = states.map((state, step) => calculateWanderStep(state, step, example));
@@ -440,6 +440,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const negative = calculations.findIndex(({ angle }) => angle < 0);
   const returned = calculations.findIndex(({ angle }, step) => step > negative && angle === 0);
   return {
+    family: 'motion',
     motion: {
       bounds: { minX: midX - width / 2, maxX: midX + width / 2, minY: lowY, maxY: highY },
       frames,

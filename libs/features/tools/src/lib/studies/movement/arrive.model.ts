@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 export interface ArriveParameters {
   readonly target: number;
@@ -156,7 +156,7 @@ function workedStep(state: ArriveState, step: number, example: ArriveParameters)
   };
 }
 
-function frameOf(state: ArriveState, step: number, example: ArriveParameters): StudyFrame {
+function frameOf(state: ArriveState, step: number, example: ArriveParameters): MotionFrame {
   const desired = desiredVelocity(state.position, example);
   return {
     seconds: step * example.timeStep,
@@ -197,7 +197,7 @@ function peakOf(frames: readonly ArriveState[], example: ArriveParameters) {
 }
 
 /** The motion rule and limits stay the example's; only the slowing radius changes. */
-function lateBraking(example: ArriveParameters): NonNullable<StudyModel['comparison']> {
+function lateBraking(example: ArriveParameters): NonNullable<MotionStudyModel['comparison']> {
   const normal = arriveFrames(example);
   const late = arriveFrames(example, example.lateRadius);
   const seconds = normal.map((_frame, step) => Number((step * example.timeStep).toFixed(1)));
@@ -261,7 +261,7 @@ function lateBraking(example: ArriveParameters): NonNullable<StudyModel['compari
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = arriveFrames(example);
   const seconds = states.map((_state, step) => Number((step * example.timeStep).toFixed(1)));
@@ -273,6 +273,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   // A run that overshoots comes back with a negative velocity, which the chart must still show.
   const lowest = Math.floor(Math.min(0, ...velocities, ...desired));
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: -10,

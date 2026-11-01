@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:229",
+  "work": "rxjs",
+  "slug": "materialize",
+  "authored": {
+    "by": "Claude dotln-worker author-09",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "materialize puts every signal a stream sends into an envelope and sends the envelope as an ordinary value. A value, a failure and a completion all arrive as records that say which they were, so a failure stops being something that tears the stream down and becomes data that can be shown, stored, counted or compared.",
+    "situation": "An import reads a spreadsheet row by row and may fail partway. Its log panel should list every row read and then, as one more line, the reason the import stopped, instead of losing its stream to the import's error."
+  },
+  "example": {
+    "name": "An import that fails on its third row",
+    "description": "import$ emits {rows} and then fails, because {reason}. The log panel reads it through materialize, so it receives a record of kind N for each row and then one of kind E carrying the reason, after which log$ completes rather than failing.",
+    "parameters": {
+      "rows": "row 1 and row 2",
+      "reason": "row 3 is unreadable"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Wrap each value",
+        "text": "Each row import$ emits leaves log$ as a record of kind N whose value is the row. The row itself is not changed, only carried."
+      },
+      {
+        "title": "Wrap the ending, then complete",
+        "text": "When import$ fails, the failure leaves as a record of kind E carrying the reason, and log$ completes at the same moment. Had the import completed, a record of kind C would have left instead, also followed by completion. Either way log$ never fails: whatever reads it learns how the import ended from its last record."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each value from the source:\n  send the record { kind: N, value }\n\nwhen the source ends:\n  if it failed with an error:\n    send the record { kind: E, error }\n  if it finished normally:\n    send the record { kind: C }\n  then end the output normally, so the output never fails",
+    "rxjs": "log$ = import$.pipe(\n  materialize(),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/materialize.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/materialize.ts",
+    "textEquivalent": "Frame {frame}: {now}."
+  },
+  "implementations": [
+    {
+      "project": "NgRx Effects",
+      "url": "https://github.com/ngrx/platform/blob/19.0.0/modules/effects/src/effects_resolver.ts",
+      "relevance": "NgRx is a state-management library for Angular, and its Effects package runs the side effects that dispatch actions to the store; mergeEffects in effects_resolver.ts of the ngrx/platform repository materializes the output of every effect.",
+      "explanation": "Each effect's stream is piped through materialize, each record is wrapped with the effect's name and instance, and the effects are merged. effect_sources.ts then reports any record of kind N whose value is not an action, naming the effect that produced it, keeps only records of kind N that carry a value, and turns them back into actions with dematerialize. Because a materialized stream never errors, a failing effect reaches the merge as a record of kind E, which that filter drops, rather than as an error that would end the merged stream carrying every other effect's actions. Both files were read at tag 19.0.0 on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · materialize",
+      "url": "https://rxjs.dev/api/index/function/materialize",
+      "accessed": "2026-10-31",
+      "supports": "Each of the source's values, its error and its completion reaches the output as a Notification value; after the error record, as after the completion record, the output completes; dematerialize is its counterpart."
+    },
+    {
+      "title": "materialize.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/materialize.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the operator emits Notification.createNext for each value, and on completion or error emits Notification.createComplete or Notification.createError and then completes its subscriber, so it never forwards an error."
+    },
+    {
+      "title": "RxJS API reference · Notification",
+      "url": "https://rxjs.dev/api/index/class/Notification",
+      "accessed": "2026-10-31",
+      "supports": "A Notification carries kind, value, error and a deprecated hasValue flag; the page recommends plain objects of the ObservableNotification shape over new instances and gives v8 as the version that removes the class."
+    },
+    {
+      "title": "NgRx effect_sources.ts at 19.0.0",
+      "url": "https://github.com/ngrx/platform/blob/19.0.0/modules/effects/src/effect_sources.ts",
+      "accessed": "2026-10-31",
+      "supports": "The effects runtime reports invalid actions from the materialized records, keeps only records of kind N with a non-null value, and restores them with dematerialize."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a hash an error, a bar completion, and parentheses group events that happen in the same frame, as the failure record and the completion do here."
+    }
+  ],
+  "limits": [
+    "materialize records a failure; it does not recover from one. The import still stopped at its third row, and log$ completes there. To go on after a failure, put retry or catchError before materialize.",
+    "Once a stream is materialized, operators that react to errors and completion find nothing to react to: a catchError or retry placed after materialize never sees the failure, which is now a value. Put them before it, or restore the signals with dematerialize first.",
+    "In RxJS 7 each record is an instance of the Notification class, which also carries a deprecated hasValue flag. The class is to be removed in v8 and the docs recommend plain objects of the ObservableNotification shape, so code that reads the records should rely only on kind, value and error.",
+    "A record of kind E carries the error exactly as it was thrown. Stored or sent as JSON, an Error object comes out as an empty object, because its message is not an enumerable field; a log that must outlive the page should copy the message out first."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:228",
+      "why": "Reach for dematerialize to turn the records back into values, an error and a completion once they have been handled as data, as NgRx does before dispatching."
+    },
+    {
+      "id": "rxc:331",
+      "why": "Type the records as ObservableNotification, the plain shape of a kind with a value or an error, whenever code reads or builds them."
+    },
+    {
+      "id": "rxc:288",
+      "why": "The Notification class is what RxJS 7 wraps each record in; read it to understand hasValue and its helpers, and build nothing new on it, since it is deprecated."
+    },
+    {
+      "id": "rxc:236",
+      "why": "Reach for toArray after materialize to keep a whole run, failure included, as one list to store or compare; toArray alone emits nothing when its source fails."
+    },
+    {
+      "id": "rxc:220",
+      "why": "Reach for catchError instead when a failure should be replaced by a fallback and the stream carry on, rather than kept as the stream's last record."
+    },
+    {
+      "id": "rxc:225",
+      "why": "Reach for tap instead when the signals only need watching, for logging, and the failure should still end the stream as an error."
+    },
+    {
+      "id": "rxp:97",
+      "why": "Reach for materialize with scan when a page shows the progress of work that may fail: the records fold into a status that survives the failure."
+    }
+  ]
+}

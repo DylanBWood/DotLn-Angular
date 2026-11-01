@@ -1,0 +1,126 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:220",
+  "work": "rxjs",
+  "slug": "catch-error",
+  "authored": {
+    "by": "Claude dotln-worker author-04",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "catchError is where a pipeline decides whether a failure is the end of the story. Everything before the error passes through unchanged; what changes is the ending. Two decisions sit with it: what the reader sees instead of the failure, which the selector chooses, and how much of the pipeline the failure may end, which its position chooses. The stream that failed is finished either way. catchError picks a successor; it does not repair the source.",
+    "situation": "A departures board fed by a live connection. When the connection drops, a blank board or an error page helps nobody. The printed timetable is a fair stand-in, provided the board says it is no longer live."
+  },
+  "example": {
+    "name": "A departures board that falls back to the timetable",
+    "description": "The board subscribes to departures$, a live feed, which sends two updates, {updates}, at frames 1 and 4 and then fails at frame 7 with {failure}. The selector answers with timetable$, the printed timetable, which takes {readFrames} frames to read, and marks its one entry with the error's message. The board keeps showing a departure and says why it is no longer live.",
+    "parameters": {
+      "updates": "the 10:02 and the 10:15",
+      "failure": "feed lost",
+      "readFrames": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Pass the source through",
+        "text": "While departures$ runs, each update goes to the board unchanged. Until an error arrives, catchError adds nothing."
+      },
+      {
+        "title": "Hand the error to the selector",
+        "text": "When departures$ fails with {failure}, the error goes no further. catchError calls the selector with it, and the selector builds the replacement from it: the timetable, marked with what went wrong. Then catchError lets go of the finished feed."
+      },
+      {
+        "title": "Continue with the replacement",
+        "text": "catchError subscribes to the stream the selector returned, in the frame of the failure, and passes its values on as if they came from the source."
+      },
+      {
+        "title": "End as the replacement ends",
+        "text": "When the replacement completes, the board completes. Had the replacement failed, its error would have reached the board: catchError does not catch an error from its own replacement."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each update from the source:\n  pass it on\n\nwhen the source fails with error:\n  replacement = selector(error)\n  stop listening to the source\n  (the error itself goes no further)\n\nstart listening to replacement\non each value from replacement:\n  pass it on\n\nwhen replacement completes:\n  complete the output\nwhen replacement fails:\n  fail the output with its error",
+    "rxjs": "board$ = departures$.pipe(\n  catchError((error: Error) =>\n    timetable$.pipe(map((entry) => `${entry}: ${error.message}`)),\n  ),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/catch-error.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/catch-error.ts",
+    "textEquivalent": "Frame {frame}: {now}. Shown so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, every store command",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/shared/data-access/src/lib/with-command.ts",
+      "relevance": "Where this app uses it: libs/shared/data-access/src/lib/with-command.ts runs each store command, the catalog load among them, and answers every trigger with a success or a failure event.",
+      "explanation": "Each trigger event is switchMapped to a fresh call made inside defer, and catchError sits on that inner stream, turning a failed call into config.failure(toAppError(error)). The failure becomes an event the store records as its error state, so the page can report what failed. Because the catch is inside switchMap, the trigger stream survives the failure: the next trigger, such as the one the catalog page's retry() leads to, runs the call again. The catalog store's summary handler repeats the shape, and the app's HTTP error interceptor, interceptors.ts, uses catchError the other way round: it dispatches httpFailed with the mapped error and rethrows it with throwError, so the caller still receives a failure."
+    },
+    {
+      "project": "Angular's router, the PreloadAllModules strategy",
+      "url": "https://github.com/angular/angular/blob/v22.2.3/packages/router/src/router_preloader.ts",
+      "relevance": "Angular's router can load lazy routes in the background after each navigation; PreloadAllModules, in router_preloader.ts of the angular/angular repository, is the strategy that preloads all of them.",
+      "explanation": "Its preload method returns fn().pipe(catchError(() => of(null))), so a route whose code fails to load yields null instead of an error. The preloader merges every route's preload and runs the whole preload from a subscription to the router's events that has no error handler; without the catch, one failing chunk would end preloading for every later navigation too. The selector discards the error, which suits work that is only an optimisation: the route is loaded again, and can fail visibly, when someone navigates to it. The file is the v22.2.3 tag, the version installed here, read on 2026-10-31."
+    },
+    {
+      "project": "NgRx Effects, the default effects error handler",
+      "url": "https://github.com/ngrx/platform/blob/22.0.1/modules/effects/src/effects_error_handler.ts",
+      "relevance": "NgRx Effects runs each effect through defaultEffectsErrorHandler, in effects_error_handler.ts of the ngrx/platform repository, unless the effect sets useEffectsErrorHandler to false.",
+      "explanation": "Its selector reports the error to Angular's ErrorHandler and returns the same handler wrapped round the same effect with one attempt fewer, so catchError subscribes to the effect again. When the attempts reach the last of MAX_NUMBER_OF_RETRY_ATTEMPTS, which is 10, it returns the bare effect: ten errors are absorbed, each one reported, and the eleventh goes through. It is a counted retry built from catchError, the bounded form of returning caught. The file is the 22.0.1 tag, read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · catchError",
+      "url": "https://rxjs.dev/api/index/function/catchError",
+      "accessed": "2026-10-31",
+      "supports": "catchError forwards every notification except an error; on a source error it maps the error through the selector to a new observable, subscribes to it and forwards its events. The selector may instead throw, and returning its second argument, caught, subscribes the source again."
+    },
+    {
+      "title": "catchError.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/catchError.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the error handler calls the selector with the error and with catchError(selector)(source) as caught, unsubscribes the failed source, and only then subscribes the output to the replacement."
+    },
+    {
+      "title": "Angular guide · Making HTTP requests, Handling request failure",
+      "url": "https://angular.dev/guide/http/making-requests",
+      "accessed": "2026-10-31",
+      "supports": "Angular's guide uses catchError to turn an HttpClient error into a value the UI can show, the use this app's commands make of it."
+    }
+  ],
+  "limits": [
+    "Placement decides what survives. catchError ends the stream it is on: after the error, the output carries the replacement and then completes. If the board reconnected on a Refresh button, switchMapping each press to a new departures$, the catch would belong on that inner feed, where this app's commands put theirs. Placed after switchMap instead, the first lost feed would complete the whole pipeline, and the next press of Refresh would never be heard.",
+    "It can hide a failure. A replacement such as EMPTY, or a plain default value, looks downstream exactly like a quiet success. Keep the evidence in the replacement, as the timetable entry carries {failure} here; turn the error into a failure value, as this app's commands do; or record it and rethrow with throwError, as its HTTP interceptor does.",
+    "It does not resume the source. Whatever the feed would have sent after its error is lost, and the replacement starts from its own beginning. Returning the selector's second argument, caught, subscribes the source again, but at once and without limit, so a source that always fails loops. retry gives a count and a delay.",
+    "An error from the replacement, or one thrown inside the selector, is not caught by the same catchError: it reaches the output. A timetable that could not be read would fail the board. A fallback that can itself fail needs a catchError of its own."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:221",
+      "why": "retry starts the failed source again, up to a count and after a delay, where catchError replaces it. The two are often combined: retry first, and catchError for what to show once the retries run out."
+    },
+    {
+      "id": "rxp:118",
+      "why": "catchError inside the inner flattening is the placement that keeps a long-lived stream alive, the one this app's commands use."
+    },
+    {
+      "id": "rxp:119",
+      "why": "catchError → EMPTY vs fallback value weighs a silent replacement against one that surfaces the failure, the choice the second limit describes."
+    },
+    {
+      "id": "rxc:224",
+      "why": "onErrorResumeNextWith moves on to the next source whether the first failed or completed, and never sees the error, where catchError's selector receives it and chooses."
+    },
+    {
+      "id": "rxc:119",
+      "why": "throwError is what a selector returns to record an error and still pass it on, as the HTTP interceptor does."
+    }
+  ]
+}

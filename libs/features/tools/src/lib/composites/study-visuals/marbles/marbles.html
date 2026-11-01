@@ -1,0 +1,151 @@
+@let view = drawing();
+<svg
+  [attr.viewBox]="view.viewBox"
+  role="img"
+  translate="no"
+  [attr.aria-label]="textEquivalent()"
+  [class.gliding]="glides()"
+  [style.--marbles-frame]="frameSeconds"
+>
+  <line
+    #cursor
+    class="cursor"
+    x1="0"
+    x2="0"
+    [attr.y1]="view.cursor.y1"
+    [attr.y2]="view.cursor.y2"
+    [style.transform]="'translate(' + cursorX() + 'px, 0)'"
+  />
+  @for (segment of view.idle; track $index) {
+    <line
+      class="idle"
+      [attr.x1]="segment.x1"
+      [attr.y1]="segment.y1"
+      [attr.x2]="segment.x2"
+      [attr.y2]="segment.y2"
+      [attr.data-tone]="segment.tone"
+    />
+  }
+  @for (axis of view.axes; track $index) {
+    <line
+      class="axis"
+      [attr.x1]="axis.x1"
+      [attr.y1]="axis.y1"
+      [attr.x2]="axis.x2"
+      [attr.y2]="axis.y2"
+      [attr.data-tone]="axis.tone"
+    />
+  }
+  <rect
+    class="operator"
+    rx="6"
+    [attr.x]="view.operator.x"
+    [attr.y]="view.operator.y"
+    [attr.width]="view.operator.width"
+    [attr.height]="view.operator.height"
+  />
+  <text
+    class="operator-name"
+    text-anchor="middle"
+    [attr.x]="view.operator.x + view.operator.width / 2"
+    [attr.y]="view.operator.y + view.operator.height / 2 + 5"
+  >
+    {{ view.operator.text }}
+  </text>
+  @for (bar of view.completes; track $index) {
+    <line
+      class="complete"
+      [attr.x1]="bar.x1"
+      [attr.y1]="bar.y1"
+      [attr.x2]="bar.x2"
+      [attr.y2]="bar.y2"
+      [attr.data-tone]="bar.tone"
+    />
+  }
+  @for (error of view.errors; track $index) {
+    <path class="error" [attr.d]="error.d" [attr.data-tone]="error.tone" />
+  }
+  @for (cut of view.cuts; track $index) {
+    <circle class="cut" [attr.cx]="cut.x" [attr.cy]="cut.y" [attr.r]="cut.r" />
+  }
+  @for (marble of view.marbles; track marble.id) {
+    <g class="marble" [class.current]="marble.current" [class.landing]="marble.landing">
+      @if (marble.current) {
+        <circle
+          class="ripple"
+          [attr.cx]="marble.x"
+          [attr.cy]="marble.y"
+          [attr.r]="marble.r"
+          [attr.data-tone]="marble.tone"
+        />
+      }
+      <circle
+        class="bead"
+        [attr.cx]="marble.x"
+        [attr.cy]="marble.y"
+        [attr.r]="marble.r"
+        [attr.data-tone]="marble.tone"
+      />
+      <text text-anchor="middle" [attr.x]="marble.x" [attr.y]="marble.y + marble.r * 0.38">
+        {{ marble.key }}
+      </text>
+    </g>
+  }
+  @for (courier of view.couriers; track step() + ':' + $index) {
+    <g class="courier" [style.--marbles-travel]="courier.y2 - courier.y1 + 'px'">
+      <circle
+        [attr.cx]="courier.x"
+        [attr.cy]="courier.y1"
+        [attr.r]="courier.r"
+        [attr.data-tone]="courier.tone"
+      />
+      <text text-anchor="middle" [attr.x]="courier.x" [attr.y]="courier.y1 + courier.r * 0.38">
+        {{ courier.key }}
+      </text>
+    </g>
+  }
+  <g class="labels" translate="no">
+    @for (label of view.labels; track $index) {
+      <text class="label" [attr.x]="label.x" [attr.y]="label.y" [attr.text-anchor]="label.anchor">
+        {{ label.text }}
+      </text>
+    }
+  </g>
+  <g class="ticks">
+    @for (tick of view.ticks; track $index) {
+      <text class="tick" [attr.x]="tick.x" [attr.y]="tick.y" [attr.text-anchor]="tick.anchor">
+        {{ tick.text }}
+      </text>
+    }
+  </g>
+</svg>
+<tools-study-scrubber
+  [step]="step()"
+  [lastStep]="lastStep()"
+  [frame]="frame()"
+  [moments]="moments()"
+  [playing]="playing()"
+  (played)="played.emit($event)"
+  (stepped)="stepped.emit($event)"
+/>
+@if (note(); as text) {
+  <p class="note" translate="no">
+    {{ text }}
+  </p>
+  <details
+    #numbers
+    class="numbers"
+    [open]="numbersOpen()"
+    (toggle)="numbersToggled.emit(numbers.open)"
+  >
+    <summary>{{ 'tools.study.emissions' | t }}</summary>
+    <p class="reading" data-testid="study-reading" translate="no">
+      {{ textEquivalent() }}
+    </p>
+  </details>
+} @else {
+  <p class="reading" data-testid="study-reading" translate="no">
+    {{ textEquivalent() }}
+  </p>
+}
+<ng-content />

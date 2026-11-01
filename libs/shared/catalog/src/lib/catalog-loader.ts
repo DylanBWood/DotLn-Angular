@@ -36,6 +36,7 @@ const chunks: CatalogChunks = {
 // One chunk per work, beside the tool data, so a regenerated join never touches a study.
 const studyChunks: StudyChunks = {
   aifg: () => import('../studies/aifg'),
+  rxjs: () => import('../studies/rxjs'),
 };
 
 const summaryChunks: SummaryChunks = [

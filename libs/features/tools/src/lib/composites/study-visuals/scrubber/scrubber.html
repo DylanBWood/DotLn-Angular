@@ -1,4 +1,10 @@
-<label [attr.for]="sliderId">{{ 'tools.study.time' | t: { seconds: seconds() } }}</label>
+<label [attr.for]="sliderId">
+  @if (frame() !== null) {
+    {{ 'tools.study.frameOf' | t: { frame: frame(), last: lastStep() } }}
+  } @else {
+    {{ 'tools.study.time' | t: { seconds: seconds() } }}
+  }
+</label>
 <input
   #slider
   type="range"

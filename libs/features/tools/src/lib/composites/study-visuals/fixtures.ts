@@ -1,4 +1,12 @@
-import type { MotionModel, StudyMoment, TimelineModel } from '../../studies/study-model';
+import { switchMap } from 'rxjs';
+
+import { marbleModel } from '../../studies/rxjs/marbles';
+import type {
+  MarblesModel,
+  MotionModel,
+  StudyMoment,
+  TimelineModel,
+} from '../../studies/study-model';
 
 /** Two bodies closing on a target, for the families' stories and specs. */
 export const motionFixture: MotionModel = {
@@ -32,3 +40,24 @@ export const momentsFixture: readonly StudyMoment[] = [
   { label: 'Start', step: 0 },
   { label: 'Close', step: 8 },
 ];
+
+/** A switch between two inner streams, for the marbles family's stories and specs. */
+export const marblesStudyModel = marbleModel({
+  inputs: {
+    source$: { label: 'source$', marbles: '-a--b-|', values: { a: 'first', b: 'second' } },
+  },
+  inner: {
+    first: { label: 'inner(first)', marbles: '--1-2|', subscriptions: '-^--!' },
+    second: { label: 'inner(second)', marbles: '--3-4|', subscriptions: '----^----!' },
+  },
+  operator: 'switchMap((value) => inner(value))',
+  outputs: { out$: { label: 'out$', marbles: '---1--3-4|' } },
+  run: ({ inputs: { source$ }, inner }) => ({
+    out$: source$.pipe(switchMap((value) => inner[String(value)])),
+  }),
+  moments: [
+    { label: 'First', frame: 1 },
+    { label: 'Switch', frame: 4 },
+  ],
+});
+export const marblesFixture: MarblesModel = marblesStudyModel.marbles;

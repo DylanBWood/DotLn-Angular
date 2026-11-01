@@ -1,0 +1,155 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:147",
+  "work": "rxjs",
+  "slug": "concat-map",
+  "authored": {
+    "by": "Claude dotln-worker author-05",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "One thing at a time, in the order it was asked for. concatMap starts the work for the first value and makes every later value wait in line; the next piece of work begins only once the current one has completed, which can be well after it first answered. Nothing is dropped and nothing overtakes: the output is each value's results in full, one value after another.",
+    "situation": "A shared album that places each photo when its upload finishes. The user adds three photos in the order they want them shown. If a small photo added second could finish uploading before a large one added first, the album would show them the wrong way round, so each upload has to finish before the next one begins."
+  },
+  "example": {
+    "name": "Three photos uploaded to a shared album",
+    "description": "The user adds three photos, {photos}, at frames 1, 3 and 5, and is done adding at frame 8. The server answers cat's upload {catUpload} frames after it starts, dog's after {dogUpload} and owl's after {owlUpload}, and each upload completes on the frame after its answer. cat is a large photo and dog a small one, so dog's quick upload has to wait for cat's. The mergeMap study runs these same uploads at once.",
+    "parameters": {
+      "photos": "cat, dog and owl",
+      "catUpload": 5,
+      "dogUpload": 1,
+      "owlUpload": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Send a photo when nothing is uploading",
+        "text": "When the user adds a photo and no upload is running, its upload is prepared and sent at once."
+      },
+      {
+        "title": "Queue a photo that arrives during an upload",
+        "text": "If an upload is running, the photo joins the back of the queue. Its upload is not prepared yet: the function that makes it runs only when the photo's turn comes, so whatever that function reads, it reads then rather than when the photo was added."
+      },
+      {
+        "title": "Pass on each answer",
+        "text": "Whatever the running upload returns goes straight to the output as it arrives."
+      },
+      {
+        "title": "Start the next upload only when this one completes",
+        "text": "The turn passes when the running upload completes, not when the server answers it. Only then is the oldest waiting photo's upload prepared and sent, which is why dog, whose upload is the quickest, still waits for cat's to finish."
+      },
+      {
+        "title": "Stop everything on a failure",
+        "text": "If an upload fails, the failure goes to the output and everything ends there: the photos still in the queue are thrown away without being sent, and photos added later are no longer listened to."
+      },
+      {
+        "title": "Finish when the user is done and the queue is empty",
+        "text": "The output completes only once the user has finished adding photos, no photo is waiting and the last upload has completed. A user who stops adding while uploads are still owed leaves the output open until they are done."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each photo the user adds:\n  if no upload is running:\n    prepare and start the upload for photo\n\n  otherwise:\n    put photo at the back of the queue\n    (its upload is prepared only when its turn comes)\n\non each answer from the running upload:\n  pass the answer on\n\nwhen the running upload completes:\n  (an answer alone does not end its turn)\n  if the queue is not empty:\n    take the oldest photo off the queue\n    prepare and start the upload for it\n\nif the running upload fails:\n  pass the failure on\n  throw the queue away, unsent\n  stop listening for new photos\n\nwhen the user is done adding, the queue is empty and no upload is running:\n  complete the output",
+    "rxjs": "stored$ = photo$.pipe(\n  concatMap((photo) => upload(photo)),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/concat-map.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/concat-map.ts",
+    "textEquivalent": "Frame {frame}: {now}. Stored so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the navigation store",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/shared/state/src/lib/navigation-store.ts",
+      "relevance": "Where this app uses it: libs/shared/state/src/lib/navigation-store.ts turns the app's navigation events into calls to Angular's router.",
+      "explanation": "The navigate and replaceQuery handlers each pass their events through concatMap. Its function builds the route, calls router.navigate and wraps the promise that returns with from; ignoreElements drops the promise's result, so the handler is kept for its effect and emits nothing. An event that arrives while the previous navigation's promise is still pending waits, and router.navigate is not called for it until that promise resolves, so the router receives this app's navigations one at a time in the order they were asked for. The two handlers have a queue each: a navigate and a replaceQuery are not ordered against each other."
+    },
+    {
+      "project": "Angular's router, its guard checks",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/operators/check_guards.ts",
+      "relevance": "Angular's router runs a navigation's guards in check_guards.ts of the angular/angular repository.",
+      "explanation": "runCanActivateChecks turns the routes being activated into a stream with from and passes it through concatMap. For each route in turn it fires the route's activation events and runs its canActivateChild and canActivate guards, joined with concat, and the next route's turn begins only when all of them have completed. first then takes the first result that is not true; taking it unsubscribes, and because a waiting route's work is prepared only when its turn comes, the guards of the later routes never run and their events are never fired. runCanDeactivateChecks, just above it, uses mergeMap instead, so its guards do not wait for one another. The file is pinned to the commit read on 2026-10-31."
+    },
+    {
+      "project": "Angular's router, its resolvers",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/operators/resolve_data.ts",
+      "relevance": "Angular's router runs the resolvers of the routes being activated in resolve_data.ts of the angular/angular repository.",
+      "explanation": "resolveData passes the routes that need data through concatMap, in the order of a Set that lists each route before its descendants. Each route's work computes its data from its parent's, and concatMap runs that work only after the previous route's has completed, so a parent's resolved data is in place before a child reads it. Within one route, resolveNode in the same file uses mergeMap, so that route's own resolvers do not wait for one another. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · concatMap",
+      "url": "https://rxjs.dev/api/index/function/concatMap",
+      "accessed": "2026-10-31",
+      "supports": "concatMap is documented as equivalent to mergeMap with a concurrency of one, with a warning that a source emitting faster than its inner observables complete fills an unbounded buffer."
+    },
+    {
+      "title": "concatMap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/concatMap.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version concatMap is a call to mergeMap with the projection and a concurrency of 1."
+    },
+    {
+      "title": "mergeInternals.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/mergeInternals.ts",
+      "accessed": "2026-10-31",
+      "supports": "The merge logic concatMap runs on pushes a value onto a buffer while the concurrency limit is reached, calls the projection only when it subscribes that value's inner, takes the next buffered value only after an inner completes rather than errors or is cut off, passes an inner's error to the output, and completes once the source has completed, the buffer is empty and no inner is active."
+    },
+    {
+      "title": "RxJS guide · Higher-order Observables",
+      "url": "https://rxjs.dev/guide/higher-order-observables",
+      "accessed": "2026-10-31",
+      "supports": "The guide's account of flattening: concatMap holds back further outer values while an inner runs and carries on with them only once that inner completes, set beside mergeMap, switchMap and exhaustMap."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS Code with Marble Diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The syntax the diagram and its spec are written in: a dash for each frame, a character for each emission, a bar for completion, a hash for an error, and in subscription marbles a caret where a subscription starts and an exclamation mark where it ends."
+    }
+  ],
+  "limits": [
+    "The queue has no ceiling. While photos arrive faster than uploads complete, each waits longer than the one before, nothing signals that the line is growing, and every photo in it is held in memory until its turn. When the order does not matter, let the uploads overlap with mergeMap and a cap; when only the newest value matters, as with an autosave, put a debounceTime in front so that a burst becomes one value.",
+    "An upload that answers but never completes holds the queue for ever. The turn passes on completion, so an inner stream that stays open after answering, such as one that goes on listening for the server's processing updates, leaves every later photo waiting, without an error. End such an inner with first(), take(1) or a timeout before concatMap sees it.",
+    "One failed upload ends all uploading. The error reaches the output, the photos waiting in the queue are discarded without being sent and photos added later are no longer heard, so the album silently stops filling. Catch inside the projection, upload(photo).pipe(catchError(...)), to keep the queue running and report the one failure.",
+    "Every value's work runs, including work whose answer is already stale. For a search, or a details panel that follows a selection, concatMap makes the reader wait for answers to questions nobody is asking any more before the current one even starts: use switchMap there. Work that is independent, like these uploads once each photo carries its own place, need not wait at all: use mergeMap."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:150",
+      "why": "mergeMap runs these same uploads at once: the album fills sooner, but dog is stored before cat. Reach for it when the pieces of work are independent and the order they finish in does not matter."
+    },
+    {
+      "id": "rxc:152",
+      "why": "switchMap is the choice when only the newest value's answer matters and older work can be abandoned, such as a search box."
+    },
+    {
+      "id": "rxc:149",
+      "why": "exhaustMap is the choice when a value arriving during the work should be ignored rather than queued, such as a second click on a submit button."
+    },
+    {
+      "id": "rxc:195",
+      "why": "concatAll is the same one-at-a-time queue over a stream that already carries the inner streams, when there is nothing left to project."
+    },
+    {
+      "id": "rxc:446",
+      "why": "The concat strategy sets this queue beside the other flattening policies as a choice of concurrency, which helps when deciding between them rather than learning one."
+    },
+    {
+      "id": "rxp:70",
+      "why": "Ordered writes is the pattern this example is an instance of, with the guards it needs against an upload that never completes and a queue that grows."
+    },
+    {
+      "id": "rxc:172",
+      "why": "debounceTime in front of concatMap suits work where only the newest value matters, such as an autosave: it waits for a pause, so a burst of edits becomes one save instead of a queue."
+    }
+  ]
+}

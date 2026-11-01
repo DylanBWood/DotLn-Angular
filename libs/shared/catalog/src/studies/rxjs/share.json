@@ -1,0 +1,132 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:215",
+  "work": "rxjs",
+  "slug": "share",
+  "authored": {
+    "by": "Claude dotln-worker author-01",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "One run of the source, for whoever is listening. share stands between a source and its readers: the first reader to arrive starts the source, every later reader joins that same run at the point it has reached, and when the last reader leaves, share stops the source and forgets it, so the next reader starts it over. While anyone listens the stream is hot, and a reader who arrives late has missed what came before; with no one listening it is cold again.",
+    "situation": "A page polls a stock quote and shows it twice: in a tile that is there from the start and in a chart the user opens later. Every subscription to an HttpClient call issues a request of its own, so two readers would run two polls. They should share one, and it should stop when the user leaves the page."
+  },
+  "example": {
+    "name": "A quote tile and a chart opened later",
+    "description": "The page polls a quote every {pollEvery} frames, the first arriving one frame after the poll starts. The tile subscribes at frame 0; the user opens the chart at frame {chartOpensAt}, between the second and third quotes, and leaves the page at frame {leftAt}, which unsubscribes both readers. The poll never completes on its own. The shareReplay study runs exactly these streams, so the two diagrams differ only in the operator.",
+    "parameters": {
+      "pollEvery": 4,
+      "chartOpensAt": 7,
+      "leftAt": 15
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start one run for the first reader",
+        "text": "When the tile subscribes and nothing is running, share subscribes to the poll, once. Every reader that follows listens to this run; none of them starts a poll of its own."
+      },
+      {
+        "title": "Pass each value to the readers present",
+        "text": "Each quote goes to every reader subscribed at that moment, and share keeps no copy of it."
+      },
+      {
+        "title": "A late reader joins where the run stands",
+        "text": "The chart subscribes at frame {chartOpensAt}, into the running poll. share has nothing stored to hand it, so the chart stays empty until the next quote arrives for both readers."
+      },
+      {
+        "title": "Stop when the last reader leaves",
+        "text": "share counts its readers. When the count falls to none, at frame {leftAt} here, it unsubscribes from the poll and forgets it: no further request is sent, and the next reader to arrive starts a new poll as if share had never run."
+      },
+      {
+        "title": "Forget the run when it ends",
+        "text": "If the poll completes or fails, share passes the completion or the error to the readers present, which ends them, and forgets the run, so the next reader starts a new one. This is a reset, not a retry: the readers who were there have already ended."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the first reader arrives:\n  start the poll, once, for every reader to come\n\non each quote from the poll:\n  give it to every reader present at that moment\n  (store nothing: a reader who arrives later never sees it)\n\nwhen a later reader arrives:\n  add it to the readers present\n  (it waits for the next quote; nothing is replayed)\n\nwhen a reader leaves:\n  remove it from the readers present\n  if none is left:\n    stop the poll and forget it\n    (the next reader to arrive is a first reader again)\n\nwhen the poll completes or fails:\n  pass that on to every reader present, which ends them\n  forget the poll: the next reader to arrive is a first reader again\n  (nothing is retried for the readers who were there)",
+    "rxjs": "shared$ = quote$.pipe(share());",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/share.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/share.ts",
+    "textEquivalent": "Frame {frame}: {now}. Received so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "NgRx Store Devtools",
+      "url": "https://github.com/ngrx/platform/blob/22.0.1/modules/store-devtools/src/extension.ts",
+      "relevance": "NgRx's Store Devtools connects an application's store to the Redux DevTools browser extension; extension.ts in the ngrx/platform repository, at tag 22.0.1, holds that connection.",
+      "explanation": "createChangesObservable returns an observable that opens a connection to the extension when it is subscribed and closes it on unsubscribe. createActionStreams passes it through share() and derives the start, stop, lifted-action and action streams from it, each a filter of the one stream. The actions are read only between a start and a stop, through switchMap, so they subscribe later than the start stream does, much as the chart here subscribes after the tile. Without share each derived stream would open a connection of its own; with it they all listen to one, which closes once none of them is listening."
+    },
+    {
+      "project": "RxJS, its own shareReplay",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/shareReplay.ts",
+      "relevance": "RxJS's shareReplay, at the installed version 7.8.2, is written as a single call to share.",
+      "explanation": "It hands share a connector that builds a ReplaySubject with the requested buffer size and window, keeps the reset on error, turns off the reset on completion, and resets at zero readers only when refCount is set. Everything that tells the two operators apart in these studies is that configuration."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · share",
+      "url": "https://rxjs.dev/api/index/function/share",
+      "accessed": "2026-10-31",
+      "supports": "share stays subscribed to its source while anyone subscribes to it and lets go when the last subscriber leaves. Resetting after an error or a completion does not hide the ending: the subscribers present receive it and are closed, and the source is subscribed again only for whoever comes afterwards. A factory that returns a notifier delays the reset."
+    },
+    {
+      "title": "share.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/share.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version the defaults are a plain Subject as the connector and all three resets on. The source is subscribed only when a subscriber arrives and no connection exists, and on completion or error the state is reset before the notification is passed to the subscribers present."
+    },
+    {
+      "title": "RxJS guide · Multicasting deprecations",
+      "url": "https://rxjs.dev/deprecations/multicasting",
+      "accessed": "2026-10-31",
+      "supports": "RxJS 7 reduced multicasting to connectable, connect and share, presenting shareReplay as a light layer over share; the refCount pairings of multicast and publish are rewritten as calls to share."
+    },
+    {
+      "title": "Angular guide · Making HTTP requests",
+      "url": "https://angular.dev/guide/http/making-requests",
+      "accessed": "2026-10-31",
+      "supports": "Subscribing to an HttpClient observable is what sends its request, and every further subscription sends another; so the tile and the chart, reading one polled request, would poll twice without sharing."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share, including subscription marbles, where a caret and an exclamation mark give a subscription's start and end and can hold a subscriber back until a later frame, which is how the chart arrives late in this example."
+    }
+  ],
+  "limits": [
+    "A late reader starts empty. The chart opened at frame {chartOpensAt} has nothing to draw until the next quote, and the quotes fetched before it opened never reach it. Where a reader must show the current value the moment it subscribes, use shareReplay({ bufferSize: 1, refCount: true }), or give share a ReplaySubject connector and keep its resets under your own control.",
+    "Every reset repeats the work. Once the last reader has gone, or the source has completed or failed, the next reader starts the source again. Had the quote been one request that completed before the chart opened, share would have sent a second request for the chart. That is how two async pipes on one shared HttpClient call can send two requests: the second, rendered only once the first value has arrived, subscribes after the request has completed. A result that should be fetched once belongs behind shareReplay; readers who come and go in quick succession are better served by a delayed reset, resetOnRefCountZero: () => timer(ms), which keeps one poll running through the gap.",
+    "A reset is not a retry. If the poll fails, the tile and the chart both receive the error and stop; only a reader that subscribes afterwards starts a new poll. To keep the readers through a failed request, retry inside the shared part, before share, as in quote$.pipe(retry({ count: 3, delay: 1000 }), share()).",
+    "A synchronous source is not shared at all. Were the quote served synchronously, from an in-memory cache say, the tile would receive it and the completion inside its own subscribe call, share would reset, and the chart would read the cache a second time. connect, which subscribes every reader before it starts the source, shares such a source once."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:216",
+      "why": "shareReplay is the choice when a late reader must see the latest value at once, as the chart here would prefer, or when a completed result should be kept rather than fetched again."
+    },
+    {
+      "id": "rxc:339",
+      "why": "ShareConfig is where share's defaults change: a delayed resetOnRefCountZero keeps the poll through a quick navigation, and a ReplaySubject connector hands late readers the latest value while share's resets stay on."
+    },
+    {
+      "id": "rxc:217",
+      "why": "connect is the choice when every reader is known inside one expression or the source is synchronous: it subscribes them all before it starts the source, so none misses a value and nothing resets in between."
+    },
+    {
+      "id": "rxc:132",
+      "why": "connectable is the choice when the shared run must start, and keep running, on your command rather than on the first and last reader, such as a feed warmed up before any view subscribes."
+    }
+  ]
+}

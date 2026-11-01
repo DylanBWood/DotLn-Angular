@@ -1,7 +1,7 @@
 import { boundsOf, namedBoundsOf, withSpacedLabels } from './drawing';
-import type { StudyFrame } from './study-model';
+import type { MotionFrame } from './study-model';
 
-const frame: StudyFrame = {
+const frame: MotionFrame = {
   seconds: 0,
   bodies: [
     { id: 'a', x: 0, y: 0, label: 'Lantern' },
@@ -53,7 +53,7 @@ it('gives the marks first call on the room when a study needs them named most', 
 
 it('places an anchor body before the other bodies', () => {
   const bounds = { minX: -10, maxX: 60, minY: -20, maxY: 20 };
-  const crowded: StudyFrame = {
+  const crowded: MotionFrame = {
     seconds: 0,
     bodies: [
       { id: 'a', x: 0, y: 0, label: 'Member' },

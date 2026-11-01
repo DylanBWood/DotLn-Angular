@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { TPipe } from '@dotln-angular/i18n';
 
@@ -23,5 +23,4 @@ export class StudyExplanation {
   readonly #id = `study-explanation-${++explanations}`;
   readonly codeHeading = `${this.#id}-code`;
   readonly stepHeading = (index: number) => `${this.#id}-step-${index}`;
-  readonly step = computed(() => this.study().visual?.step ?? 0);
 }

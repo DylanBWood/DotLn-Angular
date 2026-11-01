@@ -24,10 +24,10 @@ import {
 import { boundsOf } from '../drawing';
 import { numberParameter } from '../parameters';
 import type {
+  MotionFrame,
   MotionMark,
+  MotionStudyModel,
   MotionVector,
-  StudyFrame,
-  StudyModel,
   StudyWorkedStep,
 } from '../study-model';
 
@@ -367,7 +367,7 @@ function frameOf(
   step: number,
   p: CreatureParameters,
   layout: CreatureLayout,
-): StudyFrame {
+): MotionFrame {
   const seconds = step * p.timeStep;
   const r = readCreature(creatures, 0, seconds, p);
   const fern = creatures[0];
@@ -511,7 +511,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const p = readCreatureParameters(parameters);
   const states = creatureFrames(p);
   const layout = layoutOf(states, p);
@@ -524,6 +524,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     distance(creatures[0].position, playerAt(step * p.timeStep, p)),
   );
   return {
+    family: 'motion',
     motion: { bounds: boundsOf(frames, 12), frames, trail: true },
     timeline: {
       title: 'Species movement across Bracken Meadow',

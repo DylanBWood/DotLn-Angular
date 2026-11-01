@@ -15,10 +15,10 @@ import {
 import { drawingWidth } from '../drawing';
 import { numberParameter } from '../parameters';
 import type {
+  MotionFrame,
   MotionLink,
   MotionMark,
-  StudyFrame,
-  StudyModel,
+  MotionStudyModel,
   StudyWorkedStep,
 } from '../study-model';
 
@@ -219,7 +219,7 @@ function frameOf(
   frame: PursueFrame,
   example: PursueParameters,
   previous?: PursueFrame,
-): StudyFrame {
+): MotionFrame {
   const { ash, reed, calculation } = frame;
   const velocity = scale(ash.velocity, example.velocitySeconds);
   const targetVelocity = scale(reed.velocity, example.velocitySeconds);
@@ -272,7 +272,7 @@ function frameOf(
 }
 
 /** Separate close names in a row below the run, keeping their connectors clear of the text. */
-function labelFrame(frame: StudyFrame, left: number, span: number, rowY: number): StudyFrame {
+function labelFrame(frame: MotionFrame, left: number, span: number, rowY: number): MotionFrame {
   const ash = frame.bodies[0];
   const reed = frame.bodies[1];
   const aim = frame.marks?.[0];
@@ -331,7 +331,7 @@ function labelFrame(frame: StudyFrame, left: number, span: number, rowY: number)
   };
 }
 
-function comparison(example: PursueParameters): NonNullable<StudyModel['comparison']> {
+function comparison(example: PursueParameters): NonNullable<MotionStudyModel['comparison']> {
   const changed = { ...example, turnAt: example.comparisonTurnAt };
   const normal = pursueFrames(example);
   const turned = pursueFrames(changed);
@@ -387,7 +387,7 @@ function comparison(example: PursueParameters): NonNullable<StudyModel['comparis
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = pursueFrames(example);
   const gaps = states.map(({ calculation }) => calculation.distance);
@@ -436,6 +436,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     ({ calculation }) => calculation.prediction < example.maxPrediction,
   );
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: left,

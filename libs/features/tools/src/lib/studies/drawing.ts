@@ -1,10 +1,10 @@
-import type { MotionBounds, StudyFrame, StudyPoint } from './study-model';
+import type { MotionBounds, MotionFrame, StudyPoint } from './study-model';
 
 /** The width a drawing is laid out in, whatever size it is shown at. */
 export const drawingWidth = 600;
 
 /** Every point a frame draws. */
-const pointsOf = (frame: StudyFrame): readonly StudyPoint[] => [
+const pointsOf = (frame: MotionFrame): readonly StudyPoint[] => [
   ...frame.bodies,
   ...(frame.marks ?? []),
   ...(frame.zones ?? []).flatMap(({ x, y, radius }) => [
@@ -26,12 +26,12 @@ const boxOf = (points: readonly StudyPoint[], padding: number): MotionBounds => 
 });
 
 /** A box round everything the frames draw, with the margin the study needs. */
-export function boundsOf(frames: readonly StudyFrame[], padding: number): MotionBounds {
+export function boundsOf(frames: readonly MotionFrame[], padding: number): MotionBounds {
   return boxOf(frames.flatMap(pointsOf), padding);
 }
 
 /** The same box with room for the frames' names at the drawing's larger text size. */
-export function namedBoundsOf(frames: readonly StudyFrame[], padding: number): MotionBounds {
+export function namedBoundsOf(frames: readonly MotionFrame[], padding: number): MotionBounds {
   const raw = frames.flatMap(pointsOf);
   const names = frames.flatMap((frame) =>
     [...frame.bodies, ...(frame.marks ?? [])].flatMap((point) =>
@@ -61,10 +61,10 @@ export function namedBoundsOf(frames: readonly StudyFrame[], padding: number): M
  * anchor before them, or its marks.
  */
 export function withSpacedLabels(
-  frame: StudyFrame,
+  frame: MotionFrame,
   bounds: MotionBounds,
   first: 'bodies' | 'marks' = 'bodies',
-): StudyFrame {
+): MotionFrame {
   const scale = drawingWidth / (bounds.maxX - bounds.minX);
   const height = (bounds.maxY - bounds.minY) * scale;
   const placed: {

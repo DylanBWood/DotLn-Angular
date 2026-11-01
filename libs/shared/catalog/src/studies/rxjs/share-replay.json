@@ -1,0 +1,144 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:216",
+  "work": "rxjs",
+  "slug": "share-replay",
+  "authored": {
+    "by": "Claude dotln-worker author-01",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Where share is a live broadcast, shareReplay is a broadcast with a recording of its last moments: whoever tunes in late hears the recording first and then the live sound, so no reader ever starts empty. The recording is what it costs. To keep it current the source goes on running after the last listener has gone, and a broadcast that has finished is kept and never run again.",
+    "situation": "The page of the share study: a stock quote polled from the server, shown in a tile from the start and in a chart the user opens later. Here the chart must draw the current quote the moment it opens rather than sit empty until the next poll, and the question becomes what that convenience costs once the user has left."
+  },
+  "example": {
+    "name": "The quote page, with the latest quote kept",
+    "description": "The streams are those of the share study: a poll that fetches a quote every {pollEvery} frames, the first one frame after it starts; the tile subscribing at frame 0; the chart opening at frame {chartOpensAt}; and the user leaving at frame {leftAt}, which unsubscribes both readers. The quote is shared with shareReplay(1), a memory of {bufferSize} quote with refCount left false.",
+    "parameters": {
+      "pollEvery": 4,
+      "chartOpensAt": 7,
+      "leftAt": 15,
+      "bufferSize": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Start one run and a memory for the first reader",
+        "text": "When the tile subscribes, shareReplay creates a memory that holds the latest {bufferSize} quote and subscribes to the poll, once, to fill it. The readers listen to the memory, not to the poll."
+      },
+      {
+        "title": "Store each value, then pass it on",
+        "text": "Each quote goes into the memory, pushing out the oldest once the memory is full, and on to every reader present at that moment."
+      },
+      {
+        "title": "Replay the memory to a late reader",
+        "text": "The chart subscribes at frame {chartOpensAt} and is handed the quote in the memory in that same frame, then the live quotes alongside the tile. The memory holds {bufferSize} quote, so that is all the chart is given before the live ones."
+      },
+      {
+        "title": "Keep running when the readers leave",
+        "text": "At frame {leftAt} both readers unsubscribe. With refCount false, as shareReplay(1) leaves it, having no reader stops nothing: the poll goes on sending requests and filling the memory for no one. With refCount: true it would stop here, and the memory would be dropped with it."
+      },
+      {
+        "title": "Keep a completed run, forget a failed one",
+        "text": "Had the poll completed, the memory would keep its quote and the completion, and every later reader would receive both at once with no new request. When it fails, the readers present receive the error and end, the memory is dropped, and the next reader starts a new poll with nothing to replay."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the first reader arrives:\n  make a memory that holds the latest quote\n  start the poll, once, feeding the memory\n\non each quote from the poll:\n  put it in the memory, pushing the older one out\n  give it to every reader present at that moment\n\nwhen a later reader arrives:\n  give it the quote in the memory straight away\n  then the live quotes, as every other reader gets them\n\nwhen a reader leaves:\n  remove it from the readers present\n  (with no reader left the poll keeps running\n   and keeps filling the memory, for no one)\n\nwhen the poll completes:\n  keep the memory and the completion: a later reader gets the stored\n  quote and the completion at once, and nothing is fetched again\nwhen the poll fails:\n  give the failure to every reader present and forget the memory:\n  the next reader to arrive is a first reader again",
+    "rxjs": "shared$ = quote$.pipe(shareReplay(1));",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/share-replay.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/share-replay.ts",
+    "textEquivalent": "Frame {frame}: {now}. Received so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "NgRx ComponentStore",
+      "url": "https://github.com/ngrx/platform/blob/22.0.1/modules/component-store/src/component-store.ts",
+      "relevance": "NgRx ComponentStore is a small state container for one component or feature; component-store.ts in the ngrx/platform repository, at tag 22.0.1, defines its select method.",
+      "explanation": "Every selector that select builds ends in distinctUntilChanged, then shareReplay({ refCount: true, bufferSize: 1 }), then takeUntil(destroy$). The selector's projection runs once however many template bindings read it; a binding that subscribes later receives the current slice at once, as the chart here receives the stored quote; and because refCount is true, the selector stops listening to the state when its last reader goes instead of outliving it."
+    },
+    {
+      "project": "NgRx Data, the entity dispatcher factory",
+      "url": "https://github.com/ngrx/platform/blob/22.0.1/modules/data/src/dispatchers/entity-dispatcher-factory.ts",
+      "relevance": "NgRx Data builds entity collections on the NgRx store; entity-dispatcher-factory.ts, at tag 22.0.1, creates the dispatchers that send its commands.",
+      "explanation": "The factory shares the store's stream of reduced actions with shareReplay(1) and subscribes to it in its own constructor, so the stream stays connected for the factory's whole life and a subscriber that arrives just after an action was reduced still receives that one action; the factory's comments give that as the reason. It unsubscribes in ngOnDestroy. Here the long-lived source that the default allows is intended, and it is owned: the factory holds the subscription and ends it."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · shareReplay",
+      "url": "https://rxjs.dev/api/index/function/shareReplay",
+      "accessed": "2026-10-31",
+      "supports": "The page states that a completed source is kept for good while a failed one may be subscribed again; that refCount is off by default, so falling to no subscribers leaves the source subscribed, possibly for ever; and that with refCount on the source is let go at that point, and the next subscriber is served by a fresh ReplaySubject and a fresh subscription."
+    },
+    {
+      "title": "shareReplay.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/shareReplay.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version shareReplay calls share with a ReplaySubject connector of the given buffer size and window, resetOnError true, resetOnComplete false and resetOnRefCountZero set to refCount, which defaults to false. Without a buffer size the buffer is unbounded, and in the object form refCount is required."
+    },
+    {
+      "title": "share.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/share.ts",
+      "accessed": "2026-10-31",
+      "supports": "The resets shareReplay configures: on an error share discards its subject before passing the error on, so a later subscriber gets a fresh subject and a fresh subscription to the source, with nothing replayed."
+    },
+    {
+      "title": "RxJS guide · Multicasting deprecations",
+      "url": "https://rxjs.dev/deprecations/multicasting",
+      "accessed": "2026-10-31",
+      "supports": "shareReplay is presented as a light layer over the configurable share, and publishReplay followed by refCount is rewritten as share with a ReplaySubject connector and its resets turned off."
+    },
+    {
+      "title": "Angular guide · Making HTTP requests",
+      "url": "https://angular.dev/guide/http/making-requests",
+      "accessed": "2026-10-31",
+      "supports": "Subscribing to an HttpClient observable is what sends its request, and every further subscription sends another: the poll here is cold, and without sharing each reader would run its own."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share, including a group in parentheses for values given in one frame, and subscription marbles that hold a subscriber back until a later frame, which is how the chart arrives late in this example."
+    }
+  ],
+  "limits": [
+    "The default never lets go. After frame {leftAt} the poll goes on fetching for no one, and it will do so for as long as the app runs, because shareReplay(1) leaves refCount false. On a stream that belongs to a page or a component, write shareReplay({ bufferSize: 1, refCount: true }), which stops the poll with the last reader. Keep the default for a value that should stay warm for the whole application, owned by a long-lived service that can end it.",
+    "refCount: true gives up the cache along with the leak. The memory is dropped together with the poll, so a reader who returns after everyone has left starts a new poll and waits for its first quote, exactly as with share. To keep the last quote through a short absence and still stop the poll in the end, use share with a ReplaySubject connector and a delayed resetOnRefCountZero.",
+    "A completed source is cached for good. Had the quote been a single request that completed before the chart opened, the chart would receive the stored quote and the completion at once, and the request would never be sent again: there is no invalidation and no expiry. A value that must be refreshed needs a trigger to rebuild from, a refresh stream switched to a new request, with shareReplay after the switch.",
+    "Only the newest values are replayed, and they are as old as their fetch. The chart receives the second quote, not the first, and shows it as current although it was fetched before the chart opened. A larger buffer replays more; shareReplay() with no size keeps every value for the life of the stream; and windowTime refuses to replay a value older than the window.",
+    "An error is neither kept nor retried. When the poll fails, the readers present receive the error and end, the memory is discarded, and the next reader starts a new poll with nothing to replay. To keep the readers through a failed request, retry before shareReplay, inside the shared part."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:215",
+      "why": "share is the choice when a late reader can wait for the next value, or when the work must stop with the last reader and start afresh for the next: it keeps no memory and resets on every ending by default."
+    },
+    {
+      "id": "rxc:340",
+      "why": "ShareReplayConfig, the object form, is the only way to set refCount: true, and refCount is required there, so writing it out turns the leak trade-off into a visible decision."
+    },
+    {
+      "id": "rxc:63",
+      "why": "A ReplaySubject on its own is the choice when the app pushes the values itself rather than sharing a source; as share's connector it gives the same memory with each reset chosen separately."
+    },
+    {
+      "id": "rxc:62",
+      "why": "BehaviorSubject is the choice when there is a sensible value before the first fetch, such as a placeholder, so that no reader ever starts empty, or when the app writes the state itself instead of polling it."
+    },
+    {
+      "id": "rxc:462",
+      "why": "This analysis is the one to reach for when auditing an app for subscriptions that outlive their views: it names the default refCount as a leak source and the fixes for it."
+    }
+  ]
+}

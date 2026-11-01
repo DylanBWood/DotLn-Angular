@@ -1,0 +1,144 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:199",
+  "work": "rxjs",
+  "slug": "start-with",
+  "authored": {
+    "by": "Claude dotln-worker author-03",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A stream that has not spoken yet leaves its subscriber with nothing to show, and nothing looks the same as broken. startWith lets the code that builds the stream speak first, with a value known before the source has done anything. It is a fixed opening line, not a memory: every subscriber hears the same opening, whenever it arrives, and then whatever the source says from that moment on.",
+    "situation": "A status panel subscribes to a worker's reports, but the worker says nothing until it has started. Seeding the stream with an explicit initial status gives the person watching a meaningful state before the first report, instead of an empty panel that could mean waiting, failed or never connected."
+  },
+  "example": {
+    "name": "Status panels before and after the worker's first report",
+    "description": "The worker reports {reports}, the first at frame {firstReport}, whether or not a panel is watching, and its status completes at frame {completes}. Panels subscribe to it through startWith with {seed} as the seed: the first as the worker starts, a second at frame {latePanel}, when the worker is already running.",
+    "parameters": {
+      "seed": "waiting",
+      "reports": "running and then passed",
+      "firstReport": 4,
+      "latePanel": 6,
+      "completes": 11
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Emit the seed on subscription",
+        "text": "As soon as something subscribes, emit the given values in order, inside the subscribe call. Every subscriber gets them, whenever it arrives: the second panel is shown {seed} at frame {latePanel}, though the worker is running by then."
+      },
+      {
+        "title": "Then subscribe to the source",
+        "text": "Only once the last seed value has gone out does it subscribe to the source, separately for each subscriber. startWith is concat of its values and the source, so nothing from the source can arrive ahead of the seed."
+      },
+      {
+        "title": "Pass the source through unchanged",
+        "text": "Each value from the source goes straight to the output. The seed is not held or replaced; it is simply the output's first value, and running takes its place on the first panel when it arrives."
+      },
+      {
+        "title": "End when the source ends",
+        "text": "The output completes or errors when the source does. The seed has gone out by then, so even a source that fails at once leaves the subscriber having seen it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when someone starts listening:\n  for each seed value, in order:\n    send value to the listener\n\n  then start listening to the source on this listener's behalf\n\non each value from the source:\n  send value to the listener\n\nwhen the source finishes or fails:\n  tell the listener the same way",
+    "rxjs": "shown$ = status$.pipe(startWith('waiting'));\n// Both panels subscribe to shown$: the first at once, the second when it is opened.",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/start-with.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/start-with.ts",
+    "textEquivalent": "The seed is {seed}. Frame {frame}: {now}."
+  },
+  "implementations": [
+    {
+      "project": "DotLn-Angular, the scene's tool query",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "Where this app uses it: libs/features/scene/src/lib/facades/scene.facade.ts seeds the URL query whose tool parameter chooses a tool for the soldier scene.",
+      "explanation": "The facade turns the router's events into a signal of the current query parameters. NavigationEnd arrives only when a navigation finishes, so on its own the stream would say nothing about the URL the page was reached by. The seed is null and it sits before map, which reads the router's current URL whenever anything arrives: the null is only a trigger, turned into the query as it stands at subscription, and each later NavigationEnd is turned into the query the same way. The facade asks toSignal for requireSync, which throws unless the observable emits during subscribe; startWith's synchronous seed is what satisfies it."
+    },
+    {
+      "project": "Angular's router, the guard decision",
+      "url": "https://github.com/angular/angular/blob/v22.2.3/packages/router/src/operators/prioritized_guard_value.ts",
+      "relevance": "Angular's router, in the angular/angular repository: prioritized_guard_value.ts at v22.2.3, the installed version, combines the results of a route's guards into one decision.",
+      "explanation": "Each guard's result stream is cut to its first value and seeded with a private INITIAL_VALUE symbol, so combineLatest has a value from every guard at once and emits again as each guard answers. The map walks the guards in priority order and returns INITIAL_VALUE while an earlier guard is still undecided, so a later guard's refusal cannot win before an earlier guard has answered; a filter then drops the placeholders and the first settled decision is taken. The seed is a value no guard can return, which is how the router tells not yet from an answer."
+    },
+    {
+      "project": "Angular CDK, the breakpoint observer",
+      "url": "https://github.com/angular/components/blob/v22.2.3/src/cdk/layout/breakpoints-observer.ts",
+      "relevance": "The Angular CDK, the component toolkit in the angular/components repository: breakpoints-observer.ts at v22.2.3, the installed version, reports whether media queries match.",
+      "explanation": "Each media query's change listener is wrapped in an observable, and a change event fires only when the match changes, so on its own the stream would say nothing about whether the query matches now. startWith puts the MediaQueryList itself in front, and the map that follows reads matches from it just as it does from a change event, so a subscriber learns the current state at once. Like the scene facade's null, the seed sits before map and comes out in the same shape as every later value."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · startWith",
+      "url": "https://rxjs.dev/api/index/function/startWith",
+      "accessed": "2026-10-31",
+      "supports": "Its values go out during the subscribe call, before the source is subscribed, and the source's notifications follow as they are; the page relates it to endWith, finalize and concat."
+    },
+    {
+      "title": "startWith.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/startWith.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version each subscription runs concat of the values and then the source, so the source is subscribed only after the last seed value has gone out, once for every subscriber."
+    },
+    {
+      "title": "Angular guide · RxJS interop with Angular signals",
+      "url": "https://angular.dev/ecosystem/rxjs-interop",
+      "accessed": "2026-10-31",
+      "supports": "A signal made by toSignal reads its initialValue, or undefined, until the observable first emits; requireSync instead demands an emission during subscribe, with a BehaviorSubject given as a source that meets it."
+    },
+    {
+      "title": "to_signal.ts in Angular 22.2.3",
+      "url": "https://github.com/angular/angular/blob/v22.2.3/packages/core/rxjs-interop/src/to_signal.ts",
+      "accessed": "2026-10-31",
+      "supports": "With requireSync, toSignal throws a runtime error when the observable has not emitted by the time its subscribe call returns, which a synchronous seed prevents."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, a caret where a hot source's frame zero and a subscription start, and an exclamation mark where a subscription ends."
+    }
+  ],
+  "limits": [
+    "The seed is fixed when the pipeline is built, not when someone subscribes. startWith(read()) calls read() once, on the line that builds the pipe, so a pipeline built early and subscribed later starts from a stale value. Seed a trigger and read the value in a map, as the scene facade does with startWith(null), or build the pipeline inside defer.",
+    "Every subscription gets the seed again, however late it comes. startWith remembers nothing: the second panel subscribes at frame {latePanel}, after the worker has reported running, and is still shown {seed}; it learns the real status only at the next report. When a newcomer should get the latest status, hold it in a BehaviorSubject or share the seeded stream with shareReplay(1).",
+    "The seed is a value like any other. Downstream code cannot tell {seed} from a report the worker sent, so a count of reports, a log of changes or a test of whether the worker has spoken yet will include it. When the difference matters, seed a value the consumer can recognise as no report at all, as the router does with its INITIAL_VALUE symbol.",
+    "Where it sits decides what the seed passes through. Placed before map, scan or any other operator, the seed goes through it like a source value; placed after, it comes out exactly as written. The scene facade and the CDK's breakpoint observer both rely on the first: their seed passes through map and comes out shaped like every later value."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:62",
+      "why": "A BehaviorSubject also gives each subscriber a value at once, but the latest one rather than a fixed seed, so the second panel would see running, not waiting."
+    },
+    {
+      "id": "rxc:207",
+      "why": "endWith is the mirror image: values emitted after the source completes instead of before it starts."
+    },
+    {
+      "id": "rxc:135",
+      "why": "startWith is concat of its values and the source; concat is the general form when what comes first is itself a stream rather than fixed values."
+    },
+    {
+      "id": "rxc:240",
+      "why": "defaultIfEmpty supplies a value only when the source completes without emitting, and at the end rather than the start."
+    },
+    {
+      "id": "rxc:134",
+      "why": "combineLatest emits nothing until every input has emitted once; seeding each input with startWith lets it emit from the first subscription, as the router's guard decision does."
+    },
+    {
+      "id": "rxp:223",
+      "why": "toSignal with requireSync needs a value during subscription, and a startWith seed is the usual way to guarantee one, as the scene facade does."
+    }
+  ]
+}

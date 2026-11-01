@@ -21,10 +21,10 @@ import {
 import { boundsOf } from '../drawing';
 import { numberParameter } from '../parameters';
 import type {
+  MotionFrame,
   MotionMark,
+  MotionStudyModel,
   MotionVector,
-  StudyFrame,
-  StudyModel,
   StudyWorkedStep,
 } from '../study-model';
 
@@ -300,7 +300,7 @@ function frameOf(
   p: FlockingParameters,
   layout: FlockLayout,
   minimumGap: number,
-): StudyFrame {
+): MotionFrame {
   const r = readFlock(walkers, 0, p);
   const [mara, ivo, noor] = walkers;
   const weighted = {
@@ -440,7 +440,7 @@ function frameOf(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const p = readFlockingParameters(parameters);
   const states = flockingFrames(p);
   const crowded = flockingFrames({ ...p, separationWeight: p.crowdedSeparationWeight });
@@ -455,6 +455,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     (walkers) => centroid(walkers.map(({ position }) => position)).x >= p.crossingX,
   );
   return {
+    family: 'motion',
     motion: { bounds: boundsOf(frames, 12), frames, trail: true },
     timeline: {
       title: 'Velocity disagreement during the Reed Field crossing',

@@ -16,7 +16,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel } from '../study-model';
+import type { MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface PriorityParameters {
   readonly initialPosition: number;
@@ -181,7 +181,7 @@ function noteOf(step: PriorityStep, contactDistance: number, example: PriorityPa
     : 'Mica moves away from the trolley as Clearance keeps Travel waiting.';
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const comparisonPriority = example.clearancePriority === 1 ? 2 : 1;
   const run = prioritySteps(example);
@@ -213,7 +213,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const labelHeight = example.separationThreshold + example.radius;
   const trolley = { x: example.trolleyPosition, y: 0 };
   const bay = { x: example.target, y: 0 };
-  const frames: readonly StudyFrame[] = run.map((step, index) => {
+  const frames: readonly MotionFrame[] = run.map((step, index) => {
     const away =
       (step.state.position.x - trolley.x) * step.acceleration.x +
       step.state.position.y * step.acceleration.y;
@@ -331,6 +331,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     (Math.max(...points.map(({ x }) => x)) - Math.min(...points.map(({ x }) => x))) * 0.08,
   );
   return {
+    family: 'motion',
     motion: {
       frames,
       bounds: {

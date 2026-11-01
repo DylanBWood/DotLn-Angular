@@ -14,7 +14,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel } from '../study-model';
+import type { MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface EquilibriumParameters {
   readonly initialX: number;
@@ -173,7 +173,7 @@ function noteOf(step: EquilibriumStep, example: EquilibriumParameters, index: nu
     : 'The beacons pull Nori back towards their line, so the nudge has not chosen a destination.';
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const run = equilibriumSteps(example);
   const comparison = equilibriumSteps(example, example.weakFallbackWeight);
@@ -211,7 +211,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   const inputValues = Object.fromEntries(
     Object.entries(example).map(([name, value]) => [name, String(Number(fixed(value)))]),
   );
-  const frames: readonly StudyFrame[] = run.map((step, index) => ({
+  const frames: readonly MotionFrame[] = run.map((step, index) => ({
     seconds: seconds[index],
     bodies: [{ id: 'Nori', ...step.state.position, tone: 'subject', label: 'Nori' }],
     marks: [
@@ -324,6 +324,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
     (Math.max(...points.map(({ x }) => x)) - Math.min(...points.map(({ x }) => x))) * 0.08,
   );
   return {
+    family: 'motion',
     motion: {
       frames,
       bounds: {

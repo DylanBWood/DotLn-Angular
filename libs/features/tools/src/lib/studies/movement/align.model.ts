@@ -2,7 +2,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { cosine, sine } from '@dotln-angular/scene-engine';
 
 import { numberParameter } from '../parameters';
-import type { StudyFrame, StudyModel, StudyWorkedStep } from '../study-model';
+import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
 
 /** Angular quantities use degrees; only the drawing converts to radians. */
 export interface AngularTuning {
@@ -197,7 +197,7 @@ function frameOf(
   step: number,
   example: AlignParameters,
   parameterValues: Readonly<Record<string, string>>,
-): StudyFrame {
+): MotionFrame {
   const calculation = calculateAlignStep(state, example.targetHeading, example);
   const commandLength = example.directionLength * 1.5;
   const command = {
@@ -294,7 +294,7 @@ function summarise(states: readonly AngularState[], example: AlignParameters): A
 function lateBraking(
   example: AlignParameters,
   current: readonly AngularState[],
-): NonNullable<StudyModel['comparison']> {
+): NonNullable<MotionStudyModel['comparison']> {
   const late = alignFrames(example, example.lateSlowRadius);
   const normal = summarise(current, example);
   const comparison = summarise(late, example);
@@ -340,7 +340,7 @@ function lateBraking(
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readParameters(parameters);
   const states = alignFrames(example);
   const calculations = states.map((state) =>
@@ -374,6 +374,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   // Extra space around the fixed command keeps its name beyond every camera-facing ray.
   const extent = example.directionLength * 2;
   return {
+    family: 'motion',
     motion: {
       bounds: {
         minX: example.cameraX - extent,

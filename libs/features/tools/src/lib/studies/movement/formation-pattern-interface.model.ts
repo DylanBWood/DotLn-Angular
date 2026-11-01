@@ -22,7 +22,7 @@ import {
 
 import { withSpacedLabels } from '../drawing';
 import { numberParameter, textParameter } from '../parameters';
-import type { MotionBounds, StudyFrame, StudyModel } from '../study-model';
+import type { MotionBounds, MotionFrame, MotionStudyModel } from '../study-model';
 
 export interface RosterParameters {
   readonly pattern: FormationPattern;
@@ -264,7 +264,7 @@ function noteOf(state: RosterState, example: RosterParameters): string {
     : 'The turn has ended, so the wings can close the tracking gap to their centred targets.';
 }
 
-function frameOf(state: RosterState, example: RosterParameters): StudyFrame {
+function frameOf(state: RosterState, example: RosterParameters): MotionFrame {
   const { formation } = state;
   const rawFormation = { ...formation, slots: state.rawSlots };
   const targets = formation.assignment.map(({ unitId, slot }) => ({
@@ -393,7 +393,7 @@ function frameOf(state: RosterState, example: RosterParameters): StudyFrame {
   };
 }
 
-export const model = (parameters: StudyParameters): StudyModel => {
+export const model = (parameters: StudyParameters): MotionStudyModel => {
   const example = readRosterParameters(parameters);
   const states = rosterStates(example);
   const comparisonCorrection =
@@ -420,6 +420,7 @@ export const model = (parameters: StudyParameters): StudyModel => {
   };
   const frames = rawFrames.map((frame) => withSpacedLabels(frame, bounds, 'marks'));
   return {
+    family: 'motion',
     motion: { frames, bounds },
     timeline: {
       title: 'Geometric drift and the centre that actually moves',

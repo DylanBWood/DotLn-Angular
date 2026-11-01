@@ -1,5 +1,12 @@
+import { fillValues } from '../../studies/study-text';
 import type { StudyView } from '../../types';
-import { momentsFixture, motionFixture, timelineFixture } from '../study-visuals/fixtures';
+import {
+  marblesFixture,
+  marblesStudyModel,
+  momentsFixture,
+  motionFixture,
+  timelineFixture,
+} from '../study-visuals/fixtures';
 
 /** A study with every representation, for the composite's stories and specs. */
 export const studyViewFixture: StudyView = {
@@ -17,6 +24,7 @@ export const studyViewFixture: StudyView = {
     parameters: { distance: 10 },
   },
   visual: {
+    family: 'motion',
     view: 'motion',
     motion: motionFixture,
     timeline: timelineFixture,
@@ -43,7 +51,7 @@ export const studyViewFixture: StudyView = {
     { title: 'Point at the target', text: 'Subtract.', code: 'direction = target - position' },
     { title: 'Move', text: 'Add.', code: 'position += direction * dt' },
   ],
-  rxjs: { code: 'frames$.pipe(scan(step, start))', executable: false },
+  rxjs: { code: 'frames$.pipe(scan(step, start))', executable: false, spec: null },
   limits: ['Seek overshoots a fixed target.'],
   comparison: {
     title: 'What if the scout never slows?',
@@ -70,4 +78,34 @@ export const studyViewFixture: StudyView = {
   ],
   nearby: [{ id: 'sample:2', title: 'Arrive', why: 'It adds the braking Seek lacks.' }],
   next: null,
+};
+
+/** A study drawn as a marble diagram, with its code marked executable, for the specs and stories. */
+export const marblesStudyViewFixture: StudyView = {
+  ...studyViewFixture,
+  id: 'sample:3',
+  example: {
+    name: 'A switch between two inner streams',
+    description: 'The source emits a and then b; each opens an inner stream.',
+    parameters: { values: 'a, b' },
+  },
+  visual: {
+    family: 'marbles',
+    marbles: marblesFixture,
+    step: 4,
+    moments: marblesStudyModel.moments,
+    legend: marblesStudyModel.legend,
+    caption: marblesStudyModel.caption,
+    textEquivalent: fillValues('Frame {frame}: {now}.', marblesFixture.frames[4].values),
+    note: 'The first inner stream is cut off before its second value.',
+    playing: false,
+    inputs: [],
+  },
+  worked: { title: 'Frame 4', lines: ['source$: a at 1, b at 4'] },
+  rxjs: {
+    code: 'out$ = source$.pipe(switchMap((value) => inner(value)));',
+    executable: true,
+    spec: 'libs/features/tools/src/lib/studies/rxjs/switch-map.spec.ts',
+  },
+  comparison: null,
 };

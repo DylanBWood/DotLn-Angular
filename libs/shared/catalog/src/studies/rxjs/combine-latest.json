@@ -1,0 +1,130 @@
+{
+  "schema": "concept-study-v0",
+  "id": "rxc:134",
+  "work": "rxjs",
+  "slug": "combine-latest",
+  "authored": {
+    "by": "Claude dotln-worker author-07",
+    "on": "2026-10-31",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "combineLatest answers the question of what is true now across sources that change on their own schedules. Picture one pigeonhole per input: a report replaces whatever its own hole held, and once no hole is empty, every report produces a fresh snapshot of all of them. It never asks a source for anything; it only remembers the last thing each one said, and forgets everything said before.",
+    "situation": "A dashboard row that shows a task's worker state beside the budget it has left. Either may change at any moment, the row must always pair the newest of both, and it cannot be drawn until both have reported once. It is the wrong tool when every report matters, since a value replaced before the other sources have spoken never reaches a row."
+  },
+  "example": {
+    "name": "A dashboard row from a worker and its budget",
+    "description": "The worker reports {workerStates} at frames 1, 2, 6 and 12 and completes at frame 15. The budget reports {budgets} at frames 4 and 8 and completes at frame 10, while the worker is still running. The worker's first two reports arrive before the budget has said anything. Each row joins the worker's latest state with the budget's latest report.",
+    "parameters": {
+      "workerStates": "queued, reading, writing and done",
+      "budgets": "90% left and 40% left"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Listen to every input",
+        "text": "When the row is subscribed, combineLatest subscribes to each input in the order given and keeps one empty slot for each."
+      },
+      {
+        "title": "Keep only each input's latest value",
+        "text": "A value replaces whatever its input's slot held. The worker's queued is replaced by reading before the budget has reported, so no row will ever show it."
+      },
+      {
+        "title": "Wait until every slot is filled",
+        "text": "Until every input has reported once, nothing is sent and nothing signals the wait. The worker's state sits in its slot until the budget's first report at frame 4."
+      },
+      {
+        "title": "Send the latest of each",
+        "text": "From then on, every value from any input sends a copy of all the slots, which map joins into the row. A budget change alone rebuilds the row with the worker's unchanged state."
+      },
+      {
+        "title": "Finish when every input has",
+        "text": "A completed input leaves its last value in its slot, so the budget's final report stays in every later row. The row completes when the last input completes. The first error from any input errors the row and unsubscribes the others."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when the row starts listening:\n  keep an empty slot for each input\n  start listening to each input, in order\n\non each value from an input:\n  put the value in that input's slot\n  (whatever the slot held before is forgotten)\n\n  if any slot is still empty:\n    send nothing yet\n\n  otherwise:\n    send the latest of every slot together\n    (here: joined into the row)\n\nwhen an input finishes:\n  leave its last value in its slot\n  if every input has finished:\n    finish the row\nif an input fails:\n  fail the row and stop listening to the others",
+    "rxjs": "row$ = combineLatest([worker$, budget$]).pipe(\n  map((latest) => latest.join(', ')),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/rxjs/combine-latest.ts"
+    }
+  },
+  "visual": {
+    "family": "marbles",
+    "model": "libs/features/tools/src/lib/studies/rxjs/combine-latest.ts",
+    "textEquivalent": "Frame {frame}: {now}. Rows shown so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Angular's router",
+      "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/operators/prioritized_guard_value.ts",
+      "relevance": "Angular's router is the framework's navigation library; packages/router/src/operators/prioritized_guard_value.ts in the angular/angular repository decides a route's guards in priority order.",
+      "explanation": "Each guard's result stream is cut to its first value and started with a placeholder by startWith, so combineLatest sends at once instead of waiting for the slowest guard. Each combination is read in guard order: a placeholder in front stops the decision, so a later guard's refusal cannot overtake an earlier guard that is still running, and the first decision that is not a placeholder is passed on. It removes the wait for every input on purpose and replaces it with an explicit not-yet value. The file is pinned to the commit read on 2026-10-31."
+    }
+  ],
+  "references": [
+    {
+      "title": "RxJS API reference · combineLatest",
+      "url": "https://rxjs.dev/api/index/function/combineLatest",
+      "accessed": "2026-10-31",
+      "supports": "combineLatest sends nothing until every input has emitted at least once; an input that completes keeps contributing its last value; the output completes when all inputs have completed, and errors at once, unsubscribing the others, when any input errors. The page also states that an input which completes without a value completes the output at that same moment, which the installed version does not do."
+    },
+    {
+      "title": "combineLatest.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/observable/combineLatest.ts",
+      "accessed": "2026-10-31",
+      "supports": "At the installed version combineLatestInit subscribes to the inputs in order, keeps one slot per input and a count of inputs still to send a first value, sends a copy of the slots once that count reaches zero, and completes only when its count of active inputs reaches zero, with no earlier completion for an input that never sent a value."
+    },
+    {
+      "title": "Learn RxJS · combineLatest",
+      "url": "https://www.learnrxjs.io/learn-rxjs/operators/combination/combinelatest",
+      "accessed": "2026-10-31",
+      "supports": "A treatment that calls the wait for every input's first value a trap, since there is no output and no error to show why, and suggests forkJoin instead when each input sends only one value or only its last value matters."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "url": "https://rxjs.dev/guide/testing/marble-testing",
+      "accessed": "2026-10-31",
+      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, a hash an error, and a caret and an exclamation mark the start and end of a subscription."
+    }
+  ],
+  "limits": [
+    "Nothing is sent until every input has reported, and nothing says so. Here the worker's first two reports wait for the budget; an input that never reports keeps the row blank for good, with no error. When the row should appear before a slow source has reported, give that input a starting value with startWith, as Angular's router does with its guards.",
+    "Before every input has reported, an input's earlier values are overwritten unseen: queued never reaches a row. combineLatest is the wrong tool when every report matters, such as for an activity log; keep the worker's own stream for that.",
+    "A completed input keeps its last value in every later combination. The budget has stopped reporting before the worker is done, yet the final row still shows the budget's last report. That is right only if a finished source's last value is still true.",
+    "An input that completes without a value means no combination can ever be built, so the row completes empty, but only once every other input has completed too. The API reference says the output completes at once, the moment the empty input completes; the 7.8.2 source instead waits for the other inputs. Until they complete, the row is silent and they stay subscribed.",
+    "One error ends everything. The first error from any input errors the row and unsubscribes the others, so one failing source blanks the whole row. Catch the error on each input that may fail and replace it with a value the row can show.",
+    "Inputs that change together produce glitches. If two inputs derive from one source, each change of the source sends once per input, and the first of those combinations pairs a new value with a stale one that never held at the same time. Derive both parts from one stream with map, or combine only inputs that are independent.",
+    "Synchronous inputs are subscribed one after another, and an input that sends all its values while being subscribed has finished before the next input is subscribed. Only its last value takes part in any combination."
+  ],
+  "nearby": [
+    {
+      "id": "rxc:200",
+      "why": "withLatestFrom is the choice when only one input should rebuild the row and the others are read as context: a new budget alone would then send nothing."
+    },
+    {
+      "id": "rxc:140",
+      "why": "zip pairs values by position, the first of each and then the second of each, rather than by latest."
+    },
+    {
+      "id": "rxc:136",
+      "why": "forkJoin is the choice when only each input's final value matters: it sends once, when every input has completed."
+    },
+    {
+      "id": "rxc:201",
+      "why": "combineLatestWith is the same combination written as an operator in a pipe, with the source as the first input."
+    },
+    {
+      "id": "rxc:199",
+      "why": "startWith gives an input a value at subscription, so combineLatest need not wait for it."
+    },
+    {
+      "id": "rxc:194",
+      "why": "combineLatestAll is the same combination when the inputs arrive as a stream of streams."
+    }
+  ]
+}
