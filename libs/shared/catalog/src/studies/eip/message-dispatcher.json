@@ -1,0 +1,149 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:175",
+  "work": "eip",
+  "slug": "message-dispatcher",
+  "authored": {
+    "by": "Claude dotln-worker author-09",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A channel gives each message to whoever takes it next; it has no idea who ought to do the work. Put a single consumer on the channel whose only job is that decision, and the decision can follow rules: this kind of message only to that performer, no more than one at a time each, a waiting message kept until its performer is free. Competing consumers racing for the next message could keep none of these, since none of them knows what the others hold. The price is that every message now passes through one place, and a message waiting for its performer waits there rather than in the channel.",
+    "situation": "As an analogy, read against DotLn's public execution guide. In DotLn the operator moves a work order along with a short phrase: resume: next to have it implemented, resume: fix to have it repaired after a failed check, resume: verify to have it checked and resume: final review for its last review. The guide's table of roles gives next and fix to the executor, verify to the verifier and final review to the reviewer. Its router, which this study calls a dispatcher because a router is a different pattern in this book, consults only the order's recorded status, starts a new worker for the one phrase that status calls for, and checks the status again when that worker finishes, without reading the order or its changes. Picture one such dispatcher in front of requests about three orders, with a single executor, verifier and reviewer to share between them. It can send each request to the performer its kind of work names, which a pool of identical consumers could not do: whichever of them was free would take whatever request came next."
+  },
+  "example": {
+    "name": "One dispatcher hands requests to the executor, verifier and reviewer",
+    "description": "As an analogy, read against DotLn's public execution guide: requests about {orders} come down the Requests channel one at a time: i, to implement order 31, at frame 1; f, to fix order 30, at frame 3; r, to review order 29, at frame 5; and v, to verify order 31, at frame 8. The Dispatcher reads each request on the frame after it arrives and hands it to one of {performers} performers, one for each kind of work, each working on at most {inflightLimit} request at a time. Implementing order 31 takes the executor five frames from hand-over; the other three jobs are still under way when the example ends.",
+    "parameters": {
+      "performers": 3,
+      "inflightLimit": 1,
+      "orders": "orders 29, 30 and 31"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Take each request off the channel",
+        "text": "The dispatcher is the Requests channel's only reader, so every request reaches it once, in the order it was sent; it reads each on the frame after it arrives. The channel itself knows nothing of performers."
+      },
+      {
+        "title": "Choose the performer from the request",
+        "text": "It looks at the kind of work the request asks for and nothing else: implementing and fixing are the executor's, verifying is the verifier's and reviewing is the reviewer's."
+      },
+      {
+        "title": "Hand it over, or keep it waiting",
+        "text": "If that performer is below its limit of {inflightLimit} request at a time, the dispatcher hands the request over at once. Otherwise the request waits in that performer's queue, in arrival order, even while the other performers are idle."
+      },
+      {
+        "title": "Release the queue as performers finish",
+        "text": "When a performer finishes, the dispatcher hands it the oldest request waiting for it, if there is one. A request for another performer never waits behind it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each request from the Requests channel:\n  (the dispatcher is the channel's only reader)\n\n  performer = the one for the request's kind of work:\n    implement or fix -> executor, verify -> verifier,\n    review -> reviewer\n\n  if performer is below its limit of requests in hand:\n    hand the request to it\n  else:\n    add the request to the end of performer's queue\n\nwhen a performer finishes a request:\n  if its queue is not empty:\n    hand it the oldest request in its queue",
+    "rxjs": "handed$ = requests$.pipe(\n  // the dispatcher reads each request on the frame after it arrives\n  delay(1),\n  // the dispatcher chooses the performer by the kind of work the request asks for\n  groupBy((request) => roleOf(request)),\n  // performers of different kinds work side by side\n  mergeMap((role$) =>\n    // a performer works on one request at a time; later ones wait in its queue\n    role$.pipe(concatMap((request) => perform(request))),\n  ),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/message-dispatcher.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/message-dispatcher.ts",
+    "textEquivalent": "Step {step}: {moves}. Now {states}; {held}. The Dispatcher reads requests off the Requests channel and hands each to the Executor, the Verifier or the Reviewer by its kind of work, keeping a request waiting while its performer is busy. Taken up so far: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/message-dispatcher.html",
+      "relevance": "Apache Camel is the Apache Software Foundation's open-source integration framework; its documentation has a page for this pattern saying how Camel provides it.",
+      "explanation": "Camel has no dispatcher component of its own; its page names the ways to build one from other parts: a JMS consumer with message selectors, each consumer then acting as a selective consumer; an ordinary message endpoint acting as the dispatcher; or that endpoint combined with a content-based router that sends each message on to the performer suited to it."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/channel/implementations.html",
+      "relevance": "Spring Integration, the Spring portfolio's messaging and integration framework, builds a dispatcher into its point-to-point channels; the reference guide's page on channel implementations describes it.",
+      "explanation": "A DirectChannel hands each message to one of its subscribed handlers through an internal message dispatcher, choosing by a load-balancing strategy, round robin or one you supply, and with failover, on by default, trying the next handler when one throws. An ExecutorChannel runs the same dispatch on a TaskExecutor, so a handler may run off the sender's thread and no transaction spans the two; a PartitionedChannel keeps every message with the same partition key on the same single thread, which preserves their order."
+    },
+    {
+      "project": "Apache Pekko",
+      "url": "https://pekko.apache.org/docs/pekko/1.1/typed/routers.html",
+      "relevance": "Apache Pekko, an Apache Software Foundation project, builds programs from actors; its typed routers are themselves actors that pass each message on to one of a set of routee actors.",
+      "explanation": "A pool router spawns a set number of child routees from one behaviour and forwards each message to one of them, round robin by default; a group router finds its routees through the receptionist and by default picks one at random. With consistent hashing, a message's key decides its routee, and that choice holds only while no routee joins or leaves. The guide warns that the router is itself an actor with one mailbox, so it routes messages one at a time and can become the bottleneck under heavy load."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Message Dispatcher",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageDispatcher.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's catalog entry: a dispatcher that consumes from one channel and gives each message to a performer, which it may create or take from a pool, which may run in its own thread, and which may be chosen to suit the message."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), chapter 10, Messaging Endpoints: Message Dispatcher",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers Message Dispatcher in chapter 10, Messaging Endpoints."
+    },
+    {
+      "title": "DotLn · Execution guide",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "The guide's router looks only at an order's recorded status, launches a fresh worker for the phrase that status calls for and looks at the status again once the worker is done, without reading the order, its diff, a report or the worker's account of its work; the guide's table of roles assigns next and fix to the executor, verify to the verifier and final review to the reviewer; the actors on hand and a single writer for each worktree are what limit how much runs at once; and a dispatch is refused while another session holds the worktree's live reservation."
+    },
+    {
+      "title": "groupBy.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/groupBy.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version, groupBy keeps one subject per key, emits a grouped observable the first time a key appears, sends each value to its key's group and completes every group when the source completes."
+    },
+    {
+      "title": "concatMap.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/concatMap.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version, concatMap is mergeMap with a concurrency of one."
+    },
+    {
+      "title": "mergeInternals.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/mergeInternals.ts",
+      "accessed": "2026-11-01",
+      "supports": "Below its concurrency limit mergeMap subscribes to a new inner stream at once; at the limit it pushes the value onto an array with no bound and takes the oldest when an inner stream completes, and it completes only once the source has completed, the array is empty and no inner stream is active."
+    }
+  ],
+  "limits": [
+    "Specialised performers cannot help each other. While f waits for the executor, the verifier and the reviewer stand idle with nothing they may take, and the executor's queue clears only as fast as the executor works. When the work is interchangeable, a pool of identical performers, or competing consumers on the channel, keeps every performer busy; specialise only where performers really differ.",
+    "A waiting request has left the channel. f waits in the dispatcher's memory, where no other reader can see it and a crash would lose it, and concatMap's queue has no bound, so a burst of requests for one performer grows it without limit. If the channel is durable, take a request off it only when its performer is free, or bound the queue and decide what happens to the overflow.",
+    "The dispatcher knows kinds of work, not orders. A request to verify order 30 sent while the executor was still fixing order 30 would go straight to the idle verifier, which would check work not yet done. Order holds within one performer, since concatMap keeps arrival order, but not across performers, as r overtaking f shows. Where requests about one order must not overtake each other, key the performers by order, as Spring Integration's partitioned channel keys its threads.",
+    "Everything passes through one reader, so the dispatcher's own pace caps the throughput of every performer and its failure stops them all; Pekko's routing guide makes the same point about a router actor's single mailbox. When the dispatcher itself becomes the bottleneck, split the channel by kind of work instead.",
+    "The analogy departs from DotLn in two places: the guide's router follows a single order through its phases one after another, rather than serving a channel shared by several orders, and where another session already holds a worktree's writer reservation the guide refuses the second dispatch instead of keeping it waiting."
+  ],
+  "nearby": [
+    {
+      "id": "eip:211",
+      "why": "When performers are interchangeable and each can take requests from the channel itself: there is no single dispatcher to slow or fail, though nobody can specialise or keep order per key."
+    },
+    {
+      "id": "eip:177",
+      "why": "When each performer can filter the channel for its own kind of message, as Camel suggests with JMS selectors: the choice moves from a dispatcher into each consumer's selector."
+    },
+    {
+      "id": "eip:66",
+      "why": "When each kind of work can have a channel of its own: the specialisation moves out of the dispatcher into the channel layout, and each performer's queue stays in its own channel."
+    },
+    {
+      "id": "eip:172",
+      "why": "When the dispatcher should take a request only once a performer is free, leaving the queue in the channel rather than in its own memory."
+    },
+    {
+      "id": "eip:173",
+      "why": "When the reader should act the moment a request is pushed to it rather than ask for one, as this dispatcher does; that is why the dispatcher must hold whatever it cannot hand over yet, where a polling consumer would leave it in the channel."
+    },
+    {
+      "id": "eip:99",
+      "why": "When messages should go to different channels, each with its own consumers, rather than to performers inside one consumer."
+    }
+  ]
+}

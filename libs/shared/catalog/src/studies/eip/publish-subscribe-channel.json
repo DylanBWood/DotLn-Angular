@@ -1,0 +1,149 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:65",
+  "work": "eip",
+  "slug": "publish-subscribe-channel",
+  "authored": {
+    "by": "Claude dotln-worker author-02",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "The channel does the copying, not the sender. The planner publishes each order once and never learns who is listening; the topic keeps a list of its subscribers and gives each one a copy of its own, so nothing one session does with its copy can reach another's. The list that counts is the one at the moment of publishing, and the topic keeps no copy afterwards: a session that subscribes later hears only what is published after it joins.",
+    "situation": "As an analogy, read against DotLn's public architecture document. DotLn is the operator's agentic platform, where agent sessions take roles such as planning and execution on work orders, and the document describes feedback agents that listen to the platform's stream of events, each deciding from its own trigger when to act, off the main thread, sometimes dispatching actions in turn. Picture the planner, the role that files work orders, publishing each new order on an Order topic, and three agent sessions subscribed to it, each deciding by its own trigger what the order means for it. A board, or an audit listener on the log, could subscribe beside them: the planner would publish exactly as before and the three sessions would hear no less. The Competing Consumers study sends the same orders to the same sessions over a queue, so the two differ only in how the channel delivers."
+  },
+  "example": {
+    "name": "Four orders on a topic with three sessions",
+    "description": "The planner publishes orders {orders} on the Order topic at frames 1, 3, 5 and 7, and keeps publishing whether or not anyone listens. The topic has {subscribers} subscribers, Sessions 1, 2 and 3, all subscribed from frame 0 to the end, and hands out each order's copies one frame after it is published. The Competing Consumers study sends the same orders at the same frames to the same three sessions over a queue.",
+    "parameters": {
+      "orders": "31 to 34",
+      "subscribers": 3,
+      "lateJoin": 7
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Add a subscriber to the list",
+        "text": "When a session subscribes, the topic adds it to its list. From then on it is given a copy of every order published; it is given nothing published before, because nothing was kept."
+      },
+      {
+        "title": "Copy each publication to everyone on the list",
+        "text": "When the planner publishes an order, the topic puts one copy on the line of each session on the list at that moment, and makes no copy for anyone else. The planner publishes once whatever the list holds, so adding a subscriber changes nothing for the planner."
+      },
+      {
+        "title": "Each copy belongs to its subscriber",
+        "text": "A session reads the copy on its own line once, and reading it takes nothing from the other sessions' lines. A session that reads slowly falls behind on its own line only."
+      },
+      {
+        "title": "Keep nothing",
+        "text": "Once the copies are handed out, the topic forgets the order: after each step that hands out copies it is empty again. A session that was not on the list when the order was published never hears of it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "when a session subscribes:\n  add it to the list of subscribers\n  (it is given only what is published from now on)\n\nwhen the planner publishes an order:\n  for each session on the list right now:\n    put a copy of the order on that session's own line\n\nwhen a session reads the copy on its line:\n  take that copy off its line\n  (no other session's copy is touched)\n\nafter the copies are handed out:\n  forget the order\n  (a session that subscribes later never hears of it)",
+    "rxjs": "copies$ = orders$.pipe(\n  // delay(1): the topic hands an order on one step after the planner publishes it.\n  delay(1),\n  // share() is the channel: it copies each order to every subscriber and keeps none.\n  share(),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/publish-subscribe-channel.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/publish-subscribe-channel.ts",
+    "textEquivalent": "Step {step} on the Order topic: {moves}. Where the orders are: {held}. What each box does: {states}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/4.22.x/eips/publish-subscribe-channel.html",
+      "relevance": "Apache Camel is the Apache Software Foundation's open-source integration framework, and its documentation describes how Camel expresses many of the book's patterns, this one among them. Its page for this pattern is read here at the 4.22.x long-term-support release.",
+      "explanation": "Camel has no topic of its own for this: the page says the pattern comes from messaging components such as JMS, ActiveMQ, AMQP, Spring RabbitMQ and Camel's internal SEDA queues, and from cloud providers' messaging. Its example has one route send to a JMS topic and two further routes each consume from that same topic and pass what they receive to a different bean, so each bean is given every message the first route sends."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/channel/implementations.html#channel-implementations-publishsubscribechannel",
+      "relevance": "Spring Integration is the Spring project's implementation of the book's messaging model inside a Spring application, with channels and endpoints as objects in the application context. Its PublishSubscribeChannel is an in-process topic.",
+      "explanation": "The channel hands every message it is sent to each handler subscribed to it, calling the handlers one after another; it cannot be polled, so a subscriber must itself be a handler. The page places it with event messages meant as notification, as against document messages that one handler processes. Since version 3.0 a send counts as successful when at least minSubscribers subscribers are present, and that minimum defaults to 0, so publishing to nobody is not an error unless it is raised."
+    },
+    {
+      "project": "RabbitMQ",
+      "url": "https://www.rabbitmq.com/tutorials/tutorial-three-javascript",
+      "relevance": "RabbitMQ is an open-source message broker. Its getting-started tutorials build small Node.js programs against it, and the third builds publish/subscribe as a logging system in which every running receiver gets every log message.",
+      "explanation": "A fanout exchange copies every message it receives to every queue bound to it. Each receiver declares its own exclusive queue with a name the server chooses and binds it to the exchange, so each subscriber has a line of its own, deleted when its connection closes. The tutorial notes that a message is lost when no queue is yet bound to the exchange, and accepts that because its receivers want only the messages flowing while they run."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Publish-Subscribe Channel",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/PublishSubscribeChannel.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page in the public catalog: the channel takes messages in at one end and gives each subscriber an output channel of its own, each subscriber consumes its copy once, and a monitor listening on such a channel can log all its traffic while the flow it watches carries on unchanged. Its example notes that Google Cloud Pub/Sub gives each subscription on a topic its own copy, while subscribers sharing one subscription compete."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003) · Chapter 4: Messaging Channels, Publish-Subscribe Channel",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Publish-Subscribe Channel in chapter 4, Messaging Channels; the publisher's page lists that chapter in its contents."
+    },
+    {
+      "title": "DotLn · Architecture, the agentic communication core (commit 9139d91)",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md#the-agentic-communication-core",
+      "accessed": "2026-11-01",
+      "supports": "The platform's architecture presents its agentic communication core as redux and RxJS applied to agents. In it, feedback agents listen to the stream of events and each decides from its own trigger when to act, working off the main thread and sometimes dispatching actions in turn. Files shared in the repository may carry messages at first, but canonical state lives in the append-only log."
+    },
+    {
+      "title": "share.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/share.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version share's default connector is a plain Subject, every subscriber is subscribed to that Subject, and the source is subscribed only when a subscriber arrives and no connection exists, so all the sessions listen through one subscription to the planner's stream."
+    },
+    {
+      "title": "Subject.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/Subject.ts",
+      "accessed": "2026-11-01",
+      "supports": "A Subject's next hands the value to each of its current observers one after another in a single loop, so its subscribers receive a value in turn within the same call rather than from lines of their own."
+    },
+    {
+      "title": "RxJS guide · Testing RxJS code with marble diagrams (source at 7.8.2)",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/testing/marble-testing.md",
+      "accessed": "2026-11-01",
+      "supports": "The marble syntax this example and its spec share: a dash is one frame and a letter an emission, a hot observable behaves as though it is already running when the test begins, and subscription marbles given to expectObservable defer a subscriber to the frame of their caret, which is how a late subscriber is tested."
+    }
+  ],
+  "limits": [
+    "A subscriber that is not listening misses what is published, and nothing tells it so. Had Session 3 subscribed at frame {lateJoin}, after the copies of order 33 went out, it would have received only order 34: the topic kept no copy of the first three for it. When a subscriber must catch up after joining late or being away, use a Durable Subscriber, for which the channel keeps publications while it is gone, or record every publication in a Message Store it can read back.",
+    "A copy for every subscriber is the wrong delivery for work that must be done once. If each session takes a new order as a job to start, all three start order 31, and every order is worked three times. Use a Point-to-Point Channel with Competing Consumers, which the companion study runs on these same orders and sessions, so each order goes to one session.",
+    "Publishing succeeds whether or not anyone hears it. A topic with no subscribers, or with subscribers whose triggers all ignore an order, accepts the order and nothing happens: Spring Integration's channel reports a send to nobody as a success unless a minimum number of subscribers is set, and RabbitMQ's fanout exchange drops a message no queue is bound to. A sender that must know its order was taken up needs a reply or a queue, not a topic.",
+    "Copies multiply with listeners. Each publication becomes one copy per subscriber, so every subscriber added adds traffic for every later order. A broker gives each subscriber a line of its own, so a slow one falls behind alone; the RxJS reading has no such lines, because share's Subject hands each value to its subscribers one after another in the same call, and a subscriber that blocks holds up the ones after it.",
+    "The analogy breaks at the log. DotLn's architecture keeps its canonical state in an append-only log, so a session that starts late could read the events it missed: the platform's stream is closer to a channel backed by a Message Store than to the bare topic drawn here, where order 31 is gone for good once its copies are handed out."
+  ],
+  "nearby": [
+    {
+      "id": "eip:211",
+      "why": "Competing Consumers is the choice when the three sessions should share the orders out, each order to one of them, rather than each hear every one; the companion study runs these same orders over a queue."
+    },
+    {
+      "id": "eip:64",
+      "why": "A Point-to-Point Channel is the choice when each message is meant for exactly one receiver, whichever it turns out to be."
+    },
+    {
+      "id": "eip:178",
+      "why": "A Durable Subscriber is the choice when a subscriber that is away or joins late must still be given what was published meanwhile."
+    },
+    {
+      "id": "eip:192",
+      "why": "A Message Store is the choice when a reader needs the history of what was published, not only what arrives from now on."
+    },
+    {
+      "id": "eip:188",
+      "why": "A Wire Tap is the choice for watching one point-to-point channel's traffic without turning that channel into a topic."
+    },
+    {
+      "id": "eip:105",
+      "why": "A Recipient List is the choice when the sender, not the receivers, must decide who gets each message, naming the recipients itself."
+    }
+  ]
+}

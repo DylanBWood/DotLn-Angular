@@ -1,0 +1,143 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:184",
+  "work": "eip",
+  "slug": "control-bus",
+  "authored": {
+    "by": "Claude dotln-worker author-06",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Management gets a road of its own. Each component keeps two doors: at one, work arrives and waits its turn; at the other, questions and commands arrive and are dealt with before the next piece of work. Because the two never share a queue, a pause is not stuck behind a backlog, a status question does not disturb the work it asks about, and no work record has to be opened to find out whether it is secretly a command.",
+    "situation": "As an analogy, read against DotLn's public execution guide (its Operator recovery controls section): an order's records pass from role to role as work, while the operator's exact phrases are messages of another kind. analysis: halts what a session is doing so that the operator can diagnose it, holds on to its unfinished work and waits to be told how to go on; operator override: stops DotLn's hooks, the automatic guards that can refuse an action, from vetoing the operator's instructions until operator override: off; and neither phrase starts a phase of the work or records a pass. Keeping those phrases on a channel of their own, never mixed into the work records, is the discipline this pattern names. The same guide calls the main checkout the control plane and gives the harness commands about that machinery itself: writer --show tells a refused session which other session holds the right to write in a worktree, and evidence --stop halts a session's own gate, its run of checks, without recording a pass. In the same analogy those are control messages about the control plane."
+  },
+  "example": {
+    "name": "The operator pauses the verifier while evidence keeps coming",
+    "description": "As an analogy, read against DotLn's public execution guide: the executor puts the evidence of orders 31, 32 and 33 on the work queue, and the verifier takes it one record at a time. On the control bus the operator first asks both roles for their status, then sends {pause} to the verifier while 32 waits in the work queue, and later gives the direction {direction}. The bus carries only questions, commands and answers; the work queue carries only evidence.",
+    "parameters": {
+      "pause": "analysis:",
+      "direction": "go ahead"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Give every component two ports",
+        "text": "Each role takes work from its work queue in turn and listens separately on its control port, which it reads before it takes the next work record. The control bus joins the operator to every control port and to nothing else."
+      },
+      {
+        "title": "Ask on the bus",
+        "text": "A status question goes out on the bus to every role's control port. Each role answers about itself, on the bus, and the answers come back to the operator. No work record moves to produce them, so the picture they give is of the flow as it stands."
+      },
+      {
+        "title": "Command on the bus",
+        "text": "A command such as {pause} is addressed to one role. The role acts on it before it takes another work record, however much work is waiting in its queue, and keeps the record it holds."
+      },
+      {
+        "title": "Work goes on regardless",
+        "text": "A command on the bus reaches only the role it is addressed to. The senders on the work queue were sent no pause, so work keeps arriving for the paused role and waits in its queue, and the backlog grows for as long as the pause lasts."
+      },
+      {
+        "title": "Resume on direction",
+        "text": "The direction {direction} returns the role to its interrupted routine, starting with the record it kept, so the pause has lost nothing and reordered nothing."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "for each role:\n  workQueue = its place on the work queue\n  controlPort = its place on the control bus\n  loop:\n    handle every message waiting at controlPort\n    if not paused: take the next record from workQueue\n\noperator sends \"status?\" on the control bus to every role\neach role answers on the control bus: what it works on, what it holds\nthe operator reads the answers; no work record moves for them\n\noperator sends pause to the verifier on the control bus\nthe verifier, before its next work record:\n  stops its routine and keeps the record it holds\n\nthe executor, which was sent no pause, puts the next evidence on the work queue\nit waits there with the rest, untouched\n\noperator sends direction to the verifier on the control bus\nthe verifier resumes its routine with the record it kept",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/control-bus.ts",
+    "textEquivalent": "At step {step}, on the work queue and the control bus, {moves}. Now {states}; {held}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel, the Control Bus component",
+      "url": "https://camel.apache.org/components/latest/controlbus-component.html",
+      "relevance": "Apache Camel is an open-source integration framework from the Apache Software Foundation. Its Control Bus component is the framework's own reading of this pattern: the page presents it as a way to watch and steer a running Camel application by sending it messages.",
+      "explanation": "A route or a test sends an ordinary message to a controlbus: endpoint, and the endpoint acts on the running application instead of passing the message on. The route command takes a routeId and an action, one of start, stop, suspend, resume, restart, fail, status and stats, and can return a route's status, or its performance statistics as XML, in the reply. The language command evaluates the message body as an expression, such as a Simple expression that calls the route controller. The page also lists the other ways in that Camel keeps, JMX, a Java API on the CamelContext and the event notifier, so the bus is one door among several; its async option runs a task without putting the result on the exchange."
+    },
+    {
+      "project": "Spring Integration, the Control Bus",
+      "url": "https://docs.spring.io/spring-integration/reference/control-bus.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging and integration framework. Its reference has a Control Bus page in its System Management part.",
+      "explanation": "A control-bus endpoint listens on an input channel for messages whose payload names an operation as beanName.methodName, with any arguments in a dedicated header, and invokes that operation on a bean in the application context; a return value can be sent on to an output channel. Only operations an application has chosen to expose qualify: methods annotated @ManagedAttribute or @ManagedOperation, Spring's Lifecycle and Pausable methods and some executor and scheduler settings, so the same methods serve JMX and the bus. Because the bus can change the system's state, the page recommends securing what it receives, and it points to a REST controller for reaching the bus over HTTP."
+    },
+    {
+      "project": "Spring Cloud Bus, its bus endpoints",
+      "url": "https://docs.spring.io/spring-cloud-bus/reference/spring-cloud-bus/bus-endpoints.html",
+      "relevance": "Spring Cloud Bus gives a Spring Boot application bus versions of three actuator endpoints, so that one request can act on the instances joined to the bus instead of on one. It is a control bus built for a single job: carrying a management instruction to every running copy of an application.",
+      "explanation": "Three endpoints, /actuator/busrefresh, /actuator/busenv and /actuator/busshutdown, correspond to the single-instance refresh, env and shutdown endpoints. busrefresh clears the refresh-scope cache and rebinds configuration properties, busenv sets one key to one value in the environment of the instances on the bus, and busshutdown shuts an application down gracefully. Adding a bus id to the path addresses one instance instead of all of them. Each endpoint must be exposed in the application's configuration before it can be called."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Control Bus",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/ControlBus.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page sets the problem of managing a messaging system whose parts sit on many platforms in many places, and answers it with management traffic that uses the same messaging as the application but channels of its own, so that every component is joined both to the application's flow and to the control bus."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003), chapter 11, System Management, section Control Bus",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Control Bus pattern in chapter 11, System Management; the publisher's page lists the book and that chapter in its table of contents."
+    },
+    {
+      "title": "DotLn execution guide · Operator recovery controls",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#operator-recovery-controls",
+      "accessed": "2026-11-01",
+      "supports": "The platform's guide says that analysis: stops the current routine so that the operator can diagnose it, keeps unfinished work and waits for direction; that operator override: stops the hooks from vetoing the operator for the rest of that session, until operator override: off, and takes hold before any runtime code is loaded or repository state is checked; that neither phrase dispatches a phase or records a pass; and that diagnosis must still work when the worktree, lifecycle, runtime or gate is broken."
+    },
+    {
+      "title": "DotLn execution guide · Discipline",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#discipline",
+      "accessed": "2026-11-01",
+      "supports": "The guide names the main checkout as the control plane; a session refused because another session holds the worktree's writer reservation runs node scripts/harness.mjs writer --show to learn who holds it; and node scripts/harness.mjs evidence --stop halts the session's own gate without recording a pass."
+    },
+    {
+      "title": "DotLn execution guide · Operator resume phrases",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#operator-resume-phrases--how-you-get-dispatched",
+      "accessed": "2026-11-01",
+      "supports": "The platform's status report is built from the order records in the current checkout, not from unmerged work in other worktrees, and asking for it, in either of its two forms, changes nothing and adds no record."
+    }
+  ],
+  "limits": [
+    "A status answer is a component's own account of itself. It shows that the control port responds, not that the work is right: a verifier could report the record it is checking while filing wrong reports, and the bus and the work queue can disagree, the bus calling a role healthy while its queue is stuck. To learn whether the work path still works, send a test message through it. DotLn's own resume: status works another way. It reads what each order's record in the checkout says and writes nothing, so it reports what was recorded rather than asking a live session what it is doing.",
+    "A pause stops one component, not its senders. The pause is addressed to the verifier alone, so the executor keeps putting evidence on the work queue, and the records pile up there until someone sends the direction to go on. An operator who forgets a paused component has stopped the flow as surely as a crash would; a pause needs an expiry or an alarm, or the senders need telling too.",
+    "The bus is a way in for anyone who can post to it, and a stop or a configuration change sent there acts on the running system. Spring Integration's page recommends securing the control bus's input for that reason. A control message needs a known sender and a bounded scope; DotLn's guide, for one, keeps operator override: to the session it was typed in, and the next session starts without it.",
+    "The pattern rides the same messaging infrastructure as the work, so when the broker or the network fails the bus fails with it, just when the operator needs it most. Here the analogy breaks: DotLn's guide asks the opposite of its recovery phrases. Diagnosis must still work when the worktree, the lifecycle, the runtime or a gate is broken, and the override takes hold before any runtime code is loaded or the repository's state is checked. A last-resort way in should not share the machinery it is meant to repair.",
+    "For a few components in one process, a second set of channels can cost more than it saves: every component keeps twice the connections, and both sets need configuring and securing. Direct management calls, or management messages carried in band with the risk that a command waits behind work, can be enough there."
+  ],
+  "nearby": [
+    {
+      "id": "eip:186",
+      "why": "Read this trade-off when deciding whether separate control channels earn their cost, or whether in-band management will do."
+    },
+    {
+      "id": "eip:185",
+      "why": "Read the kinds of control message, configuration, heartbeat, test, exception and statistics, when deciding what a bus should carry beyond a pause and a status question."
+    },
+    {
+      "id": "eip:195",
+      "why": "Reach for a test message when you need to know that a component still processes correctly; an answer on the bus shows only that it is alive."
+    },
+    {
+      "id": "eip:187",
+      "why": "Use a detour when the operator should switch messages through extra validation or debugging steps from the bus, rather than pause or question a component."
+    },
+    {
+      "id": "eip:192",
+      "why": "Use a message store when the question is what has passed through the flow, answered later from copies, rather than what a component is doing now."
+    },
+    {
+      "id": "eip:103",
+      "why": "A dynamic router is fed by a control channel too: read it when control messages should reconfigure where work goes rather than stop a component."
+    }
+  ]
+}

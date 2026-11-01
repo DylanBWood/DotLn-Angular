@@ -1,5 +1,6 @@
 import type { ConceptStudy, Tool } from '@dotln-angular/models';
 
+import { flowStudyModel, marbleFlowStudyModel } from '../composites/study-visuals/fixtures';
 import { marbleModel } from '../studies/rxjs/marbles';
 import type { StudyModel } from '../studies/study-model';
 import { clampStep, mapStudy } from './study-mapper';
@@ -117,6 +118,44 @@ it('draws a marbles model in its own family, with the frame’s sentence in the 
     ).visual?.textEquivalent,
   ).toBe('nothing new happens');
   expect(clampStep(marbles, 99)).toBe(4);
+});
+
+it('draws a flow, and its marble diagram with the diagram’s own legend when a reader switches', () => {
+  const flowRecord = {
+    ...record,
+    visual: {
+      family: 'flow' as const,
+      model: 'libs/f.ts',
+      textEquivalent: 'Step {step}: {moves}.',
+    },
+  };
+  const view = mapStudy(
+    { record: flowRecord, model: marbleFlowStudyModel },
+    { ...reader, view: 'flow' },
+    catalogFixture,
+  );
+  expect(view.visual?.family).toBe('flow');
+  expect(view.visual?.family === 'flow' && view.visual.view).toBe('flow');
+  expect(view.visual?.textEquivalent).toBe('Step 0: nothing moves.');
+  expect(view.visual?.legend).toEqual(marbleFlowStudyModel.legend);
+  const switched = mapStudy(
+    { record: flowRecord, model: marbleFlowStudyModel },
+    { ...reader, view: 'marbles', step: 1 },
+    catalogFixture,
+  );
+  expect(switched.visual?.family === 'flow' && switched.visual.view).toBe('marbles');
+  expect(switched.visual?.legend).toEqual(marbleFlowStudyModel.diagram?.legend);
+  expect(switched.visual?.caption).toBe(marbleFlowStudyModel.diagram?.caption);
+  // The sentence follows the same step in either drawing.
+  expect(switched.visual?.textEquivalent).toContain('Step 1: a (order 31 verified) moves');
+  // A flow with no diagram stays a flow, whatever view the reader last chose.
+  const written = mapStudy(
+    { record: flowRecord, model: flowStudyModel },
+    { ...reader, view: 'marbles' },
+    catalogFixture,
+  );
+  expect(written.visual?.family === 'flow' && written.visual.view).toBe('flow');
+  expect(written.visual?.family === 'flow' && written.visual.marbles).toBeNull();
 });
 
 it('fills the record’s prose from the selected moment', () => {

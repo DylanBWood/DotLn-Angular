@@ -1,0 +1,123 @@
+<ng-template #picture let-view>
+  <svg [attr.viewBox]="view.viewBox" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+    @for (link of view.links; track link.id) {
+      <g class="link" [class.active]="link.active">
+        @if (link.points; as points) {
+          <polyline [attr.points]="points" />
+        } @else {
+          <line [attr.x1]="link.x1" [attr.y1]="link.y1" [attr.x2]="link.x2" [attr.y2]="link.y2" />
+        }
+        <polygon [attr.points]="link.head" />
+      </g>
+    }
+    @for (node of view.nodes; track node.id) {
+      <rect
+        class="node"
+        [class.acting]="node.acting"
+        [attr.data-kind]="node.kind"
+        [attr.data-tone]="node.tone"
+        [attr.x]="node.x"
+        [attr.y]="node.y"
+        [attr.width]="node.width"
+        [attr.height]="node.height"
+        [attr.rx]="node.rx"
+      />
+    }
+    <g class="labels" translate="no">
+      @for (node of view.nodes; track node.id) {
+        @for (line of node.label; track $index) {
+          <text
+            class="name"
+            [attr.data-tone]="node.tone"
+            [attr.x]="line.x"
+            [attr.y]="line.y"
+            [attr.text-anchor]="line.anchor"
+            [style.--flow-scale]="node.scale"
+          >
+            {{ line.text }}
+          </text>
+        }
+      }
+      @for (link of view.links; track link.id) {
+        @if (link.label; as label) {
+          <text
+            class="channel"
+            [attr.x]="label.x"
+            [attr.y]="label.y"
+            [attr.text-anchor]="label.anchor"
+          >
+            {{ label.text }}
+          </text>
+        }
+      }
+      @for (state of view.states; track $index) {
+        <text class="state" [attr.x]="state.x" [attr.y]="state.y" [attr.text-anchor]="state.anchor">
+          {{ state.text }}
+        </text>
+      }
+    </g>
+    @for (token of view.tokens; track token.id) {
+      <g
+        class="token"
+        [attr.data-state]="token.state"
+        [style.--flow-from-x]="token.fromDx + 'px'"
+        [style.--flow-from-y]="token.fromDy + 'px'"
+      >
+        @if (token.width > token.r * 2) {
+          <rect
+            [attr.x]="token.x - token.width / 2"
+            [attr.y]="token.y - token.r"
+            [attr.width]="token.width"
+            [attr.height]="token.r * 2"
+            [attr.rx]="token.r"
+          />
+        } @else {
+          <circle [attr.cx]="token.x" [attr.cy]="token.y" [attr.r]="token.r" />
+        }
+        <text text-anchor="middle" [attr.x]="token.x" [attr.y]="token.y + token.r * 0.38">
+          {{ token.key }}
+        </text>
+      </g>
+    }
+  </svg>
+</ng-template>
+<div class="across">
+  <ng-container [ngTemplateOutlet]="picture" [ngTemplateOutletContext]="{ $implicit: drawing() }" />
+</div>
+<div class="down">
+  <ng-container
+    [ngTemplateOutlet]="picture"
+    [ngTemplateOutletContext]="{ $implicit: downward() }"
+  />
+</div>
+<tools-study-scrubber
+  [step]="step()"
+  [lastStep]="lastStep()"
+  [frame]="step()"
+  [moments]="moments()"
+  [playing]="playing()"
+  counting="step"
+  (played)="played.emit($event)"
+  (stepped)="stepped.emit($event)"
+/>
+@if (note(); as text) {
+  <p class="note" translate="no">
+    {{ text }}
+  </p>
+  <details
+    #numbers
+    class="numbers"
+    [open]="numbersOpen()"
+    (toggle)="numbersToggled.emit(numbers.open)"
+  >
+    <summary>{{ 'tools.study.messages' | t }}</summary>
+    <p class="reading" data-testid="study-reading" translate="no">
+      {{ textEquivalent() }}
+    </p>
+  </details>
+} @else {
+  <p class="reading" data-testid="study-reading" translate="no">
+    {{ textEquivalent() }}
+  </p>
+}
+<ng-content />

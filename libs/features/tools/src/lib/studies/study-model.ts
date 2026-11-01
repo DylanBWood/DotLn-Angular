@@ -181,6 +181,61 @@ export interface MarblesModel {
   readonly frames: readonly MarbleFrame[];
 }
 
+/**
+ * A place a message reaches in a flow: an endpoint that sends, receives or keeps messages, or a
+ * channel drawn as a place of its own, as a queue or a publish-subscribe channel is.
+ */
+export interface FlowNode {
+  readonly id: string;
+  /** What the box says: one or two short words, such as `Aggregator` or `Work queue`. */
+  readonly label: string;
+  /** The column it stands in, from 0 at the left: a flow is laid out one column per stage. */
+  readonly stage: number;
+  /** Its place in the column from the top, when a stage holds several; 0 when absent. */
+  readonly row?: number;
+  /** An endpoint is drawn as a box and a channel as a pipe; an endpoint when absent. */
+  readonly kind?: 'endpoint' | 'channel';
+  /** `subject` for the pattern's own part of the flow; `other` when absent. */
+  readonly tone?: StudyTone;
+}
+
+/** A line a message travels along, from the node that sends it to the node that receives it. */
+export interface FlowLink {
+  readonly id: string;
+  readonly from: string;
+  readonly to: string;
+  /** A name the line carries when it is a channel of its own, such as `reply`; none when absent. */
+  readonly label?: string;
+}
+
+/** A message as a token shows it: a letter or a short number, and what it says. */
+export interface FlowToken {
+  readonly key: string;
+  readonly content: string;
+}
+
+/** One message crossing one link at a step, arriving at the link's far end. */
+export interface FlowHop extends FlowToken {
+  readonly link: string;
+}
+
+/** One step of a flow: the messages that move now, and what each node holds afterwards. */
+export interface FlowFrame extends StudyTick {
+  readonly step: number;
+  readonly hops: readonly FlowHop[];
+  /** What a node holds or decides after this step, as prose beside it, by node id. */
+  readonly states: Readonly<Record<string, string>>;
+  /** The messages a node holds after this step, drawn inside it, by node id. */
+  readonly held: Readonly<Record<string, readonly FlowToken[]>>;
+}
+
+/** Endpoints and channels with the messages that step through them. */
+export interface FlowModel {
+  readonly nodes: readonly FlowNode[];
+  readonly links: readonly FlowLink[];
+  readonly frames: readonly FlowFrame[];
+}
+
 /** A second run with one input changed, shown where the study says when the idea fails. */
 export interface StudyComparison {
   readonly title: string;
@@ -237,15 +292,34 @@ export interface MarblesStudyModel extends StudyModelBase {
   readonly marbles: MarblesModel;
 }
 
+/** The marble diagram of a flow whose example runs, with how to read it. */
+export interface FlowDiagram {
+  readonly marbles: MarblesModel;
+  readonly legend: readonly StudyLegendEntry[];
+  readonly caption: string;
+}
+
+/**
+ * A messaging example: messages stepping through endpoints and channels. When the example also
+ * runs as a marble example, `diagram` is that marble diagram, one frame for each step of the flow,
+ * so a reader can switch between the two drawings at the same moment.
+ */
+export interface FlowStudyModel extends StudyModelBase {
+  readonly family: 'flow';
+  readonly flow: FlowModel;
+  readonly diagram: FlowDiagram | null;
+}
+
 /**
  * The example worked through: every part of a study reads this one run. The family names which
  * drawing the payload is for, and `ticksOf` reads the moments every family shares.
  */
-export type StudyModel = MotionStudyModel | MarblesStudyModel;
+export type StudyModel = MotionStudyModel | MarblesStudyModel | FlowStudyModel;
 
 /** The moments of the example, whichever family draws them: one tick per step of the scrubber. */
 export function ticksOf(model: StudyModel): readonly StudyTick[] {
-  return model.family === 'motion' ? model.motion.frames : model.marbles.frames;
+  if (model.family === 'motion') return model.motion.frames;
+  return model.family === 'flow' ? model.flow.frames : model.marbles.frames;
 }
 
 /** A model module exports this: the record's parameters in, the example's run out. */

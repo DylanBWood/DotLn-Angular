@@ -569,10 +569,12 @@ test('the studied facet narrows the results to the concepts with a study', async
   await search(page).fill('a');
   const all = Number(await page.getByTestId('search-count').getAttribute('data-count'));
   await choose(page, 'Study', 'Has a study');
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '40');
-  expect(all).toBeGreaterThan(40);
+  // Twenty studies from each of the three studied works: AI for Games, RxJS and Enterprise
+  // Integration Patterns.
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '60');
+  expect(all).toBeGreaterThan(60);
   await choose(page, 'Study', 'No study yet');
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 40));
+  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 60));
 });
 
 test('keyboard menu scrolling holds focus under a stationary pointer and pointer input resumes', async ({
@@ -842,3 +844,158 @@ test('a long unbroken title wraps in search results and the history at 360px', a
   ).toBeVisible();
   expect(await fits()).toBe(true);
 });
+
+for (const width of [768, 1280])
+  test(`the sticky shelf and contents stop above the history at the foot of the page at ${width}px`, async ({
+    page,
+  }) => {
+    // A window shorter than the shelf: stuck to the top, the shelf reaches the foot of its
+    // columns when the page is scrolled to the end, and must stop there.
+    await page.setViewportSize({ width, height: 600 });
+    await page.goto('/tools/catalog/aifg-a:112');
+    const link = page
+      .getByRole('navigation', { name: 'Recently read', exact: true })
+      .getByRole('link', { name: 'Arrive', exact: true });
+    await expect(link).toBeVisible();
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await expect(link).toBeInViewport();
+    // Nothing lies over the link: the point at its centre belongs to it.
+    const topmost = await link.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return hit !== null && element.contains(hit);
+    });
+    expect(topmost).toBe(true);
+  });
+
+test('Enterprise Integration Patterns has twenty studied concepts, and Aggregator’s flow steps one message at a time', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  const shelf = page.getByRole('navigation', { name: 'The works' });
+  const work = shelf.getByRole('button', { name: /Enterprise Integration Patterns/ });
+  await expect(work).toContainText('20 studied');
+  await work.click();
+  const list = page.locator('.studied-list');
+  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
+  await expect(list.getByRole('link')).toHaveCount(20);
+  await list.getByRole('link', { name: 'Aggregator', exact: true }).click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Aggregator');
+  await expect(page).toHaveURL(/\/tools\/catalog\/eip:110$/);
+  const study = page.locator('tools-study');
+  const flow = study.locator('tools-study-flow');
+  // A messaging study opens at its start, before anything moves. The default browser context asks
+  // for reduced motion: nothing runs by itself and Play is not offered.
+  const time = study.getByRole('slider', { name: /^Step 0 of \d+$/ });
+  await expect(time).toHaveValue('0');
+  await page.waitForTimeout(300);
+  await expect(time).toHaveValue('0');
+  await expect(study.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+  await expect(flow.locator('.across .token[data-state="moving"]')).toHaveCount(0);
+  // Each step forward moves a report to the aggregator, and the drawing's sentence names it.
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(study.getByRole('slider', { name: /^Step 1 of \d+$/ })).toHaveValue('1');
+  await expect(flow.getByRole('img')).toHaveAccessibleName(/moves from .+ to Aggregator/);
+  await expect(flow.locator('.across .token[data-state="moving"]')).toHaveCount(1);
+  await flow.locator('.numbers summary').click();
+  await expect(flow.getByTestId('study-reading')).toContainText('moves from');
+  // The mechanism, the limits and the executable RxJS reading open on command.
+  await summary(page, 'Follow the mechanism').press('Enter');
+  await expect(study.locator('.code-lines').first()).toBeVisible();
+  await summary(page, 'Where this breaks down').press('Enter');
+  await expect(study).toContainText('A lost report holds its set for ever.');
+  await summary(page, 'Think in streams').press('Enter');
+  await expect(study.getByTestId('rxjs-label')).toContainText('Executable');
+  await expect(study.getByTestId('rxjs-spec')).toContainText(
+    'libs/features/tools/src/lib/studies/eip/aggregator.spec.ts',
+  );
+  // The same step drawn as the marble diagram the spec runs.
+  await study.getByRole('button', { name: 'Marbles', exact: true }).click();
+  await expect(study.locator('tools-study-marbles')).toBeVisible();
+  await expect(study.getByRole('slider', { name: /^Frame 1 of \d+$/ })).toHaveValue('1');
+  await study.getByRole('button', { name: 'Flow', exact: true }).click();
+  await expect(study.locator('tools-study-flow')).toBeVisible();
+});
+
+test('Publish-Subscribe Channel and Competing Consumers open from the contents and deliver differently', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  await page
+    .getByRole('navigation', { name: 'The works' })
+    .getByRole('button', { name: /Enterprise Integration Patterns/ })
+    .click();
+  const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
+  const open = async (chapter: RegExp, title: string) => {
+    await contents.getByRole('button', { name: chapter }).click();
+    await contents.getByRole('button', { name: new RegExp(`^${title}`) }).click();
+    await contents.getByRole('link', { name: title, exact: true }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(title);
+    await expect(page.locator('tools-study-flow')).toBeVisible();
+  };
+  // Step to step 2, where the channel delivers the first order, and read what moves there.
+  const delivery = async () => {
+    const study = page.locator('tools-study');
+    for (const step of [1, 2]) {
+      await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+      await expect(
+        study.getByRole('slider', { name: new RegExp(`^Step ${step} of \\d+$`) }),
+      ).toHaveValue(String(step));
+    }
+    return study.locator('tools-study-flow .across .token[data-state="moving"]');
+  };
+  // The same first order, a, reaches every session from the topic and one session from the queue.
+  await open(/Chapter 4: Messaging Channels/, 'Publish-Subscribe Channel');
+  await expect(await delivery()).toHaveText(['a', 'a', 'a']);
+  await open(/Chapter 10: Messaging Endpoints/, 'Competing Consumers');
+  await expect(await delivery()).toHaveText(['a']);
+});
+
+test('Request-Reply’s Correlation Identifier link opens its reading', async ({ page }) => {
+  await page.goto('/tools/catalog/eip:83');
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Request-Reply');
+  const link = page.locator('tools-study .nearby a', { hasText: 'Correlation Identifier' });
+  await expect(link).toHaveAttribute('href', /\/tools\/catalog\/eip:87$/);
+  await link.click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(
+    'Correlation Identifier',
+  );
+  await expect(page).toHaveURL(/\/tools\/catalog\/eip:87$/);
+  await expect(page.locator('tools-study-flow')).toBeVisible();
+});
+
+for (const width of [360, 768, 1440])
+  test(`Aggregator's study fits ${width}px at the board accessibility threshold`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    const serious = async () =>
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations.filter(
+        (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+      );
+    await page.goto('/tools/catalog/eip:110');
+    await expect(page.locator('tools-study-flow')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+    const study = page.locator('tools-study');
+    await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+    await study.locator('tools-study-flow .numbers summary').click();
+    await study.locator('.how-to-read summary').filter({ hasText: 'How to read' }).click();
+    for (const section of [
+      'Follow the mechanism',
+      'Think in streams',
+      'Where this breaks down',
+      'See it elsewhere',
+    ])
+      await summary(page, section).press('Enter');
+    await expect(study.getByTestId('rxjs-spec')).toBeVisible();
+    await expect(study.locator('.references a').first()).toBeVisible();
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+  });

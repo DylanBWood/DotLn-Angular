@@ -41,6 +41,32 @@
   }
 }
 
+// A marble diagram uses three of the tones: an input, a stream the operator opened, and the output.
+// Its stylesheet carries only those, which keeps it inside the component style budget.
+@mixin stream-stroke-tones {
+  &[data-tone='subject'] {
+    stroke: var(--dotln-ink);
+  }
+  &[data-tone='other'] {
+    stroke: var(--dotln-muted);
+  }
+  &[data-tone='actual'] {
+    stroke: var(--dotln-accent);
+  }
+}
+
+@mixin stream-fill-tones {
+  &[data-tone='subject'] {
+    fill: var(--dotln-ink);
+  }
+  &[data-tone='other'] {
+    fill: var(--dotln-muted);
+  }
+  &[data-tone='actual'] {
+    fill: var(--dotln-accent);
+  }
+}
+
 // Labels inside a drawing shrink with it, so a narrow screen draws them larger.
 @mixin chart-text {
   text {

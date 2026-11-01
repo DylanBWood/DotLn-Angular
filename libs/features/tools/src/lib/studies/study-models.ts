@@ -1,11 +1,32 @@
 import type { StudyModelModule } from './study-model';
 
+const eip = 'libs/features/tools/src/lib/studies/eip';
 const movement = 'libs/features/tools/src/lib/studies/movement';
 const rxjs = 'libs/features/tools/src/lib/studies/rxjs';
 
 // Each drawing's model loads with the study that reads it. The key is the path the record names
 // in `visual.model`, and a spec keeps the two lists equal.
 export const studyModels: Readonly<Record<string, () => Promise<StudyModelModule>>> = {
+  [`${eip}/aggregator.ts`]: () => import('./eip/aggregator'),
+  [`${eip}/canonical-data-model.ts`]: () => import('./eip/canonical-data-model'),
+  [`${eip}/channel-adapter.ts`]: () => import('./eip/channel-adapter'),
+  [`${eip}/command-message.ts`]: () => import('./eip/command-message'),
+  [`${eip}/competing-consumers.ts`]: () => import('./eip/competing-consumers'),
+  [`${eip}/content-based-router.ts`]: () => import('./eip/content-based-router'),
+  [`${eip}/control-bus.ts`]: () => import('./eip/control-bus'),
+  [`${eip}/correlation-identifier.ts`]: () => import('./eip/correlation-identifier'),
+  [`${eip}/event-message.ts`]: () => import('./eip/event-message'),
+  [`${eip}/guaranteed-delivery.ts`]: () => import('./eip/guaranteed-delivery'),
+  [`${eip}/message-dispatcher.ts`]: () => import('./eip/message-dispatcher'),
+  [`${eip}/message-expiration.ts`]: () => import('./eip/message-expiration'),
+  [`${eip}/message-store.ts`]: () => import('./eip/message-store'),
+  [`${eip}/message-translator.ts`]: () => import('./eip/message-translator'),
+  [`${eip}/process-manager.ts`]: () => import('./eip/process-manager'),
+  [`${eip}/publish-subscribe-channel.ts`]: () => import('./eip/publish-subscribe-channel'),
+  [`${eip}/recipient-list.ts`]: () => import('./eip/recipient-list'),
+  [`${eip}/request-reply.ts`]: () => import('./eip/request-reply'),
+  [`${eip}/resequencer.ts`]: () => import('./eip/resequencer'),
+  [`${eip}/transactional-client.ts`]: () => import('./eip/transactional-client'),
   [`${movement}/align.model.ts`]: () => import('./movement/align.model'),
   [`${movement}/arrive.model.ts`]: () => import('./movement/arrive.model'),
   [`${movement}/equilibrium-fallback.model.ts`]: () =>

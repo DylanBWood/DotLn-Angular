@@ -1,0 +1,133 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:120",
+  "work": "eip",
+  "slug": "resequencer",
+  "authored": {
+    "by": "Claude dotln-worker author-01",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Messages come in any order and leave in their proper one. A resequencer is a turnstile that knows the next number: the expected message walks straight through, an early one waits beside the gate, and when the missing one arrives, everything queued behind it walks through in a row. Read reactively, it is a scan over the next expected number and a buffer, flattened so that each arrival lets out nothing, one event or a whole run of events.",
+    "situation": "As an analogy, read against DotLn's public domain model and architecture. A projection, such as a generated view of a log, has to apply the log's events in the order they were appended: a projection that applied a command's result before the command's persist would hold a result for a command it has not yet seen. DotLn numbers each log's events at the append boundary, evt_1, evt_2 and so on, which is exactly what a resequencer needs. Wherever those events travel by a route that loses order (writers that raced, a shared-file bus, or workers dispatched in order whose returns come back in any order before a consumer that must take them in sequence), the numbers let a resequencer put them back before the projection sees them."
+  },
+  "example": {
+    "name": "A log's events over a bus that loses their order",
+    "description": "As an analogy, read against DotLn's public domain model, whose append boundary numbers every event of a log. Here a log of {events} events, two commands each persisted, accepted by the transport with a receipt and answered with a result, reaches a projection over a bus that does not keep its order, such as the shared files DotLn's architecture accepts as a first bus. They come off the bus as evt_1, evt_3, evt_2, evt_5, evt_6 and evt_4. The resequencer expects evt_{nextSequence} first and holds each event that comes early; in the step after it sees an unbroken run from the number it expects, it sends that run down a first-in, first-out channel (FIFO in the drawing) to the projection, without changing the events.",
+    "parameters": {
+      "nextSequence": 1,
+      "events": 6
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Know the next number",
+        "text": "The resequencer keeps one number, the next event the projection needs, starting at evt_{nextSequence}, and a buffer for anything that turns up early. Nothing else about the log is needed, but the events must carry those numbers."
+      },
+      {
+        "title": "Hold an event that comes early",
+        "text": "An event whose number is not the expected one goes into the buffer and nothing is sent. evt_3 waits this way while evt_2 is missing, and evt_5 and evt_6 wait for evt_4."
+      },
+      {
+        "title": "Pass the expected event on",
+        "text": "An event with the expected number goes down the FIFO channel in the next step, unchanged, and the expected number moves up by one."
+      },
+      {
+        "title": "Release what the gap held back",
+        "text": "Each time the expected number moves up, the buffer is searched for the new one, and the whole unbroken run goes out together, in order: evt_2's arrival lets evt_3 out with it, and evt_4's lets out evt_5 and evt_6. The channel after the resequencer must keep that order, or the work is undone."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "next = 1, the number of the first event the projection needs\nheld = an empty buffer\non each event from the bus:\n\n  if the event's number is not next:\n    put it in held, and wait for the next event\n\n  in the next step, send it down the FIFO channel\n  next = next + 1\n\n  while held has the event numbered next:\n    take that event out of held and send it down the FIFO channel after the last\n    next = next + 1",
+    "rxjs": "inOrder$ = bus$.pipe(\n  // Buffer: hold each early event; release takes out only the unbroken run from next.\n  scan(({ next, held }, event) => release(next, [...held, event]), start),\n  // Release: send that run on, one event after another, in sequence order.\n  concatMap(({ released }) => released),\n  // The run goes on one frame after the event that completed it.\n  delay(1),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/resequencer.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/resequencer.ts",
+    "textEquivalent": "Step {step}: {moves}; {held}; {states}. Events come off the bus in any order; the resequencer, expecting evt_{nextSequence} first, sends down the FIFO channel to the projection, one step after it sees it, only the unbroken run that starts at the number it expects."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/4.22.x/eips/resequence-eip.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are written in the vocabulary of these patterns. Its Resequence page offers two different algorithms under the one name, which shows that the pattern is a family of choices.",
+      "explanation": "An expression, typically a header holding a sequence number, gives each exchange its place. Batch mode, the default, collects exchanges up to a size or a timeout (100 messages or one second unless configured), sorts the batch and sends it on. Stream mode works on integer numbers 1, 2, 3 and so on and sends each exchange as soon as its predecessor has gone, keeping the rest in a backlog of 1000 by default; its timeout makes it give up on a missing number and move to the next, and the page relates the timeout to the largest delay between neighbouring messages. By default only the last of two exchanges with the same number is kept, and rejectOld throws MessageRejectedException for an exchange older than the last one delivered."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/7.1/resequencer.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging framework: it implements these patterns as message handlers between channels inside a Spring application. Its resequencer is built on the same correlating machinery as its aggregator.",
+      "explanation": "It stores messages in groups by their CORRELATION_ID header, as the aggregator does, but passes them on unchanged, in the order of their SEQUENCE_NUMBER header. By default it waits for the whole group that the SEQUENCE_SIZE header promises; release-partial-sequences sends each in-order run as soon as it is available. A group timeout can expire a group with a hole in it, either discarding its messages or, with send-partial-result-on-expiry, sending what it has in order, and messages that arrive for an expired group are discarded by default. The page says the resequencer is meant for short sequences with small gaps and warns of poor performance with many disjoint sequences full of gaps."
+    },
+    {
+      "project": "Apache NiFi, EnforceOrder",
+      "url": "https://nifi.apache.org/components/org.apache.nifi.processors.standard.EnforceOrder/",
+      "relevance": "Apache NiFi is a dataflow system that moves FlowFiles between processors arranged on a canvas. EnforceOrder is its processor for putting FlowFiles back into their original order after branches and error handling have scrambled them.",
+      "explanation": "A Group Identifier sorts FlowFiles into ordering groups, an Order Attribute gives each an integer and Initial Order says where a group starts. A FlowFile with the expected number goes to the success relationship and one with a later number to the wait relationship; after Wait Timeout a waiting FlowFile goes to overtook, passing the ones it was waiting for, and a FlowFile older than the current number goes to skipped. The page insists on NiFi's FirstInFirstOutPrioritizer for every downstream relationship until the order is fixed, which is the order-preserving output channel the pattern relies on."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Resequencer",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/Resequencer.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern catalog's page for the Resequencer: messages that took different routes can reach a later step out of order, the resequencer keeps the out-of-sequence ones in a buffer until the sequence is complete and publishes them in order, usually without altering them, and its output channel must preserve order."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 7: Message Routing · Resequencer",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The publisher's page for the book by Gregor Hohpe and Bobby Woolf, whose chapter 7, Message Routing, covers the Resequencer."
+    },
+    {
+      "title": "DotLn domain model",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md",
+      "accessed": "2026-11-01",
+      "supports": "In DotLn the append boundary assigns each event's eventId as evt_n, monotonic per log; CommandPersisted, CommandResult and CommandRefused are the outbox's event types and a CommandReceipt is the transport's acknowledgement; replay holds on to a result that comes before its persist and finishes the command once that persist record turns up; and the beacon fold reads the log in append order."
+    },
+    {
+      "title": "DotLn architecture · The agentic communication core",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md#the-agentic-communication-core",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's architecture accepts shared files in the repository as a first bus but never as canonical state; the append-only log is canonical, because of lost-update and ordering hazards."
+    }
+  ],
+  "limits": [
+    "A gap that never fills stops the projection for good. Lose evt_4 on the bus and evt_5 and evt_6 are never sent: the projection stays at evt_3, every later event of the log queues behind them, and the buffer grows without bound while nothing reports a fault. A resequencer needs a rule for a gap: wait a bounded time and then skip the number, as Camel's stream mode does, or route the overtaking events elsewhere, as NiFi's overtook relationship does; here the better rule is to fetch the missing event again by its number, since the log still has it.",
+    "A redelivered event is never let go. A bus that can deliver twice may bring evt_3 again after it has gone out. Its number is below the expected one, so this resequencer neither sends it again nor drops it: it stays in the buffer for good. Drop or report a number below the expected one, as NiFi's skipped relationship and Camel's rejectOld do, and keep the projection idempotent on eventId.",
+    "It can only restore the order its numbers record. DotLn's domain model meets a case a resequencer cannot mend: when a log presents a command's result before its persist, replay holds on to the early result and finishes the command once its persist record turns up, matching the two by commandId. The log's own numbers already put the result first, so ordering by them keeps the wrong order.",
+    "Everything behind a gap waits, even events the projection could use at once: one slow event delays all that follow it. Where the consumer does not care about order, such as a count of events by type, resequencing only adds delay and memory.",
+    "Numbers belong to a sequence. Each DotLn log numbers its own events, so a resequencer that serves several logs needs one expected number and one buffer per log, as Spring Integration keeps one per correlation id and NiFi one per group identifier; one counter shared by two logs would pass whichever log's evt_2 arrived first and hold the other's for good.",
+    "The analogy breaks where DotLn keeps order instead of restoring it. Its architecture treats shared files as no more than a first bus and keeps the append-only log as the source of truth, and a fold such as its beacon fold reads that log in append order, so nothing reaches it out of order. Reading the log directly is the cheaper fix; a resequencer is the repair for a channel that has already lost the order."
+  ],
+  "nearby": [
+    {
+      "id": "eip:89",
+      "why": "Message Sequence is where the numbers come from: reach for it first, since a resequencer can do nothing for messages that do not say where they stand."
+    },
+    {
+      "id": "eip:121",
+      "why": "Read the row on sequence numbering requirements for what the numbers must be: one numbering per sequence, without gaps, with a known first number."
+    },
+    {
+      "id": "eip:211",
+      "why": "Competing Consumers is the most common reason order is lost: parallel consumers finish in any order, and a resequencer is what restores it if a later step needs it."
+    },
+    {
+      "id": "eip:180",
+      "why": "An Idempotent Receiver answers the redelivery limit: a receiver that ignores an eventId it has already applied makes a duplicate harmless downstream."
+    },
+    {
+      "id": "eip:110",
+      "why": "Choose an Aggregator when the related messages should become one message rather than all pass through in order."
+    }
+  ]
+}

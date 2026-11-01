@@ -98,3 +98,14 @@ it('gives each instance its own ids', () => {
   const two = other.nativeElement as HTMLElement;
   expect(one.querySelector('h5')?.id).not.toBe(two.querySelector('h5')?.id);
 });
+
+it('says values are rounded only when the worked step shows a rounded number', () => {
+  const rounded = render('mechanism', studyViewFixture).element;
+  expect(rounded.querySelector('.worked-step')?.textContent).toContain('rounded to two decimal');
+  TestBed.resetTestingModule();
+  const counted = render('mechanism', {
+    ...studyViewFixture,
+    worked: { title: 'Step 3', lines: ['Aggregator holds a, b'] },
+  }).element;
+  expect(counted.querySelector('.worked-step')?.textContent).not.toContain('rounded');
+});

@@ -1,0 +1,147 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:60",
+  "work": "eip",
+  "slug": "message-translator",
+  "authored": {
+    "by": "Claude dotln-worker author-08",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A translator lets two parties keep their own formats. It stands on the channel between them, reads each message in the shape the sender writes, writes the same message in the shape the receiver reads, and then forgets it: it keeps no state, so one message in is one message out, at once and in order. The plumbing is the easy part, a single map in RxJS. The work is in the mapping: deciding what each field becomes, and what to write where the old shape has nothing to say.",
+    "situation": "As an analogy, read against this app's catalog loader at its pinned commit. The catalog loads each book's rows as one bundle, a chunk, and accepts a chunk in the older tool-v0 shape or in tool-v1. Each tool-v0 row goes through a temporary compatibility reader that adds what tool-v1 expects: a definition saying the old catalog has none, and a verification marked partial because no reading of the source is available. Read as messaging, a legacy chunk is a sender that writes only tool-v0, the Tools home, the catalog's front page, is a receiver that reads only tool-v1, and the compatibility reader is the translator between them: neither end changes, and only the reader knows both shapes. DotLn's own documents describe the same move, read here as analogies too: a status page generated from an order's history, and one reviewed source rendered for different readers with its facts unchanged."
+  },
+  "example": {
+    "name": "Three legacy rows read for the Tools home",
+    "description": "As an analogy, read against this app's catalog loader: suppose a book's chunk were still in {from}. It holds three rows, {rows}, and sends one at each of frames 1, 2 and 3 before finishing at frame 4. The Tools home reads only {to}. The translator rebuilds each row in {to} in the frame it arrives: it keeps the id, marks the definition unavailable and the verification partial, and keeps nothing between rows.",
+    "parameters": {
+      "from": "tool-v0",
+      "to": "tool-v1",
+      "rows": "eip:60 Message Translator, eip:145 Normalizer and eip:146 Canonical Data Model"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Take one row as it was written",
+        "text": "The translator receives a row from the {from} channel. It knows the sender's shape and nothing else about the sender, and the sender knows nothing about the Tools home."
+      },
+      {
+        "title": "Refuse a shape it does not know",
+        "text": "If the row is not in {from}, there is no mapping to apply, and a guess would hand the Tools home a row that looks right and is not. The translator stops with an error naming the shape. In this reading the error ends the stream; the limits say what to do when the other rows should still flow."
+      },
+      {
+        "title": "Rebuild the row in the receiver's shape",
+        "text": "Keep what both shapes share, the row's id, and write the fields {to} adds. Where {from} has nothing to say, say so plainly: the definition is marked unavailable and the verification partial, never filled with something plausible."
+      },
+      {
+        "title": "Send it on at once, keeping nothing",
+        "text": "The new row leaves on the {to} channel in the frame the old one arrived. Nothing is kept for the next row, so the translator never reorders, merges or holds rows back: one row in is one row out."
+      },
+      {
+        "title": "Complete with the sender",
+        "text": "When the chunk completes, the translator completes the {to} channel. It has nothing left to flush, because it never held anything."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each row from the tool-v0 channel:\n  read its id and the shape it says it is in\n\n  if the shape is not tool-v0:\n    stop with an error naming the shape\n    (no row after this one is translated)\n\n  new row = the same id,\n            shape tool-v1,\n            definition marked unavailable,\n            verification marked partial\n\n  send new row on the tool-v1 channel now\n  (nothing is remembered for the next row)\n\nwhen the chunk completes:\n  complete the tool-v1 channel",
+    "rxjs": "// records$ is the tool-v0 channel; rows$ is the tool-v1 channel the Tools home reads\nrows$ = records$.pipe(\n  // the translator: each record becomes one tool-v1 row as it arrives, or is refused\n  map((record) => toToolV1(record)),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/message-translator.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/message-translator.ts",
+    "textEquivalent": "Frame {frame}: {moves}. The legacy chunk writes to the {from} channel and the Tools home reads the {to} channel; {states}. The Tools home has received: {delivered}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/latest/eips/message-translator.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are assembled from the Enterprise Integration Patterns, and its documentation gives this pattern a page of its own.",
+      "explanation": "Camel offers several ways to translate a message on a route: a transform or set-body step with an expression, a processor or bean that converts the body in Java, and a templating component, Velocity in the page's example, that renders the new body from a template; data formats that marshal and unmarshal between encodings are a further way, which the page leaves to the Marshal page. Each worked example, shown in Java, XML and YAML, is a route that takes a message from one endpoint, converts it and passes it on, so the translator is one step on the route and the endpoints at either end never see each other's format."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/transformer.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging framework. It implements this pattern as its transformer endpoint, documented on its own page, though the page does not use the pattern's name.",
+      "explanation": "A transformer sits between an input and an output channel and converts the payload, or the whole message, so a producer need not know what type the next consumer expects. It can be a plain method marked @Transformer, a transform step in the Java DSL or an XML element, and the framework ships ready-made ones for strings, maps, JSON, Java serialisation, Avro and Protocol Buffers. Two details stand out: a transformer may not return null, which raises a MessageTransformationException, and the page points a step whose result is optional to a service activator instead; and the page states that Spring Integration does not require a canonical data model or any particular format, leaving that choice to the application."
+    },
+    {
+      "project": "Apache Kafka Connect",
+      "url": "https://kafka.apache.org/41/kafka-connect/user-guide/",
+      "relevance": "Kafka Connect moves records between Apache Kafka and other systems through connectors, and its single message transformations are translators declared in a connector's configuration rather than written as code.",
+      "explanation": "The Kafka 4.1 user guide describes transformations as lightweight changes made one message at a time, listed as aliases in the order they apply. Its worked example wraps each line read from a file in a map with HoistField and then adds a static field naming the source with InsertField, so plain strings become structured records; other built-in transformations filter or rename fields, cast types, mask fields and convert timestamps, and predicates limit a transformation to the records that match."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Message Translator",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/MessageTranslator.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern's page in the authors' public catalogue, in its Messaging Systems section: it sets out the problem of applications with their own data formats exchanging messages, places a translating filter between them, and compares it with the Adapter of object-oriented design."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 3: Messaging Systems, Message Translator",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Message Translator in Chapter 3, Messaging Systems."
+    },
+    {
+      "title": "DotLn-Angular · libs/shared/catalog/src/lib/catalog-loader.ts",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/c0e5a36008828ec5b742d6e740efff619f3cedbe/libs/shared/catalog/src/lib/catalog-loader.ts",
+      "accessed": "2026-11-01",
+      "supports": "The loader accepts a work's chunk in tool-v0 or tool-v1. It returns tool-v1 rows as they are and maps each tool-v0 row through upgradeLegacyTool, a temporary compatibility reader that adds a definition saying the legacy catalog has none, an empty place, related and hooks, and a partial verification note; a chunk in any other shape throws, and the failed load is forgotten so a retry can run."
+    },
+    {
+      "title": "DotLn · Architecture, Session lifecycle and resilience",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md",
+      "accessed": "2026-11-01",
+      "supports": "Resume control keeps an append-only JSONL history for each order and generates a human projection, docs/control/current.md, from those histories; the histories are canonical and the Markdown is disposable."
+    },
+    {
+      "title": "DotLn · Publication compiler",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/08-publication-compiler.md",
+      "accessed": "2026-11-01",
+      "supports": "The publication compiler builds editions for different audiences from the same reviewed sources; audience selection may change sequence, vocabulary, examples and depth but not facts, limitations, permissions or evidence, and implementation status labels must stay visibly different in every edition."
+    }
+  ],
+  "limits": [
+    "A translator can only write what it can derive. Where {from} has nothing to say, an honest translator marks the gap, as this one marks the definition unavailable; one that fills it with a plausible default turns missing data into wrong data that looks right. If the receiver really needs the value, a Content Enricher that looks it up is the tool, not a cleverer mapping.",
+    "A record it cannot read is the hard case. In this reading the translator throws, and an error ends an RxJS stream, so rows$ stops at that record and every later row is lost, readable or not: had a row in tool-v2 arrived in place of n, the Tools home would have received only T, and c would never have been read. When the other rows should still flow, catch the failure for each record and send the bad one to an Invalid Message Channel; stopping, as the catalog loader does for a chunk of an unsupported shape, is right only when a partial answer would mislead.",
+    "The meaning has to survive the mapping. A translator that maps two different source values to the same target value loses the difference for good, and no later step can recover it. DotLn's publication rules guard against exactly this for implementation status labels, which must stay distinct in every edition however much else is adapted.",
+    "Translators between pairs multiply. Two formats need one translator each way; when several parties each keep a format of their own, the pairs grow with roughly the square of their number, and a canonical data model, with one translator in and one out for each party, becomes the cheaper thing to maintain.",
+    "Where the analogy breaks: the catalog loader upgrades a whole chunk at once inside one promise and reads the shape from the chunk rather than from each row, so the Tools home receives every row together when the chunk resolves. The rows' separate frames, and each row naming its own shape, are the messaging reading, not the loader's schedule."
+  ],
+  "nearby": [
+    {
+      "id": "eip:146",
+      "why": "Reach for a Canonical Data Model when more than two parties each keep their own format: each then needs one translator in and one out, not one for every partner."
+    },
+    {
+      "id": "eip:140",
+      "why": "A Content Enricher is the choice when the receiver needs data the sender never had: it looks the value up or computes it, where a translator can only mark the gap."
+    },
+    {
+      "id": "eip:145",
+      "why": "A Normalizer is the choice when one kind of message arrives in several formats: it routes each to the translator for its format so that all of them come out in one."
+    },
+    {
+      "id": "eip:68",
+      "why": "An Invalid Message Channel is where a message the translator cannot read should go when the other messages must keep flowing, instead of ending the stream."
+    },
+    {
+      "id": "eip:141",
+      "why": "A Content Filter is the choice when the receiver needs less than the sender writes: it removes or flattens fields rather than rewriting the shape."
+    },
+    {
+      "id": "eip:73",
+      "why": "A Channel Adapter is the choice when the other party is not on the messaging system at all; it connects the application, and translating its data remains a separate step."
+    }
+  ]
+}

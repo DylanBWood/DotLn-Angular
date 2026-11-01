@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { TPipe } from '@dotln-angular/i18n';
 
@@ -20,6 +20,11 @@ export class StudyExplanation {
   readonly section = input.required<StudySection>();
   readonly study = input.required<StudyView>();
   readonly momentRequested = output<void>();
+  /** Whether the worked step shows a rounded number, which the precision note is about. */
+  readonly rounded = computed(() => {
+    const worked = this.study().worked;
+    return !!worked && [worked.title, ...worked.lines].some((line) => /\d\.\d/.test(line));
+  });
   readonly #id = `study-explanation-${++explanations}`;
   readonly codeHeading = `${this.#id}-code`;
   readonly stepHeading = (index: number) => `${this.#id}-step-${index}`;

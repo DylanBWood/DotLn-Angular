@@ -96,6 +96,19 @@
   `expectMarbleExample` (the record check requires the call), the record's `pseudocode.rxjs` is that
   pipeline outside any comment, and the `marbles` drawing reads the same module. The one exception is a record that marks its reading illustrative, with
   `// Illustrative: <reason>` as the code's first line and the reason in the batch's decisions.
+- A messaging study draws a `flow`. A pattern whose mechanism transforms a stream runs its example
+  as marbles, and its flow is built from that same example with `flowFromMarbles`, so the flow, the
+  marble drawing and the spec cannot disagree. A structure, a data model or a protocol carries
+  `executable: null`, with no RxJS reading or one marked `// Illustrative:`, and the batch's
+  decisions give its reason; the record check holds the messaging work to the RxJS work's marking.
+  A messaging study's RxJS reading, and its module's pipeline alike, names the pattern's parts in
+  short comments on the operators that carry them, in the pattern's own words (for an aggregator,
+  `groupBy` is the correlation and `take(3)` the completion condition); each comment states only
+  what its code does.
+- A study's analogy to the platform or to this app is stated as an analogy: the study says so,
+  names the public record it reads and cites that record for what it says about the platform. It
+  never claims that the platform or the app implements the pattern that way, and where the analogy
+  breaks belongs in the limits.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A
   batch's critic findings are disposed in its decisions.
 - A change to the record's shape after it ships is a new schema version, never an edit of

@@ -1,0 +1,143 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:110",
+  "work": "eip",
+  "slug": "aggregator",
+  "authored": {
+    "by": "Claude dotln-worker author-01",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Many related messages become one, and only once the set is whole. If you think in folds, an aggregator is a reduce per key whose inputs arrive scattered among other keys' inputs, and which must decide for itself when its list has ended. Until then it holds what it has and says nothing; the message that completes a set runs the fold, sends the single result and lets the set go.",
+    "situation": "As an analogy, read against DotLn's public execution guide. DotLn, the operator's platform for running AI agents on pieces of work it calls orders, has every finished order checked by three fresh, independent reviewers, and lets the order go on to its full validation run only after all three have reported. When several orders are reviewed at once, their reports can reach one place mixed together. Merging them into one result per order means naming three things: which order a report belongs to (the correlation), when an order has heard enough (the completion condition; the guide asks for all three reviewers, not the first two, and that choice is a product decision) and how the reports become one message (the aggregation). DotLn's architecture describes the same move for its background checks: a reducer that gathers their results either when all have answered or when a time limit passes, which are two different completion conditions."
+  },
+  "example": {
+    "name": "Three reviewers' reports on two orders",
+    "description": "As an analogy, read against DotLn's public execution guide, where every piece of work, called an order, is checked by three independent reviewers before it may go further. Here two such orders, {first} and {second}, are each reviewed by the same three reviewers: Criteria, who checks that the order's requirements hold; Design, who looks for a simpler build; and Consistency, who checks that the documents and records around the change are up to date. Each reviewer sends the Aggregator one report on each order, naming the order and how many findings (problems) it raised, over one channel the three share, so reports on the two orders arrive mixed. The Aggregator reads which order each report is about and keeps it in that order's set. A set is complete once it holds a report from all {reviewers} reviewers; in the next step the Aggregator sends it on to the Next phase as one message, with the findings added up, and forgets it. The set for {second} fills first, so it goes on first, although the first report to arrive was about {first}. The orders themselves never move: only reports about them do.",
+    "parameters": {
+      "reviewers": 3,
+      "first": "order 31",
+      "second": "order 32"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read which order a report is about",
+        "text": "Every report comes down the one shared channel, whichever order it is about. The Aggregator reads the order the report names, and that alone decides which set it joins: B, the first report on {second}, starts a new set instead of joining the set for {first}. This is the correlation."
+      },
+      {
+        "title": "Keep it in that order's set",
+        "text": "The first report on an order starts that order's set, and later reports on the same order join it. The sets are kept apart, so a report on {second} can never fill a gap in the set for {first}."
+      },
+      {
+        "title": "Check whether the set is complete",
+        "text": "After each report the Aggregator checks only that report's set: does it now hold a report from each of the {reviewers} reviewers? Until it does, the set waits and nothing is sent. This is the completion condition."
+      },
+      {
+        "title": "Send the set on and forget it",
+        "text": "Once it sees a set complete, the Aggregator sends it on in the next step as one message, with the findings added up, and drops the set. That is why the set for {second}, which filled first, reaches the Next phase before the set for {first}, although the first report to arrive was about {first}. Adding up is this aggregator's way of combining; another might keep only the worst report, or all of them."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "sets = an empty map from each order to the reports kept for it\non each report from the shared channel:\n  order = the order the report names\n\n  set = sets[order], or a new empty set kept there\n  add the report to set\n\n  if set holds fewer than three reports (one from each reviewer, if none sends two):\n    stop here; the set waits for its next report\n\n  in the next step, send the Next phase one message:\n    the order, with the findings of every report in set added up\n  remove sets[order]",
+    "rxjs": "// merge is the one channel the three reviewers share.\nready$ = merge(criteria$, design$, consistency$).pipe(\n  // Correlation: one group for each order a report names.\n  groupBy((report) => report.order),\n  mergeMap((order$) =>\n    order$.pipe(\n      // Completion condition: an order's set is complete at its third report.\n      take(3),\n      // Aggregation: gather the complete set's reports into one list.\n      toArray(),\n      // Aggregation: make that list one message, its findings added up.\n      map(gather),\n    ),\n  ),\n  // The complete set goes on one frame after the report that completed it.\n  delay(1),\n);",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/aggregator.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/aggregator.ts",
+    "textEquivalent": "Step {step}: {moves}; {held}; {states}. Reports on both orders reach the Aggregator mixed, over one shared channel; it files each under the order it names (the correlation) and, once an order's set holds a report from all {reviewers} reviewers (the completion condition), sends the set on to the Next phase in the next step."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel",
+      "url": "https://camel.apache.org/components/4.22.x/eips/aggregate-eip.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are written in the vocabulary of these patterns. Its Aggregate page shows what a production aggregator has to make configurable once the three decisions are taken seriously.",
+      "explanation": "A required correlation expression computes each exchange's key, and exchanges with the same key are merged one at a time by a mandatory AggregationStrategy, which receives the result so far and the new arrival. Completion is mandatory and may combine several conditions, whichever fires first: a size, an inactivity timeout or a predicate completes a group, a fixed interval completes every current group at once, a batch consumer's option completes once its whole batch has been aggregated, and an external controller can complete one group or all of them; the inactivity timeout and the interval cannot be used together. Groups live in a MemoryAggregationRepository unless a persistent repository is plugged in, and closeCorrelationKeyOnCompletion makes a late exchange for a finished key fail with ClosedCorrelationKeyException instead of starting a new group."
+    },
+    {
+      "project": "Spring Integration",
+      "url": "https://docs.spring.io/spring-integration/reference/7.1/aggregator.html",
+      "relevance": "Spring Integration is the Spring portfolio's messaging framework: it implements these patterns as message handlers between channels inside a Spring application. Its aggregator gives each of the pattern's decisions its own strategy object.",
+      "explanation": "A CorrelationStrategy groups messages, by default on the CORRELATION_ID header; a ReleaseStrategy decides when a group may go, by default once as many messages as the SEQUENCE_SIZE header promises are present; a MessageGroupProcessor builds the output, by default a list of the payloads. Groups are kept in a MessageStore, which may be persistent. A group timeout forces a stalled group out, discarded or, with send-partial-result-on-expiry, released incomplete. After a normal release the group's metadata stays so that late messages for it go to the discard channel, and the page warns that this kept state can exhaust memory unless a MessageGroupStoreReaper clears it. A reactive variant, FluxAggregatorMessageHandler, is built on Project Reactor's groupBy and window operators."
+    },
+    {
+      "project": "Apache NiFi, MergeContent",
+      "url": "https://nifi.apache.org/components/org.apache.nifi.processors.standard.MergeContent/",
+      "relevance": "Apache NiFi is a dataflow system that moves FlowFiles between processors arranged on a canvas. MergeContent is its processor for combining many FlowFiles into one, and its documentation is frank about what holding them costs.",
+      "explanation": "In the Defragment strategy, FlowFiles with the same fragment.identifier attribute share a bin, fragment.index orders them and fragment.count says how many make the bin complete; if Max Bin Age passes before the count is reached, every FlowFile in the bin goes to the failure relationship instead of being merged. In the Bin-Packing strategy a Correlation Attribute Name groups like FlowFiles, minimum and maximum counts or sizes complete a bin, and the number of bins is capped: when a new bin is needed at the cap, the oldest bin is merged early to make room. The page advises setting Max Bin Age almost always, so that FlowFiles cannot stay stuck when the data stops."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Aggregator",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/Aggregator.html",
+      "accessed": "2026-11-01",
+      "supports": "The pattern catalog's page for the Aggregator: it frames the design as a correlation, a completeness condition and an aggregation algorithm, lists completeness strategies from waiting for all to a time-out, the first best answer and an external event, and warns that waiting for all is stalled by a single missing message."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003) · Chapter 7: Message Routing · Aggregator",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The publisher's page for the book by Gregor Hohpe and Bobby Woolf, whose chapter 7, Message Routing, covers the Aggregator."
+    },
+    {
+      "title": "DotLn execution guide · Verification review and attack",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#verification-review-and-attack",
+      "accessed": "2026-11-01",
+      "supports": "DotLn requires three fresh, independent reviewer workers, a criteria adversary, a design improver and a consistency reviewer, for every execution and repair of an order; all three must finish before the order's complete validation run, the agent doing the work records one line counting what they found, and after new code changes all three are restarted to check again."
+    },
+    {
+      "title": "DotLn architecture · The agentic communication core",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/03-architecture.md#the-agentic-communication-core",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's architecture has a reducer collect what its feedback effects produce, once all have answered or a time limit has passed, and pass the main session a short summary."
+    },
+    {
+      "title": "groupBy.ts in RxJS 7.8.2",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/groupBy.ts",
+      "accessed": "2026-11-01",
+      "supports": "At the installed version, groupBy keeps every key's group in its map until the source subscription ends unless a duration selector closes it, and it passes each value to its key's group whether or not anything still listens there."
+    }
+  ],
+  "limits": [
+    "A lost report holds its set for ever. If Consistency's report on {second} never arrives, that set keeps A and B and never completes: nothing about {second} reaches the Next phase, and nothing raises an error. Waiting for every reviewer needs a time limit for each set beside it. Here that limit should raise an alarm or ask the missing reviewer again, not send on a set with a review missing, which would let an order go further unchecked.",
+    "Counting reports is not the same as hearing from every reviewer. DotLn's guide has all three reviewers check again after a repair, so one reviewer can report twice on one order. This Aggregator counts to {reviewers}: if Criteria sends a second report on {first} before Design has reported, the set goes on with two Criteria reports and none from Design, and Design's report that follows reaches the Aggregator and vanishes. Make the condition name the reviewers, decide whether a later report replaces an earlier one, and keep a second round of reviews in a set of its own.",
+    "A finished set either leaves a trace or leaves late reports nowhere to go. In this RxJS reading groupBy keeps every order it has seen for as long as the channel is open, so its memory grows with the orders, and a late report on an order already sent on goes to a group nobody listens to. Camel can refuse such a report and Spring Integration sends it to a discard channel; in RxJS a duration selector on groupBy forgets a finished group, after which a late report starts a new set that will never complete by itself.",
+    "The sets are state. If the Aggregator restarts, every set it was holding is lost, and unless the reviewers report again, those orders wait for ever. A store that keeps the sets, such as Camel's aggregation repository or Spring Integration's message store, is the price of an aggregator that can be restarted.",
+    "The analogy breaks at the shared channel. In DotLn the agent working on an order starts its own three reviewers and waits for them, so it knows which order a report is about from whom it asked, and nothing has to sort a mixed stream. An aggregator earns its place where replies to many requests share one channel; where each requester can wait for its own replies, a forkJoin over them is simpler."
+  ],
+  "nearby": [
+    {
+      "id": "eip:87",
+      "why": "Reach for Correlation Identifier when choosing what each report must carry to be sorted: here the order number, or an order with its round of review, so that a second round cannot join the first round's set."
+    },
+    {
+      "id": "eip:120",
+      "why": "Choose a Resequencer when related messages should all pass through unchanged and in order, rather than become one message."
+    },
+    {
+      "id": "eip:108",
+      "why": "A Splitter is the usual partner upstream: one that numbers its parts and says how many there are lets the completion condition be the count each message carries instead of a fixed three."
+    },
+    {
+      "id": "eip:127",
+      "why": "Scatter-Gather is the whole round trip, sending one order to three reviewers and gathering their reports; read it when the sending out matters as much as the gathering this Aggregator does."
+    },
+    {
+      "id": "eip:119",
+      "why": "Read the row on aggregator state, persistence, scaling and late arrivals when the questions are the ones the last limits raise: where the sets live, and what a late report means."
+    },
+    {
+      "id": "eip:91",
+      "why": "Message Expiration supplies the time limit an aggregator that waits for every reviewer needs beside it, for a report or a set that has waited too long."
+    }
+  ]
+}

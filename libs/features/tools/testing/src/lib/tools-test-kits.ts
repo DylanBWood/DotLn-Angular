@@ -70,3 +70,16 @@ export async function loadStudy(id: ToolId): Promise<DrawnStudy> {
   if (!study?.visual || !study.pseudocode.executable) throw new Error(`No drawn study of ${id}.`);
   return study as DrawnStudy;
 }
+
+/** A study drawn as a flow, whether or not its example also runs as marbles. */
+export type FlowStudy = ConceptStudy & {
+  readonly visual: StudyVisual & { readonly family: 'flow'; readonly model: string };
+};
+
+/** A bundled flow study, for a spec that checks a flow module against the record it runs from. */
+export async function loadFlowStudy(id: ToolId): Promise<FlowStudy> {
+  const study = await createCatalogLoader().study(id);
+  if (study?.visual?.family !== 'flow' || !study.visual.model)
+    throw new Error(`No flow study of ${id}.`);
+  return study as FlowStudy;
+}

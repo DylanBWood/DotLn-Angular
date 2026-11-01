@@ -1,0 +1,131 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:78",
+  "work": "eip",
+  "slug": "command-message",
+  "authored": {
+    "by": "Claude dotln-worker author-10",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A command message is a request written down and posted instead of phoned through. The sender puts the name of the work and everything the work needs into one message, leaves it on a channel and carries on; whichever receiver picks it up does the work. Because the request now exists apart from both of them, it can wait for a busy receiver and goes to exactly one of several. The cost is that the sender hears the outcome only in a later message, and a request posted twice may be carried out twice.",
+    "situation": "As an analogy, read against DotLn's public domain model: once DotLn's kernel, the part that decides what happens next, has authorised an action, it issues it as a Command carrying a fixed id, and the part the model calls the dispatch port hands the work order to a command-line session; the port first acknowledges the dispatch with a receipt, and the session's result later comes back naming that id. Here the kernel asks for order 41 to be verified while both sessions are busy, so a work order handed to a role reads as a command meant for one holder. The operator's typed phrase resume: verify has the same shape at the human end, with one difference DotLn's execution guide spells out: the phrase alone starts the session's work, and the recorded state of the work, not the phrase, says which order. A command message would carry the order inside it."
+  },
+  "example": {
+    "name": "Verifying order 41: one command, two sessions",
+    "description": "As an analogy to DotLn's dispatch of a work order: the kernel sends command {commandId}, verify order {order}, onto the dispatch channel while Session A and Session B are both busy. When both are free the channel gives it to B alone. B is slow, so the kernel's wait runs out and it sends {commandId} again; A takes the copy and verifies order {order} a second time. Both results reach the event store, each naming {commandId}.",
+    "parameters": {
+      "order": 41,
+      "commandId": 7
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Write the work into the message",
+        "text": "The sender puts the procedure, verify, and its argument, order {order}, into one message with an id, {commandId}. Everything the receiver needs travels inside, so the receiver need not ask the sender or read shared state to know what to do."
+      },
+      {
+        "title": "Post it and carry on",
+        "text": "The sender puts the command on a point-to-point channel and does not wait. If no receiver is free, the channel keeps the command; a direct call would have failed instead."
+      },
+      {
+        "title": "One receiver takes it",
+        "text": "Of the receivers listening, the channel hands the command to exactly one, and the others never see it. That receiver runs the named procedure with the arguments in the message."
+      },
+      {
+        "title": "Answer in a message of its own",
+        "text": "The outcome comes back as a separate message naming {commandId}, so the sender can match it to its request. Until it arrives the sender knows nothing about whether the work ran."
+      },
+      {
+        "title": "A repeat is new work to the channel",
+        "text": "If the sender's wait runs out and it sends {commandId} again, the channel hands the copy to whichever receiver is free, and the procedure runs a second time. Only a receiver that checks the id against work already done can refuse it."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "command = { procedure: verify, order, id }\n  (everything the work needs is inside the message)\n\nput command on the dispatch channel\ncarry on without waiting\n  (while every session is busy, the channel keeps the command)\n\nwhen a session is free and the channel holds a command:\n  take it; no other session receives this one\n  run command.procedure for command.order\n\nsend { answers: command.id, outcome } to the event store\n\nif no answer naming command.id arrives within the wait:\n  put command on the dispatch channel again\n  (the next free session runs it again unless it first\n   checks command.id against the work already done)",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/command-message.ts",
+    "textEquivalent": "Command {commandId} to verify order {order}, step {step}: {moves}. At the dispatch channel, the two sessions and the event store: {states}. Held: {held}."
+  },
+  "implementations": [
+    {
+      "project": "Spring Integration · Control Bus",
+      "url": "https://docs.spring.io/spring-integration/reference/control-bus.html",
+      "relevance": "Spring Integration is the Spring project for message-based integration in Java, and its reference names the integration patterns book as the source of its control bus. It has no page called Command Message; the control bus is where a message becomes a call to a named operation, the pattern at work inside one application.",
+      "explanation": "A message on the control bus's input channel names the operation in its payload as beanName.methodName and carries any arguments as a list in the CONTROL_BUS_ARGUMENTS header, which the page likens to binding a prepared statement's parameters. A registry resolves the bean and the method, and only eligible methods can be called: managed attributes and operations, lifecycle methods and some executor and scheduler settings. A return value can travel on through an output channel, and the page advises securing the input channel, since such messages can change the running system."
+    },
+    {
+      "project": "NServiceBus · Messages, events and commands",
+      "url": "https://docs.particular.net/nservicebus/messaging/messages-events-commands",
+      "relevance": "NServiceBus is Particular Software's service bus for .NET. It treats command and event as two kinds of message type and checks the difference when the application runs, so it shows what the distinction buys once a framework enforces it.",
+      "explanation": "A command asks a service to do something and is sent to the one logical endpoint that owns it, where a single handler or saga deals with it; its name puts the verb first, as SubmitOrder does. Publishing a command, or subscribing to or unsubscribing from one, throws an exception unless that checking has been switched off, and the page counts a reply as neither a command nor an event."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Command Message",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/CommandMessage.html",
+      "accessed": "2026-11-01",
+      "supports": "The catalogue places Command Message under Message Construction, treats it as an ordinary message that happens to hold a command rather than a special message type, gives a SOAP request as one, and relates it to Remote Procedure Invocation and Point-to-Point Channel."
+    },
+    {
+      "title": "Hohpe and Woolf, Enterprise Integration Patterns (Addison-Wesley, 2003), Chapter 5: Message Construction, Command Message",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the pattern in Chapter 5, Message Construction, in the section Command Message."
+    },
+    {
+      "title": "DotLn product documents · 02 Domain model, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/02-domain-model.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's domain model defines a Command as an authorised effect sent to an adapter, with a stable commandId the kernel computes and duplicate delivery ignored deterministically; records the adapter's result as a CommandResult event matched on that id and the transport's acknowledgement as a CommandReceipt; and names the work-order transport the dispatch port, whose request carries the persisted command and the compiled work order to a Claude or Codex command-line session."
+    },
+    {
+      "title": "DotLn product documents · 07 Execution guide, at commit 9139d91",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-01",
+      "supports": "DotLn's execution guide says the operator's resume: phrase is the session's whole dispatch, with the durable control state rather than the phrase answering which work order, and that a driven phase interrupted part way receives the same phrase and briefing in a fresh session."
+    }
+  ],
+  "limits": [
+    "Posting twice means running twice. In the drawing the kernel cannot tell a slow session from a lost command, sends {commandId} again, and Session A verifies order {order} a second time: a point-to-point channel promises one taker per message, not per request. Give every command an id and have the receiver check it against finished work before acting, as an Idempotent Receiver does. DotLn's domain model says a duplicate delivery of a command is ignored by its stable id, and its execution guide hands an interrupted phase the same phrase in a fresh session, which is where such a check earns its keep. With competing receivers the record of finished ids has to be shared: Session A never saw the first delivery, so a memory kept by each session would not have stopped it.",
+    "A command fixes what happens next. The sender has to know the procedure's name and arguments, and every further reaction to the same change needs another command from it. When the sender should only report what happened and leave others to decide, an Event Message is the better fit.",
+    "Sent on a publish-subscribe channel, a command runs once per subscriber. It belongs on a point-to-point channel; NServiceBus, for one, throws an exception rather than publish a command.",
+    "The outcome is another message. Until a result naming {commandId} arrives, the sender cannot tell whether the work ran, failed or never started, so it needs a reply channel, an id to match on and a deadline, which is Request-Reply with a correlation identifier. When the caller cannot go on without the answer and the receiver is always up, a plain call is simpler than a command and its reply.",
+    "The analogy bends twice. DotLn's dispatch port launches the one session it hands the work order to, so no second session competes for it; the pair of sessions is the pattern's usual form, not DotLn's. And the operator's resume: phrase names only the procedure: if the control state changes between the phrase and the session reading it, the session acts on another order than the one meant, which a command carrying its own arguments avoids."
+  ],
+  "nearby": [
+    {
+      "id": "eip:80",
+      "why": "Reach for an event message when the sender should report what happened and leave each receiver to decide, instead of ordering one receiver to act."
+    },
+    {
+      "id": "eip:79",
+      "why": "Reach for a document message when the point is the data itself, such as a finished verification report, and the receiver chooses what to do with it."
+    },
+    {
+      "id": "eip:47",
+      "why": "Remote Procedure Invocation is the simpler choice when the caller needs the answer before it can go on and the receiver is reliably there to give it."
+    },
+    {
+      "id": "eip:64",
+      "why": "The point-to-point channel is what gives a command to exactly one receiver; read it for how that channel behaves on its own."
+    },
+    {
+      "id": "eip:83",
+      "why": "Request-Reply is how the result finds its way back to the sender and is matched to the command that asked for it."
+    },
+    {
+      "id": "eip:180",
+      "why": "An idempotent receiver is the remedy for the repeated command in the drawing: it recognises an id it has already handled and does nothing the second time."
+    }
+  ]
+}

@@ -272,6 +272,58 @@ test('a marbles drawing reads the executable module, and an RxJS reading that ru
   }
 });
 
+test('a flow drawn over an executable example reads its module, and a messaging reading that runs nowhere says so', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studies-flow-'));
+  const messaging = new Map([...tools, ['eip:110', { id: 'eip:110', work: 'eip' }]]);
+  try {
+    const study = rxjsStudy(root);
+    const flow = {
+      ...study,
+      id: 'eip:110',
+      work: 'eip',
+      slug: 'aggregator',
+      visual: {
+        family: 'flow',
+        model: study.visual.model,
+        textEquivalent: 'Step {step}: {moves}.',
+      },
+    };
+    assert.deepEqual(studyProblems(flow, messaging, root), []);
+    writeFileSync(join(root, 'libs/other.ts'), '');
+    writeFileSync(join(root, 'libs/other.spec.ts'), '');
+    const elsewhere = { ...flow, visual: { ...flow.visual, model: 'libs/other.ts' } };
+    assert.match(
+      studyProblems(elsewhere, messaging, root).join(),
+      /flow drawing does not read its executable module/,
+    );
+    // A flow whose example does not run reads its own model, and its RxJS reading is absent…
+    const structure = {
+      ...elsewhere,
+      pseudocode: { ...flow.pseudocode, rxjs: null, executable: null },
+    };
+    assert.deepEqual(studyProblems(structure, messaging, root), []);
+    // …or marked as a sketch with its reason.
+    const unmarked = {
+      ...structure,
+      pseudocode: { ...structure.pseudocode, rxjs: 'store$.pipe(tap(keep))' },
+    };
+    assert.match(
+      studyProblems(unmarked, messaging, root).join(),
+      /neither runs nor is marked illustrative/,
+    );
+    const marked = {
+      ...unmarked,
+      pseudocode: {
+        ...unmarked.pseudocode,
+        rxjs: '// Illustrative: a store keeps copies; it does not transform a stream.\nstore$.pipe(tap(keep))',
+      },
+    };
+    assert.deepEqual(studyProblems(marked, messaging, root), []);
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+
 test('the ordinary pseudocode has one blank-line block per mechanism step', () => {
   assert.deepEqual(codeBlocks('a\nb\n\n  \nc\n'), ['a\nb', 'c']);
   const study = checked();
@@ -507,6 +559,44 @@ test('the RxJS batch is exactly the concepts its order names', () => {
       'rxc:63',
     ],
   );
+});
+
+test('the messaging batch is exactly the patterns its order names, and the stream patterns run', () => {
+  const messaging = readStudies().filter(({ study }) => study.work === 'eip');
+  assert.deepEqual(messaging.map(({ study }) => study.id).sort(), [
+    'eip:105',
+    'eip:110',
+    'eip:120',
+    'eip:131',
+    'eip:146',
+    'eip:170',
+    'eip:175',
+    'eip:184',
+    'eip:192',
+    'eip:211',
+    'eip:60',
+    'eip:65',
+    'eip:71',
+    'eip:73',
+    'eip:78',
+    'eip:80',
+    'eip:83',
+    'eip:87',
+    'eip:91',
+    'eip:99',
+  ]);
+  // The patterns whose mechanism is a stream transformation run their example as marbles, from a
+  // module under the batch's own folder, and their flow is drawn from that same module.
+  const streams = ['eip:110', 'eip:120', 'eip:99', 'eip:105', 'eip:91', 'eip:211', 'eip:65'];
+  for (const { study } of messaging.filter(({ study }) => streams.includes(study.id))) {
+    const { executable } = study.pseudocode;
+    assert.equal(executable?.kind, 'rxjs', `${study.slug} does not run`);
+    assert.match(executable.module, /^libs\/features\/tools\/src\/lib\/studies\/eip\//);
+    assert.equal(study.visual?.family, 'flow');
+    assert.equal(study.visual.model, executable.module);
+  }
+  // Every study of the batch is drawn as a flow, whether or not its example runs.
+  assert.ok(messaging.every(({ study }) => study.visual?.family === 'flow'));
 });
 
 test('the workspace check runs inside check:fixtures and the committed records pass it', () => {

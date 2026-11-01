@@ -1,7 +1,12 @@
 import { applicationConfig, type Meta, type StoryObj } from '@storybook/angular-vite';
 
 import { provideToolsTestKit } from '../../../../testing/src';
-import { marblesStudyViewFixture, studyViewFixture } from './fixtures';
+import {
+  flowStudyViewFixture,
+  marbleFlowStudyViewFixture,
+  marblesStudyViewFixture,
+  studyViewFixture,
+} from './fixtures';
 import { Study } from './study';
 
 const meta: Meta<Study> = {
@@ -25,4 +30,8 @@ export const ExplanationsOpen: StoryObj<Study> = {
 };
 export const Marbles: StoryObj<Study> = {
   args: { study: { ...marblesStudyViewFixture, expanded: ['reactive'] } },
+};
+export const Flow: StoryObj<Study> = { args: { study: flowStudyViewFixture } };
+export const FlowThatRuns: StoryObj<Study> = {
+  args: { study: { ...marbleFlowStudyViewFixture, expanded: ['reactive'] } },
 };

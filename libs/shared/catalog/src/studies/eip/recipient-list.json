@@ -1,0 +1,140 @@
+{
+  "schema": "concept-study-v0",
+  "id": "eip:105",
+  "work": "eip",
+  "slug": "recipient-list",
+  "authored": {
+    "by": "Claude dotln-worker author-04",
+    "on": "2026-11-01",
+    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A recipient list works in two halves. First it decides, for this one message, who should have it; then it walks that list and hands each recipient its own copy. The list can change from one message to the next and can be empty, and it is worth keeping beside the message, because afterwards it is the only account of who was meant to receive what.",
+    "situation": "As an analogy, read against DotLn's public execution guide. Once an order's release has been tagged and published, release close brings every declared export sibling, a separate repository kept in step with each release, up to date: it fast-forwards the sibling's main branch to one checked commit, tags that commit with the release's tag name, gives the sibling its own Release, and notes each refresh in its close record. A close that publishes nothing new, such as one for a target order whose change landed in another repository, or one for an older version, updates no sibling. So the list is worked out per release from two sources, the declared siblings, which are configuration, and the close itself, which is the message, and it is kept with the dispatch."
+  },
+  "example": {
+    "name": "Three release closes and the declared siblings",
+    "description": "As an analogy, read against DotLn's public execution guide. Siblings {declaredFirst} are declared at step 1, and three closes, {closes}, arrive at steps 2, 4 and 7. WO-240 publishes v0.95.0. WO-241 is a target order, whose change landed in another repository, and publishes no release. At step 6 a third sibling is declared, so the declared siblings become {declaredLater}, and WO-242 then publishes v0.96.0. The recipient list works out each close's list when the close arrives and, the step after, writes the order and the list to the close record and sends each sibling on the list its own copy of the close on that sibling's main branch; the closes end at step 8.",
+    "parameters": {
+      "closes": "WO-240, WO-241 and WO-242",
+      "declaredFirst": "A and B",
+      "declaredLater": "A, B and C"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Keep the declared siblings",
+        "text": "Each declaration replaces the siblings the recipient list knows. It is read when a close passes, so a change applies to later closes only."
+      },
+      {
+        "title": "Compute the list for this close",
+        "text": "A close that publishes a release goes to every sibling declared at that moment; a close that publishes none, as WO-241 does, gets an empty list."
+      },
+      {
+        "title": "Record the list with the dispatch",
+        "text": "Write the order and its recipients to the close record, an empty list included, so the record shows who was meant to have each release."
+      },
+      {
+        "title": "Send each recipient its own copy",
+        "text": "Walk the list and send each sibling a fresh, unchanged copy of the close on that sibling's own channel. A sibling not on the list hears nothing."
+      },
+      {
+        "title": "End with the closes",
+        "text": "When the closes end, every sibling's channel and the close record end with them."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "on each declaration:\n  declared = the siblings it names\n\non each close:\n  if the close publishes a release:\n    recipients = declared, as it stands now\n  otherwise:\n    recipients = nobody\n\n  write (the close's order, recipients) to the close record\n\n  for each sibling in recipients:\n    send a fresh copy of the close on that sibling's main\n\nwhen the closes end:\n  end every sibling's channel and the close record",
+    "rxjs": "const listed$ = closes$.pipe(\n  // The list for each close is computed from the siblings declared at that moment.\n  withLatestFrom(declared$),\n  map(([close, declared]) => ({ close, to: recipientsOf(close, declared) })),\n  // The copies go out one step after the close arrives.\n  delay(1),\n  // One list per close, however many channels read it.\n  share(),\n);\n// The list is recorded with the dispatch, an empty one included.\nconst record$ = listed$.pipe(\n  map(({ close, to }) => ({ order: close.order, refreshed: to.join(', ') || 'none' })),\n);\n// Each recipient on the list gets its own copy of the close.\nconst copyFor = (sibling: string) =>\n  listed$.pipe(\n    filter(({ to }) => to.includes(sibling)),\n    map(({ close }) => ({ ...close })),\n  );\nconst toA$ = copyFor('A');\nconst toB$ = copyFor('B');\nconst toC$ = copyFor('C');",
+    "executable": {
+      "kind": "rxjs",
+      "module": "libs/features/tools/src/lib/studies/eip/recipient-list.ts"
+    }
+  },
+  "visual": {
+    "family": "flow",
+    "model": "libs/features/tools/src/lib/studies/eip/recipient-list.ts",
+    "textEquivalent": "Step {step}: {moves}. Each sibling's main is its own channel, and every close's list goes to the close record. Now {states}; {held}."
+  },
+  "implementations": [
+    {
+      "project": "Apache Camel · Recipient List",
+      "url": "https://camel.apache.org/components/4.22.x/eips/recipientList-eip.html",
+      "relevance": "Apache Camel is an open-source Java integration framework whose routes are assembled from the integration patterns by name. Its Recipient List EIP, built on its Multicast EIP, is documented here for the 4.22 long-term-support line.",
+      "explanation": "An expression computes the endpoints for each message: a constant for a fixed list, or a header the message carries for a dynamic one, as a comma-separated string or a collection. Camel sends to them one after another by default, or in parallel, and can aggregate the replies into a single message. When one recipient fails it carries on to the rest by default; with stopOnException it stops there, so the recipients after the failure get nothing. onPrepare can deep-clone each copy before it is sent, and ignoreInvalidEndpoints skips an endpoint that cannot be created."
+    },
+    {
+      "project": "Spring Integration · RecipientListRouter",
+      "url": "https://docs.spring.io/spring-integration/reference/router/implementations.html",
+      "relevance": "Spring Integration is the Spring portfolio's implementation of the integration patterns for Java applications. Its router implementations page describes the RecipientListRouter it ships.",
+      "explanation": "The router sends each message to a list of channels configured up front, and a selector expression per recipient, such as a test on the payload or on a header, decides whether that channel is on the list for a given message. Since version 4.1 recipients can be added and removed at run time through a control bus or JMX, so a router may start with none; a message no recipient takes goes to the default output channel if one is set, and otherwise raises a MessageDeliveryException. It also offers apply-sequence and ignore-send-failures settings."
+    },
+    {
+      "project": "Apache Synapse · RecipientListEndpoint.java",
+      "url": "https://github.com/apache/synapse/blob/Apache-Synapse-3.0.2/modules/core/src/main/java/org/apache/synapse/endpoints/RecipientListEndpoint.java",
+      "relevance": "Apache Synapse is the Apache Software Foundation's mediation engine and enterprise service bus. RecipientListEndpoint.java, read at the Apache-Synapse-3.0.2 tag, is its recipient list.",
+      "explanation": "send takes its recipients from configured child endpoints, from cluster members, or from an expression evaluated on each message into a comma-separated list of addresses, keeping the endpoints it creates for those addresses in a small least-recently-used pool. For each recipient that is ready to send it clones the message context and stamps the clone with its position and the list's size, for an aggregator to use later. A recipient that is not ready is skipped, an expression that yields no address sends nothing, and a failing recipient is logged and reported as a failure."
+    }
+  ],
+  "references": [
+    {
+      "title": "Enterprise Integration Patterns · Recipient List",
+      "url": "https://www.enterpriseintegrationpatterns.com/patterns/messaging/RecipientList.html",
+      "accessed": "2026-11-01",
+      "supports": "For each message the pattern works out who should receive it and then delivers it on every one of those recipients' channels; the page describes this as two steps that implementations often merge, building the list and then walking it to send each recipient a copy, and says the content is normally left as it was."
+    },
+    {
+      "title": "Enterprise Integration Patterns (Hohpe and Woolf, Addison-Wesley, 2003) · Chapter 7: Message Routing, Recipient List",
+      "url": "https://www.informit.com/store/enterprise-integration-patterns-designing-building-9780321200686",
+      "accessed": "2026-11-01",
+      "supports": "The book covers the Recipient List in Chapter 7, Message Routing."
+    },
+    {
+      "title": "DotLn execution guide · Workflow closeout and releases",
+      "url": "https://github.com/DylanBWood/DotLn/blob/9139d91eb0b2b5cdcb683f750e48684b43fb95b6/docs/product/07-execution-guide.md#workflow-closeout-and-releases",
+      "accessed": "2026-11-01",
+      "supports": "Once a release's tag and Release exist, DotLn's release close brings every declared export sibling up to date: it fast-forwards the sibling's main branch to one commit it has checked, exporting the kit to it the first time, tags that commit with core's release tag name and gives the sibling a Release of its own. A close that publishes nothing new, whether for a target order or an older version, updates no sibling. The close record, release-close.json, and its summary note every refresh; a close is not finished while a refresh is blocked, a refused refresh is retried by running the same command again, and a retry that meets a sibling's existing tag and Release reports that sibling current."
+    }
+  ],
+  "limits": [
+    "There is no transaction across the recipients. Copies go out one by one, so when one recipient refuses, those before it already have the message and those after it may or may not, depending on whether the sender carries on or stops. A safe retry sends to the whole list again, so every recipient has to treat a copy it already holds as done. The guide's close does exactly this: a refused refresh blocks the close, and the retry reports an already refreshed sibling as current, an Idempotent Receiver at each sibling.",
+    "The list is computed when the message passes. Sibling C is declared at step 6 and receives nothing of v0.95.0, which went out at step 3; it hears only from WO-242 on. A recipient that must catch up needs the current state or a stored history, not the recipient list; the guide's refresh, for its part, can export the kit, the platform's shared files, to a sibling for the first time, which hands a new sibling the current state rather than the releases it missed.",
+    "An empty list has to be visible. WO-241 reaches nobody, which is right for a target order but looks the same, from any sibling, as a list computed wrongly. Recording every list with its dispatch, the empty ones included, is what lets someone check it afterwards.",
+    "In memory a copy is only as deep as you make it. The RxJS reading spreads each close into a new object for each sibling, so one sibling changing its copy cannot change another's, but anything nested inside would still be shared. A framework that sends real copies, such as Camel with onPrepare, settles this for you.",
+    "The sender has to know every recipient. When receivers should decide for themselves, a Publish-Subscribe Channel with a filter on each receiver needs no central list, at the cost of no single record of who was meant to receive what. When the copies are requests whose answers must be combined, the list is only the first half of a Scatter-Gather and needs an Aggregator after it.",
+    "The analogy breaks where the platform waits. DotLn's refresh is no fire-and-forget copy: each sibling gets its own commit and Release, checked before the push, and a close is done only when no refresh blocker remains. In the pattern the recipient list's work ends once each copy is on its channel; waiting until every recipient has finished, as the close does, is a further step the pattern leaves to whatever follows it."
+  ],
+  "nearby": [
+    {
+      "id": "eip:99",
+      "why": "Reach for a Content-Based Router when each message has exactly one right destination, so no list is needed."
+    },
+    {
+      "id": "eip:65",
+      "why": "Reach for a Publish-Subscribe Channel when every subscriber should get every message and the receivers, not the sender, decide who listens."
+    },
+    {
+      "id": "eip:127",
+      "why": "Reach for Scatter-Gather when the recipients answer and their answers must be combined into one result."
+    },
+    {
+      "id": "eip:110",
+      "why": "Reach for an Aggregator after the recipient list when its copies come back as replies that belong together."
+    },
+    {
+      "id": "eip:180",
+      "why": "Reach for an Idempotent Receiver at each recipient whenever a failed dispatch is retried by sending to the whole list again."
+    },
+    {
+      "id": "eip:107",
+      "why": "Read the robust-delivery trade-off for the two ways to make every recipient get its copy: send all the copies in one transaction, or let receivers ignore duplicates."
+    },
+    {
+      "id": "eip:103",
+      "why": "Reach for a Dynamic Router when recipients should register and withdraw their own interest at run time instead of being written into one list."
+    }
+  ]
+}

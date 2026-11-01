@@ -87,6 +87,91 @@
       ]
     },
     {
+      "work": "eip",
+      "studies": [
+        {
+          "id": "eip:60",
+          "state": "checked"
+        },
+        {
+          "id": "eip:65",
+          "state": "checked"
+        },
+        {
+          "id": "eip:71",
+          "state": "checked"
+        },
+        {
+          "id": "eip:73",
+          "state": "checked"
+        },
+        {
+          "id": "eip:78",
+          "state": "checked"
+        },
+        {
+          "id": "eip:80",
+          "state": "checked"
+        },
+        {
+          "id": "eip:83",
+          "state": "checked"
+        },
+        {
+          "id": "eip:87",
+          "state": "checked"
+        },
+        {
+          "id": "eip:91",
+          "state": "checked"
+        },
+        {
+          "id": "eip:99",
+          "state": "checked"
+        },
+        {
+          "id": "eip:105",
+          "state": "checked"
+        },
+        {
+          "id": "eip:110",
+          "state": "checked"
+        },
+        {
+          "id": "eip:120",
+          "state": "checked"
+        },
+        {
+          "id": "eip:131",
+          "state": "checked"
+        },
+        {
+          "id": "eip:146",
+          "state": "checked"
+        },
+        {
+          "id": "eip:170",
+          "state": "checked"
+        },
+        {
+          "id": "eip:175",
+          "state": "checked"
+        },
+        {
+          "id": "eip:184",
+          "state": "checked"
+        },
+        {
+          "id": "eip:192",
+          "state": "checked"
+        },
+        {
+          "id": "eip:211",
+          "state": "checked"
+        }
+      ]
+    },
+    {
       "work": "rxjs",
       "studies": [
         {
