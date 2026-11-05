@@ -6,6 +6,7 @@ import type {
   StudyPoint,
   StudyTone,
 } from '../../../studies/study-model';
+import { motionLabels } from './motion-labels';
 
 const trailMoments = 24;
 const trailSpacing = 3;
@@ -15,8 +16,6 @@ const headLength = 10;
 const headWidth = 8;
 // A vector shorter than this, in the drawing's units, is too small to carry a head.
 const shortestHeaded = 4;
-// A label sits this far above the middle of what it names.
-const labelOffset = 16;
 
 export interface DrawnBody {
   readonly id: string;
@@ -26,6 +25,7 @@ export interface DrawnBody {
   /** The arrowhead's points, or null for a body drawn as a dot. */
   readonly arrow: string | null;
   readonly label: string | null;
+  readonly labelX: number;
   readonly labelY: number;
 }
 
@@ -44,6 +44,7 @@ export interface MotionDrawing {
     readonly tone: StudyTone;
     readonly cross: string;
     readonly label: string | null;
+    readonly labelX: number;
     readonly labelY: number;
   })[];
   readonly trail: readonly StudyPoint[];
@@ -106,6 +107,8 @@ export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
     y: rounded((y - minY) * scale),
   });
   const frame = model.frames[Math.max(0, Math.min(model.frames.length - 1, step))];
+  const height = rounded((maxY - minY) * scale);
+  const name = motionLabels(height);
   const body = ({ id, tone = 'subject', heading, label, ...place }: MotionBody): DrawnBody => {
     const point = toDrawing(place);
     return {
@@ -113,12 +116,12 @@ export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
       tone,
       ...point,
       arrow: heading === undefined ? null : arrowhead(point, heading),
-      label: label ?? null,
-      labelY: point.y - labelOffset,
+      ...name(point, label),
     };
   };
+  const bodies = frame.bodies.map(body);
   return {
-    viewBox: `0 0 ${drawingWidth} ${rounded((maxY - minY) * scale)}`,
+    viewBox: `0 0 ${drawingWidth} ${height}`,
     zones: (frame.zones ?? []).map(({ radius, tone = 'zone', ...place }) => ({
       ...toDrawing(place),
       r: rounded(radius * scale),
@@ -136,12 +139,11 @@ export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
         shape,
         tone,
         cross: `M ${x - 8} ${y - 8} L ${x + 8} ${y + 8} M ${x + 8} ${y - 8} L ${x - 8} ${y + 8}`,
-        label: label ?? null,
-        labelY: y - labelOffset,
+        ...name({ x, y }, label),
       };
     }),
     trail: model.trail ? trailOf(model.frames, step, toDrawing) : [],
-    bodies: frame.bodies.map(body),
+    bodies,
     vectors: (frame.vectors ?? []).map(({ dx, dy, tone, ...place }) => {
       const start = toDrawing(place);
       const [x2, y2] = [rounded(start.x + dx * scale), rounded(start.y + dy * scale)];

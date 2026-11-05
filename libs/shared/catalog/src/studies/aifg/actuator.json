@@ -1,0 +1,108 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:157",
+  "work": "aifg",
+  "slug": "actuator",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 7",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Agreeing on a velocity gives the courier a goal, but it still needs an acceleration command. The actuator is where that agreement meets the courier's current motion and limits. A sensible output can be too small to keep an impossible promise, which is useful information for the earlier pipeline stages.",
+    "situation": "A courier platform beside an inspection belt must match the belt's velocity before handing over a parcel. A marker on the belt makes the difference between matching speed and catching a particular position visible."
+  },
+  "example": {
+    "name": "The inspection-belt courier",
+    "description": "A courier and a belt marker start beside each other. The belt moves at the agreed {beltSpeed} units/s; the courier starts at {initialSpeed} units/s, with a speed capability of {maxSpeed} units/s and acceleration limit of {maxAcceleration} units/s². A response time of {responseTime} s sets how strongly it closes a velocity gap. The run advances by {timeStep} s for {duration} s. This is a velocity-channel actuator: public engine clipLength bounds the goal and matchVelocity produces the steering output. Study-local fixed-step integration applies it; target selection, constraint iteration and a full vehicle motor are outside this example.",
+    "parameters": {
+      "beltSpeed": 6,
+      "impossibleSpeed": 12,
+      "initialSpeed": 0,
+      "maxSpeed": 8,
+      "maxAcceleration": 3,
+      "responseTime": 0.5,
+      "timeStep": 0.25,
+      "steps": 48
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read the agreed velocity channel",
+        "text": "The incoming agreement is the belt velocity, currently {agreed} units/s. Keep it distinct from both the courier's measured speed and the command the actuator will produce. The belt marker advances at this agreed velocity throughout the run."
+      },
+      {
+        "title": "Bound the goal by the speed capability",
+        "text": "Use the engine's clipLength to restrict the velocity goal to the courier's speed capability. The feasible velocity is {feasible} units/s. This adapter keeps the original agreement visible, so capping it cannot silently turn an unmet goal into success."
+      },
+      {
+        "title": "Produce steering acceleration",
+        "text": "Pass the feasible velocity and the current body to the engine's matchVelocity. It divides their velocity gap by the response time and clips the result to the acceleration limit. The actuator output is {acceleration} units/s², rather than a position update or an instantaneous velocity change."
+      },
+      {
+        "title": "Let the movement harness apply the output",
+        "text": "The study-local harness advances velocity with the bounded acceleration, caps speed and then advances position with the updated velocity. At the selected moment the courier moves at {speed} units/s, leaving a velocity gap of {speedGap} units/s to the agreement. Equal velocities alone do not close the position gap of {positionGap} units."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "agreedVelocity = velocityChannelFromPipeline\n\nfeasibleVelocity = engine.clipLength(agreedVelocity, maxSpeed)\n\nacceleration = engine.matchVelocity(body, feasibleVelocity, responseTime)\n// body.maxAcceleration bounds this output\n\nvelocity = engine.clipLength(velocity + acceleration * timeStep, maxSpeed)\nposition = position + velocity * timeStep",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/actuator.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/actuator.model.ts",
+    "textEquivalent": "At {elapsed} s the courier is at {position} units and the parallel belt marker at {markerPosition}; agreed velocity is {agreed}, feasible velocity {feasible} and actual velocity {speed} units/s, while the actuator outputs {acceleration} units/s² and the position gap is {positionGap} units."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · MatchVelocity",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "relevance": "gdx-ai is a game-AI library whose MatchVelocity behaviour converts a selected target's velocity into steering acceleration. It supplies the velocity-to-output calculation that a velocity-channel actuator can use.",
+      "explanation": "calculateRealSteering subtracts the owner's linear velocity from the target's, scales the difference by the reciprocal of timeToTarget and limits it with the active maximum linear acceleration. It explicitly sets angular acceleration to zero and returns a steering output. Selecting that target and applying the returned acceleration belong to surrounding code. The behaviour therefore makes its output boundary clear without implementing a complete goal-negotiating pipeline."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · §3.4.5 Steering Pipeline · Actuator",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers Actuator in Chapter 3 Movement, §3.4.5 Steering Pipeline."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · MatchVelocity.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "accessed": "2026-11-04",
+      "supports": "A target velocity and current velocity can be converted into acceleration using a response time, bounded by an acceleration limiter, with movement left to the caller."
+    }
+  ],
+  "limits": [
+    "If the agreed belt velocity exceeds the courier's speed capability, feasible output cannot fulfil that agreement. The comparison changes only belt velocity to {impossibleSpeed} units/s and leaves the speed limit unchanged, exposing the persistent mismatch.",
+    "Velocity matching leaves a position gap after acceleration. A parcel hand-off that also requires a particular meeting position needs a positional goal or a prediction step before this actuator.",
+    "This example accepts one linear velocity channel. It does not decide between conflicting position, orientation or timing channels, and it does not model a wheeled vehicle's turning or traction limits."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:153",
+      "why": "Use Steering pipeline when the interesting work is choosing, decomposing and constraining the courier's goal before this final conversion to output."
+    },
+    {
+      "id": "aifg-a:194",
+      "why": "Reach for Capability-sensitive steering when the earlier stages need to reject or revise a belt velocity the courier cannot achieve."
+    },
+    {
+      "id": "aifg-a:158",
+      "why": "Goal channels becomes useful when matching belt velocity must coexist with a meeting position or a required facing direction."
+    },
+    {
+      "id": "aifg-a:192",
+      "why": "Motor control handles how the courier's particular body realises an actuator's requested acceleration, including physical constraints beyond this point model."
+    }
+  ]
+}

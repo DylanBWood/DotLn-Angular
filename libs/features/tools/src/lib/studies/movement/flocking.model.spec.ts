@@ -313,8 +313,8 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
         expect(x >= minX && x <= maxX && y >= minY && y <= maxY).toBe(true);
       }
       const drawing = motionDrawing(run.motion, step);
-      const labels = [...drawing.bodies, ...drawing.marks].flatMap(({ x, labelY, label }) =>
-        label ? [{ x, y: labelY, text: label }] : [],
+      const labels = [...drawing.bodies, ...drawing.marks].flatMap(
+        ({ labelX: x, labelY, label }) => (label ? [{ x, y: labelY, text: label }] : []),
       );
       const height = Number(drawing.viewBox.split(' ')[3]);
       for (const label of labels) {

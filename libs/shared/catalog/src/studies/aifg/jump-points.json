@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:169",
+  "work": "aifg",
+  "slug": "jump-points",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 6",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A take-off marker asks Finch to arrive in a particular moving state. Reaching the painted ring while standing still is no help when the canal crossing needs forward speed. The run-up prepares that speed; the marker grants the vertical jump only when position and velocity agree with its requirement.",
+    "situation": "A courier follows a straight quay towards a designer-authored crossing. The marker makes the transition from ground locomotion to airborne motion inspectable and gives an explicit reason to refuse a poorly prepared jump."
+  },
+  "example": {
+    "name": "Finch crossing the canal",
+    "description": "Finch begins at {startX} m with horizontal velocity {initialVelocity} m/s and approaches the take-off ring at {markerX} m. The ring requires {requiredVelocity} m/s within {velocityTolerance} m/s and position within {positionTolerance} m. Run-up acceleration is limited to {maxAcceleration} m/s², speed to {maxSpeed} m/s and response time to {responseTime} s. An accepted launch adds vertical velocity {verticalVelocity} m/s under gravity {gravity} m/s². The equal-height receiving pad is centred at {padCentre} m, with half-width {padHalfWidth} m. The current phase is {phase}, horizontal speed {vx} m/s and height {height} m.",
+    "parameters": {
+      "startX": 0,
+      "lateStartX": 6,
+      "markerX": 7.5,
+      "initialVelocity": 0,
+      "requiredVelocity": 4,
+      "maxSpeed": 6,
+      "maxAcceleration": 4,
+      "responseTime": 0.25,
+      "positionTolerance": 0.1,
+      "velocityTolerance": 0.1,
+      "verticalVelocity": 5,
+      "gravity": 5,
+      "timeStep": 0.25,
+      "steps": 20,
+      "padHalfWidth": 0.5,
+      "arrowSeconds": 0.5,
+      "radius": 0.25
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Author a take-off state",
+        "text": "Place the ring at {markerX} m and require forward velocity {requiredVelocity} m/s. For this canal, the vertical impulse and equal platform heights imply flight duration {flightDuration} s. Place the receiving pad where that required horizontal velocity carries Finch during the flight. The marker protocol and this trajectory are study-local."
+      },
+      {
+        "title": "Prepare the moving arrival",
+        "text": "During the straight run-up, call the scene engine’s matchVelocity with the marker’s required velocity. It requests the velocity gap divided by {responseTime} s and caps acceleration. Advance the new horizontal velocity over {timeStep} s. This is a velocity target, so the run-up keeps moving through the ring rather than slowing towards a stop."
+      },
+      {
+        "title": "Check both conditions at the marker",
+        "text": "At the first sampled encounter with the marker window, check position error and horizontal velocity error together. Only a valid state receives the vertical launch impulse; preserve the actual horizontal velocity instead of replacing it with the requested one. A failed encounter ends this one-pass example as rejected, with no claim to simulate emergency braking."
+      },
+      {
+        "title": "Follow the accepted flight",
+        "text": "After take-off, horizontal velocity remains constant and height follows the constant-gravity equation. Sample until the equal-height ground contact, then compare the contact position with the receiving pad. The airborne calculation uses elapsed flight time {airTime} s; the current height is {height} m and vertical velocity {vy} m/s. The study stops before landing collision response."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "marker = (markerX, requiredVelocity)\nflightDuration = 2 * verticalVelocity / gravity\npadCentre = markerX + requiredVelocity * flightDuration\nstate = (startX, initialVelocity, runUp)\n\nwhile x < markerX - positionTolerance and steps remain:\n  acceleration = engine.matchVelocity(body, requiredVelocity, responseTime)\n  velocity = clamp(velocity + acceleration * dt, -maxSpeed, maxSpeed)\n  x = x + velocity * dt\nif the step horizon ends before the marker: report unfinished\n\npositionOK = abs(x - markerX) <= positionTolerance\nvelocityOK = abs(velocity - requiredVelocity) <= velocityTolerance\nif not (positionOK and velocityOK): reject this encounter\ntakeoffX = x\ntakeoffVelocity = velocity\napply verticalVelocity as the jump impulse\n\nfor each airborne sample t through flightDuration:\n  x = takeoffX + takeoffVelocity * t\n  height = verticalVelocity * t - gravity * t * t / 2\n  vy = verticalVelocity - gravity * t\nat ground contact:\n  landingError = abs(x - padCentre)\n  report whether landingError <= padHalfWidth\n  end before collision response",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/jump-points.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/jump-points.model.ts",
+    "textEquivalent": "At {seconds} s Finch is in phase {phase}, x {x} m and height {height} m, with horizontal velocity {vx} m/s and vertical velocity {vy} m/s; the ring at {markerX} m requires {requiredVelocity} m/s, current position error is {positionError} m and velocity error {velocityError} m/s, while the planned arc ends at the receiving pad centred at {padCentre} m."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai 1.8.2 · Jump",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Jump.java",
+      "relevance": "gdx-ai is a Java game-AI library. Its Jump behaviour connects an authored take-off and landing descriptor to a velocity-matching run-up and a take-off callback.",
+      "explanation": "Jump derives an airborne time and planar velocity from its descriptor and gravity, checks the speed limit, and delegates run-up acceleration to MatchVelocity. calculateRealSteering calls takeoff only after both position and velocity tolerances pass. The callback applies the launch action; the steering calculation does not itself animate the flight."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · §3.6.1 Jump Points",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers this topic at Chapter 3, §3.6.1, the location recorded by the catalog. DOI metadata confirms the book’s identity and edition; no chapter text was read or used for the local marker policy."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Jump.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Jump.java",
+      "accessed": "2026-11-04",
+      "supports": "A concrete jump behaviour checks position and velocity tolerances before invoking takeoff, and delegates its approach acceleration to velocity matching."
+    },
+    {
+      "title": "OpenStax University Physics Volume 1 · §4.3 Projectile Motion",
+      "url": "https://openstax.org/books/university-physics-volume-1/pages/4-3-projectile-motion",
+      "accessed": "2026-11-04",
+      "supports": "Under constant downward gravity and negligible air resistance, horizontal velocity is constant and vertical position is initial vertical velocity times time minus half gravity times time squared; equal-height flight duration follows from that equation."
+    }
+  ],
+  "limits": [
+    "A marker does not supply the runway needed to reach its required velocity. Starting at {lateStartX} m can reach the ring with too much velocity error; the comparison rejects launch rather than silently supplying the missing horizontal speed.",
+    "The runway is straight and aligned with the required velocity. This one-dimensional run-up uses engine velocity matching, not a general controller that synchronises an arbitrary position and velocity in space.",
+    "The gate is tested at sampled positions. A coarse step can skip a narrow position window even with the correct speed; the one-pass policy then rejects the encounter. A production controller could plan an event crossing or retry, but neither occurs here.",
+    "An accepted state is within tolerances, rather than necessarily exact. Its actual launch position and velocity determine contact, so an especially narrow receiving pad can still be missed.",
+    "The flight assumes equal platform heights, constant gravity and no air resistance or mid-air control. The terminal sample ends at contact before collision response; this local marker protocol is not a scene-engine jumping feature."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:171",
+      "why": "Landing pads becomes useful when the receiving region and its tolerances should determine the launch requirement, rather than merely checking this authored crossing."
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "Velocity matching explains the engine acceleration that prepares the run-up; use it alone when matching motion is enough and no jump transition is needed."
+    },
+    {
+      "id": "aifg-a:170",
+      "why": "Take-off velocity matching focuses on reaching the required moving state, especially when the runway, acceleration limit or timing makes that state difficult to obtain."
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "Arrive is appropriate when Finch should stop at a destination. A launch marker instead requires forward motion at the encounter."
+    }
+  ]
+}

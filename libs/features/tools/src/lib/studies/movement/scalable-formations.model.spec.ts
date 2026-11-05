@@ -331,7 +331,9 @@ it('keeps notes, labels, prose and the complete footprint sound at every control
       ]);
       for (const [index, first] of labels.entries())
         for (const second of labels.slice(index + 1))
-          expect(Math.hypot(first.x - second.x, first.labelY - second.labelY)).toBeGreaterThan(30);
+          expect(
+            Math.hypot(first.labelX - second.labelX, first.labelY - second.labelY),
+          ).toBeGreaterThan(30);
     }
     for (const chart of [run.timeline, run.comparison?.timeline]) {
       if (!chart) throw new Error('Both muster charts are required.');

@@ -241,7 +241,8 @@ it('keeps every offered cost step readable, labelled, bounded and consistent wit
       for (const [index, label] of labels.entries()) {
         for (const other of labels.slice(index + 1)) {
           expect(
-            Math.abs(label.x - other.x) > 80 || Math.abs(label.labelY - other.labelY) > 24,
+            Math.abs(label.labelX - other.labelX) > 80 ||
+              Math.abs(label.labelY - other.labelY) > 24,
           ).toBe(true);
         }
       }

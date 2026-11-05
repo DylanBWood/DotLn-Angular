@@ -1,0 +1,106 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:192",
+  "work": "aifg",
+  "slug": "motor-control",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 7",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A stop command does not erase momentum. The loading-bay cart can receive a strong braking request while its motor removes speed much more slowly. Looking at the request and the motion together exposes the gap between a controller's intention and the body that must carry it out.",
+    "situation": "A rail cart must halt before a painted safety line. Its steering controller already wants it stationary; the question is whether the available brake can make that happen within the remaining rail."
+  },
+  "example": {
+    "name": "The loading-bay rail cart",
+    "description": "The cart begins at the origin travelling at {initialSpeed} units/s, with the safety line at {stopLine} units. It asks for zero velocity over a response time of {responseTime} s. The steering request has an acceleration limit of {steeringLimit} units/s², while the motor can brake at only {motorBrake} units/s². The run advances by {timeStep} s for {duration} s. This study calls the scene engine's matchVelocity for the request; the straight-rail brake policy and fixed-step integration are study-local, because the public engine has no separate motor-control adapter.",
+    "parameters": {
+      "initialSpeed": 6,
+      "steeringLimit": 12,
+      "motorBrake": 4,
+      "weakBrake": 1,
+      "responseTime": 0.2,
+      "timeStep": 0.1,
+      "steps": 100,
+      "stopLine": 6
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Ask the steering controller to stop",
+        "text": "The velocity goal is zero. The engine's matchVelocity divides the velocity gap by {responseTime} s, then clips the acceleration vector to the steering limit. At this moment it requests {requested} units/s². This is a request to the motor, not a replacement for the current speed."
+      },
+      {
+        "title": "Apply the brake the cart actually has",
+        "text": "The rail cart accepts only braking between the negative motor limit and zero. Its study-local adapter applies {applied} units/s². A larger request cannot create extra brake capacity; it stays saturated until the velocity gap becomes small enough."
+      },
+      {
+        "title": "Change speed before moving the body",
+        "text": "Applied acceleration changes speed over the fixed step. Clamp speed at zero because this brake cannot propel the cart backwards, then move using the updated speed. The safety line is only a marker: remaining clearance is {remaining} units, and there is no wall clamp to hide a crossing."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "requested = engine.matchVelocity(body, zeroVelocity, responseTime)\n// body.maxAcceleration is the steering limit\n\napplied = max(-motorBrake, min(0, requested.x))\n\nvelocity = max(0, velocity + applied * timeStep)\nposition = position + velocity * timeStep",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/motor-control.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/motor-control.model.ts",
+    "textEquivalent": "At {elapsed} s the cart is at {position} units and moves forwards at {speed} units/s; steering requests {requested} units/s², the motor applies {applied} units/s², and the safety line has {remaining} units of signed clearance."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · Box2D steering entity",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/box2d/Box2dSteeringEntity.java",
+      "relevance": "gdx-ai's Box2D test entity connects steering behaviours to a physics body. It is a concrete example of the boundary where a movement request must become body motion.",
+      "explanation": "Its update calculates steering output and passes that output to applySteering. The adapter applies linear output as force at the body's centre and angular output as torque when facing is independent; otherwise it aligns facing to velocity. It also attempts speed caps. The file flags a timing problem with those caps, and its comment proposes an additional motor filter for vehicle constraints without implementing that filter. The physics adapter is real; a car-specific motor model is left to its caller."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement · §3.8 Motor Control",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers Motor control in Chapter 3 Movement, §3.8 Motor Control."
+    },
+    {
+      "title": "Craig Reynolds · Steering Behaviors For Autonomous Characters · Locomotion",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-11-04",
+      "supports": "Steering and locomotion can be separated, while the body's limited forces and momentum constrain how a steering signal becomes motion."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Box2dSteeringEntity.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/box2d/Box2dSteeringEntity.java",
+      "accessed": "2026-11-04",
+      "supports": "The test entity applies steering output to a Box2D body, identifies a motor-filter insertion point and records a limitation in its speed-capping timing."
+    }
+  ],
+  "limits": [
+    "Limiting a request makes the response feasible, but does not guarantee a safe stopping distance. The comparison changes only brake capacity to {weakBrake} units/s² and exposes whether the cart passes the same safety line.",
+    "The brake is a scalar cap for a point moving on a straight rail. It does not model wheel slip, changing load, turning geometry or an animation controller; those require a motor model with the corresponding capabilities.",
+    "A fixed-step update is part of this example's contract. Its zero-speed clamp prevents brake-driven reversal; it is not a controller for deliberately reversing the cart, and it never snaps the cart to the safety line."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:157",
+      "why": "Reach for Actuator when the missing step is converting an agreed goal into steering output before the motor receives it."
+    },
+    {
+      "id": "aifg-a:193",
+      "why": "Output filtering examines the specific strategy used here: adjust a steering request after it has been produced to fit a body's limits."
+    },
+    {
+      "id": "aifg-a:194",
+      "why": "Use Capability-sensitive steering when the planner must account for the weaker brake before choosing when to stop, rather than discovering the stopping distance at the motor boundary."
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:111",
+  "work": "aifg",
+  "slug": "flee",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 2",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Pip is a survey rover beside a hot test beacon. An escape instruction tells its motor which way to accelerate; it does not teleport Pip away or erase motion already heading inwards. Watch the velocity arrow as well as the outward push.",
+    "situation": "Use this response when Pip should open a gap from a known point. This study runs the scene engine’s Flee: its push fades with distance, so the example also shows the boundary between asking for escape and deciding how motion should stop."
+  },
+  "example": {
+    "name": "Pip leaves the test beacon",
+    "description": "Pip starts at {start} on an open line, with the beacon fixed at {threat} and initial velocity {initialVelocity} units/s. Its motor allows {maxAcceleration} units/s² and {maxSpeed} units/s. Updates are {timeStep} s apart over a {duration} s window. The scene engine fixes its flee radius at {engineRadius} units; that is an engine choice, not a universal safe distance.",
+    "parameters": {
+      "start": 5,
+      "threat": 0,
+      "initialVelocity": 0,
+      "maxSpeed": 6,
+      "maxAcceleration": 8,
+      "engineRadius": 20,
+      "timeStep": 0.25,
+      "steps": 40,
+      "bodyRadius": 0.5,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 1,
+      "arrowLane": 3,
+      "padding": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Find the direction away",
+        "text": "Subtract the beacon’s position from Pip’s: the signed displacement is {offset} and its magnitude is {distance} units. Normalising this displacement chooses away. At exact coincidence the displacement supplies no direction, so this engine returns no push."
+      },
+      {
+        "title": "Ask the engine for its fading push",
+        "text": "Call scene-engine flee on the current body and beacon. Inside its fixed {engineRadius}-unit radius it scales the away direction by maxAcceleration times the remaining fraction of the radius. Here the fade is {fade} and the signed acceleration is {acceleration} units/s². At or beyond the radius the output is zero. This differs from a constant maximum-acceleration Flee."
+      },
+      {
+        "title": "Let the motor change velocity",
+        "text": "Multiply the acceleration by {timeStep} s and add it to velocity, then enforce the {maxSpeed} units/s speed limit. Acceleration changes motion over time: an inward-moving Pip can continue towards the beacon while the outward push brakes it."
+      },
+      {
+        "title": "Move with the new velocity",
+        "text": "Advance position using that updated velocity. The next position is {nextPosition} units. This study-local open-line motor keeps existing velocity when Flee becomes silent; it adds neither a stop at the circle nor the full scene’s other steering rules."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "offset = position - threat\ndistance = abs(offset)\nbody = bodyAt(position, velocity, maxSpeed, maxAcceleration)\n\nacceleration = sceneEngine.flee(body, point(threat))\n// engine: normalise(offset) * maxAcceleration * max(0, 1 - distance / engineRadius)\n// normalise(0) is 0\n\nvelocity = clamp(velocity + acceleration * timeStep,\n                 -maxSpeed, maxSpeed)\n\nposition = position + velocity * timeStep",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/flee.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/flee.model.ts",
+    "textEquivalent": "At {seconds} s, Pip is at {position}, {distance} units from the beacon at {threat}, with velocity {velocity} units/s and acceleration {acceleration} units/s²; the circle marks the {engineRadius}-unit response radius and {motionState}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai 1.8.2 · Flee",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Flee.java",
+      "relevance": "gdx-ai is a Java game-AI library with steering behaviours over either planar or spatial vectors. Its Flee class is a small reusable implementation of repulsion from a target position.",
+      "explanation": "Flee extends Seek and reverses the position subtraction. It normalises the resulting vector, scales it to the configured maximum linear acceleration and sets angular acceleration to zero. The class returns a steering output for game code to apply; this method contains no distance fade or stopping rule."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement, §3.3.3 Seek and Flee",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers Flee in Chapter 3 Movement, section 3.3.3 Seek and Flee."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Flee.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Flee.java",
+      "accessed": "2026-11-04",
+      "supports": "A public implementation reverses the position displacement, normalises it and applies the configured maximum linear acceleration without a distance fade in that method."
+    }
+  ],
+  "limits": [
+    "With Pip exactly on the beacon and initially still, the away vector is zero. The comparison changes only starting position and leaves Pip stuck; choosing an escape direction needs another rule.",
+    "An outward acceleration does not immediately reverse an inward velocity. Pip can move closer before the motor has removed that approach speed.",
+    "Leaving the response circle means the push is silent, not that Pip has stopped or reached a safe destination. This motor coasts; a complete game must decide what follows the escape instruction.",
+    "The example has an open line and a fixed beacon. The rule reads neither obstacles nor a moving threat’s future position, so it cannot select a route around a barrier or anticipate an interception."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:110",
+      "why": "Reach for Seek when Pip should close the displacement towards a point instead of opening it."
+    },
+    {
+      "id": "aifg-a:122",
+      "why": "Reach for Evade when the threatening actor moves and its predicted position matters to the escape."
+    },
+    {
+      "id": "aifg-a:131",
+      "why": "Reach for Separation when Pip must part from several neighbours rather than repel one named point."
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "Reach for Obstacle and wall avoidance when a direct outward push can lead into a barrier."
+    }
+  ]
+}

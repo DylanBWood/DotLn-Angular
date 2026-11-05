@@ -278,13 +278,13 @@ it('keeps every offered sideways start readable, labelled and inside the drawing
       expect(labels.map(({ label }) => label).sort()).toEqual(['Beacon', 'Mica']);
       for (const [index, label] of labels.entries()) {
         const halfWidth = (label.label?.length ?? 0) * 8;
-        expect(label.x - halfWidth >= 0 && label.x + halfWidth <= 600 && label.labelY >= 24).toBe(
-          true,
-        );
+        expect(
+          label.labelX - halfWidth >= 0 && label.labelX + halfWidth <= 600 && label.labelY >= 24,
+        ).toBe(true);
         for (const vector of drawing.vectors) {
           const entirelyBeside =
-            Math.min(vector.x1, vector.x2) > label.x + halfWidth + 6 ||
-            Math.max(vector.x1, vector.x2) < label.x - halfWidth - 6;
+            Math.min(vector.x1, vector.x2) > label.labelX + halfWidth + 6 ||
+            Math.max(vector.x1, vector.x2) < label.labelX - halfWidth - 6;
           const entirelyAboveOrBelow =
             Math.min(vector.y1, vector.y2) > label.labelY + 10 ||
             Math.max(vector.y1, vector.y2) < label.labelY - 30;
@@ -293,7 +293,7 @@ it('keeps every offered sideways start readable, labelled and inside the drawing
         for (const other of labels.slice(index + 1))
           expect(
             Math.abs(label.labelY - other.labelY) >= 24 ||
-              Math.abs(label.x - other.x) >= halfWidth + (other.label?.length ?? 0) * 8,
+              Math.abs(label.labelX - other.labelX) >= halfWidth + (other.label?.length ?? 0) * 8,
           ).toBe(true);
       }
     }

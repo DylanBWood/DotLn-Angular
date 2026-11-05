@@ -104,6 +104,7 @@ export interface StudyView {
   readonly expanded: readonly StudyDisclosure[];
   readonly worked: StudyWorkedStep | null;
   readonly pseudocode: string;
+  readonly executableModel: { readonly module: string; readonly spec: string } | null;
   readonly steps: readonly StudyStepView[];
   readonly rxjs: StudyRxjsView | null;
   readonly limits: readonly string[];

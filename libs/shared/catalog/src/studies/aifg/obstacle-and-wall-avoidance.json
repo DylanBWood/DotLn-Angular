@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:137",
+  "work": "aifg",
+  "slug": "obstacle-and-wall-avoidance",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 3",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Give the courier a feeler ahead of its travel. A hit supplies more than a warning: the surface normal tells it which way leads back into free space. Put a temporary target along that normal and let the courier pull towards it. The ray can see a wall before the courier’s body reaches it, but detection still needs time to change motion.",
+    "situation": "A courier approaches the end of a depot courtyard wall on the way to an offset delivery point. Watch its forward ray meet the wall and the temporary target turn it towards free space. Then put the delivery straight ahead: the same local rule brakes and switches targets without choosing a side."
+  },
+  "example": {
+    "name": "Courier at the depot courtyard wall",
+    "description": "The courier starts at ({startX}, {startY}) with velocity ({velocityX}, {velocityY}) units/s and radius {radius}. Its delivery point is ({goalX}, {goalY}); a vertical wall runs from ({wallX}, {wallBottom}) to ({wallX}, {wallTop}). A forward ray of length {rayLength} units constructs an avoidance target {avoidDistance} units along the hit normal. Maximum speed is {maxSpeed} units/s and acceleration {maxAcceleration} units/s². The run takes {steps} fixed steps of {timeStep} s. Segment intersection and target selection are study-local; the actual pull to either target calls engine Seek.",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "velocityX": 4,
+      "velocityY": 0,
+      "goalX": 18,
+      "goalY": 15,
+      "wallX": 10,
+      "wallBottom": -6,
+      "wallTop": 6,
+      "radius": 1,
+      "rayLength": 9,
+      "avoidDistance": 6,
+      "comparisonRayLength": 1,
+      "maxSpeed": 4,
+      "maxAcceleration": 8,
+      "timeStep": 0.1,
+      "steps": 80,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 0.25,
+      "comparisonGoalY": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Cast a finite forward ray",
+        "text": "Normalise the current velocity and extend it by {rayLength}; at zero speed retain the last travel heading. The local detector intersects this finite segment with the finite wall segment using cross products. Both intersection fractions must lie within the segments. It reports the actual hit point and a unit surface normal facing against the incoming ray. Parallel and collinear segments return no hit in this small detector."
+      },
+      {
+        "title": "Build a target from the hit normal",
+        "text": "A hit replaces the delivery point with hitPoint + normal × {avoidDistance}. The offset is a centre-target distance, not an automatic guarantee about the courier’s radius. The normal arrow ends at the avoidance cross. Without a hit the selected target is the delivery point, so local avoidance has no memory of the blocked route."
+      },
+      {
+        "title": "Pull with engine Seek",
+        "text": "The model passes the selected target to the existing engine Seek function. It returns acceleration towards that target, capped at {maxAcceleration}. When the target still lies ahead, a ray hit can initially leave the pull pointing towards the wall; once the courier passes the offset target the pull points back. Detection alone never sets the courier’s velocity to zero."
+      },
+      {
+        "title": "Measure body clearance and advance",
+        "text": "Find the nearest point on the finite wall segment and subtract {radius} from its distance to the courier’s centre. This body clearance stays meaningful beside the wall and round either end; a negative value means overlap. Add acceleration times {timeStep} to velocity, clip speed to {maxSpeed}, then advance position. The local update applies no wall clamp or collision response."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "direction = normalise(velocity) if moving else lastTravelHeading\nrayEnd = position + direction * rayLength\nhit = intersectFiniteSegments(position, rayEnd, wallStart, wallEnd)\n// Accept only intersection fractions in [0, 1]; normal opposes the ray.\n\nif hit exists: target = hit.point + hit.normal * avoidDistance\nelse: target = deliveryPoint\n\nacceleration = sceneEngine.seek(body, target)\n// Seek pulls towards the selected point; it does not command a stop.\n\nnearestWallPoint = (wallX, clamp(position.y, wallBottom, wallTop))\nbodyClearance = distance(position, nearestWallPoint) - radius\nvelocity = clipLength(velocity + acceleration * dt, maxSpeed)\nposition += velocity * dt\nif moving: lastTravelHeading = normalise(velocity)",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/obstacle-and-wall-avoidance.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/obstacle-and-wall-avoidance.model.ts",
+    "textEquivalent": "At {seconds} s the courier is at {position} with radius {radius}, velocity {velocity} units/s and acceleration {acceleration} units/s²; its ray runs from {rayStart} to {rayEnd} against the wall from {wallStart} to {wallEnd}, with {rayStatus}, normal {normal}, avoidance target {avoidanceTarget} and selected target {selectedTarget}; delivery remains at {goal}, and body clearance from the finite wall is {clearance} units: {decision}"
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · RaycastObstacleAvoidance",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "relevance": "gdx-ai’s Java steering library separates ray configurations, collision detectors and obstacle-avoidance steering.",
+      "explanation": "Version 1.8.2 updates its configured rays, asks the detector for each hit and retains the nearest hit to the owner. It constructs a target using the hit normal multiplied by the owner’s bounding radius plus distanceFromBoundary, then normalises the offset to maximum acceleration. No hit produces zero steering, so another behaviour must supply travel. The source discusses corner trapping and alternative ray configurations."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement, §3.3.15 Obstacle and Wall Avoidance",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers this topic at Chapter 3, §3.3.15; no claim is made about its unread text."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · RaycastObstacleAvoidance.java",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "accessed": "2026-11-04",
+      "supports": "Configurable rays, nearest-hit selection, normal-offset target construction and acceleration towards that target; its commentary identifies corner trapping."
+    }
+  ],
+  "limits": [
+    "A shorter ray gives the courier less time to turn. Try rayLength {comparisonRayLength}: the model keeps any overlap visible instead of clamping the body back to free space.",
+    "With the delivery straight ahead at height {comparisonGoalY}, the comparison has no sideways cue. The courier switches between delivery and avoidance targets while staying on the same line. A ray-based local pull does not choose a route round a wall.",
+    "A single centre ray does not sweep the whole disc. It can miss a wall edge that the courier’s radius clips. The local detector also deliberately returns no collision for parallel or collinear segments.",
+    "Several rays can alternate between adjacent faces at a corner and keep reversing the chosen target. That is the Corner trap; this straight-wall example does not implement a remedy for it."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:139",
+      "why": "Reach for Corner trap when adjacent faces make ray-selected targets alternate and the character cannot free itself."
+    },
+    {
+      "id": "aifg-a:138",
+      "why": "Ray configurations is the next choice when one centre feeler misses edges or needs side coverage in a passage."
+    },
+    {
+      "id": "aifg-a:140",
+      "why": "The Collision detector interface separates geometry from steering when several obstacle shapes must provide consistent hit points and normals."
+    },
+    {
+      "id": "aifg-a:110",
+      "why": "Seek is the actual motor used here once a ray hit has supplied a temporary target."
+    },
+    {
+      "id": "aifg-a:134",
+      "why": "Collision avoidance predicts another moving centre’s closest approach; use it for moving characters rather than a static surface normal."
+    }
+  ]
+}

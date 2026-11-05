@@ -1,0 +1,112 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:139",
+  "work": "aifg",
+  "slug": "corner-trap",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 4",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A rover can see an obstacle perfectly and still have no useful decision. Point its matching whiskers at the two faces of a pointed wedge: each hit asks it to move away from one wall, towards the influence of the other. In this example the sideways requests erase each other, while their backward components erase the delivery request. The sensors keep reporting the same danger because the rover never changes its position.",
+    "situation": "A delivery rover stops in front of a pointed display plinth. Logging more ray hits confirms that sensing works; it does not explain how the rover should choose a side. A persistent stall needs a decision that breaks the symmetry."
+  },
+  "example": {
+    "name": "The delivery rover at the pointed plinth",
+    "description": "The rover starts on the centre line at x = {startX}, facing a wedge whose nose is at x = {cornerX}. Its two walls extend {wallDepth} units right and {wallRise} units to either side. Delivery is further along the centre line at x = {targetX}. Matching whiskers have direction ratios ({rayForward}, ±{raySide}) and length {rayLength}. A wall hit requests its outward unit normal times {wallAcceleration} units/s². Engine seek supplies the delivery request; engine blend caps the sum at {maxAcceleration} units/s². The run takes {steps} updates of {timeStep} s, with speed capped at {maxSpeed} units/s. winnerRay is {winnerRay}, disabled; the comparison enables it so the upper ray wins simultaneous hits.",
+    "parameters": {
+      "startX": 8,
+      "targetX": 32,
+      "cornerX": 12,
+      "wallDepth": 16,
+      "wallRise": 12,
+      "rayForward": 4,
+      "raySide": 1,
+      "rayLength": 12,
+      "wallAcceleration": 5,
+      "maxAcceleration": 6,
+      "maxSpeed": 4,
+      "timeStep": 0.25,
+      "steps": 8,
+      "stallEpsilon": 0.001,
+      "winnerRay": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Find actual finite-ray hits",
+        "text": "Normalise each direction ratio and extend it by rayLength from the current rover position. Intersect that finite segment with both finite wall segments and retain its nearest hit. The rings in the drawing are these calculated intersections, currently {upperHit} and {lowerHit}. Wall sensing is study-local because the public scene engine has no wall raycast helper."
+      },
+      {
+        "title": "Turn each hit into an outward request",
+        "text": "A wall's perpendicular pointing out of the wedge supplies the correction direction. Normalise it, then multiply by wallAcceleration. The current requests are {upperCorrection} and {lowerCorrection}; engine seek adds the destination request {goal}. These fixed-strength normal requests are the teaching rule for this plinth, rather than a reproduction of a library's complete avoidance policy."
+      },
+      {
+        "title": "Expose the conflict in the sum",
+        "text": "Pass the destination and all hit corrections to engine blend with equal weights. Its acceleration cap limits a large result but cannot restore a direction after cancellation. Here the net is {net}. The comparison changes only this admission rule: when both rays hit, keep the upper ray's correction and omit the lower one for that update. It chooses a side deterministically instead of waiting for rounding noise."
+      },
+      {
+        "title": "Move, then cast again",
+        "text": "Add acceleration times timeStep to velocity, cap velocity at maxSpeed, then move using that updated velocity. Recompute the rays from the new position next update. With both hits admitted, the rover stays still and repeats the same calculation. The stall flag requires both hits, acceleration no greater than stallEpsilon and speed no greater than stallEpsilon; a small instantaneous sum while already moving would not count as this stall."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "for side in [upper, lower]:\n  end = position + normalise(rayForward, side * raySide) * rayLength\n  hit[side] = nearest finite segment intersection(position, end, walls)\n\nfor each hit:\n  correction[hit] = outwardUnitNormal(hit.wall) * wallAcceleration\ngoal = engine.seek(rover, delivery)\n\nadmitted = all hit corrections\nif winnerRay and both rays hit: admitted = [upper correction]\nterms = [goal, ...admitted].map(a => ({ acceleration: a, weight: 1 }))\nacceleration = engine.blend(terms, maxAcceleration)\n\nvelocity = clipLength(velocity + acceleration * timeStep, maxSpeed)\nposition = position + velocity * timeStep\nnext update casts from this new position",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/corner-trap.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/corner-trap.model.ts",
+    "textEquivalent": "At {elapsed} s the rover is at ({x}, {y}) with speed {speed} units/s; its upper and lower whiskers hit {upperHit} and {lowerHit}, their corrections are {upperCorrection} and {lowerCorrection}, and the destination request {goal} leaves net acceleration {net} units/s²: {stalled}."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · RaycastObstacleAvoidance",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "relevance": "gdx-ai is an open-source Java game-AI library. Its raycast avoidance behaviour is a practical implementation of wall sensing and documents a corner trap in which alternating ray hits keep changing the chosen turn.",
+      "explanation": "The implementation updates a configurable set of rays, asks an injected collision detector for hits and selects the hit closest to the owner. It offsets that hit along its normal by the owner's radius plus a boundary margin, then steers towards the resulting point at maximum acceleration. Its class documentation proposes widening the ray fan or temporarily honouring a winning ray; those recovery policies are discussed there rather than implemented by this class."
+    }
+  ],
+  "references": [
+    {
+      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.3.15 Obstacle and Wall Avoidance",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers the corner trap under Chapter 3 Movement, §3.3.15 Obstacle and Wall Avoidance."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · RaycastObstacleAvoidance source and corner-trap discussion",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "accessed": "2026-11-04",
+      "supports": "The source computes a normal-offset target from the nearest ray hit. Its documentation describes alternating corrections at pointed corners and discusses adaptive fan angles and a temporary winning ray as recovery approaches."
+    }
+  ],
+  "limits": [
+    "The exact equilibrium is deliberately symmetric: the chosen wall slope, correction strength and destination request cancel at the starting pose. Other dimensions can produce sideways oscillation, contact or slow drift instead of a perfectly stationary rover. The failure is the unresolved conflict, not a promise that every corner produces a zero vector.",
+    "This short run demonstrates a local cancellation and the start of a detour. It does not supply a route planner, collision response or proof that the winning-ray run can reach delivery around the whole plinth.",
+    "The whiskers keep a fixed forward direction and use point segments. A turning body with width needs suitable sensor placement and swept collision checks; increasing ray length alone does not account for its footprint.",
+    "Always preferring the upper ray breaks this example's symmetry but can select a blocked side in another layout. A recovery policy needs a way to commit, detect lack of progress and reconsider its choice."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:138",
+      "why": "Use Ray configurations when deciding where the rover should look before a stall happens. Wider or adaptive fans change which wall is detected and when."
+    },
+    {
+      "id": "aifg-a:146",
+      "why": "Use Equilibria in blending when apparently valid requests cancel outside a corner too. The same zero-sum diagnosis applies to this rover's destination and wall requests."
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "Use Obstacle and wall avoidance for the ordinary hit-to-steering pipeline. Corner trap examines a case where that local pipeline needs a recovery decision."
+    }
+  ]
+}

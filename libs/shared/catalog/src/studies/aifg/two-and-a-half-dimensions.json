@@ -1,0 +1,128 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:90",
+  "work": "aifg",
+  "slug": "two-and-a-half-dimensions",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 8",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "A courier can climb to a concourse without leaning its whole movement model uphill. Keep the height needed to place its feet in the level, while describing its facing with a compass direction. The route’s elevation and the character’s orientation answer different questions.",
+    "situation": "An upright courier crosses a ramp to a raised concourse. Its feet gain height, but its body has no need to pitch or roll with the ramp."
+  },
+  "example": {
+    "name": "The raised-concourse courier",
+    "description": "The courier follows a straight plan route to ({targetX}, {targetZ}) in x/z, with a speed limit of {maxSpeed} units/s and acceleration limit of {maxAcceleration} units/s². A surface starts rising at x = {rampStart}, gains {rise} units over a run of {rampRun} units and supplies height after each {timeStep} s plan step. The profile and plan show the same courier. Its facing has yaw only; the final partial plan step is clamped and stopped for this teaching example.",
+    "parameters": {
+      "startX": 0,
+      "startZ": 0,
+      "targetX": 12,
+      "targetZ": 9,
+      "maxSpeed": 4,
+      "maxAcceleration": 4,
+      "rampStart": 4,
+      "rampRun": 4,
+      "ledgeRun": 0,
+      "rise": 3,
+      "timeStep": 0.25,
+      "steps": 24,
+      "bodyHeight": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Steer in the ground plane",
+        "text": "Map world x/z into the public scene engine’s Vec2 coordinates and call Seek. Height is still stored, but it is not an input to that planar steering rule. A {maxAcceleration} units/s² budget is shared across the plan direction rather than applied independently to both axes."
+      },
+      {
+        "title": "Move the plan position",
+        "text": "Use the engine’s vector operations to add acceleration over {timeStep} s and cap plan speed at {maxSpeed} units/s. Move using that velocity. A local final-step clamp ends this straight route exactly at the target; it is not a gradual Arrive behaviour."
+      },
+      {
+        "title": "Resolve height from the surface",
+        "text": "The local sampler assigns height from the updated x position: below the ramp, up its linear rise, or on the concourse. The current foot height is {height}; its observed vertical rate is {verticalSpeed} units/s. The sampler is deliberately separate from steering and proves neither ground contact nor traversability."
+      },
+      {
+        "title": "Keep facing upright",
+        "text": "Derive yaw from the plan velocity and retain it when stopped. Pitch and roll stay at {pitch}° and {roll}° even as height changes. The model therefore has a spatial position without needing a free aircraft pose. An upright line in the profile makes that restriction visible."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "plan = Vec2(position.x, position.z)\nplanTarget = Vec2(targetX, targetZ)\nacceleration = engine.seek(planBody, planTarget)\n\ncandidateVelocity = engine.clipLength(velocity + acceleration * dt, maxSpeed)\ntravel = candidateVelocity * dt\nif length(travel) >= distance(plan, planTarget):\n  plan = planTarget; velocity = zero2  // local final-step clamp\nelse:\n  plan += travel; velocity = candidateVelocity\n\nnextHeight = localSurfaceHeight(plan.x, rampStart, rampRun, rise)\nverticalSpeed = (nextHeight - position.height) / dt\nposition = (plan.x, nextHeight, plan.y)\n\nif length(candidateVelocity) > 0:\n  yaw = atan2(candidateVelocity.y, candidateVelocity.x)\npitch = 0; roll = 0\ndrawPlanAndUprightProfile(position, yaw)",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/two-and-a-half-dimensions.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/two-and-a-half-dimensions.model.ts",
+    "textEquivalent": "At {seconds} s the same courier appears in plan at ({x}, {z}) and in profile with foot height {height}; its plan speed is {speed} units/s, height rate {verticalSpeed} units/s, yaw {yaw}°, pitch {pitch}° and roll {roll}°, so the profile body remains upright."
+  },
+  "implementations": [
+    {
+      "project": "Godot demo projects · 3D platformer controller",
+      "url": "https://raw.githubusercontent.com/godotengine/godot-demo-projects/52e30044658448149b04e8f69b475eebbfbd8f6e/3d/platformer/player/player.gd",
+      "relevance": "Godot’s public platformer demo is a grounded character controller in a spatial world. It shows how horizontal facing can remain upright while vertical motion is handled separately.",
+      "explanation": "The controller separates horizontal velocity from vertical velocity, handles gravity and jumps, then combines them for move_and_slide. Its grounded mesh-facing calculation removes the up component and builds a basis with Vector3.UP fixed. The root moves through the spatial level while grounded facing turns within the horizontal plane."
+    },
+    {
+      "project": "Recast Navigation · Detour crowd and path corridor",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourPathCorridor.cpp",
+      "relevance": "Detour provides ground navigation and crowd movement on a navigation mesh. It implements the surface-position part of this representation and leaves rendered facing to the caller.",
+      "explanation": "Crowd steering clears the vertical component of its path direction. The path corridor then moves a proposed spatial position along the navigation surface and replaces its height with getPolyHeight. Polygon connectivity constrains that adjustment; it is more than assigning height from a global function. These files do not prescribe a yaw-only rendered pose."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement, §3.1.1 Two-Dimensional Movement",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "Bibliographic pointer to the topic located by the catalog at Chapter 3, §3.1.1. DOI metadata confirmed the book identity and edition; it did not expose section text."
+    },
+    {
+      "title": "Godot demo projects · 3D platformer player.gd, pinned source",
+      "url": "https://raw.githubusercontent.com/godotengine/godot-demo-projects/52e30044658448149b04e8f69b475eebbfbd8f6e/3d/platformer/player/player.gd",
+      "accessed": "2026-11-04",
+      "supports": "The controller separates horizontal and vertical velocity, and its grounded mesh-facing basis keeps the up axis fixed."
+    },
+    {
+      "title": "Recast Navigation v1.6.0 · DetourCrowd.cpp",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourCrowd.cpp",
+      "accessed": "2026-11-04",
+      "supports": "Both straight and smoothed path steering explicitly clear the height component of the direction."
+    },
+    {
+      "title": "Recast Navigation v1.6.0 · DetourPathCorridor.cpp",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourPathCorridor.cpp",
+      "accessed": "2026-11-04",
+      "supports": "movePosition uses moveAlongSurface, updates the polygon corridor and obtains the resulting height through getPolyHeight."
+    }
+  ],
+  "limits": [
+    "A height sampler can conceal an impossible climb. Changing only the ramp run to {ledgeRun} makes a ledge, yet the courier still receives its new height in a single step. The comparison exposes the resulting vertical-rate spike; a collision or navigation controller must judge that transition.",
+    "This particular surface sampler assigns one height to each x position. It cannot distinguish a bridge deck from a passage below it. A spatial position plus an appropriate surface or navigation layer is needed; the yaw-only choice does not require such a limited height sampler.",
+    "The courier has no gravity, jump arc, contact response or gradual braking here. The final-step stop and sampled height are explicit local teaching rules.",
+    "An aircraft or swimming character that must point its nose uphill or roll independently needs a richer pose. Raising the courier’s height alone cannot provide those rotations."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:89",
+      "why": "Use the flat movement model when the courier’s level has no height that changes movement or placement."
+    },
+    {
+      "id": "aifg-a:196",
+      "why": "Use full volume movement when a flying or swimming actor needs height in steering and pitch or roll in its pose."
+    },
+    {
+      "id": "aifg-a:168",
+      "why": "Read Jumping when the courier must cross the ledge with a take-off and landing rather than receive an instantaneous sampled height."
+    }
+  ]
+}

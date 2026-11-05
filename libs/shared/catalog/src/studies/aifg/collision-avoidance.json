@@ -1,0 +1,135 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:134",
+  "work": "aifg",
+  "slug": "collision-avoidance",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 3",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "The courier and porter have room between them now, but their velocity arrows can already reveal a collision. Extend both arrows on the same clock and ask where their centres would be closest. The useful warning is a small future gap, rather than a small present gap.",
+    "situation": "A courier passes an oncoming porter in a loading lane. Only the courier adjusts its motion; the porter keeps walking. A small lateral offset supplies an unambiguous side on which to pass."
+  },
+  "example": {
+    "name": "Courier and porter in the loading lane",
+    "description": "The courier starts at ({courierStartX}, {courierStartY}) with velocity ({courierVelocityX}, {courierVelocityY}); the porter starts at ({porterStartX}, {porterStartY}) with velocity ({porterVelocityX}, {porterVelocityY}), in units and units/s. Their radii are {courierRadius} and {porterRadius}. The courier has maximum speed {maxSpeed} units/s and acceleration {maxAcceleration} units/s². The existing engine avoidance rule looks strictly less than {predictionHorizon} s ahead. This study advances {steps} fixed steps of {timeStep} s on an open plane, without the soldier scene’s field edges, braking or collision response.",
+    "parameters": {
+      "courierStartX": 0,
+      "courierStartY": 0,
+      "courierVelocityX": 4,
+      "courierVelocityY": 0,
+      "porterStartX": 10,
+      "porterStartY": 1,
+      "porterVelocityX": -4,
+      "porterVelocityY": 0,
+      "courierRadius": 1,
+      "porterRadius": 1,
+      "maxSpeed": 5,
+      "maxAcceleration": 6,
+      "predictionHorizon": 1.5,
+      "comparisonPorterY": 0,
+      "timeStep": 0.1,
+      "steps": 40,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 0.5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Put both motions on one relative clock",
+        "text": "Subtract courier from porter for both position r and velocity v. The time t = −(r · v) / (v · v) minimises the squared separation along their current straight paths. A negative time places that closest approach in the past. Equal velocities give no unique time. The local diagnostic draws both projected centres and reports t on every frame."
+      },
+      {
+        "title": "Admit a future collision, or an existing overlap",
+        "text": "The engine first reacts to bodies already closer than their combined radii, using their current offset. Otherwise it accepts a neighbour only when t is positive, strictly inside {predictionHorizon} s, and the projected gap is smaller than the radii sum. With more neighbours, engine avoid retains the earliest accepted threat; this example has only the porter."
+      },
+      {
+        "title": "Use the engine’s away acceleration",
+        "text": "The model calls scene-engine avoid for the actual steering. An accepted predicted offset is reversed, normalised and multiplied by {maxAcceleration}; no accepted threat means zero acceleration. A zero predicted offset remains zero after normalisation, which is the exact head-on failure exposed below."
+      },
+      {
+        "title": "Advance the courier and the coasting porter",
+        "text": "The study’s local fixed-step update adds acceleration times {timeStep} to the courier velocity, clips speed to {maxSpeed}, then advances position with the updated velocity. The porter simply advances at its existing velocity. Recompute the prediction on the next frame: these are repeatedly revised forecasts, not a commitment to the first projected position."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "r = porter.position - courier.position\nv = porter.velocity - courier.velocity\nt = undefined if dot(v, v) == 0 else -dot(r, v) / dot(v, v)\nprojectionTime = 0 if t is undefined else t\nproject both current velocities by projectionTime for the drawing\n\ncontact = courier.radius + porter.radius\nif length(r) < contact: selectedAway = -r\nelse if t is defined and 0 < t < predictionHorizon\n        and length(r + v * t) < contact: selectedAway = -(r + v * t)\nelse: selectedAway = null\n\nacceleration = zero if selectedAway is null\n               else normalise(selectedAway) * maxAcceleration\n// The model obtains this result by calling sceneEngine.avoid.\n// normalise(zero) stays zero; there is no head-on tie-break.\n\ncourier.velocity = clipLength(courier.velocity + acceleration * dt, maxSpeed)\ncourier.position += courier.velocity * dt\nporter.position += porter.velocity * dt",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/collision-avoidance.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/collision-avoidance.model.ts",
+    "textEquivalent": "At {seconds} s the courier is at {courierPosition}, moving at {courierVelocity} units/s, and the porter is at {porterPosition}, moving at {porterVelocity} units/s; the current gap is {currentSeparation} units, time to closest approach is {closestTime}, projected centres are {courierProjection} and {porterProjection} with gap {predictedSeparation} against contact distance {contactDistance}, and courier acceleration is {acceleration} units/s²: {decision}"
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai · CollisionAvoidance",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/CollisionAvoidance.java",
+      "relevance": "gdx-ai is a Java game-AI library with a neighbour-based collision behaviour for circular or spherical agents.",
+      "explanation": "In version 1.8.2, relative position and velocity give a candidate time, and a distance-minus-relative-speed estimate filters the earliest candidate. Steering uses the current offset for an estimated direct hit or existing overlap, otherwise the predicted relative offset, normalised to maximum acceleration. The acceptance filter uses scalar distance minus relative speed multiplied by time."
+    },
+    {
+      "project": "OpenSteer · steerToAvoidNeighbors",
+      "url": "https://github.com/meshula/OpenSteer/blob/710432341807f5597b62fa168f194f9ef2640c8e/include/OpenSteer/SteerLibrary.h",
+      "relevance": "OpenSteer is a C++ steering library whose vehicle mixin includes avoidance between independently moving vehicles.",
+      "explanation": "The inspected code handles immediate close neighbours first, then projects both vehicles to their nearest-approach positions within a caller-supplied time window. It selects the earliest pair closer than twice the owner’s radius. Heading alignment distinguishes opposing, parallel and crossing traffic, choosing a lateral side vector. Crossing traffic steers only when the threat’s speed is no greater than the owner’s."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement, §3.3.14 Collision Avoidance",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers this topic at Chapter 3, §3.3.14; no claim is made about its unread text."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · CollisionAvoidance.java",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/CollisionAvoidance.java",
+      "accessed": "2026-11-04",
+      "supports": "Relative-velocity prediction, earliest-candidate selection, the scalar separation filter and current-offset fallback in this library."
+    },
+    {
+      "title": "OpenSteer · SteerLibrary.h at 7104323",
+      "url": "https://github.com/meshula/OpenSteer/blob/710432341807f5597b62fa168f194f9ef2640c8e/include/OpenSteer/SteerLibrary.h",
+      "accessed": "2026-11-04",
+      "supports": "Nearest-approach prediction, immediate overlap handling and heading-dependent lateral avoidance in the public vehicle mixin."
+    }
+  ],
+  "limits": [
+    "Changing only the porter’s lateral offset to {comparisonPorterY} makes the initial predicted centres coincide. Engine avoid then returns zero because there is no direction to normalise; the comparison exposes overlap before its current-offset response can resolve the encounter.",
+    "The forecast assumes constant velocities until the next recomputation. A turning or accelerating porter can invalidate it, and the fixed {predictionHorizon} s window is an engine constant rather than an adjustable study input.",
+    "One courier reacting to one coasting porter does not establish a rule for reciprocal crowds. Repeatedly choosing the earliest neighbour can change the chosen threat abruptly.",
+    "The courier can coast after the threat passes. This open-plane study supplies neither a destination nor a physics solver, and its collision rule does not detect walls."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:131",
+      "why": "Use Separation when present crowd spacing is the concern; it reacts to nearby positions without requiring a predicted crossing."
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "Use Obstacle and wall avoidance for a surface with a hit point and normal; a moving circular neighbour is a different geometric test."
+    },
+    {
+      "id": "aifg-a:111",
+      "why": "Flee explains acceleration away from a supplied point. Reach for it when the threat point is already known; collision avoidance must predict and select its threat first."
+    },
+    {
+      "id": "aifg-a:136",
+      "why": "Time of closest approach isolates the dot-product calculation when the meaning of a positive, negative or undefined prediction needs closer study."
+    },
+    {
+      "id": "aifg-a:135",
+      "why": "A Cone check is useful when a cheaper directional pre-filter should reduce the neighbours sent to a prediction calculation."
+    }
+  ]
+}

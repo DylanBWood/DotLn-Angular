@@ -272,7 +272,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
         for (const right of labels.slice(leftIndex + 1))
           expect(
             Math.abs(left.labelY - right.labelY) >= 18 ||
-              Math.abs(left.x - right.x) >=
+              Math.abs(left.labelX - right.labelX) >=
                 ((left.label?.length ?? 0) + (right.label?.length ?? 0)) * 4 + 8,
           ).toBe(true);
     }

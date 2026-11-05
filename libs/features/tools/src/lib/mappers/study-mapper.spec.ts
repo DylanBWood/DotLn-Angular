@@ -169,6 +169,37 @@ it('fills the record’s prose from the selected moment', () => {
   expect(earlier.visual?.textEquivalent).toBe('Now far.');
 });
 
+it('selects the chart series key and restores the movement key when the view changes', () => {
+  const motion = {
+    ...model,
+    legend: [{ tone: 'subject' as const, label: 'Sheep' }],
+    timeline: {
+      title: 'Distance',
+      xLabel: 'Seconds',
+      seconds: [0, 1],
+      yLabel: 'Metres',
+      series: [
+        { id: 'near', label: 'Near pair', tone: 'actual' as const, values: [2, 1] },
+        { id: 'far', label: 'Far pair', tone: 'actual' as const, values: [4, 3] },
+      ],
+    },
+  };
+  const loaded = { record, model: motion };
+  const chart = mapStudy(loaded, { ...reader, view: 'timeline' }, catalogFixture);
+  expect(chart.visual?.legend).toEqual([
+    { tone: 'actual', label: 'Near pair' },
+    { tone: 'actual', label: 'Far pair' },
+  ]);
+  expect(mapStudy(loaded, reader, catalogFixture).visual?.legend).toEqual(motion.legend);
+  const withoutChart = mapStudy(
+    { record, model: { ...motion, timeline: null } },
+    { ...reader, view: 'timeline' },
+    catalogFixture,
+  );
+  expect(withoutChart.visual?.family === 'motion' && withoutChart.visual.view).toBe('motion');
+  expect(withoutChart.visual?.legend).toEqual(motion.legend);
+});
+
 it('fills the example and the limits too, so a value in them follows the inputs', () => {
   const view = mapStudy(
     {
@@ -276,4 +307,22 @@ it('keeps a step inside the run', () => {
   expect(clampStep(model, -3)).toBe(0);
   expect(clampStep(model, 0.6)).toBe(1);
   expect(clampStep(model, null)).toBe(1);
+});
+
+it('carries TypeScript model and spec paths without labelling illustrative models executable', () => {
+  const record = {
+    ...studyFixture,
+    pseudocode: {
+      ...studyFixture.pseudocode,
+      executable: { kind: 'typescript' as const, module: 'libs/movement/example.model.ts' },
+    },
+  };
+  const view = mapStudy({ record, model: null }, reader, catalogFixture);
+  expect(view.executableModel).toEqual({
+    module: 'libs/movement/example.model.ts',
+    spec: 'libs/movement/example.model.spec.ts',
+  });
+  expect(
+    mapStudy({ record: studyFixture, model: null }, reader, catalogFixture).executableModel,
+  ).toBeNull();
 });

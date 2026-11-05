@@ -282,7 +282,7 @@ it('keeps notes, displayed precision, labels and every drawn extent sound throug
         for (const [index, label] of labels.entries())
           for (const other of labels.slice(index + 1))
             if (Math.abs(label.labelY - other.labelY) < 24)
-              expect(Math.abs(label.x - other.x)).toBeGreaterThan(
+              expect(Math.abs(label.labelX - other.labelX)).toBeGreaterThan(
                 ((label.label?.length ?? 0) + (other.label?.length ?? 0)) * 7.2,
               );
       }

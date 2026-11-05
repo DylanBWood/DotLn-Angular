@@ -372,8 +372,8 @@ it('keeps notes, names, moments, prose and bounds sound across the live ranges',
       expect(drawing.bodies.map(({ label }) => label)).toEqual(['Camera', 'Beacon']);
       expect(drawing.bodies[1].labelY - 24).toBeGreaterThan(drawing.bodies[0].labelY);
       for (const body of drawing.bodies) {
-        expect(body.x - (body.label?.length ?? 0) * 7.2).toBeGreaterThan(0);
-        expect(body.x + (body.label?.length ?? 0) * 7.2).toBeLessThan(600);
+        expect(body.labelX - (body.label?.length ?? 0) * 7.2).toBeGreaterThan(0);
+        expect(body.labelX + (body.label?.length ?? 0) * 7.2).toBeLessThan(600);
       }
       expect(drawing.vectors.every(({ head }) => head !== null)).toBe(true);
     }

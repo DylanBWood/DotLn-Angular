@@ -49,14 +49,17 @@ function drawingOf(
       value: reader.inputs[input.name] ?? Number(record.example.parameters[input.name]),
     })),
   };
-  if (model.family === 'motion')
+  if (model.family === 'motion') {
+    const timeline = reader.view === 'timeline' ? model.timeline : null;
     return {
       ...shared,
+      ...(timeline ? { legend: timeline.series.map(({ tone, label }) => ({ tone, label })) } : {}),
       family: 'motion',
-      view: model.timeline && reader.view === 'timeline' ? 'timeline' : 'motion',
+      view: timeline ? 'timeline' : 'motion',
       motion: model.motion,
       timeline: model.timeline,
     };
+  }
   if (model.family === 'flow') {
     // The marble diagram, when the reader switches to it, says how to read its own lanes.
     const diagram = reader.view === 'marbles' ? model.diagram : null;
@@ -99,6 +102,10 @@ export function mapStudy(
     expanded: reader.expanded,
     worked: tick?.worked ?? null,
     pseudocode: record.pseudocode.ordinary,
+    executableModel:
+      executable?.kind === 'typescript'
+        ? { module: executable.module, spec: executable.module.replace(/\.ts$/, '.spec.ts') }
+        : null,
     steps: record.mechanism.steps.map(({ title, text }, index) => ({
       title,
       text: fillValues(text, values),

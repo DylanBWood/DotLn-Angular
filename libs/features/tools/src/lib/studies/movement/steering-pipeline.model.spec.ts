@@ -435,8 +435,8 @@ it('keeps notes, prose, arithmetic, labels and every drawing sound over the offe
           place.label
             ? [
                 {
-                  left: place.x - place.label.length * 7.2,
-                  right: place.x + place.label.length * 7.2,
+                  left: place.labelX - place.label.length * 7.2,
+                  right: place.labelX + place.label.length * 7.2,
                   top: place.labelY - 24,
                   bottom: place.labelY + 6,
                 },

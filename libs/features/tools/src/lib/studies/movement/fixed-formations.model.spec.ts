@@ -318,7 +318,8 @@ it('keeps notes, labels, prose and all drawing geometry sound across control cor
       for (const [index, first] of labels.entries())
         for (const second of labels.slice(index + 1))
           expect(
-            Math.abs(first.x - second.x) > 50 || Math.abs(first.labelY - second.labelY) > 18,
+            Math.abs(first.labelX - second.labelX) > 50 ||
+              Math.abs(first.labelY - second.labelY) > 18,
           ).toBe(true);
     }
     for (const chart of [run.timeline, run.comparison?.timeline]) {

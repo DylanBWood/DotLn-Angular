@@ -1,5 +1,20 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import type { StudiesSummary } from '@dotln-angular/models';
+
+const studiesSummary: StudiesSummary = JSON.parse(
+  readFileSync(
+    resolve(__dirname, '../../../libs/shared/catalog/src/studies/studies-summary.json'),
+    'utf8',
+  ),
+);
+
+const studiedCount = (work: string) =>
+  studiesSummary.works.find((entry) => entry.work === work)?.studies.length ?? 0;
+const totalStudied = studiesSummary.works.reduce((total, entry) => total + entry.studies.length, 0);
 
 const search = (page: Page) => page.getByRole('searchbox', { name: 'Find a concept' });
 const reading = (page: Page) => page.getByRole('region', { name: 'Concept reading', exact: true });
@@ -516,12 +531,14 @@ test('the shelf and the home count the studies, and contents and results mark th
   await page.goto('/tools');
   const home = (title: string) => page.getByRole('listitem').filter({ hasText: title });
   await expect(home('AI for Games')).toContainText('768 concepts');
-  await expect(home('AI for Games')).toContainText('20 studied');
-  await expect(home('RxJS')).toContainText('20 studied');
+  await expect(home('AI for Games')).toContainText(`${studiedCount('aifg')} studied`);
+  await expect(home('RxJS')).toContainText(`${studiedCount('rxjs')} studied`);
   expect(scripts.some((url) => url.includes('tools-aifg'))).toBe(false);
   await page.getByRole('link', { name: 'Read the catalog', exact: true }).click();
   const shelf = page.getByRole('navigation', { name: 'The works' });
-  await expect(shelf.getByRole('button', { name: /AI for Games/ })).toContainText('20 studied');
+  await expect(shelf.getByRole('button', { name: /AI for Games/ })).toContainText(
+    `${studiedCount('aifg')} studied`,
+  );
   await shelf.getByRole('button', { name: /AI for Games/ }).click();
   const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
   await contents.getByRole('button', { name: /Chapter 3 Movement/ }).click();
@@ -542,15 +559,15 @@ test('a chosen work lists its studied concepts, and a study hands on to the next
     .getByRole('button', { name: /AI for Games/ })
     .click();
   const list = page.locator('.studied-list');
-  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
-  await expect(list.getByRole('link')).toHaveCount(20);
+  await expect(list.getByRole('heading')).toHaveText(`${studiedCount('aifg')} studied concepts`);
+  await expect(list.getByRole('link')).toHaveCount(studiedCount('aifg'));
   await list.getByRole('link', { name: 'Seek', exact: true }).click();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Seek');
   const next = page.locator('tools-study .next a');
-  await expect(next).toContainText('Next study: Arrive');
+  await expect(next).toContainText('Next study: Flee');
   await next.click();
-  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Arrive');
-  await expect(page).toHaveURL(/\/tools\/catalog\/aifg-a:112$/);
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Flee');
+  await expect(page).toHaveURL(/\/tools\/catalog\/aifg-a:111$/);
 });
 
 test('the disclosures around a drawing stay open across its two views', async ({ page }) => {
@@ -569,12 +586,17 @@ test('the studied facet narrows the results to the concepts with a study', async
   await search(page).fill('a');
   const all = Number(await page.getByTestId('search-count').getAttribute('data-count'));
   await choose(page, 'Study', 'Has a study');
-  // Twenty studies from each of the three studied works: AI for Games, RxJS and Enterprise
-  // Integration Patterns.
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', '60');
-  expect(all).toBeGreaterThan(60);
+  // The generated summary supplies the integrated inventory across independent batches.
+  await expect(page.getByTestId('search-count')).toHaveAttribute(
+    'data-count',
+    String(totalStudied),
+  );
+  expect(all).toBeGreaterThan(totalStudied);
   await choose(page, 'Study', 'No study yet');
-  await expect(page.getByTestId('search-count')).toHaveAttribute('data-count', String(all - 60));
+  await expect(page.getByTestId('search-count')).toHaveAttribute(
+    'data-count',
+    String(all - totalStudied),
+  );
 });
 
 test('keyboard menu scrolling holds focus under a stationary pointer and pointer input resumes', async ({
@@ -739,16 +761,18 @@ for (const width of [360, 768, 1440]) {
   });
 }
 
-test('RxJS has twenty studied concepts, and switchMap’s study steps its marbles with each emission named', async ({
+test('RxJS lists its studied concepts, and switchMap’s study steps its marbles with each emission named', async ({
   page,
 }) => {
   await page.goto('/tools/catalog');
   const shelf = page.getByRole('navigation', { name: 'The works' });
-  await expect(shelf.getByRole('button', { name: /RxJS/ })).toContainText('20 studied');
+  await expect(shelf.getByRole('button', { name: /RxJS/ })).toContainText(
+    `${studiedCount('rxjs')} studied`,
+  );
   await shelf.getByRole('button', { name: /RxJS/ }).click();
   const list = page.locator('.studied-list');
-  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
-  await expect(list.getByRole('link')).toHaveCount(20);
+  await expect(list.getByRole('heading')).toHaveText(`${studiedCount('rxjs')} studied concepts`);
+  await expect(list.getByRole('link')).toHaveCount(studiedCount('rxjs'));
   await list.getByRole('link', { name: 'switchMap', exact: true }).click();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('switchMap');
   await expect(page).toHaveURL(/\/tools\/catalog\/rxc:152$/);
@@ -868,17 +892,17 @@ for (const width of [768, 1280])
     expect(topmost).toBe(true);
   });
 
-test('Enterprise Integration Patterns has twenty studied concepts, and Aggregator’s flow steps one message at a time', async ({
+test('Enterprise Integration Patterns lists its studied concepts, and Aggregator’s flow steps one message at a time', async ({
   page,
 }) => {
   await page.goto('/tools/catalog');
   const shelf = page.getByRole('navigation', { name: 'The works' });
   const work = shelf.getByRole('button', { name: /Enterprise Integration Patterns/ });
-  await expect(work).toContainText('20 studied');
+  await expect(work).toContainText(`${studiedCount('eip')} studied`);
   await work.click();
   const list = page.locator('.studied-list');
-  await expect(list.getByRole('heading')).toHaveText('20 studied concepts');
-  await expect(list.getByRole('link')).toHaveCount(20);
+  await expect(list.getByRole('heading')).toHaveText(`${studiedCount('eip')} studied concepts`);
+  await expect(list.getByRole('link')).toHaveCount(studiedCount('eip'));
   await list.getByRole('link', { name: 'Aggregator', exact: true }).click();
   await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Aggregator');
   await expect(page).toHaveURL(/\/tools\/catalog\/eip:110$/);
@@ -998,4 +1022,89 @@ for (const width of [360, 768, 1440])
     await expect(study.locator('.references a').first()).toBeVisible();
     expect(await fits()).toBe(true);
     expect(await serious()).toEqual([]);
+  });
+
+for (const width of [360, 768, 1440])
+  test(`the next movement studies can be read and stepped at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/tools/catalog');
+    const work = page
+      .getByRole('navigation', { name: 'The works' })
+      .getByRole('button', { name: /AI for Games/ });
+    await expect(work).toContainText(`${studiedCount('aifg')} studied`);
+    await work.click();
+    const list = page.locator('.studied-list');
+    await expect(list.getByRole('heading')).toHaveText(`${studiedCount('aifg')} studied concepts`);
+    await expect(list.getByRole('link')).toHaveCount(studiedCount('aifg'));
+    await list.getByRole('link', { name: 'Collision avoidance', exact: true }).click();
+    const study = page.locator('tools-study');
+    const motion = study.locator('tools-study-motion');
+    const drawing = motion.getByRole('img');
+    await expect(drawing).toHaveAccessibleName(/closest/i);
+    await expect(study.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+    const time = study.getByRole('slider', { name: /^Time/ });
+    await time.fill('0');
+    const before = await drawing.getAttribute('aria-label');
+    await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+    await expect(time).toHaveValue('1');
+    await expect(drawing).not.toHaveAttribute('aria-label', before ?? '');
+    await expect(drawing).toHaveAccessibleName(/closest/i);
+    await study.locator('.numbers summary').click();
+    await expect(study.getByTestId('study-reading')).toContainText(/closest/i);
+    await study.getByRole('button', { name: 'Chart', exact: true }).click();
+    await expect(study.locator('tools-study-timeline')).toBeVisible();
+    await study.locator('.how-to-read summary').filter({ hasText: 'How to read' }).click();
+    await expect(study.locator('figcaption .legend')).toContainText('Current gap');
+    await expect(study.locator('figcaption .legend')).not.toContainText('Courier velocity');
+    await study.getByRole('button', { name: 'Movement', exact: true }).click();
+    await expect(study.locator('figcaption .legend')).toContainText('Courier velocity');
+    await study.getByRole('button', { name: 'Chart', exact: true }).click();
+    await summary(page, 'Follow the mechanism').press('Enter');
+    await expect(study.locator('.algorithm-guide > pre')).toBeVisible();
+    await study.locator('.executable-model summary').click();
+    await expect(study.getByTestId('model-spec')).toContainText(
+      'collision-avoidance.model.spec.ts',
+    );
+    await summary(page, 'Where this breaks down').press('Enter');
+    await expect(study.locator('.limits')).toBeVisible();
+    await summary(page, 'See it elsewhere').press('Enter');
+    await expect(study.locator('.implementations .implementation')).toHaveCount(2);
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    const violations = (
+      await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+        .analyze()
+    ).violations;
+    expect(
+      violations.filter(({ impact }) => impact === 'serious' || impact === 'critical'),
+    ).toEqual([]);
+
+    const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
+    await contents.getByRole('link', { name: 'Flee', exact: true }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Flee');
+    await expect(study.locator('tools-study-motion')).toBeVisible();
+    await openBySearch(page, 'Obstacle and wall avoidance', 'aifg-a:137');
+    await expect(motion.getByRole('img')).toBeVisible();
+    await study.getByRole('slider', { name: /^Time/ }).fill('0');
+    await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+    await expect(study.getByRole('slider', { name: /^Time/ })).toHaveValue('1');
+    await study.locator('.nearby a', { hasText: 'Corner trap' }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Corner trap');
+    await expect(motion.getByRole('img')).toBeVisible();
+    await openBySearch(page, 'Projectile trajectory', 'aifg-a:162');
+    await expect(motion.getByRole('img')).toBeVisible();
+    const projectileTime = study.getByRole('slider', { name: /^Time/ });
+    await projectileTime.fill((await projectileTime.getAttribute('max')) ?? '0');
+    await study.locator('.nearby a', { hasText: 'The firing solution' }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(
+      'The firing solution',
+    );
+    await summary(page, 'Where this breaks down').press('Enter');
+    await expect(study.locator('.limits')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
   });

@@ -499,35 +499,85 @@ test('the link check lists each cited address once, with the studies that cite i
   );
 });
 
-test('the movement batch is exactly the concepts its order names', () => {
+const firstMovementBatch = [
+  'aifg-a:110',
+  'aifg-a:112',
+  'aifg-a:116',
+  'aifg-a:118',
+  'aifg-a:120',
+  'aifg-a:123',
+  'aifg-a:125',
+  'aifg-a:131',
+  'aifg-a:144',
+  'aifg-a:145',
+  'aifg-a:149',
+  'aifg-a:151',
+  'aifg-a:153',
+  'aifg-a:174',
+  'aifg-a:175',
+  'aifg-a:177',
+  'aifg-a:181',
+  'aifg-a:186',
+  'aifg-b:354',
+  'aifg-b:373',
+];
+const secondMovementBatch = [
+  'aifg-a:105',
+  'aifg-a:162',
+  'aifg-a:108',
+  'aifg-a:169',
+  'aifg-a:192',
+  'aifg-a:196',
+  'aifg-a:111',
+  'aifg-a:134',
+  'aifg-a:137',
+  'aifg-a:139',
+  'aifg-a:143',
+  'aifg-a:157',
+  'aifg-a:163',
+  'aifg-a:166',
+  'aifg-a:173',
+  'aifg-a:90',
+  'aifg-a:94',
+  'aifg-a:101',
+  'aifg-a:102',
+  'aifg-a:103',
+];
+
+test('the first movement batch keeps every concept its order names', () => {
+  const ids = readStudies()
+    .filter(({ study }) => study.work === 'aifg')
+    .map(({ study }) => study.id);
   assert.deepEqual(
-    readStudies()
-      .filter(({ study }) => study.work === 'aifg')
-      .map(({ study }) => study.id)
-      .sort(),
-    [
-      'aifg-a:110',
-      'aifg-a:112',
-      'aifg-a:116',
-      'aifg-a:118',
-      'aifg-a:120',
-      'aifg-a:123',
-      'aifg-a:125',
-      'aifg-a:131',
-      'aifg-a:144',
-      'aifg-a:145',
-      'aifg-a:149',
-      'aifg-a:151',
-      'aifg-a:153',
-      'aifg-a:174',
-      'aifg-a:175',
-      'aifg-a:177',
-      'aifg-a:181',
-      'aifg-a:186',
-      'aifg-b:354',
-      'aifg-b:373',
-    ],
+    ids.filter((id) => firstMovementBatch.includes(id)).sort(),
+    [...firstMovementBatch].sort(),
   );
+});
+
+test('the second movement batch adds exactly its twenty concepts beside the first batch', () => {
+  const records = readStudies().filter(({ study }) => study.work === 'aifg');
+  assert.deepEqual(
+    records.map(({ study }) => study.id).sort(),
+    [...firstMovementBatch, ...secondMovementBatch].sort(),
+  );
+  const illustrative = new Set([
+    'aifg-a:105',
+    'aifg-a:192',
+    'aifg-a:196',
+    'aifg-a:157',
+    'aifg-a:173',
+    'aifg-a:90',
+    'aifg-a:94',
+  ]);
+  for (const { study } of records.filter(({ study }) => secondMovementBatch.includes(study.id))) {
+    assert.equal(study.authored.state, 'checked', study.slug);
+    assert.ok(new Set(study.authored.reviewedBy).size >= 2, study.slug);
+    assert.equal(study.visual.family, 'motion', study.slug);
+    if (!illustrative.has(study.id)) {
+      assert.equal(study.pseudocode.executable?.kind, 'typescript', study.slug);
+      assert.equal(study.pseudocode.executable.module, study.visual.model, study.slug);
+    }
+  }
 });
 
 test('the RxJS batch is exactly the concepts its order names', () => {

@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v0",
+  "id": "aifg-a:105",
+  "work": "aifg",
+  "slug": "steering-behaviors",
+  "authored": {
+    "by": "Codex gpt-6.1-sol, study author 1",
+    "on": "2026-11-04",
+    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "Mara has a destination, a velocity and a limited ability to change that velocity. A steering behaviour answers a small question about that state: should she accelerate towards the depot, or reduce speed so she can finish there? Keeping that question separate from the movement loop lets us inspect and replace the answer without rewriting how Mara moves.",
+    "situation": "Use this separation when a courier needs different movement goals at different times. Seek can keep her heading towards the depot; Arrive is the more suitable member when delivery requires her to slow down. The example chooses a member explicitly. Combining several simultaneous requests is a further decision."
+  },
+  "example": {
+    "name": "Mara’s depot delivery",
+    "description": "Mara starts at x {initialPosition} with signed velocity {initialVelocity} units/s and a depot at x {target}. Her speed limit is {maxSpeed} units/s and acceleration limit {maxAcceleration} units/s². Arrive uses a slowing radius of {slowRadius}, target radius {targetRadius} and response time {responseTime} s. The drawing follows {member} for {duration} s in {timeStep} s updates, while showing both candidate requests at each current state. These are toy teaching values; the actual engine functions calculate the requests and a study-local loop applies them.",
+    "parameters": {
+      "initialPosition": 0,
+      "initialVelocity": 0,
+      "target": 24,
+      "maxSpeed": 6,
+      "maxAcceleration": 4,
+      "radius": 0.5,
+      "slowRadius": 10,
+      "targetRadius": 1,
+      "responseTime": 0.25,
+      "arrivalEnabled": 1,
+      "timeStep": 0.25,
+      "steps": 80
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "Read one current state",
+        "text": "Take Mara’s position and velocity before this update, together with her speed and acceleration limits. Both candidate behaviours read this same snapshot and the same fixed depot; neither moves her while calculating its answer."
+      },
+      {
+        "title": "Ask each small movement question",
+        "text": "Engine Seek requests full acceleration towards the depot. Engine Arrive instead chooses a desired velocity that decreases inside the slowing radius, then limits the acceleration needed to close the velocity gap over {responseTime} s. At this moment the requests are {seekAcceleration} and {arriveAcceleration} units/s². Both use the same output convention."
+      },
+      {
+        "title": "Choose the request the goal needs",
+        "text": "The arrivalEnabled input selects {member}, so the applied acceleration is {acceleration} units/s². The unselected candidate remains visible for comparison. Selecting a member is an explicit policy here; a common interface alone does not decide which request should win or how requests should combine."
+      },
+      {
+        "title": "Apply the output once",
+        "text": "Multiply the selected acceleration by the update interval to change velocity, enforce the speed limit, then use that updated velocity to move Mara. Repeating this local loop makes changing requests into a trajectory. Acceleration is not a position command and does not remove existing momentum."
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "body = snapshot(position, velocity, maxSpeed, maxAcceleration)\ndepot = (target, 0)\n\nseekRequest = engine.seek(body, depot)\narriveRequest = engine.arrive(body, depot,\n  { slowRadius, targetRadius, timeToTarget: responseTime })\n\nacceleration = arrivalEnabled == 1 ? arriveRequest : seekRequest\n// Inspect the unselected request, but do not add it.\n\nvelocity = clipLength(velocity + acceleration * timeStep, maxSpeed)\nposition = position + velocity * timeStep",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/steering-behaviors.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/steering-behaviors.model.ts",
+    "textEquivalent": "At {seconds} s Mara is at x {position} with signed velocity {velocity} units/s and the depot at x {target}; the upper Seek arrow requests {seekAcceleration}, the lower Arrive arrow requests {arriveAcceleration}, and the arrow through Mara applies the selected {member} request of {acceleration} units/s²."
+  },
+  "implementations": [
+    {
+      "project": "gdx-ai",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringBehavior.java",
+      "relevance": "gdx-ai is a public Java game-AI library with a family of steering classes behind a common base class. That base makes the contract between a movement question and its acceleration output concrete.",
+      "explanation": "SteeringBehavior holds an owner and an optional limiter. calculateSteering delegates to a subclass when enabled and zeroes the caller’s output when disabled. The Seek subclass fills the linear channel with a normalised target direction scaled to the allowed acceleration and explicitly clears the angular channel. This separates calculating a request from the game’s code that applies it."
+    }
+  ],
+  "references": [
+    {
+      "title": "AI for Games, third edition · Chapter 3 Movement, §3.3 Steering Behaviors",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "The book covers this topic in Chapter 3, section 3.3, Steering Behaviors."
+    },
+    {
+      "title": "Craig Reynolds · Steering Behaviors For Autonomous Characters",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-11-04",
+      "supports": "Steering is separated from locomotion, and combinations of smaller steering behaviours can serve wider movement goals."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · SteeringBehavior.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringBehavior.java",
+      "accessed": "2026-11-04",
+      "supports": "The shared base calculates into a supplied acceleration output when enabled and zeroes that output when disabled."
+    },
+    {
+      "title": "gdx-ai 1.8.2 · Seek.java",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Seek.java",
+      "accessed": "2026-11-04",
+      "supports": "This Seek implementation requests maximum linear acceleration towards its target and explicitly sets angular acceleration to zero."
+    }
+  ],
+  "limits": [
+    "Using Seek for a delivery that requires stopping gives the wrong goal to an otherwise valid movement loop. In the comparison, {member} has a recorded overshoot of {overshoot} units and {comparisonMember} has {comparisonOvershoot}; Seek changes its request’s direction after passing the depot while momentum continues carrying Mara forwards.",
+    "The candidate arrows share one current state; the comparison chart uses separate evolving states. An Arrive request drawn beside a Seek run is not the trajectory an Arrive courier would already have followed.",
+    "This example has a clear straight route. Neither selected member checks obstacles or plans a route, and choosing a member here does not solve conflicts between simultaneous goals.",
+    "The loop has no field boundary, drag or exact rest snap. Arrive can become arbitrarily slow inside the target radius without being placed exactly on the depot. Its output still depends on the body’s acceleration limit and the chosen update interval."
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:142",
+      "why": "Reach for Combining steering behaviors when Mara must satisfy several simultaneous movement goals and selecting a single member is insufficient."
+    },
+    {
+      "id": "aifg-a:108",
+      "why": "Variable matching explains the state differences a behaviour tries to reduce; it is useful when designing another small movement question with the same output contract."
+    },
+    {
+      "id": "aifg-a:110",
+      "why": "Study Seek when reaching towards the depot is enough and the direction of a full acceleration request needs examination."
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "Study Arrive when delivery requires slowing down, particularly to inspect how desired velocity and acceleration limits affect the approach."
+    }
+  ]
+}

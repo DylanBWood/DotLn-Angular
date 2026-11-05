@@ -334,8 +334,8 @@ it('keeps notes, rounded readings, names and all geometry sound at each slider e
             ? [
                 {
                   label: point.label,
-                  left: point.x - point.label.length * 7.2,
-                  right: point.x + point.label.length * 7.2,
+                  left: point.labelX - point.label.length * 7.2,
+                  right: point.labelX + point.label.length * 7.2,
                   top: point.labelY - 24,
                   bottom: point.labelY + 5,
                 },

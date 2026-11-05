@@ -109,3 +109,25 @@ it('says values are rounded only when the worked step shows a rounded number', (
   }).element;
   expect(counted.querySelector('.worked-step')?.textContent).not.toContain('rounded');
 });
+
+it('exposes a tested TypeScript model on request and omits the claim for an illustration', () => {
+  const { element } = render('mechanism', {
+    ...studyViewFixture,
+    executableModel: {
+      module: 'libs/movement/example.model.ts',
+      spec: 'libs/movement/example.model.spec.ts',
+    },
+  });
+  expect(element.querySelector('.executable-model summary')?.textContent).toContain(
+    'Executable model',
+  );
+  expect(element.querySelector('.executable-model[open]')).toBeNull();
+  expect(element.querySelector('[data-testid="model-module"]')?.textContent).toBe(
+    'libs/movement/example.model.ts',
+  );
+  expect(element.querySelector('[data-testid="model-spec"]')?.textContent).toContain(
+    'libs/movement/example.model.spec.ts',
+  );
+  TestBed.resetTestingModule();
+  expect(render('mechanism').element.querySelector('.executable-model')).toBeNull();
+});

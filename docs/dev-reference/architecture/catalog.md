@@ -303,7 +303,14 @@ A visual family, under `libs/features/tools/src/lib/composites/study-visuals/<fa
 composite that takes a declarative model and a step index and draws an SVG with a text equivalent.
 Geometry derives from the model in a pure `*-drawing.ts` module with its own spec. `motion` draws the
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
-dimensions. `timeline` draws series over time with the moment marked, or a still chart when it has
+dimensions. Its names are placed independently of the physical points: `motion/motion-labels.ts`
+keeps each above its anchor when there is room, then uses the nearest clear row or horizontal gap,
+with a thin guide back to the unchanged point. It reserves space for the larger narrow-screen
+font; all guides render before all names, and names render above vectors with a surface-coloured
+outline. The corpus check retains every
+supplied name on every default frame, and browser regressions measure real glyphs at narrow and
+operator-sized viewports. The placement decision and corpus comparison are in the launchpad's
+WO-028-D026. `timeline` draws series over time with the moment marked, or a still chart when it has
 no step. `marbles` draws a marble diagram: the input streams and the streams the operator opens
 above the operator's band, the outputs below it, time in frames left to right with every frame
 numbered, the stepped frame as a dotted line down every lane with its emissions ringed, a stream
@@ -340,7 +347,9 @@ sentence stays on screen; its full text is the drawing's accessible name and sit
 numbers (Show the emissions on a marble study, Show the messages on a flow). A slider under Try another value reruns the whole
 model with one input changed, and Back to the example restores it. A movement study opens on the
 moment its author chose as the most telling, and its switch's two views are always Movement and
-Chart, with the chart's own title above it; a marble study opens on its last frame and has no
+Chart, with the chart's own title above it. How to read keys the selected view: the movement
+legend explains bodies and vectors, and the chart legend names each time series alongside
+its tone and axis labels. A marble study opens on its last frame and has no
 switch; a messaging study opens at its start, before anything moves, so a reader steps through the
 flow in order, and its switch, when its example runs, is Flow and Marbles.
 
@@ -352,9 +361,11 @@ with the mechanism, the RxJS reading, the limits and then the implementations wi
 then the nearby concepts and a link to the work's next study. Everything a reader may want only
 sometimes is one click away: the example in full, the moment's numbers, the inputs and how to read
 the drawing. `ToolsFacade` derives one `StudyView` from the record and the model through `mapStudy`,
-and `ReadingView` carries it; the facade is the single source of every disclosure's open state,
+and `ReadingView` carries it; the facade is the single source of the main disclosures' open state,
 bound onto the disclosures, so switching between the drawing and the chart keeps them, and every
-reader intent reaches it as one `StudyIntent`. The study owns its focus, and element ids carry a
+reader intent reaches it as one `StudyIntent`. A TypeScript study exposes its executable model and
+spec paths inside Follow the mechanism; illustrative models make no executable claim. The study
+owns its focus, and element ids carry a
 per-instance suffix.
 
 Explanations use native disclosure semantics and Angular `@defer` on first expansion, so a section
@@ -385,7 +396,7 @@ gate does.
 
 | Work                            | Studied | The batch                                                                                                                                                             |
 | ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AI for Games                    | twenty  | the movement concepts the soldier scene runs, drawn by `motion` and `timeline`                                                                                        |
+| AI for Games                    | forty   | the first movement batch (WO-020) and the next twenty Movement concepts (WO-028), drawn by `motion` and `timeline`                                                    |
 | RxJS                            | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles`                                                                 |
 | Enterprise Integration Patterns | twenty  | the messaging patterns of agents handing records through channels, each a `flow` that steps its messages, the stream patterns drawn from an executable marble example |
 

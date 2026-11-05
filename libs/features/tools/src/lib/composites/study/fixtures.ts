@@ -14,6 +14,7 @@ import {
 /** A study with every representation, for the composite's stories and specs. */
 export const studyViewFixture: StudyView = {
   id: 'sample:1',
+  executableModel: null,
   authoredBy: 'A study author',
   authoredOn: '2026-10-31',
   reviewers: 'factual-critic, reading-critic',

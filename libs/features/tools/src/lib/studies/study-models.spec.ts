@@ -2,6 +2,7 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { ConceptStudy } from '@dotln-angular/models';
 
 import { flowDrawing } from '../composites/study-visuals/flow/flow-drawing';
+import { motionDrawing } from '../composites/study-visuals/motion/motion-drawing';
 import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
 import { placeholdersIn } from './study-text';
@@ -110,4 +111,33 @@ it('stays a sound example across the whole range of every input a model offers',
           }
       }
   }
+});
+
+it('keeps every supplied movement name visible and apart on every frame', async () => {
+  const problems: string[] = [];
+  for (const record of await records()) {
+    if (!record.visual?.model) continue;
+    const run = (await studyModels[record.visual.model]()).model(record.example.parameters);
+    if (run.family !== 'motion') continue;
+    for (const [step, frame] of run.motion.frames.entries()) {
+      const drawing = motionDrawing(run.motion, step);
+      const source = [...frame.bodies, ...(frame.marks ?? [])].filter(({ label }) => label);
+      const labels = [...drawing.bodies, ...drawing.marks].filter(({ label }) => label);
+      if (source.length !== labels.length)
+        problems.push(`${record.slug} frame ${step}: missing name`);
+      for (const [i, label] of labels.entries()) {
+        // Even a narrow screen uses at most 24 drawing units of font height. Keep lines apart
+        // when their conservative name widths overlap; the browser suite checks the real glyphs.
+        for (const other of labels.slice(i + 1)) {
+          if (
+            Math.abs(label.labelY - other.labelY) < 30 &&
+            Math.abs(label.labelX - other.labelX) <
+              ((label.label?.length ?? 0) + (other.label?.length ?? 0)) * 6
+          )
+            problems.push(`${record.slug} frame ${step}: ${label.label} / ${other.label}`);
+        }
+      }
+    }
+  }
+  expect(problems).toEqual([]);
 });
