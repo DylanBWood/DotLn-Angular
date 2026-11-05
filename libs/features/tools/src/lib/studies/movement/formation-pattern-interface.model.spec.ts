@@ -4,6 +4,7 @@ import { distance, length, slotPosition, subtract } from '@dotln-angular/scene-e
 import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
+import type { StudyTranslate } from '../study-translate';
 import {
   advanceRosterMembers,
   createRosterPattern,
@@ -218,6 +219,17 @@ it('explains the opening coincidence and names the anchor and occupied slots wit
   expect(record.limits.join(' ')).not.toContain(
     'The anchor remains fixed while its heading is scripted',
   );
+});
+
+it('names each escort in the slot readout through its display message, never by its machine id', () => {
+  const marked: StudyTranslate = (key, values) =>
+    key.includes('.escortName') ? `«${studyTranslate(key, values)}»` : studyTranslate(key, values);
+  const slots = model(parameters, marked).motion.frames[0].values['slotPositions'];
+  expect(slots.split('; ').map((slot) => slot.split(',')[0])).toEqual([
+    '«lookout»',
+    '«port»',
+    '«starboard»',
+  ]);
 });
 
 it('keeps every frame readable and bounded at both ends of each live input', () => {

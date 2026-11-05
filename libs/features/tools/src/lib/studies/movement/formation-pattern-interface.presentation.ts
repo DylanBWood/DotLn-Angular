@@ -114,7 +114,7 @@ function frameValues(
     slotPositions: targets
       .map(({ id, slot, position }) =>
         t('studyAifg.formation-pattern-interface.model.valueSlot', {
-          id,
+          id: escortName(t, id),
           slot,
           position: vectorText(position, 2, 0.005),
         }),

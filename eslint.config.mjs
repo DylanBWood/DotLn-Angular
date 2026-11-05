@@ -191,7 +191,7 @@ export default [
     rules: { 'no-restricted-imports': restrictions([...domainImports, ...behaviorImports]) },
   },
   {
-    files: ['libs/features/tools/src/lib/studies/**/*.ts'],
+    files: ['**/src/lib/studies/**/*.ts'],
     ignores: ['**/*.spec.ts', '**/*-testing.ts'],
     rules: {
       'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
