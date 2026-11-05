@@ -1,10 +1,11 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import type { MotionStudyModel } from '../study-model';
-import type { KinematicArriveParameters } from './kinematic-arrive.model';
 import {
   calculateKinematicArriveStep,
+  type KinematicArriveParameters,
   kinematicArriveSamples,
   model,
 } from './kinematic-arrive.model';
@@ -22,7 +23,7 @@ const example: KinematicArriveParameters = {
 const parameters: StudyParameters = { ...example };
 
 function motionOf(input: StudyParameters = parameters): MotionStudyModel {
-  return model(input);
+  return model(input, studyTranslate);
 }
 
 it('uses the catalogue example parameters', async () => {
@@ -64,7 +65,10 @@ it('accepts a residual error without snapping and handles the target and its far
     nextPosition: 11,
   });
   expect(
-    calculateKinematicArriveStep(10.75, { ...example, satisfactionRadius: 0.25 }),
+    calculateKinematicArriveStep(10.75, {
+      ...example,
+      satisfactionRadius: 0.25,
+    }),
   ).toMatchObject({ accepted: true, velocity: 0, nextPosition: 10.75 });
   expect(calculateKinematicArriveStep(12, example)).toMatchObject({
     offset: -1,
@@ -128,7 +132,11 @@ it('keeps the selected drawing, text, arithmetic and chart on the same update', 
 });
 
 it('recomputes changed inputs and keeps every drawing element in bounds', () => {
-  const run = motionOf({ ...parameters, timeToTarget: 2, satisfactionRadius: 1 });
+  const run = motionOf({
+    ...parameters,
+    timeToTarget: 2,
+    satisfactionRadius: 1,
+  });
   expect(run.motion.frames[0].values).toMatchObject({
     timeToTarget: '2.000',
     satisfactionRadius: '1.000',
@@ -150,5 +158,31 @@ it('recomputes changed inputs and keeps every drawing element in bounds', () => 
   expect(motionOf({ ...parameters, timeToTarget: 0.2 }).comparison?.findings).toEqual([
     'Both response times are equal, so the comparison runs coincide.',
   ]);
-  expect(model(parameters)).toEqual(model(parameters));
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

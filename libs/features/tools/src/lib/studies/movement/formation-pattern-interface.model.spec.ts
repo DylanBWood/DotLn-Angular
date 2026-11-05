@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length, slotPosition, subtract } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import {
@@ -17,6 +17,7 @@ import {
 const record = await loadStudy('aifg-a:181');
 
 const parameters: StudyParameters = record.example.parameters;
+
 const example = readRosterParameters(parameters);
 
 it('checks capacity and indexed access instead of inventing a place for an unsupported member', () => {
@@ -116,15 +117,15 @@ it('isolates persistent geometric bias by disabling only drift subtraction', () 
   expect(rosterCentreGap(raw[example.steps])).toBeGreaterThan(
     rosterCentreGap(corrected[example.steps]) + 0.9,
   );
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(corrected.map(rosterCentreGap));
   expect(comparison?.timeline.series[1].values).toEqual(raw.map(rosterCentreGap));
   expect(comparison?.findings[1]).toContain('target mean itself remains 1.00 units');
 });
 
 it('supports the reading with complete frame values, a worked release and inspectable drawings', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.initialStep).toBe(example.releaseStep);
   expect(run.moments.map(({ step }) => step)).toEqual([0, 20, 40, 60, 120]);
   const released = run.motion.frames[run.initialStep];
@@ -160,20 +161,24 @@ it('supports the reading with complete frame values, a worked release and inspec
 });
 
 it('lets spacing change the departure drift and correction remove its visible centre bias', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['spacing', 'driftCorrection']);
   const spacing = inputs.find(({ name }) => name === 'spacing');
   const correction = inputs.find(({ name }) => name === 'driftCorrection');
   if (!spacing || !correction)
     throw new Error('The pattern needs geometry and correction controls.');
-  const narrow = model({ ...parameters, spacing: spacing.min }).motion.frames[example.releaseStep];
-  const wide = model({ ...parameters, spacing: spacing.max }).motion.frames[example.releaseStep];
+  const narrow = model({ ...parameters, spacing: spacing.min }, studyTranslate).motion.frames[
+    example.releaseStep
+  ];
+  const wide = model({ ...parameters, spacing: spacing.max }, studyTranslate).motion.frames[
+    example.releaseStep
+  ];
   expect(narrow.values['driftLength']).toBe('0.67');
   expect(wide.values['driftLength']).toBe('1.33');
   expect(narrow.marks?.filter(({ shape }) => shape === 'ring')[0].y).toBeCloseTo(12, 10);
   expect(wide.marks?.filter(({ shape }) => shape === 'ring')[0].y).toBeCloseTo(14, 10);
-  const corrected = model({ ...parameters, driftCorrection: correction.max });
-  const raw = model({ ...parameters, driftCorrection: correction.min });
+  const corrected = model({ ...parameters, driftCorrection: correction.max }, studyTranslate);
+  const raw = model({ ...parameters, driftCorrection: correction.min }, studyTranslate);
   const chosen = corrected.motion.frames[example.releaseStep];
   const uncorrected = raw.motion.frames[example.releaseStep];
   expect(chosen.values['targetGap']).toBe('0.00');
@@ -195,7 +200,7 @@ it('lets spacing change the departure drift and correction remove its visible ce
 });
 
 it('explains the opening coincidence and names the anchor and occupied slots without a coordinate inventory', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const released = run.motion.frames[run.initialStep];
   const rawDots = released.marks?.filter(({ tone }) => tone === 'muted') ?? [];
   for (const [index, member] of released.bodies.entries())
@@ -216,13 +221,13 @@ it('explains the opening coincidence and names the anchor and occupied slots wit
 });
 
 it('keeps every frame readable and bounded at both ends of each live input', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   const placeholders = [...JSON.stringify(record).matchAll(/\{([a-zA-Z][a-zA-Z0-9]*)\}/g)].map(
     (match) => match[1],
   );
   for (const input of inputs)
     for (const value of [input.min, input.max]) {
-      const run = model({ ...parameters, [input.name]: value });
+      const run = model({ ...parameters, [input.name]: value }, studyTranslate);
       expect(run.initialStep).toBeGreaterThanOrEqual(0);
       expect(run.initialStep).toBeLessThan(run.motion.frames.length);
       for (const moment of run.moments) {

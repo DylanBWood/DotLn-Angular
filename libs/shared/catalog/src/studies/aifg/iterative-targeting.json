@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:166",
   "work": "aifg",
   "slug": "iterative-targeting",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 6",
+    "by": "studyAifg.iterative-targeting.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.iterative-targeting.record.authored.reviewedBy.item0",
+      "studyAifg.iterative-targeting.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "The harbour launcher can predict where a shot lands without firing it. Treat its signed miss as feedback: a short prediction and a long prediction surround a useful angle, and each new prediction narrows that choice. The important result is an angle with a measured small miss, rather than an attractive-looking arc.",
-    "situation": "A training launcher must hit a stationary drum while its game’s drag rule changes the flight. Reusing that flight rule inside the aiming search keeps the prediction consistent with the toy physics."
+    "text": "studyAifg.iterative-targeting.record.intuition.text",
+    "situation": "studyAifg.iterative-targeting.record.intuition.situation"
   },
   "example": {
-    "name": "The harbour launcher finding the drum",
-    "description": "The drum is {targetX} m along level ground. Every candidate leaves the harbour launcher at {launchSpeed} m/s; only its angle changes between {lowerAngle}° and {upperAngle}°. The local simulator uses downward gravity {gravity} m/s², linear drag coefficient {drag} per second and velocity-before-position steps of {timeStep} s. Two endpoint probes precede at most {maxIterations} midpoint guesses. A completed impact within {tolerance} m is accepted; {flightSteps} physics steps bound each prediction. The drawing currently shows angle {angle}°, signed miss {error} m and search status {status}.",
+    "name": "studyAifg.iterative-targeting.record.example.name",
+    "description": "studyAifg.iterative-targeting.record.example.description",
     "parameters": {
       "targetX": 6,
       "launchSpeed": 10,
@@ -34,25 +37,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Require a useful angle bracket",
-        "text": "Predict the endpoint shots first. Both must reach the ground. Accept an endpoint already within tolerance; otherwise their signed range errors must surround zero. A same-side pair rejects this bracket, rather than declaring the drum unreachable at every possible angle. Endpoint probes are separate from the midpoint-guess budget."
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step0.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Predict the midpoint shot",
-        "text": "Bisect the current angles {bracketLower}° and {bracketUpper}° to obtain {angle}°. Resolve the fixed launch speed into horizontal and vertical velocity, then repeatedly apply gravity and drag. Interpolate the first ground crossing between the surrounding samples so the miss is measured on the ground, rather than at the last airborne point."
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step1.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Measure before accepting",
-        "text": "Subtract the drum position from the predicted impact: {impactX} − {targetX} = {error} m. Positive means long and negative means short. Accept only when the absolute miss is at most {tolerance} m. A prediction that outlasts its physics horizon has an unknown impact, not a successful shot."
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step2.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Retain the sign change or report failure",
-        "text": "Compare the midpoint’s sign with the lower endpoint’s sign and discard the half without a sign change. The candidate next bracket is [{nextLower}, {nextUpper}]°. Repeat until acceptance or the budget ends. Exhausting a budget with a remaining miss reports failure even when the next guess might have succeeded."
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step3.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "lowFlight = simulate(lowerAngle)\nhighFlight = simulate(upperAngle)\nif either flight has no ground impact: fail unfinished\nlowError = lowFlight.range - targetX\nhighError = highFlight.range - targetX\nif abs(lowError) <= tolerance: accept lowerAngle\nif abs(highError) <= tolerance: accept upperAngle\nif lowError * highError > 0: fail unbracketed\n\nangle = (lowerAngle + upperAngle) / 2\nvelocity = launchSpeed * (cos(angle), sin(angle))\nrepeat at most flightSteps times:\n  vx = vx + (-drag * vx) * dt\n  vy = vy + (-gravity - drag * vy) * dt\n  nextPosition = position + (vx, vy) * dt\n  if nextHeight <= 0:\n    fraction = height / (height - nextHeight)\n    range = x + fraction * (nextX - x)\n    end this prediction\n  position = nextPosition\n\nif no ground crossing: fail unfinished\nerror = range - targetX\nif abs(error) <= tolerance: accept angle\n\nif lowError * error > 0:\n  lowerAngle = angle\n  lowError = error\nelse:\n  upperAngle = angle\nrepeat midpoint prediction while guesses remain\notherwise report budget exhausted",
+    "ordinary": "studyAifg.iterative-targeting.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -62,46 +65,46 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/iterative-targeting.model.ts",
-    "textEquivalent": "Search step {iteration} predicts a shot at {angle}° from the harbour launcher towards the drum at {targetX} m: impact {impactX} m after {flightTime} s of simulated flight, signed miss {error} m, current bracket [{bracketLower}, {bracketUpper}]°, next bracket [{nextLower}, {nextUpper}]°, status {status}."
+    "textEquivalent": "studyAifg.iterative-targeting.record.visual.textEquivalent"
   },
   "implementations": [],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement · §3.5.5 Iterative Targeting",
+      "title": "studyAifg.iterative-targeting.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers this topic at Chapter 3, §3.5.5, the location recorded by the catalog. DOI metadata confirms the book’s identity and edition; no chapter text was read or used for the local algorithm."
+      "supports": "studyAifg.iterative-targeting.record.references.item0.supports"
     },
     {
-      "title": "GNU Scientific Library · One Dimensional Root-Finding",
+      "title": "studyAifg.iterative-targeting.record.references.item1.title",
       "url": "https://www.gnu.org/software/gsl/doc/html/roots.html",
       "accessed": "2026-11-04",
-      "supports": "Bisection evaluates an interval midpoint and keeps a half selected by sign; bracketing needs a zero crossing, and convergence tests and iteration limits are separate stopping conditions. This is numerical-method support, not a projectile implementation."
+      "supports": "studyAifg.iterative-targeting.record.references.item1.supports"
     }
   ],
   "limits": [
-    "The search solves its own fixed-step flight model. A different integration order, drag law or collision rule in the game can turn a small predicted miss into a real miss; tightening the search tolerance cannot remove that modelling error.",
-    "Reducing the midpoint budget to {shortBudget} can stop with a measurable miss outside tolerance. The comparison holds the last result after stopping; it does not imply the solver continued working.",
-    "Endpoint signs establish a bracket only for a continuous range-error function. Terrain collisions, target switching or discontinuous flight rules can invalidate that assumption. Same-side endpoint errors do not prove there is no intermediate or higher-arc solution.",
-    "The drum stays still on level ground. Moving targets require impact-time prediction, and this local angle search does not choose between low and high arcs or check obstacles along an arc.",
-    "This study-local search and linear-drag simulator are absent from the public scene engine. The engine supplies only deterministic trigonometry here; no whole-scene projectile behaviour is claimed."
+    "studyAifg.iterative-targeting.record.limits.item0",
+    "studyAifg.iterative-targeting.record.limits.item1",
+    "studyAifg.iterative-targeting.record.limits.item2",
+    "studyAifg.iterative-targeting.record.limits.item3",
+    "studyAifg.iterative-targeting.record.limits.item4"
   ],
   "nearby": [
     {
       "id": "aifg-a:165",
-      "why": "Read Projectiles with drag when the main uncertainty is the force and integration model that each candidate prediction should run."
+      "why": "studyAifg.iterative-targeting.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:163",
-      "why": "Use The firing solution when the chosen physics admits a direct launch calculation and repeated flight guesses are unnecessary."
+      "why": "studyAifg.iterative-targeting.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:164",
-      "why": "Two-arc ambiguity matters when more than one launch angle can reach the drum and clearance or flight time must choose between them."
+      "why": "studyAifg.iterative-targeting.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:167",
-      "why": "Moving targets adds the changing destination at the predicted impact time; the stationary drum’s range error is then insufficient."
+      "why": "studyAifg.iterative-targeting.record.nearby.item3.why"
     }
   ]
 }

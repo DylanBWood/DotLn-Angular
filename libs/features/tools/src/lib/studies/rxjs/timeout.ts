@@ -26,20 +26,37 @@ const stalled = new TimeoutError({ meta: null, seen: 3, lastValue: null });
 export const example: MarbleExample = {
   inputs: {
     report$: {
-      label: 'report$',
+      label: 'studyRxjs.timeout.model.example.inputs.report.label',
       marbles: '-----a--b-c-----d|',
       values: { a: 'page 1', b: 'page 2', c: 'page 3', d: 'page 4' },
       subscriptions: '^-------------!',
+
+      valueMessages: {
+        a: 'studyRxjs.timeout.model.example.inputs.report.values.a',
+        b: 'studyRxjs.timeout.model.example.inputs.report.values.b',
+        c: 'studyRxjs.timeout.model.example.inputs.report.values.c',
+        d: 'studyRxjs.timeout.model.example.inputs.report.values.d',
+      },
     },
   },
   // No lane marks the waits, so the band names their values.
-  operator: `timeout({ first: ${waits.startup}, each: ${waits.gap} })`,
+  operator: {
+    key: 'studyRxjs.timeout.model.example.operator',
+    params: { startup: waits.startup, gap: waits.gap },
+  },
   outputs: {
     pages$: {
-      label: 'pages$',
+      label: 'studyRxjs.timeout.model.example.outputs.pages.label',
       marbles: '-----a--b-c---#',
       values: { a: 'page 1', b: 'page 2', c: 'page 3' },
       error: stalled,
+
+      valueMessages: {
+        a: 'studyRxjs.timeout.model.example.outputs.pages.values.a',
+        b: 'studyRxjs.timeout.model.example.outputs.pages.values.b',
+        c: 'studyRxjs.timeout.model.example.outputs.pages.values.c',
+      },
+      errorMessage: 'studyRxjs.timeout.model.example.outputs.pages.error',
     },
   },
   run: ({ inputs: { report$ } }) => {
@@ -49,21 +66,20 @@ export const example: MarbleExample = {
     return { pages$ };
   },
   moments: [
-    { label: 'Without first', frame: 4 },
-    { label: 'First page', frame: 5 },
-    { label: 'Wait restarts', frame: 8 },
-    { label: 'Timeout', frame: 14 },
+    { label: 'studyRxjs.timeout.model.example.moments.0.label', frame: 4 },
+    { label: 'studyRxjs.timeout.model.example.moments.1.label', frame: 5 },
+    { label: 'studyRxjs.timeout.model.example.moments.2.label', frame: 8 },
+    { label: 'studyRxjs.timeout.model.example.moments.3.label', frame: 14 },
   ],
-  caption:
-    'Time runs in frames, one virtual millisecond each. A circle is a page, with its letter, and a cross is an error. report$ ends in a small hollow ring where timeout stopped listening to the server, and pages$ ends on the same frame in a cross, the TimeoutError it fails with. Step the frames to follow each wait.',
+  caption: 'studyRxjs.timeout.model.example.caption',
   notes: {
-    0: 'The report is requested and the startup wait begins. It is the longer wait, because the server needs time to start a report.',
-    4: 'Had the first page been held to the gap wait, it would have run out here, before the server answered. The startup wait is still running.',
-    5: 'The first page arrives inside the startup wait and is shown. The timer starts again, now for the shorter gap wait.',
-    8: 'The second page arrives inside its gap and is shown. The timer starts again from here, not from the start of the report.',
-    10: 'The third page arrives sooner still and is shown. The timer starts again.',
-    14: 'No page has come within a gap of the third. timeout stops listening to the server and fails pages$ with a TimeoutError that counts the pages seen; its record of the last page is already empty.',
+    0: 'studyRxjs.timeout.model.example.notes.0',
+    4: 'studyRxjs.timeout.model.example.notes.4',
+    5: 'studyRxjs.timeout.model.example.notes.5',
+    8: 'studyRxjs.timeout.model.example.notes.8',
+    10: 'studyRxjs.timeout.model.example.notes.10',
+    14: 'studyRxjs.timeout.model.example.notes.14',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

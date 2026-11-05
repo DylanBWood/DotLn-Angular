@@ -1,11 +1,12 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import type { MotionStudyModel } from '../study-model';
-import type { SatisfactionRadiusParameters } from './satisfaction-radius.model';
 import {
   calculateSatisfactionRadiusStep,
   model,
+  type SatisfactionRadiusParameters,
   satisfactionRadiusSamples,
 } from './satisfaction-radius.model';
 
@@ -21,7 +22,7 @@ const example: SatisfactionRadiusParameters = {
 const parameters: StudyParameters = { ...example };
 
 function motionOf(input: StudyParameters = parameters): MotionStudyModel {
-  return model(input);
+  return model(input, studyTranslate);
 }
 
 it('uses the catalogue example parameters', async () => {
@@ -97,7 +98,10 @@ it('does not count crossing the region between samples as acceptance', () => {
 });
 
 it('shows how an oversized region can accept the starting place', () => {
-  const wide = { ...example, satisfactionRadius: example.target - example.start };
+  const wide = {
+    ...example,
+    satisfactionRadius: example.target - example.start,
+  };
   expect(
     satisfactionRadiusSamples(wide).every(
       (sample) => sample.accepted && sample.position === example.start,
@@ -147,5 +151,31 @@ it('updates the region when its input changes and keeps the drawing in bounds', 
   expect(motionOf({ ...parameters, satisfactionRadius: 0 }).comparison?.findings).toEqual([
     'Both radii are equal, so the comparison runs coincide.',
   ]);
-  expect(model(parameters)).toEqual(model(parameters));
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

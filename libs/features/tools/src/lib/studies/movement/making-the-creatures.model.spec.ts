@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length, sine } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -17,6 +17,7 @@ import {
 } from './making-the-creatures.model';
 
 const record = await loadStudy('aifg-b:373');
+
 const parameters: StudyParameters = {
   startX: 0,
   sheepOffset: 3,
@@ -48,6 +49,7 @@ const parameters: StudyParameters = {
   timeStep: 0.1,
   steps: 160,
 };
+
 const p = readCreatureParameters(parameters);
 
 it('uses exactly the draft record’s parameters and aligns its mechanism and code blocks', () => {
@@ -162,7 +164,7 @@ it('lets Kit approach much more closely when only the flee scale is removed', ()
   );
   expect(Math.min(...gaps)).toBeGreaterThan(9);
   expect(Math.min(...ignoredGaps)).toBeLessThan(0.2);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(gaps);
   expect(comparison?.timeline.series[1].values).toEqual(ignoredGaps);
   expect(comparison?.findings[0]).toContain('9.78 units at flee scale 1.00 and 0.17 at scale 0.00');
@@ -203,9 +205,9 @@ it('silences player response outside its range without inventing a new creature 
 });
 
 it('gives every selected moment complete prose values and geometry on the same chart scales', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const states = creatureFrames(p);
-  expect(model(parameters)).toEqual(run);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.motion.frames.length).toBeLessThanOrEqual(240);
   expect(run.initialStep).toBe(0);
   expect(run.moments).toHaveLength(4);
@@ -260,7 +262,7 @@ it('gives every selected moment complete prose values and geometry on the same c
 });
 
 it('separates the opening wander and flee requests into named rows with visible arrowheads', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const first = run.motion.frames[0];
   const vectors = first.vectors ?? [];
   expect(new Set(vectors.map(({ y }) => y)).size).toBe(4);
@@ -288,10 +290,10 @@ it('separates the opening wander and flee requests into named rows with visible 
 });
 
 it('reruns the player response and goat profile without changing the other starting requests', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['fleeScale', 'goatWanderWeight']);
-  const noResponse = model({ ...parameters, fleeScale: 0 });
-  const strongResponse = model({ ...parameters, fleeScale: 2 });
+  const noResponse = model({ ...parameters, fleeScale: 0 }, studyTranslate);
+  const strongResponse = model({ ...parameters, fleeScale: 2 }, studyTranslate);
   expect(noResponse.motion.frames[0].vectors?.[2].dx).toBe(0);
   expect(strongResponse.motion.frames[0].vectors?.[2].dx).toBe(24);
   expect(noResponse.motion.frames[0].note).toContain('player response is off');
@@ -303,8 +305,8 @@ it('reruns the player response and goat profile without changing the other start
   expect(strongResponse.motion.frames.at(-1)?.values['sheepTravel']).not.toBe(
     noResponse.motion.frames.at(-1)?.values['sheepTravel'],
   );
-  const quietGoats = model({ ...parameters, goatWanderWeight: 0 });
-  const wanderingGoats = model({ ...parameters, goatWanderWeight: 1 });
+  const quietGoats = model({ ...parameters, goatWanderWeight: 0 }, studyTranslate);
+  const wanderingGoats = model({ ...parameters, goatWanderWeight: 1 }, studyTranslate);
   expect(quietGoats.motion.frames[0].values['goatWander']).toBe('0.00');
   expect(wanderingGoats.motion.frames[0].values['goatWander']).toBe('1.00');
   const quietFirst = quietGoats.motion.frames[1].bodies.find(({ id }) => id === 'Flint');
@@ -318,7 +320,7 @@ it('reruns the player response and goat profile without changing the other start
 });
 
 it('keeps notes, prose, labels and all geometry sound at input endpoints and combined extremes', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs).toHaveLength(2);
   const variants = [
     parameters,
@@ -340,7 +342,7 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);

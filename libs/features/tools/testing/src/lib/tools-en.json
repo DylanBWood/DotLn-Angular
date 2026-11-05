@@ -126,6 +126,8 @@
       "flowView": "Flow",
       "marblesView": "Marbles",
       "time": "Time · {{seconds}} seconds",
+      "symbol": "{{symbol}}",
+      "number": "{{value}}",
       "frameOf": "Frame {{frame}} of {{last}}",
       "stepOf": "Step {{frame}} of {{last}}",
       "previous": "Step back",
@@ -148,6 +150,7 @@
       },
       "model": {
         "label": "Executable model",
+        "path": "{{module}}",
         "spec": "The TypeScript model runs this example and is tested in {{spec}}. The ordinary pseudocode above explains its steps."
       },
       "codeGuide": {

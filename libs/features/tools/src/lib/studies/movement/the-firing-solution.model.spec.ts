@@ -1,8 +1,9 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
-import type { FiringParameters } from './the-firing-solution.model';
+import { studyTranslate } from '../../../../testing/src';
 import {
+  type FiringParameters,
   firingPositionAt,
   firingTimes,
   model,
@@ -31,7 +32,11 @@ it('uses the harbour-launcher record parameters and links back to forward predic
 
 it('finds two fixed-speed launches from hand-checkable slopes', () => {
   const solution = solveFiringSolution(example);
-  expect(solution).toMatchObject({ distance: 32, heightOffset: 0, discriminant: 57600 });
+  expect(solution).toMatchObject({
+    distance: 32,
+    heightOffset: 0,
+    discriminant: 57600,
+  });
   expect(solution.arcs).toHaveLength(2);
   const [low, high] = solution.arcs;
   expect(low.slope).toBe(0.5);
@@ -79,7 +84,7 @@ it('returns no shot beyond range and one shot where the two roots meet', () => {
   expect(boundary.discriminant).toBe(0);
   expect(boundary.arcs).toHaveLength(1);
   expect(boundary.arcs[0].slope).toBe(1);
-  const boundaryRun = model({ ...parameters, targetX: 40 });
+  const boundaryRun = model({ ...parameters, targetX: 40 }, studyTranslate);
   expect(boundaryRun.motion.frames.at(-1)?.note).toContain('single admitted candidate');
   expect(boundaryRun.legend.some(({ tone }) => tone === 'desired')).toBe(false);
   expect(solveFiringSolution(example, 40 + 1e-8).arcs).toEqual([]);
@@ -115,8 +120,8 @@ it('inserts exact events into the preview without nearly duplicate playback mome
 });
 
 it('makes the selected moment, height chart and no-shot comparison agree', () => {
-  const run = model(parameters);
-  expect(run).toEqual(model(parameters));
+  const run = model(parameters, studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   const selected = run.motion.frames[run.initialStep];
   expect(selected.seconds).toBeCloseTo(1.788854381999832, 12);
   expect(selected.bodies).toHaveLength(1);
@@ -149,7 +154,7 @@ it('makes the selected moment, height chart and no-shot comparison agree', () =>
 });
 
 it('draws no fictitious flight when the main request itself is unreachable', () => {
-  const run = model({ ...parameters, targetX: 48 });
+  const run = model({ ...parameters, targetX: 48 }, studyTranslate);
   expect(run.timeline).toBeNull();
   expect(
     run.motion.frames.every(
@@ -166,7 +171,7 @@ it('draws no fictitious flight when the main request itself is unreachable', () 
 });
 
 it('keeps candidate positions, velocity arrows and predicted paths inside the view', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const { minX, maxX, minY, maxY } = run.motion.bounds;
   expect(run.motion.frames.length).toBeLessThanOrEqual(240);
   for (const frame of run.motion.frames) {
@@ -174,7 +179,10 @@ it('keeps candidate positions, velocity arrows and predicted paths inside the vi
       ...frame.bodies,
       ...(frame.marks ?? []),
       ...(frame.links ?? []).flatMap(({ from, to }) => [from, to]),
-      ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+      ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({
+        x: x + dx,
+        y: y + dy,
+      })),
     ];
     for (const point of points) {
       expect(Number.isFinite(point.x) && Number.isFinite(point.y)).toBe(true);
@@ -196,6 +204,32 @@ it('supplies every prose placeholder at every selectable frame', async () => {
     record.visual,
   ]);
   const names = [...prose.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/g)].map((match) => match[1]);
-  for (const frame of model(parameters).motion.frames)
+  for (const frame of model(parameters, studyTranslate).motion.frames)
     for (const name of names) expect(frame.values[name]).toBeDefined();
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

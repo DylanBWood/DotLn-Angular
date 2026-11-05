@@ -42,6 +42,9 @@ export const queueWithLimit =
     return { toVerifier$, deadLetter$ };
   };
 
+const requests = { a: 'verify order 31', b: 'verify order 32', c: 'verify order 33' };
+const waiting = ['b', 'c'];
+
 /**
  * The operator sends three requests to verify an order into the queue in front of one verifier.
  * The first reaches the verifier at once and keeps it busy; when it is free again, the oldest
@@ -52,71 +55,138 @@ export const queueWithLimit =
 export const example: MarbleExample = {
   inputs: {
     request$: {
-      label: 'request$',
+      label: 'studyEip.message-expiration.model.example.inputs.request.label',
       marbles: '-a-b-c',
-      values: { a: 'verify order 31', b: 'verify order 32', c: 'verify order 33' },
+      values: requests,
       hot: true,
+
+      valueMessages: {
+        a: 'studyEip.message-expiration.model.example.inputs.request.values.a',
+        b: 'studyEip.message-expiration.model.example.inputs.request.values.b',
+        c: 'studyEip.message-expiration.model.example.inputs.request.values.c',
+      },
     },
   },
   inner: {
     'verify order 31': {
-      label: 'verification(31)',
+      label: 'studyEip.message-expiration.model.example.inner.verify-order-31.label',
       marbles: '------|',
       subscriptions: '--^-----!',
     },
     'verify order 33': {
-      label: 'verification(33)',
+      label: 'studyEip.message-expiration.model.example.inner.verify-order-33.label',
       marbles: '-|',
       subscriptions: '---------^!',
     },
   },
-  operator: `concatMap: past ${timeToLive} steps to deadLetter$, else to the verifier`,
+  operator: {
+    key: 'studyEip.message-expiration.model.example.operator',
+    params: { timeToLive },
+  },
   outputs: {
     toVerifier$: {
-      label: 'toVerifier$',
+      label: 'studyEip.message-expiration.model.example.outputs.toVerifier.label',
       marbles: '--a------c',
       values: { a: 'verify order 31', c: 'verify order 33' },
+
+      valueMessages: {
+        a: 'studyEip.message-expiration.model.example.outputs.toVerifier.values.a',
+        c: 'studyEip.message-expiration.model.example.outputs.toVerifier.values.c',
+      },
     },
     deadLetter$: {
-      label: 'deadLetter$',
+      label: 'studyEip.message-expiration.model.example.outputs.deadLetter.label',
       marbles: '--------b',
       values: { b: 'verify order 32' },
+
+      valueMessages: {
+        b: 'studyEip.message-expiration.model.example.outputs.deadLetter.values.b',
+      },
     },
   },
   run: queueWithLimit(timeToLive),
   moments: [
-    { label: 'First one verified', frame: 2 },
-    { label: 'Two waiting', frame: 5 },
-    { label: "b's last good step", frame: 7 },
-    { label: 'b expires', frame: 8 },
-    { label: 'c verified', frame: 9 },
+    {
+      label: 'studyEip.message-expiration.model.example.moments.0.label',
+      frame: 2,
+    },
+    {
+      label: {
+        key: 'studyEip.message-expiration.model.example.moments.1.label',
+        params: { waiting: waiting.length },
+      },
+      frame: 5,
+    },
+    {
+      label: 'studyEip.message-expiration.model.example.moments.2.label',
+      frame: 7,
+    },
+    {
+      label: 'studyEip.message-expiration.model.example.moments.3.label',
+      frame: 8,
+    },
+    {
+      label: 'studyEip.message-expiration.model.example.moments.4.label',
+      frame: 9,
+    },
   ],
   notes: {
-    0: 'The operator has three orders to be verified and has sent nothing yet. The Request queue is empty and the Verifier is free.',
-    1: `The operator sends a, a request to verify order 31, to the Request queue, with a time limit of ${timeToLive} steps.`,
-    2: 'The Verifier is free, so the Request queue hands a to it, and the Verifier starts verifying order 31.',
-    3: `The operator sends b, a request to verify order 32, to the Request queue, with the same limit of ${timeToLive} steps. The Verifier is busy, so b waits.`,
-    4: 'Nothing moves. b waits in the Request queue while the Verifier works on order 31.',
-    5: 'The operator sends c, a request to verify order 33, to the Request queue, where it waits behind b.',
-    6: 'Nothing moves. b and c both wait while the Verifier works on order 31.',
-    7: `Nothing moves. b has now waited its whole limit of ${timeToLive} steps, and the Verifier is still busy with order 31.`,
-    8: 'The Verifier finishes order 31 and is free. The oldest request waiting, b, is now past its limit, so the Request queue moves it to the Dead letter channel instead of handing it to the Verifier.',
-    9: 'The Request queue hands c, still within its limit, to the Verifier, which starts verifying order 33.',
-    10: 'The Verifier finishes order 33. Orders 31 and 33 were verified; order 32 never was, and the Dead letter channel keeps its request where someone can see it.',
+    0: {
+      key: 'studyEip.message-expiration.model.example.notes.0',
+      params: { orders: Object.keys(requests).length },
+    },
+    1: {
+      key: 'studyEip.message-expiration.model.example.notes.1',
+      params: { timeToLive },
+    },
+    2: 'studyEip.message-expiration.model.example.notes.2',
+    3: {
+      key: 'studyEip.message-expiration.model.example.notes.3',
+      params: { timeToLive },
+    },
+    4: 'studyEip.message-expiration.model.example.notes.4',
+    5: 'studyEip.message-expiration.model.example.notes.5',
+    6: 'studyEip.message-expiration.model.example.notes.6',
+    7: {
+      key: 'studyEip.message-expiration.model.example.notes.7',
+      params: { timeToLive },
+    },
+    8: 'studyEip.message-expiration.model.example.notes.8',
+    9: 'studyEip.message-expiration.model.example.notes.9',
+    10: 'studyEip.message-expiration.model.example.notes.10',
   },
   // Every value the outputs carry is one of the operator's requests, so each rides from request$.
   origins: { 2: 'request$', 8: 'request$', 9: 'request$' },
-  caption:
-    'Time runs in frames, one step of the flow each. request$ is what the operator sends: a, b and c are requests to verify orders 31, 32 and 33. A verification lane runs from the frame the Verifier receives a request to the bar where it finishes; it carries no values and only keeps the Verifier busy, and there is none for b. toVerifier$ shows each request as it reaches the Verifier, one frame after the queue lets it go, and deadLetter$ each request that was past its limit when its turn came.',
+  caption: 'studyEip.message-expiration.model.example.caption',
 };
 
 /** The operator, the queue the pattern is about, and the two places a request can leave it for. */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'operator', label: 'Operator', stage: 0 },
-    { id: 'queue', label: 'Request queue', stage: 1, kind: 'channel', tone: 'subject' },
-    { id: 'verifier', label: 'Verifier', stage: 2 },
-    { id: 'dead', label: 'Dead letter', stage: 2, row: 1, kind: 'channel' },
+    {
+      id: 'operator',
+      label: 'studyEip.message-expiration.model.flow.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'queue',
+      label: 'studyEip.message-expiration.model.flow.nodes.1.label',
+      stage: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'verifier',
+      label: 'studyEip.message-expiration.model.flow.nodes.2.label',
+      stage: 2,
+    },
+    {
+      id: 'dead',
+      label: 'studyEip.message-expiration.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+      kind: 'channel',
+    },
   ],
   links: [
     { id: 'send', from: 'operator', to: 'queue' },
@@ -125,34 +195,79 @@ export const flow: MarbleFlow = {
   ],
   routes: { request$: 'send', toVerifier$: 'take', deadLetter$: 'expire' },
   states: {
-    0: { operator: '3 requests to send', queue: 'empty', verifier: 'free', dead: 'empty' },
-    1: { operator: 'sent a', queue: `a good until step ${1 + timeToLive}` },
-    2: { queue: 'empty', verifier: 'verifying order 31' },
-    3: { operator: 'sent a, b', queue: `b good until step ${3 + timeToLive}` },
+    0: {
+      operator: {
+        key: 'studyEip.message-expiration.model.flow.states.0.operator',
+        params: { requests: Object.keys(requests).length },
+      },
+      queue: 'studyEip.message-expiration.model.flow.states.0.queue',
+      verifier: 'studyEip.message-expiration.model.flow.states.0.verifier',
+      dead: 'studyEip.message-expiration.model.flow.states.0.dead',
+    },
+    1: {
+      operator: 'studyEip.message-expiration.model.flow.states.1.operator',
+      queue: {
+        key: 'studyEip.message-expiration.model.flow.states.1.queue',
+        params: { firstDeadline: 1 + timeToLive },
+      },
+    },
+    2: {
+      queue: 'studyEip.message-expiration.model.flow.states.2.queue',
+      verifier: 'studyEip.message-expiration.model.flow.states.2.verifier',
+    },
+    3: {
+      operator: 'studyEip.message-expiration.model.flow.states.3.operator',
+      queue: {
+        key: 'studyEip.message-expiration.model.flow.states.3.queue',
+        params: { secondDeadline: 3 + timeToLive },
+      },
+    },
     5: {
-      operator: 'sent a, b, c',
-      queue: `b until ${3 + timeToLive}, c until ${5 + timeToLive}`,
+      operator: 'studyEip.message-expiration.model.flow.states.5.operator',
+      queue: {
+        key: 'studyEip.message-expiration.model.flow.states.5.queue',
+        params: {
+          secondDeadline: 3 + timeToLive,
+          thirdDeadline: 5 + timeToLive,
+        },
+      },
     },
-    7: { queue: `b until ${3 + timeToLive} (now), c until ${5 + timeToLive}` },
+    7: {
+      queue: {
+        key: 'studyEip.message-expiration.model.flow.states.7.queue',
+        params: {
+          secondDeadline: 3 + timeToLive,
+          thirdDeadline: 5 + timeToLive,
+        },
+      },
+    },
     8: {
-      queue: `c good until step ${5 + timeToLive}`,
-      verifier: 'finished 31; free',
-      dead: 'b, never verified',
+      queue: {
+        key: 'studyEip.message-expiration.model.flow.states.8.queue',
+        params: { thirdDeadline: 5 + timeToLive },
+      },
+      verifier: 'studyEip.message-expiration.model.flow.states.8.verifier',
+      dead: 'studyEip.message-expiration.model.flow.states.8.dead',
     },
-    9: { queue: 'empty', verifier: 'verifying order 33' },
-    10: { verifier: 'finished 33; free' },
+    9: {
+      queue: 'studyEip.message-expiration.model.flow.states.9.queue',
+      verifier: 'studyEip.message-expiration.model.flow.states.9.verifier',
+    },
+    10: {
+      verifier: 'studyEip.message-expiration.model.flow.states.10.verifier',
+    },
   },
   held: {
     1: { queue: ['a'] },
     2: { queue: [], verifier: ['a'] },
     3: { queue: ['b'] },
-    5: { queue: ['b', 'c'] },
+    5: { queue: waiting },
     8: { queue: ['c'], verifier: [], dead: ['b'] },
     9: { queue: [], verifier: ['c'] },
     10: { verifier: [] },
   },
-  caption:
-    'Each token is one request from the operator, the person directing the work, to verify an order: a, b and c ask for orders 31, 32 and 33. The Operator box sends them. The Request queue is the channel they wait in, each carrying the step until which it is still worth starting. The Verifier works on one request at a time, and the Dead letter box is a second channel that keeps the requests that waited too long, unverified, where someone can see them. The words in a box say what that box is doing or holding. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.',
+  caption: 'studyEip.message-expiration.model.flow.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

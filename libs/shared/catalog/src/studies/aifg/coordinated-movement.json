@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:173",
   "work": "aifg",
   "slug": "coordinated-movement",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 10",
+    "by": "studyAifg.coordinated-movement.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.coordinated-movement.record.authored.reviewedBy.item0",
+      "studyAifg.coordinated-movement.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "The Harbour survey trio needs to cross a quay abreast: Scanner watches one edge, Camera records the centre and Radio watches the other. Sending all of them to the survey gate would discard that organisation. Instead, move a shared pattern and give each robot its own moving place within it.",
-    "situation": "Use coordination when individual movement must preserve a useful relationship between members. The shared task decides the pattern and its pace; each robot still needs a movement controller capable of keeping up."
+    "text": "studyAifg.coordinated-movement.record.intuition.text",
+    "situation": "studyAifg.coordinated-movement.record.intuition.situation"
   },
   "example": {
-    "name": "The Harbour survey trio crosses the quay",
-    "description": "Scanner, Camera and Radio start abreast around ({startX}, {startY}), with neighbouring slots {spacing} units apart. Their shared anchor heads for the survey gate at ({targetX}, {targetY}). Scanner and Radio can travel at {memberSpeed} units/s; Camera can travel at {cameraSpeed}. The anchor uses the engine's planning speed {anchorSpeed} units per planning step and lag limit {lagLimit} units. Each local integration step lasts {timeStep} s. The comparison changes only Camera's speed limit to {failureCameraSpeed} units/s.",
+    "name": "studyAifg.coordinated-movement.record.example.name",
+    "description": "studyAifg.coordinated-movement.record.example.description",
     "parameters": {
       "startX": 0,
       "startY": 0,
@@ -42,25 +45,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Give each robot a distinct place",
-        "text": "The public patternSlots function centres a line around the anchor. Public assignSlots maps the robots to left, centre and right roles using costs {preferredCost} for their own roles and {otherCost} for the others. Assignment happens once for this fixed crew; it is separate from steering to the chosen place."
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step0.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Move the shared reference",
-        "text": "Public advanceFormation steers the anchor towards the survey gate, moderates it towards the members' previous mean and caps how far it can lead that mean. Public slotPosition turns each relative offset into a world target. The anchor is a reference point, not another robot."
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step1.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Let each robot follow its own target",
-        "text": "Public arrive returns a bounded acceleration towards each moved slot, using slowing radius {slowRadius}, target radius {targetRadius} and response time {responseTime}. The study-local integrator updates velocity, caps it at that robot's speed limit, then moves position with the new velocity. It adds no separation or collision avoidance."
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step2.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Measure whether the relationship survives",
-        "text": "Measure Camera's distance from its centre slot and the mean distance of all members from their slots after each update. Distinct targets preserve identity, but do not guarantee that every robot can reach its target at the chosen pace. The lines joining bodies to rings make that difference visible."
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step3.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "slots = patternSlots('line', crew.length, spacing)\nassignment = assignSlots(crew, ['left', 'centre', 'right'], costs)\nformation = makeTwoLevelFormation(slots, assignment, start, anchorSpeed, lagLimit)\n\nformation = advanceFormation(formation, previousMembers, surveyGate, timeStep)\ntargets = assignment.map(member => slotPosition(formation, member.slot))\n\nfor each robot, using the previous members:\n  acceleration = arrive(robot, itsTarget, arrivalTuning)\n  velocity = clipLength(robot.velocity + acceleration * timeStep, robot.maxSpeed)\n  position = robot.position + velocity * timeStep\n\ncameraError = distance(camera.position, cameraSlot)\nmeanError = mean(members.map(robot => distance(robot.position, itsSlot)))\nremember(formation, members, cameraError, meanError)",
+    "ordinary": "studyAifg.coordinated-movement.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -70,57 +73,57 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/coordinated-movement.model.ts",
-    "textEquivalent": "At {seconds} s, Scanner, Camera and Radio follow their own moving slots. Camera is at ({cameraX}, {cameraY}), {cameraError} units from its slot; the crew’s mean slot error is {meanError} units. Their shared anchor is at ({anchorX}, {anchorY}), heading for the gate at ({targetX}, {targetY})."
+    "textEquivalent": "studyAifg.coordinated-movement.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "gdx-ai · formation motion",
+      "project": "studyAifg.coordinated-movement.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
-      "relevance": "gdx-ai is a Java game-AI library. Formation coordinates member targets through separate pattern, assignment-strategy and optional motion-moderator objects, making the responsibilities independently replaceable.",
-      "explanation": "updateSlotAssignments asks the strategy for assignments and updates the pattern's slot count. updateSlots asks the pattern for each relative slot, rotates it by the anchor's orientation, applies position and drift offsets, then writes the member's target location. It calls an optional moderator afterwards. The member's actual movement remains separate from this target-generation code."
+      "relevance": "studyAifg.coordinated-movement.record.implementations.item0.relevance",
+      "explanation": "studyAifg.coordinated-movement.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement · 3.7 Coordinated Movement",
+      "title": "studyAifg.coordinated-movement.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "Identifies the book whose coverage of coordinated movement the supplied catalog places at Chapter 3, section 3.7. DOI content negotiation confirmed bibliographic metadata; chapter text was not read."
+      "supports": "studyAifg.coordinated-movement.record.references.item0.supports"
     },
     {
-      "title": "gdx-ai · Formation.java at version 1.8.2",
+      "title": "studyAifg.coordinated-movement.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
       "accessed": "2026-11-04",
-      "supports": "Separates assignment, pattern-relative slot generation, anchor transformation, member target locations and an optional motion moderator."
+      "supports": "studyAifg.coordinated-movement.record.references.item1.supports"
     },
     {
-      "title": "gdx-ai · FormationMotionModerator.java at version 1.8.2",
+      "title": "studyAifg.coordinated-movement.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationMotionModerator.java",
       "accessed": "2026-11-04",
-      "supports": "Provides a per-update anchor-moderation hook and calculates drift from the average positions and orientations of occupied pattern slots."
+      "supports": "studyAifg.coordinated-movement.record.references.item2.supports"
     }
   ],
   "limits": [
-    "Reducing Camera's top speed can leave its assigned slot far ahead even while the slot table remains valid. The comparison with Camera limited to {failureCameraSpeed} units/s measures this loss of formation; a lag limit on the group mean does not bound every member's slot error.",
-    "The quay is empty and the gate is fixed. This example does not plan a formation's swept width through obstacles, avoid collisions or change its shape to pass through a doorway.",
-    "The crew and roles stay fixed. A departing robot, a failed sensor or a change of task needs an explicit reassignment policy; this run does not silently change who owns a slot."
+    "studyAifg.coordinated-movement.record.limits.item0",
+    "studyAifg.coordinated-movement.record.limits.item1",
+    "studyAifg.coordinated-movement.record.limits.item2"
   ],
   "nearby": [
     {
       "id": "aifg-a:35",
-      "why": "Reach for the Strategy layer when deciding why the trio should move together, where it should go or which survey task takes priority; movement coordination takes that shared purpose as given."
+      "why": "studyAifg.coordinated-movement.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:177",
-      "why": "Open Two-level formation steering for the specific arrangement used here: a shared moving anchor followed by independently steered members."
+      "why": "studyAifg.coordinated-movement.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:186",
-      "why": "Open Slot assignment when membership or role suitability changes. Choosing who owns a place is a separate decision from following it."
+      "why": "studyAifg.coordinated-movement.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:191",
-      "why": "Reach for Tactical movement when the shared organisation must respond to cover, threats or other environmental opportunities instead of following this empty-quay pattern."
+      "why": "studyAifg.coordinated-movement.record.nearby.item3.why"
     }
   ]
 }

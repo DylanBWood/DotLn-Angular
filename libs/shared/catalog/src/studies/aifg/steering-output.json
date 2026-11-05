@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:94",
   "work": "aifg",
   "slug": "steering-output",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 1",
+    "by": "studyAifg.steering-output.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.steering-output.record.authored.reviewedBy.item0",
+      "studyAifg.steering-output.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "Nori’s inspection tug already has motion when a steering request arrives. The request says how that motion should change, so the tug’s controller must keep it separate from the velocity and turning rate it already has. Packaging linear and angular acceleration together lets one update carry both instructions without confusing either with a new position or heading.",
-    "situation": "Use a steering output at the boundary between a rule that requests movement and a controller that advances a body. Nori’s pulse makes this boundary visible: the controller consumes the request, then continues moving after the request becomes zero."
+    "text": "studyAifg.steering-output.record.intuition.text",
+    "situation": "studyAifg.steering-output.record.intuition.situation"
   },
   "example": {
-    "name": "Nori’s inspection pulse",
-    "description": "Nori launches at ({initialX}, {initialY}) with velocity ({initialVelocityX}, {initialVelocityY}) units/s, heading {initialHeading} rad and turning rate {initialRotation} rad/s. For {pulseSeconds} s it receives world-coordinate linear acceleration ({linearAccelerationX}, {linearAccelerationY}) units/s² and angular acceleration {angularAcceleration} rad/s²; later updates receive zero in both channels. Each update lasts {timeStep} s and the run lasts {duration} s. This is a study-local output record and consumer: the engine provides vector arithmetic, but no combined linear/angular output type or angular integrator.",
+    "name": "studyAifg.steering-output.record.example.name",
+    "description": "studyAifg.steering-output.record.example.description",
     "parameters": {
       "initialX": 0,
       "initialY": 0,
@@ -35,25 +38,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Package the current request",
-        "text": "At this update the pulse supplies linear {linearOutput} units/s² and angular {angularOutput} rad/s². The linear vector uses world axes; the angular scalar changes the rate of facing. After the pulse the complete request is zeroed, so a previous command cannot remain accidentally active."
+        "title": "studyAifg.steering-output.record.mechanism.steps.step0.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Change linear velocity",
-        "text": "Multiply linear acceleration by {timeStep} s and add the resulting velocity change, {velocityChange} units/s, to Nori’s existing velocity. Assigning acceleration directly to velocity would mix quantities with different units and lose the motion already present."
+        "title": "studyAifg.steering-output.record.mechanism.steps.step1.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Change angular velocity",
-        "text": "Multiply angular acceleration by the same update interval and add it to the existing turning rate. A positive angular output increases that rate; zero preserves it. Neither value is a heading assignment."
+        "title": "studyAifg.steering-output.record.mechanism.steps.step2.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Advance using the updated rates",
-        "text": "Move with the new linear velocity and turn with the new angular velocity. This local consumer chooses rates first, then positions and heading. It has no drag, speed cap or automatic coupling between facing and the world-coordinate linear channel."
+        "title": "studyAifg.steering-output.record.mechanism.steps.step3.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "output = { linear: (linearAccelerationX, linearAccelerationY),\n           angular: angularAcceleration }\nif seconds >= pulseSeconds:\n  output = { linear: (0, 0), angular: 0 }\n\nvelocity = velocity + output.linear * timeStep\n\nrotation = rotation + output.angular * timeStep\n\nposition = position + velocity * timeStep\nheading = heading + rotation * timeStep",
+    "ordinary": "studyAifg.steering-output.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -63,52 +66,52 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/steering-output.model.ts",
-    "textEquivalent": "At {seconds} s Nori is at {position}, facing {heading} rad, with velocity {velocity} units/s and turning rate {rotation} rad/s; its request is linear {linearOutput} units/s² and angular {angularOutput} rad/s², and the amber arrow shows velocity change {velocityChange} units/s; the comparison tug is at {comparisonPosition} with the same facing."
+    "textEquivalent": "studyAifg.steering-output.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "gdx-ai",
+      "project": "studyAifg.steering-output.record.implementations.item0.project",
       "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringAcceleration.java",
-      "relevance": "gdx-ai is a public Java game-AI library. SteeringAcceleration is its concrete record for a requested linear and angular movement change, making the producer/consumer boundary visible in a reusable API.",
-      "explanation": "The class stores a generic vector in linear and a float in angular. setZero clears both fields; add, scl and mulAdd operate on both channels together, which lets callers accumulate or weight requests without dropping the angular part. The class holds and combines accelerations; it does not update a body’s position or orientation."
+      "relevance": "studyAifg.steering-output.record.implementations.item0.relevance",
+      "explanation": "studyAifg.steering-output.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement, §3.1.3 Kinematics",
+      "title": "studyAifg.steering-output.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers steering output in Chapter 3, section 3.1.3, Kinematics."
+      "supports": "studyAifg.steering-output.record.references.item0.supports"
     },
     {
-      "title": "gdx-ai 1.8.2 · SteeringAcceleration.java",
+      "title": "studyAifg.steering-output.record.references.item1.title",
       "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringAcceleration.java",
       "accessed": "2026-11-04",
-      "supports": "The record contains linear and angular acceleration fields, clears both together and provides arithmetic on both channels without advancing a body."
+      "supports": "studyAifg.steering-output.record.references.item1.supports"
     }
   ],
   "limits": [
-    "Zero output is not a stop command. At {coastSeconds} s the pulse has ended, yet Nori retains velocity {coastVelocity} units/s and turning rate {coastRotation} rad/s. Stopping requires a braking request or a separate controller rule.",
-    "Turning alone does not bend a world-coordinate velocity in this consumer. Changing only the world-y pulse from {linearAccelerationY} to {comparisonLinearAccelerationY} units/s² changes final y from {finalY} to {comparisonFinalY} units while both facings remain identical. A craft constrained to move along its heading needs a different actuator model.",
-    "The record’s shape does not enforce acceleration bounds, coordinate conventions or how a real body can move. The producer and consumer must agree on units, axes and which limits they enforce.",
-    "The rates-first update is a numerical choice. A larger time step changes the positions and headings reached during the pulse even when the final velocities agree. Outputs are sampled at update boundaries, so a pulse ending between samples remains active until the next sample."
+    "studyAifg.steering-output.record.limits.item0",
+    "studyAifg.steering-output.record.limits.item1",
+    "studyAifg.steering-output.record.limits.item2",
+    "studyAifg.steering-output.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:93",
-      "why": "Kinematic data is the state a consumer changes. Read it when the difference between current motion and a requested change needs clarification."
+      "why": "studyAifg.steering-output.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:95",
-      "why": "The Kinematic update step is the next study when the order of integration, limits or the body’s state update is the main question."
+      "why": "studyAifg.steering-output.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:116",
-      "why": "Align supplies a goal-directed angular request when Nori should finish facing a chosen direction rather than receive a fixed turning pulse."
+      "why": "studyAifg.steering-output.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:96",
-      "why": "Variable frame rate matters when update intervals change; this study fixes the interval so the output’s units and accumulation remain easy to inspect."
+      "why": "studyAifg.steering-output.record.nearby.item3.why"
     }
   ]
 }

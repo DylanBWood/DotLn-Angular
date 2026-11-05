@@ -12,25 +12,42 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     download$: {
-      label: 'download$',
+      label: 'studyRxjs.finalize.model.example.inputs.download.label',
       marbles: '--a--b--c--d|',
       values: { a: 'part 1', b: 'part 2', c: 'part 3', d: 'part 4' },
       subscriptions: '^------!',
+
+      valueMessages: {
+        a: 'studyRxjs.finalize.model.example.inputs.download.values.a',
+        b: 'studyRxjs.finalize.model.example.inputs.download.values.b',
+        c: 'studyRxjs.finalize.model.example.inputs.download.values.c',
+        d: 'studyRxjs.finalize.model.example.inputs.download.values.d',
+      },
     },
   },
-  operator: 'finalize(release), finalize(hideSpinner)',
+  operator: 'studyRxjs.finalize.model.example.operator',
   outputs: {
     shown$: {
-      label: 'shown$',
+      label: 'studyRxjs.finalize.model.example.outputs.shown.label',
       marbles: '--a--b-',
       values: { a: 'part 1', b: 'part 2' },
       // The view listens from the start and leaves with the reader.
       subscriptions: '^------!',
+
+      valueMessages: {
+        a: 'studyRxjs.finalize.model.example.outputs.shown.values.a',
+        b: 'studyRxjs.finalize.model.example.outputs.shown.values.b',
+      },
     },
     cleanup$: {
-      label: 'cleanup$',
+      label: 'studyRxjs.finalize.model.example.outputs.cleanup.label',
       marbles: '-------(rh)',
       values: { r: 'released', h: 'hidden' },
+
+      valueMessages: {
+        r: 'studyRxjs.finalize.model.example.outputs.cleanup.values.r',
+        h: 'studyRxjs.finalize.model.example.outputs.cleanup.values.h',
+      },
     },
   },
   run: ({ inputs: { download$ } }) => {
@@ -42,19 +59,18 @@ export const example: MarbleExample = {
     return { shown$, cleanup$ };
   },
   moments: [
-    { label: 'Started', frame: 0 },
-    { label: 'First part', frame: 2 },
-    { label: 'Second part', frame: 5 },
-    { label: 'Reader leaves', frame: 7 },
+    { label: 'studyRxjs.finalize.model.example.moments.0.label', frame: 0 },
+    { label: 'studyRxjs.finalize.model.example.moments.1.label', frame: 2 },
+    { label: 'studyRxjs.finalize.model.example.moments.2.label', frame: 5 },
+    { label: 'studyRxjs.finalize.model.example.moments.3.label', frame: 7 },
   ],
-  caption:
-    'Time runs in frames. A circle is an emission, with its letter. A lane that ends in a small hollow ring is where listening stopped: the view leaves shown$, and that cuts the download off. cleanup$ is not part of the program; each clean-up reports itself there so the diagram can show when it ran, and the two on one frame ran in the order of their letters, r before h. Step the frames to follow each emission.',
+  caption: 'studyRxjs.finalize.model.example.caption',
   notes: {
-    0: 'The reader starts the download and the spinner shows. finalize has only taken note of its two clean-ups.',
-    2: 'The first part arrives and is shown. Nothing is cleaned up while the download runs.',
-    5: 'The second part arrives and is shown.',
-    7: 'The reader leaves the page and the view unsubscribes from shown$. It is told nothing, since it is the one that left. The subscription is torn down from the source outward: the download is cut off, the connection is released, and then the spinner is hidden.',
+    0: 'studyRxjs.finalize.model.example.notes.0',
+    2: 'studyRxjs.finalize.model.example.notes.2',
+    5: 'studyRxjs.finalize.model.example.notes.5',
+    7: 'studyRxjs.finalize.model.example.notes.7',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

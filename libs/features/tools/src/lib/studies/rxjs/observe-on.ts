@@ -18,25 +18,43 @@ const paints = '---p---p';
 export const example: MarbleExample = {
   inputs: {
     progress$: {
-      label: 'progress$',
+      label: 'studyRxjs.observe-on.model.example.inputs.progress.label',
       marbles: '-ab--c#',
       values: { a: '10%', b: '30%', c: '60%' },
       error: 'connection lost',
       subscriptions: '^-----!',
+
+      valueMessages: {
+        a: 'studyRxjs.observe-on.model.example.inputs.progress.values.a',
+        b: 'studyRxjs.observe-on.model.example.inputs.progress.values.b',
+        c: 'studyRxjs.observe-on.model.example.inputs.progress.values.c',
+      },
+      errorMessage: 'studyRxjs.observe-on.model.example.inputs.progress.error',
     },
     repaint: {
-      label: 'repaint',
+      label: 'studyRxjs.observe-on.model.example.inputs.repaint.label',
       marbles: paints,
       values: { p: 'the browser paints' },
+
+      valueMessages: {
+        p: 'studyRxjs.observe-on.model.example.inputs.repaint.values.p',
+      },
     },
   },
-  operator: 'observeOn(animationFrameScheduler)',
+  operator: 'studyRxjs.observe-on.model.example.operator',
   outputs: {
     bar$: {
-      label: 'bar$',
+      label: 'studyRxjs.observe-on.model.example.outputs.bar.label',
       marbles: '---(ab)(c#)',
       values: { a: '10%', b: '30%', c: '60%' },
       error: 'connection lost',
+
+      valueMessages: {
+        a: 'studyRxjs.observe-on.model.example.outputs.bar.values.a',
+        b: 'studyRxjs.observe-on.model.example.outputs.bar.values.b',
+        c: 'studyRxjs.observe-on.model.example.outputs.bar.values.c',
+      },
+      errorMessage: 'studyRxjs.observe-on.model.example.outputs.bar.error',
     },
   },
   run: ({ inputs: { progress$ } }) => {
@@ -49,23 +67,27 @@ export const example: MarbleExample = {
   // they are delivered is where they come from, so no value rides down from the repaint marker.
   origins: { 3: null, 7: null },
   moments: [
-    { label: 'Reports queue', frame: 2 },
-    { label: 'First paint', frame: 3 },
-    { label: 'Upload fails', frame: 6 },
-    { label: 'Second paint', frame: 7 },
+    { label: 'studyRxjs.observe-on.model.example.moments.0.label', frame: 2 },
+    { label: 'studyRxjs.observe-on.model.example.moments.1.label', frame: 3 },
+    { label: 'studyRxjs.observe-on.model.example.moments.2.label', frame: 6 },
+    { label: 'studyRxjs.observe-on.model.example.moments.3.label', frame: 7 },
   ],
   notes: {
-    0: 'The upload starts and the bar subscribes through observeOn. Nothing has been reported yet.',
-    1: 'The upload reports 10%. observeOn does not pass it on: it hands the report to animationFrameScheduler, which asks the browser for the next animation frame.',
-    2: 'The upload reports 30%. A frame is already requested, so the scheduler only queues this report behind the first. The bar has heard nothing.',
-    3: 'The browser is about to paint and runs the animation frame. The scheduler delivers both queued reports in order: the bar is drawn at 10% and at once at 30%, and only 30% reaches the screen.',
-    4: 'Nothing new happens. The queue is empty, and the bar shows 30% until the next report is delivered.',
-    5: 'The upload reports 60%. The queue is empty again, so the scheduler queues this report and requests a new frame.',
-    6: 'The connection is lost and the upload errors. Its subscription ends here, but observeOn schedules the error like any other notification, behind 60%.',
-    7: 'The browser paints again. The bar hears 60% and then the error, in the order they happened, in the same frame.',
+    0: 'studyRxjs.observe-on.model.example.notes.0',
+    1: 'studyRxjs.observe-on.model.example.notes.1',
+    2: 'studyRxjs.observe-on.model.example.notes.2',
+    3: 'studyRxjs.observe-on.model.example.notes.3',
+    4: 'studyRxjs.observe-on.model.example.notes.4',
+    5: 'studyRxjs.observe-on.model.example.notes.5',
+    6: 'studyRxjs.observe-on.model.example.notes.6',
+    7: 'studyRxjs.observe-on.model.example.notes.7',
   },
-  caption:
-    'Time runs in frames. progress$ is what the upload reports; repaint is not a stream the pipeline reads but marks each frame at which the browser is about to paint, when animationFrameScheduler runs what it holds; bar$ is what the progress bar hears. A circle is an emission, with its letter; a cross on progress$ or bar$ is the upload failing. bar$’s values do not ride down at a paint: each left progress$ frames earlier and waited in the scheduler’s queue. Step the frames to follow each report from the upload to the bar.',
+  caption: 'studyRxjs.observe-on.model.example.caption',
+
+  parameterMessages: {
+    reports: 'studyRxjs.observe-on.record.parameters.reports',
+    failure: 'studyRxjs.observe-on.record.parameters.failure',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

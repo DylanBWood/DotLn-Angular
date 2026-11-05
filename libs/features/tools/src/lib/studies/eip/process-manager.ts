@@ -20,7 +20,11 @@ export interface Status {
 }
 
 /** Before the drive: nothing called for and nothing failed. */
-export const opened: Status = { phrase: 'nothing yet', failures: 0, stopped: false };
+export const opened: Status = {
+  phrase: 'nothing yet',
+  failures: 0,
+  stopped: false,
+};
 
 /**
  * Folds one message the router reads into its record of the order and decides the phrase that
@@ -39,16 +43,35 @@ export function fold(status: Status, message: unknown): Status {
       const failures = status.failures + 1;
       return failures < failureLimit
         ? { ...status, failures, phrase: 'resume: fix' }
-        : { failures, phrase: `stop after ${failures} failed verifications`, stopped: true };
+        : {
+            failures,
+            phrase: `stop after ${failures} failed verifications`,
+            stopped: true,
+          };
     }
     case 'verification-result pass':
       return { ...status, phrase: 'resume: final review' };
     case 'final-review-result pass':
-      return { ...status, phrase: 'stop for the operator merge', stopped: true };
+      return {
+        ...status,
+        phrase: 'stop for the operator merge',
+        stopped: true,
+      };
     default:
       throw new Error(`The router has no rule for ${String(message)}.`);
   }
 }
+
+const outcomes = {
+  i: 'implementation-ready',
+  x: 'verification-result fail',
+  c: 'repair-complete',
+  p: 'verification-result pass',
+  a: 'final-review-result pass',
+};
+
+const beforeVerification = fold(opened, outcomes.i);
+const afterFailure = fold(beforeVerification, outcomes.x);
 
 /**
  * The operator drives one order. Each worker reports one frame after the phrase that started it,
@@ -60,26 +83,36 @@ export function fold(status: Status, message: unknown): Status {
  */
 export const example: MarbleExample = {
   inputs: {
-    drive$: { label: 'drive$', marbles: '^d|', hot: true, values: { d: `drive: ${order}` } },
+    drive$: {
+      label: 'studyEip.process-manager.model.example.inputs.drive.label',
+      marbles: '^d|',
+      hot: true,
+      values: { d: `drive: ${order}` },
+      valueMessages: {
+        d: 'studyEip.process-manager.model.example.inputs.drive.values.d',
+      },
+    },
     outcomes$: {
-      label: 'outcomes$',
+      label: 'studyEip.process-manager.model.example.inputs.outcomes.label',
       marbles: '^--i-x-c-p-a',
       hot: true,
-      values: {
-        i: 'implementation-ready',
-        x: 'verification-result fail',
-        c: 'repair-complete',
-        p: 'verification-result pass',
-        a: 'final-review-result pass',
-      },
+      values: outcomes,
       // The router stops reading reports when the route ends.
       subscriptions: '^----------!',
+
+      valueMessages: {
+        i: 'studyEip.process-manager.model.example.inputs.outcomes.values.i',
+        x: 'studyEip.process-manager.model.example.inputs.outcomes.values.x',
+        c: 'studyEip.process-manager.model.example.inputs.outcomes.values.c',
+        p: 'studyEip.process-manager.model.example.inputs.outcomes.values.p',
+        a: 'studyEip.process-manager.model.example.inputs.outcomes.values.a',
+      },
     },
   },
-  operator: 'merge, scan(fold), takeWhile(not stopped), map(phrase), delay(1)',
+  operator: 'studyEip.process-manager.model.example.operator',
   outputs: {
     phrases$: {
-      label: 'phrases$',
+      label: 'studyEip.process-manager.model.example.outputs.phrases.label',
       marbles: '--N-V-F-V-R-(M|)',
       values: {
         N: 'resume: next',
@@ -87,6 +120,14 @@ export const example: MarbleExample = {
         F: 'resume: fix',
         R: 'resume: final review',
         M: 'stop for the operator merge',
+      },
+
+      valueMessages: {
+        N: 'studyEip.process-manager.model.example.outputs.phrases.values.N',
+        V: 'studyEip.process-manager.model.example.outputs.phrases.values.V',
+        F: 'studyEip.process-manager.model.example.outputs.phrases.values.F',
+        R: 'studyEip.process-manager.model.example.outputs.phrases.values.R',
+        M: 'studyEip.process-manager.model.example.outputs.phrases.values.M',
       },
     },
   },
@@ -107,29 +148,56 @@ export const example: MarbleExample = {
   // Each phrase was held back a frame by delay, so it rides from no input lane.
   origins: { 2: null, 4: null, 6: null, 8: null, 10: null, 12: null },
   moments: [
-    { label: 'Drive', frame: 1 },
-    { label: 'Verification fails', frame: 5 },
-    { label: 'Back to the executor', frame: 6 },
-    { label: 'Passes on retry', frame: 9 },
-    { label: 'Stop for merge', frame: 12 },
+    {
+      label: 'studyEip.process-manager.model.example.moments.0.label',
+      frame: 1,
+    },
+    {
+      label: 'studyEip.process-manager.model.example.moments.1.label',
+      frame: 5,
+    },
+    {
+      label: 'studyEip.process-manager.model.example.moments.2.label',
+      frame: 6,
+    },
+    {
+      label: 'studyEip.process-manager.model.example.moments.3.label',
+      frame: 9,
+    },
+    {
+      label: 'studyEip.process-manager.model.example.moments.4.label',
+      frame: 12,
+    },
   ],
   notes: {
-    0: `The operator has order ${order} to drive. The router has no order, and the executor, the verifier and the reviewer are idle.`,
-    1: `The operator sends d, the drive that hands ${order} to the router to take through every phase. The router starts a record of the order: nothing done, no failures.`,
-    2: 'The router sends N, resume: next, to the executor, which starts building the order.',
-    3: 'The executor sends i, implementation-ready, back to the router. The router notes that the order is built and that verification comes next.',
-    4: 'The router sends V, resume: verify, to the verifier.',
-    5: `The verifier sends x, a failed verification, to the router. The router counts 1 failure of ${failureLimit}; with fewer than ${failureLimit}, a failure means repair.`,
-    6: 'The router sends F, resume: fix, to the executor. A pass would have sent the order to the reviewer instead: the reply chose the step.',
-    7: 'The executor sends c, repair-complete, to the router, which calls for verification again.',
-    8: 'The router sends V, resume: verify, to the verifier a second time: the repair loop has gone round once.',
-    9: 'The verifier sends p, a passed verification, to the router, which calls for the final review.',
-    10: 'The router sends R, resume: final review, to the reviewer.',
-    11: 'The reviewer sends a, a passed final review, to the router. The order is ready to merge, which only the operator may do.',
-    12: 'The router sends M, its stop, to the operator, asking for the merge, and reads no more reports for this order.',
+    0: {
+      key: 'studyEip.process-manager.model.example.notes.0',
+      params: { order },
+    },
+    1: {
+      key: 'studyEip.process-manager.model.example.notes.1',
+      params: { order },
+    },
+    2: 'studyEip.process-manager.model.example.notes.2',
+    3: 'studyEip.process-manager.model.example.notes.3',
+    4: 'studyEip.process-manager.model.example.notes.4',
+    5: {
+      key: 'studyEip.process-manager.model.example.notes.5',
+      params: { failureLimit, failures: afterFailure.failures },
+    },
+    6: 'studyEip.process-manager.model.example.notes.6',
+    7: 'studyEip.process-manager.model.example.notes.7',
+    8: 'studyEip.process-manager.model.example.notes.8',
+    9: 'studyEip.process-manager.model.example.notes.9',
+    10: 'studyEip.process-manager.model.example.notes.10',
+    11: 'studyEip.process-manager.model.example.notes.11',
+    12: 'studyEip.process-manager.model.example.notes.12',
   },
-  caption:
-    'Time runs in frames, one message to a frame. drive$ is the operator starting the route; outcomes$ is what the executor, the verifier and the reviewer report to the router, in small letters; phrases$ is what the router sends, in capitals, each one frame after the message that called for it.',
+  caption: 'studyEip.process-manager.model.example.caption',
+
+  parameterMessages: {
+    order: 'studyEip.process-manager.record.parameters.order',
+  },
 };
 
 /**
@@ -138,11 +206,37 @@ export const example: MarbleExample = {
  */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'operator', label: 'Operator', stage: 0, row: 1 },
-    { id: 'router', label: 'Router', stage: 1, row: 1, tone: 'subject' },
-    { id: 'executor', label: 'Executor', stage: 2, row: 0 },
-    { id: 'verifier', label: 'Verifier', stage: 2, row: 1 },
-    { id: 'reviewer', label: 'Reviewer', stage: 2, row: 2 },
+    {
+      id: 'operator',
+      label: 'studyEip.process-manager.model.flow.nodes.0.label',
+      stage: 0,
+      row: 1,
+    },
+    {
+      id: 'router',
+      label: 'studyEip.process-manager.model.flow.nodes.1.label',
+      stage: 1,
+      row: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'executor',
+      label: 'studyEip.process-manager.model.flow.nodes.2.label',
+      stage: 2,
+      row: 0,
+    },
+    {
+      id: 'verifier',
+      label: 'studyEip.process-manager.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'reviewer',
+      label: 'studyEip.process-manager.model.flow.nodes.4.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
     { id: 'drive', from: 'operator', to: 'router' },
@@ -175,41 +269,117 @@ export const flow: MarbleFlow = {
   },
   states: {
     0: {
-      operator: `has ${order} to drive`,
-      router: 'no order yet',
-      executor: 'idle',
-      verifier: 'idle',
-      reviewer: 'idle',
+      operator: {
+        key: 'studyEip.process-manager.model.flow.states.0.operator',
+        params: { order },
+      },
+      router: 'studyEip.process-manager.model.flow.states.0.router',
+      executor: 'studyEip.process-manager.model.flow.states.0.executor',
+      verifier: 'studyEip.process-manager.model.flow.states.0.verifier',
+      reviewer: 'studyEip.process-manager.model.flow.states.0.reviewer',
     },
-    1: { operator: `drove ${order}`, router: `build next, 0 of ${failureLimit} failed` },
+    1: {
+      operator: {
+        key: 'studyEip.process-manager.model.flow.states.1.operator',
+        params: { order },
+      },
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.1.router',
+        params: { failureLimit, failures: beforeVerification.failures },
+      },
+    },
     2: {
-      router: `awaits executor, 0 of ${failureLimit} failed`,
-      executor: `building ${order}`,
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.2.router',
+        params: { failureLimit, failures: beforeVerification.failures },
+      },
+      executor: {
+        key: 'studyEip.process-manager.model.flow.states.2.executor',
+        params: { order },
+      },
     },
-    3: { executor: 'idle', router: `verify next, 0 of ${failureLimit} failed` },
+    3: {
+      executor: 'studyEip.process-manager.model.flow.states.3.executor',
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.3.router',
+        params: { failureLimit, failures: beforeVerification.failures },
+      },
+    },
     4: {
-      router: `awaits verifier, 0 of ${failureLimit} failed`,
-      verifier: `verifying ${order}`,
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.4.router',
+        params: { failureLimit, failures: beforeVerification.failures },
+      },
+      verifier: {
+        key: 'studyEip.process-manager.model.flow.states.4.verifier',
+        params: { order },
+      },
     },
-    5: { verifier: 'idle', router: `fix next, 1 of ${failureLimit} failed` },
+    5: {
+      verifier: 'studyEip.process-manager.model.flow.states.5.verifier',
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.5.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+    },
     6: {
-      router: `awaits executor, 1 of ${failureLimit} failed`,
-      executor: `repairing ${order}`,
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.6.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+      executor: {
+        key: 'studyEip.process-manager.model.flow.states.6.executor',
+        params: { order },
+      },
     },
-    7: { executor: 'idle', router: `verify next, 1 of ${failureLimit} failed` },
+    7: {
+      executor: 'studyEip.process-manager.model.flow.states.7.executor',
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.7.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+    },
     8: {
-      router: `awaits verifier, 1 of ${failureLimit} failed`,
-      verifier: 'verifying again',
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.8.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+      verifier: 'studyEip.process-manager.model.flow.states.8.verifier',
     },
-    9: { verifier: 'idle', router: `review next, 1 of ${failureLimit} failed` },
+    9: {
+      verifier: 'studyEip.process-manager.model.flow.states.9.verifier',
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.9.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+    },
     10: {
-      router: `awaits reviewer, 1 of ${failureLimit} failed`,
-      reviewer: `reviewing ${order}`,
+      router: {
+        key: 'studyEip.process-manager.model.flow.states.10.router',
+        params: { failureLimit, failures: afterFailure.failures },
+      },
+      reviewer: {
+        key: 'studyEip.process-manager.model.flow.states.10.reviewer',
+        params: { order },
+      },
     },
-    11: { reviewer: 'idle', router: 'stop next, ready to merge' },
-    12: { router: 'stopped, reads no more', operator: `asked to merge ${order}` },
+    11: {
+      reviewer: 'studyEip.process-manager.model.flow.states.11.reviewer',
+      router: 'studyEip.process-manager.model.flow.states.11.router',
+    },
+    12: {
+      router: 'studyEip.process-manager.model.flow.states.12.router',
+      operator: {
+        key: 'studyEip.process-manager.model.flow.states.12.operator',
+        params: { order },
+      },
+    },
   },
-  caption: `The boxes: the Operator starts the route and is the only one who may merge; the Router is the process manager, which keeps its record of the order and decides each next step; the Executor builds and repairs the order, the Verifier checks it and the Reviewer gives it a final review. The workers never send to each other: every line runs to or from the Router. Each token is one message, and d is the operator's drive. Capitals are the router's phrases, each telling one worker to start: N resume: next (build), V resume: verify, F resume: fix (repair), R resume: final review, and M the stop that asks the operator to merge. Small letters are the workers' reports back: i implementation-ready, x a failed verification, c repair-complete, p a passed verification and a a passed final review. The words in a box say what that box is doing; in the Router they are its record: the step it calls for or awaits, and how many verifications have failed of the ${failureLimit} allowed. A token is green while it moves, and a box a token leaves or reaches is outlined in green.`,
+  caption: {
+    key: 'studyEip.process-manager.model.flow.caption',
+    params: { failureLimit },
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

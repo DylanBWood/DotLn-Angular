@@ -8,7 +8,7 @@ import {
   sine,
 } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -32,7 +32,9 @@ const example: FixedFormationParameters = {
   timeStep: 0.1,
   steps: 50,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const record = await loadStudy('aifg-a:174');
 
 it('uses the draft record parameters and pairs every mechanism step with its code', () => {
@@ -159,8 +161,8 @@ it('makes spacing affect demand and treats the speed budget as a check, not a ta
 });
 
 it('supplies every prose value, the worked calculation and bounded drawings for every sample', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.initialStep).toBe(20);
   expect(run.moments).toHaveLength(5);
   const prose = [
@@ -211,12 +213,12 @@ it('supplies every prose value, the worked calculation and bounded drawings for 
 });
 
 it('makes the live controls change the visible sweep and its feasibility', () => {
-  const inputs = model(parameters).inputs;
+  const inputs = model(parameters, studyTranslate).inputs;
   if (!inputs) throw new Error('The escort needs live controls.');
   expect(inputs.map(({ name }) => name)).toEqual(['turnSteps', 'spacing']);
   const turn = inputs[0];
-  const rapid = model({ ...parameters, [turn.name]: turn.min });
-  const gentle = model({ ...parameters, [turn.name]: turn.max });
+  const rapid = model({ ...parameters, [turn.name]: turn.min }, studyTranslate);
+  const gentle = model({ ...parameters, [turn.name]: turn.max }, studyTranslate);
   const rapidFrame = rapid.motion.frames[rapid.initialStep];
   const gentleFrame = gentle.motion.frames[gentle.initialStep];
   expect(Number(rapidFrame.values['requiredSpeed'])).toBeGreaterThan(example.speedLimit);
@@ -232,8 +234,8 @@ it('makes the live controls change the visible sweep and its feasibility', () =>
   expect(arrowLength(rapidArrow)).toBeGreaterThan(arrowLength(gentleArrow));
   expect(rapidFrame.worked?.lines.join(' ')).not.toBe(gentleFrame.worked?.lines.join(' '));
   const spacing = inputs[1];
-  const close = model({ ...parameters, [spacing.name]: spacing.min });
-  const wide = model({ ...parameters, [spacing.name]: spacing.max });
+  const close = model({ ...parameters, [spacing.name]: spacing.min }, studyTranslate);
+  const wide = model({ ...parameters, [spacing.name]: spacing.max }, studyTranslate);
   expect(close.motion.bounds).toEqual(wide.motion.bounds);
   const closeDrawing = motionDrawing(close.motion, close.initialStep);
   const wideDrawing = motionDrawing(wide.motion, wide.initialStep);
@@ -253,7 +255,7 @@ it('makes the live controls change the visible sweep and its feasibility', () =>
 });
 
 it('keeps notes, labels, prose and all drawing geometry sound across control corners', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   const corners = inputs.reduce<readonly StudyParameters[]>(
     (runs, input) =>
       runs.flatMap((current) =>
@@ -272,7 +274,7 @@ it('keeps notes, labels, prose and all drawing geometry sound across control cor
     { ...parameters, turnSteps: 3 },
     { ...parameters, turnSteps: 29 },
   ]) {
-    const run = model(current);
+    const run = model(current, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);

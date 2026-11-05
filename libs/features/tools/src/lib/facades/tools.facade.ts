@@ -17,12 +17,14 @@ import {
   workTitle,
 } from '@dotln-angular/catalog';
 import { catalogPageEvents } from '@dotln-angular/events';
-import { translateSignal } from '@dotln-angular/i18n';
+import { MessageCatalog, translateSignal } from '@dotln-angular/i18n';
 import type { CatalogFilters, ConceptStudy, ToolId, WorkSlug } from '@dotln-angular/models';
 
 import { clampStep, mapStudy } from '../mappers/study-mapper';
 import { type StudyModel, type StudyModelFunction, ticksOf } from '../studies/study-model';
 import { studyModels } from '../studies/study-models';
+import { studyScope, translateStudy } from '../studies/study-record';
+import type { StudyTranslate } from '../studies/study-translate';
 import type { StudyDisclosure, StudyIntent, StudyView, StudyVisualView } from '../types';
 
 /** Search results shown on one page. */
@@ -35,6 +37,7 @@ type StudyLoad =
       readonly status: 'ready';
       readonly record: ConceptStudy;
       readonly run: StudyModelFunction | null;
+      readonly translate: StudyTranslate;
     };
 
 /** The longest gap a running example counts, so a hidden tab does not jump when it returns. */
@@ -45,6 +48,8 @@ export class ToolsFacade {
   readonly #store = inject(CatalogStore);
   readonly #dispatcher = inject(Dispatcher);
   readonly #catalog = inject(CatalogToken);
+  readonly #messages = inject(MessageCatalog);
+  #loadSequence = 0;
   readonly #studyStep = signal<number | null>(null);
   readonly #studyView = signal<StudyVisualView>('motion');
   readonly #expandedStudy = signal<readonly StudyDisclosure[]>([]);
@@ -64,7 +69,7 @@ export class ToolsFacade {
       if (load.status !== 'ready' || !load.run) return { model: null, failed: false };
       try {
         return {
-          model: load.run({ ...load.record.example.parameters, ...this.#inputs() }),
+          model: load.run({ ...load.record.example.parameters, ...this.#inputs() }, load.translate),
           failed: false,
         };
       } catch {
@@ -91,6 +96,7 @@ export class ToolsFacade {
       },
       this.#store.tools(),
       this.#studiedTools(),
+      (tool) => load.translate(`${studyScope(load.record.work)}.titles.${tool.id}`),
     );
   });
   readonly #all = translateSignal('tools.filters.all');
@@ -203,23 +209,37 @@ export class ToolsFacade {
     effect(() => {
       const id = this.#store.selectedId();
       this.#studyAttempt();
-      untracked(() => void this.#loadStudy(id));
+      const language = this.#messages.language();
+      untracked(() => void this.#loadStudy(id, language));
     });
   }
   /** Loads a reading's study. A later reading that takes over leaves this one's answer unused. */
-  async #loadStudy(id: ToolId | null) {
+  async #loadStudy(id: ToolId | null, language: string) {
+    const sequence = ++this.#loadSequence;
     this.#studyLoad.set({ status: id ? 'loading' : 'none' });
     if (!id) return;
-    const current = () => this.#store.selectedId() === id;
+    const current = () => this.#loadSequence === sequence && this.#store.selectedId() === id;
     try {
       const record = await this.#catalog.study(id);
       const path = record?.visual?.model;
       const load = path ? studyModels[path] : undefined;
       if (path && !load) throw new Error(`No model is listed for ${path}.`);
-      const module = await load?.();
+      const [module, translate] = await Promise.all([
+        load?.(),
+        record
+          ? this.#messages.translator(['studyCommon', studyScope(record.work)], language)
+          : null,
+      ]);
       if (!current()) return;
       this.#studyLoad.set(
-        record ? { status: 'ready', record, run: module?.model ?? null } : { status: 'none' },
+        record && translate
+          ? {
+              status: 'ready',
+              record: translateStudy(record, translate),
+              run: module?.model ?? null,
+              translate,
+            }
+          : { status: 'none' },
       );
     } catch {
       if (current()) this.#studyLoad.set({ status: 'failed' });

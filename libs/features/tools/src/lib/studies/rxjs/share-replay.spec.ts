@@ -1,7 +1,7 @@
 import { defer, ReplaySubject, retry, share, shareReplay, timer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './share-replay';
@@ -20,9 +20,9 @@ it('attaches the record to the shareReplay row and reads its code from this modu
     'libs/features/tools/src/lib/studies/rxjs/share-replay.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'quote$',
     'tile$',
     'chart$',
@@ -30,7 +30,7 @@ it('attaches the record to the shareReplay row and reads its code from this modu
 });
 
 it('hands the chart the stored quote the moment it opens, and only that one', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[7];
   expect(telling.frame).toBe(7);
   expect(telling.values['now']).toBe('chart$ subscribes; chart$ emits b (104)');
@@ -44,9 +44,13 @@ it('hands the chart the stored quote the moment it opens, and only that one', ()
 });
 
 it('keeps the poll running for no one after both readers have left', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const poll = run.marbles.lines.find(({ label }) => label === 'quote$');
-  expect(poll).toMatchObject({ subscribedAt: 0, unsubscribedAt: undefined, cancelled: false });
+  expect(poll).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: undefined,
+    cancelled: false,
+  });
   expect(poll?.events.every(({ delivered }) => delivered)).toBe(true);
   const afterLeaving = run.marbles.frames.find(({ frame }) => frame === 17);
   expect(afterLeaving?.values['now']).toBe('quote$ emits e (105)');
@@ -67,7 +71,10 @@ it('keeps the latest quote through a short absence with share, a ReplaySubject a
   scheduler().run(({ cold, expectObservable, expectSubscriptions }) => {
     const quote$ = cold(quote.marbles, quote.values);
     const shared$ = quote$.pipe(
-      share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: () => timer(3) }),
+      share({
+        connector: () => new ReplaySubject(1),
+        resetOnRefCountZero: () => timer(3),
+      }),
     );
     expectObservable(shared$, '^-----!').toBe('-a---b', quote.values);
     // Back inside the three-frame grace: the stored quote at once, then the running poll.

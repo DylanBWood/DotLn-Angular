@@ -2,7 +2,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import type { SteeringBody } from '@dotln-angular/scene-engine';
 import { arrive, distance, length } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -15,7 +15,9 @@ import {
 } from './steering-pipeline.model';
 
 const record = await loadStudy('aifg-a:153');
+
 const visual = record.visual;
+
 const executable = record.pseudocode.executable;
 
 const example: PipelineParameters = {
@@ -42,9 +44,13 @@ const example: PipelineParameters = {
   maxChecks: 2,
   failureChecks: 1,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const goal = { x: 80, y: 0 };
+
 const bypass = [{ x: 20, y: -20 }, { x: 60, y: -20 }, goal];
+
 const start: PipelineState = { position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, route: [goal] };
 
 it('uses the record parameters and pairs each pipeline stage with its code block', () => {
@@ -170,7 +176,7 @@ it('discards an unchecked repair and repeats a safe but unproductive refusal', (
     expect(result.attempts).toHaveLength(1);
     expect(result.next.route).toEqual([goal]);
   }
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[1].values).toEqual(states.map(() => 80));
   expect(comparison?.findings[1]).toContain('refuses 220 updates');
   expect(comparison?.findings[1]).toContain('80.00 units');
@@ -212,7 +218,7 @@ it('checks momentum even on a clear route, and does not promise emergency stoppi
 });
 
 it('supplies every prose placeholder, shows the hand calculation and keeps drawings in bounds', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const texts = [
     record.intuition.text,
     record.intuition.situation,
@@ -282,7 +288,7 @@ it('supplies every prose placeholder, shows the hand calculation and keeps drawi
 
 it('is repeatable without mutating inputs, and responds to a changed delivery position', () => {
   const frozen = Object.freeze({ ...parameters });
-  expect(model(frozen)).toEqual(model(frozen));
+  expect(model(frozen, studyTranslate)).toEqual(model(frozen, studyTranslate));
   expect(frozen).toEqual(parameters);
   const state: PipelineState = Object.freeze({
     position: Object.freeze({ ...start.position }),
@@ -291,14 +297,19 @@ it('is repeatable without mutating inputs, and responds to a changed delivery po
   });
   expect(calculatePipelineStep(state, example)).toEqual(calculatePipelineStep(state, example));
   expect(state).toEqual(start);
-  const changed = model({ ...parameters, goalX: example.goalX + example.detourPadding });
+  const changed = model(
+    { ...parameters, goalX: example.goalX + example.detourPadding },
+    studyTranslate,
+  );
   expect(changed.motion.frames[0].values['goalDistance']).toBe('88.00');
-  expect(changed.motion.bounds.maxX).toBeGreaterThan(model(parameters).motion.bounds.maxX);
+  expect(changed.motion.bounds.maxX).toBeGreaterThan(
+    model(parameters, studyTranslate).motion.bounds.maxX,
+  );
 });
 
 it('lets the budget stop delivery and restores progress when a repair can be checked', () => {
-  const stopped = model({ ...parameters, maxChecks: 1 });
-  const moving = model({ ...parameters, maxChecks: 2 });
+  const stopped = model({ ...parameters, maxChecks: 1 }, studyTranslate);
+  const moving = model({ ...parameters, maxChecks: 2 }, studyTranslate);
   expect(stopped.inputs?.map(({ name }) => name)).toEqual(['maxChecks', 'detourPadding']);
   expect(
     stopped.motion.frames.every((frame) => frame.bodies[0].x === 0 && frame.bodies[0].y === 0),
@@ -334,8 +345,8 @@ it('lets the budget stop delivery and restores progress when a repair can be che
 });
 
 it('moves the bypass and its clearance when padding changes while retaining the delivery goal', () => {
-  const narrow = model({ ...parameters, detourPadding: 2 });
-  const wide = model({ ...parameters, detourPadding: 12 });
+  const narrow = model({ ...parameters, detourPadding: 2 }, studyTranslate);
+  const wide = model({ ...parameters, detourPadding: 12 }, studyTranslate);
   const firstNarrow = narrow.motion.frames[0];
   const firstWide = wide.motion.frames[0];
   expect(firstNarrow.marks?.find(({ label }) => label === 'Entry')).toMatchObject({
@@ -364,7 +375,7 @@ it('moves the bypass and its clearance when padding changes while retaining the 
 });
 
 it('keeps notes, prose, arithmetic, labels and every drawing sound over the offered input ranges', () => {
-  const offered = model(parameters).inputs;
+  const offered = model(parameters, studyTranslate).inputs;
   if (!offered || offered.length !== 2) throw new Error('Offer the budget and bypass padding.');
   const budgetInput = offered.find(({ name }) => name === 'maxChecks');
   const paddingInput = offered.find(({ name }) => name === 'detourPadding');
@@ -381,7 +392,10 @@ it('keeps notes, prose, arithmetic, labels and every drawing sound over the offe
       padding <= paddingInput.max;
       padding += paddingInput.step
     ) {
-      const run = model({ ...parameters, maxChecks: budget, detourPadding: padding });
+      const run = model(
+        { ...parameters, maxChecks: budget, detourPadding: padding },
+        studyTranslate,
+      );
       const where = `budget ${budget}, padding ${padding}`;
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       expect(run.motion.frames).toHaveLength(example.steps + 1);

@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:103",
   "work": "aifg",
   "slug": "kinematic-wander",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 10",
+    "by": "studyAifg.kinematic-wander.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.kinematic-wander.record.authored.reviewedBy.item0",
+      "studyAifg.kinematic-wander.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "Moss, a gallery patrol robot, keeps walking while its facing drifts. Each update remembers the previous facing and adds a small signed turn. That memory gives the trail continuity: choosing an entirely new compass direction would make each update unrelated to the last.",
-    "situation": "Use this when an idle character should roam without a destination and its movement system accepts velocity directly. It gives Moss motion to watch; it does not give the patrol a route or a guarantee of visiting every room."
+    "text": "studyAifg.kinematic-wander.record.intuition.text",
+    "situation": "studyAifg.kinematic-wander.record.intuition.situation"
   },
   "example": {
-    "name": "Moss patrols an empty gallery",
-    "description": "Moss starts at ({startX}, {startY}), facing {startHeading} radians, and immediately walks at {speed} units/s. Every {timeStep} s it draws a signed turn rate bounded by {maxRotation} radians/s. Seed {seed} makes the {duration}-second patrol replayable. The comparison raises only the turn-rate bound to {failureRotation} radians/s. The empty gallery has no walls or stopping rule.",
+    "name": "studyAifg.kinematic-wander.record.example.name",
+    "description": "studyAifg.kinematic-wander.record.example.description",
     "parameters": {
       "startX": 0,
       "startY": 0,
@@ -31,21 +34,21 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Read the current facing as velocity",
-        "text": "Convert the remembered angle with the public engine's deterministic cosine and sine, normalise the direction and multiply by {speed}. Moss uses this velocity immediately; there is no acceleration ramp. The green arrow is this update's displacement direction."
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step0.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Draw a small signed turn",
-        "text": "Take the difference of successive uniform draws. Small differences are more common than extreme ones; the sign chooses a turning direction. Multiplying by {maxRotation} gives a turn rate. The seeded generator is study-local because the engine's random helpers are not public exports."
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step1.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Move, then remember the new facing",
-        "text": "Move with the velocity calculated from the old facing, then add turnRate × {timeStep} to that facing. The amber arrow previews the next update's velocity. This direct kinematic update is study-local: the public engine's wander function is an acceleration-based behaviour with a forward circle, a different mechanism."
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step2.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step2.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "direction = normalize({ x: cosine(heading), y: sine(heading) })\nvelocity = direction * speed\n\n[first, seed] = seededUniform(seed)\n[second, seed] = seededUniform(seed)\nsample = first - second\nturnRate = sample * maxRotation\n\nposition = position + velocity * timeStep\nheading = heading + turnRate * timeStep\nremember(position, heading, seed)",
+    "ordinary": "studyAifg.kinematic-wander.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -55,47 +58,47 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/kinematic-wander.model.ts",
-    "textEquivalent": "At {seconds} s, Moss is at ({x}, {y}), facing {heading} radians and moving at {currentSpeed} units/s; the green velocity is ({velocityX}, {velocityY}), {turnDescription}, and the amber next-update direction faces {nextHeading} radians."
+    "textEquivalent": "studyAifg.kinematic-wander.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "AI Steering Behaviors for Games · KinematicWander.cs",
+      "project": "studyAifg.kinematic-wander.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicWander.cs",
-      "relevance": "This public C# teaching collection supplies Unity components for classic movement behaviours. Its kinematic wander component exposes speed, rotation range and separate waiting periods for turning and translation.",
-      "explanation": "RandomBinomial subtracts two floating-point uniform draws. Separate coroutines set rotation and translate along the object's forward vector. Rotation is assigned as an absolute Euler angle rather than accumulated, and translation is a distance per coroutine iteration without elapsed-time scaling. Those choices make its clocks and units part of its behaviour; the file is an implementation to inspect, with limits visible in its code."
+      "relevance": "studyAifg.kinematic-wander.record.implementations.item0.relevance",
+      "explanation": "studyAifg.kinematic-wander.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement · 3.2.2 Wandering",
+      "title": "studyAifg.kinematic-wander.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "Identifies the book whose coverage of this topic the supplied catalog places at Chapter 3, section 3.2.2 Wandering. DOI content negotiation confirmed bibliographic metadata; chapter text was not read."
+      "supports": "studyAifg.kinematic-wander.record.references.item0.supports"
     },
     {
-      "title": "KinematicWander.cs · pinned public Unity implementation",
+      "title": "studyAifg.kinematic-wander.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicWander.cs",
       "accessed": "2026-11-04",
-      "supports": "The component subtracts two uniform draws and uses separate rotation and forward-translation coroutines, with absolute rotation assignment and no elapsed-time factor in its translation call."
+      "supports": "studyAifg.kinematic-wander.record.references.item1.supports"
     }
   ],
   "limits": [
-    "A large turn-rate bound can make consecutive velocities point more than a right angle apart while speed stays unchanged. Raising it to {failureRotation} in the comparison exposes this abrupt change: the mechanism imposes no limit on acceleration or turning acceleration.",
-    "Moss has no knowledge of gallery walls, other visitors or patrol coverage. A smooth-looking trail is not evidence of safe movement or an effective patrol.",
-    "The draw rate is part of the model. Changing {timeStep} changes both how often Moss samples and how far each sample turns it, so a different update rate does not preserve the same random walk."
+    "studyAifg.kinematic-wander.record.limits.item0",
+    "studyAifg.kinematic-wander.record.limits.item1",
+    "studyAifg.kinematic-wander.record.limits.item2"
   ],
   "nearby": [
     {
       "id": "aifg-a:104",
-      "why": "Open Random binomial to examine why the two-draw difference favours smaller turns and how its sampling affects the path."
+      "why": "studyAifg.kinematic-wander.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:125",
-      "why": "Use Wander when the movement system needs bounded acceleration toward a changing point ahead instead of replacing velocity directly."
+      "why": "studyAifg.kinematic-wander.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:127",
-      "why": "Use Path following when Moss must inspect a prescribed route; random wandering offers no coverage guarantee."
+      "why": "studyAifg.kinematic-wander.record.nearby.item2.why"
     }
   ]
 }

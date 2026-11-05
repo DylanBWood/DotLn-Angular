@@ -17,27 +17,43 @@ const updates = { a: '10:02', b: '10:15' };
 export const example: MarbleExample = {
   inputs: {
     departures$: {
-      label: 'departures$',
+      label: 'studyRxjs.catch-error.model.example.inputs.departures.label',
       marbles: '-a--b--#',
       values: updates,
       error: failure,
       subscriptions: '^------!',
+
+      valueMessages: {
+        a: 'studyRxjs.catch-error.model.example.inputs.departures.values.a',
+        b: 'studyRxjs.catch-error.model.example.inputs.departures.values.b',
+      },
+      errorMessage: 'studyRxjs.catch-error.model.example.inputs.departures.error',
     },
   },
   inner: {
     timetable: {
-      label: 'timetable$',
+      label: 'studyRxjs.catch-error.model.example.inner.timetable.label',
       marbles: '--t|',
       values: { t: 'timetable' },
       subscriptions: '-------^--!',
+
+      valueMessages: {
+        t: 'studyRxjs.catch-error.model.example.inner.timetable.values.t',
+      },
     },
   },
-  operator: 'catchError((error) => timetable$ …)',
+  operator: 'studyRxjs.catch-error.model.example.operator',
   outputs: {
     board$: {
-      label: 'board$',
+      label: 'studyRxjs.catch-error.model.example.outputs.board.label',
       marbles: '-a--b----t|',
       values: { ...updates, t: `timetable: ${failure.message}` },
+
+      valueMessages: {
+        a: 'studyRxjs.catch-error.model.example.outputs.board.values.a',
+        b: 'studyRxjs.catch-error.model.example.outputs.board.values.b',
+        t: 'studyRxjs.catch-error.model.example.outputs.board.values.t',
+      },
     },
   },
   run: ({ inputs: { departures$ }, inner }) => {
@@ -49,21 +65,29 @@ export const example: MarbleExample = {
     return { board$ };
   },
   moments: [
-    { label: 'Live update', frame: 1 },
-    { label: 'Feed fails', frame: 7 },
-    { label: 'Timetable shown', frame: 9 },
-    { label: 'Done', frame: 10 },
+    { label: 'studyRxjs.catch-error.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.catch-error.model.example.moments.1.label', frame: 7 },
+    { label: 'studyRxjs.catch-error.model.example.moments.2.label', frame: 9 },
+    { label: 'studyRxjs.catch-error.model.example.moments.3.label', frame: 10 },
   ],
-  caption: `Time runs in frames, left to right. A circle is an emission, with its letter, and a bar is completion. The cross on departures$ is its error, ${failure.message}: catchError stops it before it reaches board$ and answers with timetable$, whose lane starts in that same frame. Step the frames to follow the board.`,
+  caption: {
+    key: 'studyRxjs.catch-error.model.example.caption',
+    messages: { failure: 'studyRxjs.catch-error.record.parameters.failure' },
+  },
   notes: {
-    0: 'The board has subscribed to the live feed. Nothing has arrived yet.',
-    1: 'The first live update, the 10:02, goes straight to the board. Until an error comes, catchError does nothing.',
-    4: 'The 10:15 update arrives and is shown in the same way.',
-    7: 'The feed fails. The error stops here: catchError calls its selector with it, lets go of the feed and, in the same frame, subscribes to the replacement the selector built, the timetable marked with the error.',
-    8: 'The timetable is still being read. The board shows the 10:15 and nothing new.',
-    9: 'The timetable has been read. Its entry reaches the board with the reason the feed was lost attached, so the board shows a fallback and says that it is one.',
-    10: "The timetable completes, so the board completes. The feed is not resumed: the board's last live update was the 10:15.",
+    0: 'studyRxjs.catch-error.model.example.notes.0',
+    1: 'studyRxjs.catch-error.model.example.notes.1',
+    4: 'studyRxjs.catch-error.model.example.notes.4',
+    7: 'studyRxjs.catch-error.model.example.notes.7',
+    8: 'studyRxjs.catch-error.model.example.notes.8',
+    9: 'studyRxjs.catch-error.model.example.notes.9',
+    10: 'studyRxjs.catch-error.model.example.notes.10',
+  },
+
+  parameterMessages: {
+    updates: 'studyRxjs.catch-error.record.parameters.updates',
+    failure: 'studyRxjs.catch-error.record.parameters.failure',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

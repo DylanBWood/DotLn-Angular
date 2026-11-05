@@ -1,8 +1,9 @@
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { expectMarbleExample } from '../rxjs/marble-testing';
+import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import { type Close, example, model, recipientsOf } from './recipient-list';
@@ -16,7 +17,7 @@ const parameters = {
 
 /** The example run by its model, which draws a flow. */
 const flowRun = (): FlowStudyModel => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error(`The model draws ${run.family}, not a flow.`);
   return run;
 };
@@ -41,7 +42,7 @@ it('attaches the record to the Recipient List row, reads this module and supplie
   expect(record.pseudocode.executable?.module).toBe(path);
   expect(record.example.parameters).toEqual(parameters);
   const run = flowRun();
-  expect(model(record.example.parameters).family).toBe('flow');
+  expect(model(record.example.parameters, studyTranslate).family).toBe('flow');
   expect(run.diagram).not.toBeNull();
   const names = [
     ...placeholdersIn(record.visual.textEquivalent),
@@ -104,7 +105,8 @@ it('computes the list when a close passes, so a sibling declared later misses ea
     ['Three copies', 8],
   ]);
   // Every step has its own sentence, and no state outgrows what a box can show.
-  for (const frame of flow.frames) expect(frame.note).toBe(example.notes?.[frame.step]);
+  for (const frame of flow.frames)
+    expect(frame.note).toBe(studyMessage(studyTranslate, example.notes?.[frame.step] ?? ''));
   for (const frame of flow.frames)
     for (const state of Object.values(frame.states)) expect(state.length).toBeLessThanOrEqual(40);
 });
@@ -121,7 +123,11 @@ it('hands each sibling its own object, equal to the close but not shared with th
   scheduler.run(({ hot, flush }) => {
     const closes$ = hot('-c', { c: close });
     const declared$ = hot('d', { d: ['A', 'B'] });
-    const { toA$, toB$ } = example.run({ inputs: { closes$, declared$ }, inner: {}, scheduler });
+    const { toA$, toB$ } = example.run({
+      inputs: { closes$, declared$ },
+      inner: {},
+      scheduler,
+    });
     toA$.subscribe((copy) => received.push(copy));
     toB$.subscribe((copy) => received.push(copy));
     flush();

@@ -104,9 +104,12 @@ function. `THIRD-PARTY-NOTICES.md` carries both upstream license texts.
 ## Translations
 
 Use `'scope.key' | t` in templates and `translateSignal()` from
-`@dotln-angular/i18n` in class code. `apps/dotln/public/i18n/en.json` owns every
-host-authored string, in one block per area. The document title is the static `<title>` in
-`apps/dotln/src/index.html`. `TranslocoHttpLoader` accepts configured language
+`@dotln-angular/i18n` in class code. `apps/dotln/public/i18n/en.json` owns the root
+host-authored strings, in one block per area. The document title is the static `<title>` in
+`apps/dotln/src/index.html`. `MessageCatalog` supplies a translator after its requested feature scopes load,
+bound to that language. Feature catalogs live at `i18n/<scope>/<language>.json`;
+the loader validates the language and a single safe scope segment and preserves
+the application base path. `TranslocoHttpLoader` accepts configured language
 identifiers and loads assets beneath the configured base path. Missing keys
 throw in development and return the key in production. The pipe rerenders on
 language changes.

@@ -3,9 +3,10 @@ import { TestScheduler } from 'rxjs/testing';
 
 import type { ConceptStudy } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import { placeholdersIn } from '../study-text';
-import { example, model } from './combine-latest';
+import { example, model, withBudgets } from './combine-latest';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 
@@ -44,10 +45,10 @@ it('attaches the record to the combineLatest row and reads its inputs from this 
   expect(record.visual.family).toBe('marbles');
   expect(record.example.parameters['workerStates']).toBe(listed(worker.values));
   expect(record.example.parameters['budgets']).toBe(listed(budget.values));
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(example.operator.length).toBeLessThanOrEqual(40);
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(studyMessage(studyTranslate, example.operator).length).toBeLessThanOrEqual(40);
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'worker$',
     'budget$',
     'row$',
@@ -58,12 +59,13 @@ it('fills every placeholder the record’s prose writes at every moment', async 
   const record = await loadStudy('rxc:134');
   const names = [...new Set(proseOf(record).flatMap(placeholdersIn))].sort();
   expect(names).toEqual(['budgets', 'delivered', 'frame', 'now', 'workerStates']);
-  for (const { values: shown } of marbleModel(example, record.example.parameters).marbles.frames)
+  for (const { values: shown } of marbleModel(example, record.example.parameters, studyTranslate)
+    .marbles.frames)
     for (const name of names) expect(shown[name], name).toBeDefined();
 });
 
 it('sends nothing while the budget is silent and overwrites queued before any row is built', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const waiting = run.marbles.frames.find(({ frame }) => frame === 2);
   expect(waiting?.values['now']).toBe('worker$ emits r (reading)');
   expect(waiting?.values['delivered']).toBe('nothing');
@@ -79,7 +81,7 @@ it('sends nothing while the budget is silent and overwrites queued before any ro
 });
 
 it('tells of the first row and names each moment', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const first = run.marbles.frames[4];
   expect(first.frame).toBe(4);
   expect(first.values['now']).toBe('budget$ emits a (90% left); row$ emits 1 (reading, 90% left)');
@@ -93,7 +95,7 @@ it('tells of the first row and names each moment', () => {
 });
 
 it('keeps the completed budget’s last value and completes only with the last input', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const events = (label: string) =>
     marbles.lines
       .find((line) => line.label === label)
@@ -168,4 +170,38 @@ it('combines only the last value of an input that sends everything while being s
     of(...Object.values(budget.values ?? {})),
   ]).subscribe(([a, b]) => seen.push(`${String(a)}, ${String(b)}`));
   expect(seen).toEqual(['done, 90% left', 'done, 40% left']);
+});
+
+it('retains composed row templates while changed reports alter the paired budget values', () => {
+  const changed = withBudgets({ a: 75, b: 20 });
+  expect(changed.run).toBe(example.run);
+  expect(changed.outputs['row$'].marbles).toBe('----1-2-3---4--|');
+  expect(changed.outputs['row$'].values).toEqual({
+    1: 'reading, 75% left',
+    2: 'writing, 75% left',
+    3: 'writing, 20% left',
+    4: 'done, 20% left',
+  });
+  expectMarbleExample(changed);
+  const translate = vi.fn(studyTranslate);
+  const run = marbleModel(changed, {}, translate);
+  expect(run.marbles.lines.find(({ id }) => id === 'row$')?.events[0].value).toBe(
+    'reading, 75% left',
+  );
+  expect(run.marbles.frames[12].note).toBe(
+    'The worker is done. The row pairs done with the 20% left that the completed budget left in its slot.',
+  );
+  expect(translate).toHaveBeenCalledWith('studyRxjs.combine-latest.model.row', {
+    budget: 75,
+    state: 'reading',
+  });
+  expect(translate).toHaveBeenCalledWith('studyRxjs.combine-latest.model.example.notes.12', {
+    budget: 20,
+  });
+  expect(example.outputs['row$'].valueMessages?.['1']).toMatchObject({
+    key: 'studyRxjs.combine-latest.model.row',
+  });
+  expect(changed.outputs['row$'].valueMessages?.['1']).toMatchObject({
+    key: 'studyRxjs.combine-latest.model.row',
+  });
 });

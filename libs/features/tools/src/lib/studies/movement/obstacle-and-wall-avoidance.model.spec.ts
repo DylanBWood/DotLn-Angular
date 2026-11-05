@@ -2,6 +2,7 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, dot, length } from '@dotln-angular/scene-engine';
 
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import {
   calculateWallAvoidanceStep,
@@ -98,7 +99,11 @@ it('constructs the normal-offset target and actually uses it to reverse the engi
 });
 
 it('retains the last travel direction for its ray while momentarily stopped', () => {
-  const stopped = { position: { x: 5.2, y: 0 }, velocity: { x: 0, y: 0 }, heading: { x: 1, y: 0 } };
+  const stopped = {
+    position: { x: 5.2, y: 0 },
+    velocity: { x: 0, y: 0 },
+    heading: { x: 1, y: 0 },
+  };
   const calculation = calculateWallAvoidanceStep(stopped, headOn);
   expect(calculation.rayEnd.x).toBeCloseTo(13.2);
   expect(calculation.hit?.point.x).toBeCloseTo(10);
@@ -147,11 +152,14 @@ it('turns on a glancing ray hit and clears the finite wall with its whole disc',
 });
 
 it('retains the dead-on failure when only the delivery height changes', () => {
-  const straight = wallAvoidanceFrames({ ...example, goalY: example.comparisonGoalY });
+  const straight = wallAvoidanceFrames({
+    ...example,
+    goalY: example.comparisonGoalY,
+  });
   expect(straight.every(({ position }) => position.y === 0)).toBe(true);
   expect(straight.at(-1)?.position.x).toBeLessThan(example.wallX);
   expect(straight.some(({ velocity }) => velocity.x < 0)).toBe(true);
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.comparison?.timeline.series[1].values).toEqual(
     straight.map(({ position }) => wallClearance(position, example)),
   );
@@ -178,8 +186,8 @@ it('changes only ray length to expose body overlap, without a hidden wall clamp'
 });
 
 it('draws its ray as a link and supplies every selected-frame text-equivalent value', async () => {
-  const run = model(parameters);
-  const record = await createCatalogLoader().study('aifg-a:137');
+  const run = model(parameters, studyTranslate);
+  const record = await loadStudy('aifg-a:137');
   const names = [...(record?.visual?.textEquivalent.matchAll(/\{([^}]+)\}/g) ?? [])].map(
     (match) => match[1],
   );
@@ -213,25 +221,51 @@ it('draws its ray as a link and supplies every selected-frame text-equivalent va
 });
 
 it('is deterministic and calls out equal destinations in its comparison', () => {
-  expect(model(parameters)).toEqual(model(parameters));
-  const same = model({ ...parameters, goalY: example.comparisonGoalY });
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
+  const same = model({ ...parameters, goalY: example.comparisonGoalY }, studyTranslate);
   expect(same.comparison?.findings).toContain(
     'Both destination heights are equal, so these are the same run.',
   );
 });
 
 it('offers only hit and turn moments that occur in the selected run', () => {
-  const missed = model({ ...parameters, rayLength: 0.5 });
+  const missed = model({ ...parameters, rayLength: 0.5 }, studyTranslate);
   expect(missed.motion.frames.every((frame) => frame.values['rayStatus'] === 'no hit')).toBe(true);
   expect(missed.moments.map((moment) => moment.label)).toEqual([
     'Start · ray misses',
     'Smallest clearance',
     'End of run',
   ]);
-  const straight = model({ ...parameters, goalY: 0 });
+  const straight = model({ ...parameters, goalY: 0 }, studyTranslate);
   expect(straight.moments.map((moment) => moment.label)).toEqual([
     'Ray first hits',
     'Smallest clearance',
     'End of run',
   ]);
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

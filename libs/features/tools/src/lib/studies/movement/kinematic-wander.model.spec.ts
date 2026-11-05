@@ -2,6 +2,7 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length } from '@dotln-angular/scene-engine';
 
+import { studyTranslate } from '../../../../testing/src';
 import {
   applyKinematicWander,
   kinematicReversals,
@@ -99,15 +100,17 @@ it('makes the sampling interval part of the walk rather than claiming frame-rate
 });
 
 it('keeps both velocity arrows in the drawing and supplies the selected-frame explanation', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.motion.frames).toHaveLength(121);
   expect(run.timeline?.series[0].values).toHaveLength(121);
   expect(run.motion.frames[0].worked?.lines.join(' ')).toContain('0.6000, 0.0000');
-  expect(run.motion.frames[run.initialStep].values).toMatchObject({ currentSpeed: '6.0000' });
+  expect(run.motion.frames[run.initialStep].values).toMatchObject({
+    currentSpeed: '6.0000',
+  });
   expect(run.motion.frames.at(-1)?.note).toContain('not a stopping decision');
   expect(run.comparison?.findings[0]).toContain('changes beyond a right angle');
   for (const speed of [2, 10]) {
-    const changed = model({ ...parameters, speed, maxRotation: 4 });
+    const changed = model({ ...parameters, speed, maxRotation: 4 }, studyTranslate);
     const bounds = changed.motion.bounds;
     for (const frame of changed.motion.frames) {
       expect(frame.values['currentSpeed']).toBe(speed.toFixed(4));
@@ -119,6 +122,32 @@ it('keeps both velocity arrows in the drawing and supplies the selected-frame ex
       }
     }
   }
-  const same = model({ ...parameters, maxRotation: example.failureRotation });
+  const same = model({ ...parameters, maxRotation: example.failureRotation }, studyTranslate);
   expect(same.comparison?.findings[1]).toContain('same patrol');
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

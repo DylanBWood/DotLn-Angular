@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:102",
   "work": "aifg",
   "slug": "satisfaction-radius",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 9",
+    "by": "studyAifg.satisfaction-radius.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.satisfaction-radius.record.authored.reviewedBy.item0",
+      "studyAifg.satisfaction-radius.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "The shelf runner can be close enough to collect a parcel without standing exactly on a painted cross. Making that acceptable region explicit turns arrival into a decision the task can actually satisfy. It also makes the cost visible: a larger region permits a less precise stop.",
-    "situation": "A shelf runner advances in fixed strides towards a pickup marker that falls between the positions those strides can reach."
+    "text": "studyAifg.satisfaction-radius.record.intuition.text",
+    "situation": "studyAifg.satisfaction-radius.record.intuition.situation"
   },
   "example": {
-    "name": "The shelf runner accepts a pickup region",
-    "description": "The runner starts at {start}; the pickup marker is at {target}. Outside a satisfaction radius of {satisfactionRadius} units, it moves towards the marker at {speed} units/s for each {timeStep} s update, a stride of {stride} units. The accepted interval runs from {lowerEdge} to {upperEdge}, including both edges. The run contains {steps} updates. The tolerance check and direct movement are study-local: the public scene engine exposes acceleration steering rather than this constant-stride controller.",
+    "name": "studyAifg.satisfaction-radius.record.example.name",
+    "description": "studyAifg.satisfaction-radius.record.example.description",
     "parameters": {
       "start": 0,
       "target": 10.5,
@@ -29,21 +32,21 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Measure distance before moving",
-        "text": "The runner compares its current sampled position with the marker. The signed offset selects a direction if movement is needed; its magnitude, currently {distance} units, decides acceptance. The radius is a positional tolerance, not the runner body size."
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step0.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Accept the interval, including its boundary",
-        "text": "If distance is at or below {satisfactionRadius} units, set velocity to zero and keep the present position. At this moment the decision is {accepted}. No snap is added: a successful decision may leave a visible gap to the cross."
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step1.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Take a full stride only outside",
-        "text": "If the check fails, assign the signed travel speed and advance by velocity × {timeStep} s. The assigned velocity is {velocity} units/s and the next position is {nextPosition}. There is no speed taper, inertia or between-sample intersection test in this controller."
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step2.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step2.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "offset = target - position\ndistance = abs(offset)\n\nif distance <= satisfactionRadius:\n  return { position: position, velocity: 0 }\n\nvelocity = sign(offset) * speed\nnextPosition = position + velocity * timeStep\nreturn { position: nextPosition, velocity: velocity }",
+    "ordinary": "studyAifg.satisfaction-radius.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -53,60 +56,60 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/satisfaction-radius.model.ts",
-    "textEquivalent": "The shelf runner is at {position}, {distance} units from the pickup cross at {target}, with an accepted circle of radius {satisfactionRadius} and an accepted aisle interval from {lowerEdge} to {upperEdge}; it is {accepted}, assigns velocity {velocity} units/s and its next sampled position is {nextPosition}."
+    "textEquivalent": "studyAifg.satisfaction-radius.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "highnet · AI Steering Behaviors for Games",
+      "project": "studyAifg.satisfaction-radius.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicArrive.cs",
-      "relevance": "This public Unity C# project supplies movement components. Its KinematicArrive component is useful here because its translation coroutine has an explicit target-radius decision.",
-      "explanation": "The coroutine normalises the target direction and translates by maxSpeed only when distance is at least targetRadius. It waits translationWaitSeconds between decisions, but does not multiply the translation by elapsed time. Its strict accepted region excludes equality, and the translation has no speed taper. The class name alone therefore does not imply proportional slowing."
+      "relevance": "studyAifg.satisfaction-radius.record.implementations.item0.relevance",
+      "explanation": "studyAifg.satisfaction-radius.record.implementations.item0.explanation"
     },
     {
-      "project": "gdx-ai · Arrive",
+      "project": "studyAifg.satisfaction-radius.record.implementations.item1.project",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
-      "relevance": "gdx-ai is a reusable Java game-AI library. Its Arrive behaviour exposes arrivalTolerance separately from the radius that begins deceleration.",
-      "explanation": "The arrivalTolerance check uses distance at or below the threshold to return zero steering acceleration. Outside it, the routine calculates a target velocity, then a bounded acceleration from the velocity gap. The routine does not set the owner velocity to zero, so the caller still owns the integration and stopping policy."
+      "relevance": "studyAifg.satisfaction-radius.record.implementations.item1.relevance",
+      "explanation": "studyAifg.satisfaction-radius.record.implementations.item1.explanation"
     }
   ],
   "references": [
     {
-      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.2 Kinematic Movement Algorithms, §3.2.1 Seek: Satisfaction radius",
+      "title": "studyAifg.satisfaction-radius.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers Satisfaction radius at the Chapter 3, §3.2.1 Seek location mapped by this catalogue; no chapter text is quoted or used here."
+      "supports": "studyAifg.satisfaction-radius.record.references.item0.supports"
     },
     {
-      "title": "highnet · KinematicArrive translation coroutine at a pinned revision",
+      "title": "studyAifg.satisfaction-radius.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicArrive.cs",
       "accessed": "2026-11-04",
-      "supports": "A target-radius check gates repeated direct translation, with equality still taking the movement branch and no distance-based speed taper."
+      "supports": "studyAifg.satisfaction-radius.record.references.item1.supports"
     },
     {
-      "title": "gdx-ai 1.8.2 · Arrive arrivalTolerance branch",
+      "title": "studyAifg.satisfaction-radius.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
       "accessed": "2026-11-04",
-      "supports": "The library accepts equality at arrivalTolerance and returns zero acceleration there; decelerationRadius and the caller’s velocity remain separate concerns."
+      "supports": "studyAifg.satisfaction-radius.record.references.item2.supports"
     }
   ],
   "limits": [
-    "Changing only the radius to {comparisonRadius} units demands an exact sampled landing. With this marker and stride, the runner alternates across the cross and never accepts a position. The comparison chart makes those reversals visible.",
-    "A band narrower than the gap between reachable samples may be crossed entirely between updates. This controller checks endpoints only, so crossing the band is insufficient; reduce the stride, taper movement or add an intersection policy when that matters.",
-    "A radius large enough to include the starting place reports success before the runner travels. Choose the permitted placement error from the pickup task rather than widening it until jitter disappears.",
-    "A satisfaction decision does not provide braking. This runner can set velocity to zero immediately; a physical character needs a speed condition or a braking controller as well as a position tolerance."
+    "studyAifg.satisfaction-radius.record.limits.item0",
+    "studyAifg.satisfaction-radius.record.limits.item1",
+    "studyAifg.satisfaction-radius.record.limits.item2",
+    "studyAifg.satisfaction-radius.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:101",
-      "why": "Use Kinematic arrive when the runner can vary its direct velocity and should shorten its strides near the pickup region."
+      "why": "studyAifg.satisfaction-radius.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:112",
-      "why": "Use Arrive when the runner has momentum and needs acceleration to slow before a positional tolerance can count as a settled stop."
+      "why": "studyAifg.satisfaction-radius.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:113",
-      "why": "Use Slow radius and target radius when separating the place where braking begins from the place accepted as reached."
+      "why": "studyAifg.satisfaction-radius.record.nearby.item2.why"
     }
   ]
 }

@@ -12,12 +12,20 @@ export class TranslocoHttpLoader implements TranslocoLoader {
   readonly #config = inject(I18nConfigToken);
 
   getTranslation(lang: string) {
-    if (!this.#config.availableLangs.includes(lang)) {
+    const segments = lang.split('/');
+    const language = segments.at(-1) ?? '';
+    const scopeIsSafe =
+      segments.length === 1 ||
+      (segments.length === 2 && /^[a-zA-Z][a-zA-Z0-9-]*$/.test(segments[0]));
+    if (!scopeIsSafe || !this.#config.availableLangs.includes(language)) {
       throw new Error('The requested translation language is not configured.');
     }
     const base = this.#config.basePath.replace(/\/?$/, '/');
     return this.#http.get<Translation>(
-      new URL(`${base}i18n/${encodeURIComponent(lang)}.json`, this.#document.baseURI).href,
+      new URL(
+        `${base}i18n/${segments.map(encodeURIComponent).join('/')}.json`,
+        this.#document.baseURI,
+      ).href,
     );
   }
 }

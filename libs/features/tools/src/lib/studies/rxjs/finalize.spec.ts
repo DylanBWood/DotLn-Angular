@@ -11,7 +11,7 @@ import {
 } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { example, model } from './finalize';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
@@ -45,9 +45,9 @@ it('attaches the record to the finalize row and reads its code from this module'
     'libs/features/tools/src/lib/studies/rxjs/finalize.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'download$',
     'shown$',
     'cleanup$',
@@ -56,15 +56,21 @@ it('attaches the record to the finalize row and reads its code from this module'
 
 it('names in the record the number of parts the view is shown', async () => {
   const { parameters } = (await loadStudy('rxc:237')).example;
-  const shown = marbleModel(example).marbles.lines.find(({ label }) => label === 'shown$');
+  const shown = marbleModel(example, {}, studyTranslate).marbles.lines.find(
+    ({ label }) => label === 'shown$',
+  );
   const parts = shown?.events.filter(({ kind, delivered }) => kind === 'next' && delivered) ?? [];
   expect(parts).toHaveLength(Number(parameters['partsShown']));
 });
 
 it('cuts the download off when the view leaves, dropping the parts still to come', () => {
-  const { lines } = marbleModel(example).marbles;
+  const { lines } = marbleModel(example, {}, studyTranslate).marbles;
   const download = lines.find(({ label }) => label === 'download$');
-  expect(download).toMatchObject({ subscribedAt: 0, unsubscribedAt: 7, cancelled: true });
+  expect(download).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 7,
+    cancelled: true,
+  });
   expect(
     download?.events.filter(({ delivered }) => !delivered).map(({ kind, key }) => `${kind} ${key}`),
   ).toEqual(['next c', 'next d', 'complete |']);
@@ -159,7 +165,7 @@ it('cleans up after every attempt above a retry, and once below it', () => {
 });
 
 it('opens as the reader leaves and names both clean-ups, in order, in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[7];
   expect(telling.frame).toBe(7);
   expect(telling.values['now']).toBe(

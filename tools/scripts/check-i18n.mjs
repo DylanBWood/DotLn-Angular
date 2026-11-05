@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
 import { isMain, readSource, sourceFiles, workspaceRoot } from './source-files.mjs';
 import { templates, translocoTemplate } from './templates.mjs';
+import { checkStudyMessages } from './catalog/check-study-messages.mjs';
 
 export function houseSignalSource(path) {
   const source = readSource(path);
@@ -38,9 +39,19 @@ export function checkI18n({ paths, translationsPath = 'apps/dotln/public/i18n' }
   if (!existsSync(catalogPath) || !statSync(catalogPath).isFile()) {
     throw new Error('The English translation catalog must exist before checking keys.');
   }
+  if (!paths) {
+    const problems = checkStudyMessages(workspaceRoot);
+    if (problems.length) {
+      for (const problem of problems) console.error(`FAIL study messages: ${problem}`);
+      return 1;
+    }
+  }
   mkdirSync(join(workspaceRoot, '.nx'), { recursive: true });
   const scratch = mkdtempSync(join(workspaceRoot, '.nx/i18n-check-'));
   try {
+    const languageDirectory = join(scratch, 'languages');
+    mkdirSync(languageDirectory);
+    writeFileSync(join(languageDirectory, 'en.json'), readFileSync(catalogPath));
     let index = 0;
     for (const template of templates(paths).filter(
       (entry) => !/\.spec\.ts#|\/testing\//.test(entry.id),
@@ -65,7 +76,7 @@ export function checkI18n({ paths, translationsPath = 'apps/dotln/public/i18n' }
         '--input',
         scratch,
         '--translations-path',
-        resolve(workspaceRoot, translationsPath),
+        languageDirectory,
         '--emit-error-on-extra-keys',
       ],
       { cwd: workspaceRoot, stdio: 'inherit', timeout: 60_000 },

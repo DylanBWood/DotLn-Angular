@@ -1,8 +1,9 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
+import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import {
@@ -17,11 +18,14 @@ import {
 } from './content-based-router';
 
 const path = 'libs/features/tools/src/lib/studies/eip/content-based-router.ts';
-const parameters = { findings: 'F1 to F5', rules: 'blocking, then operator, then follow-up' };
+const parameters = {
+  findings: 'F1 to F5',
+  rules: 'blocking, then operator, then follow-up',
+};
 
 /** The example run by its model, which draws a flow. */
 const flowRun = (): FlowStudyModel => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error(`The model draws ${run.family}, not a flow.`);
   return run;
 };
@@ -42,7 +46,7 @@ it('attaches the record to the Content-Based Router row, reads this module and s
   expect(record.pseudocode.executable?.module).toBe(path);
   expect(record.example.parameters).toEqual(parameters);
   const run = flowRun();
-  expect(model(record.example.parameters).family).toBe('flow');
+  expect(model(record.example.parameters, studyTranslate).family).toBe('flow');
   expect(run.diagram).not.toBeNull();
   const names = [
     ...placeholdersIn(record.visual.textEquivalent),
@@ -105,13 +109,18 @@ it('holds each finding in the router while it chooses, then at the one destinati
     ['All routed', 10],
   ]);
   // Every step has its own sentence, and no state outgrows what a box can show.
-  for (const frame of drawn.frames) expect(frame.note).toBe(example.notes?.[frame.step]);
+  for (const frame of drawn.frames)
+    expect(frame.note).toBe(studyMessage(studyTranslate, example.notes?.[frame.step] ?? ''));
   for (const frame of drawn.frames)
     for (const state of Object.values(frame.states)) expect(state.length).toBeLessThanOrEqual(40);
 });
 
 it('reads the rules in order, so a finding that passes both is blocking', () => {
-  const f5: Finding = { finding: 'F5', unmet: 'criterion 4', choice: 'waive or repair' };
+  const f5: Finding = {
+    finding: 'F5',
+    unmet: 'criterion 4',
+    choice: 'waive or repair',
+  };
   expect(routeOf(f5)).toBe('blocking');
   // With the two rules swapped, the same finding would ask the operator to authorise a repair.
   const swapped = [...rules].reverse();
@@ -125,28 +134,56 @@ it('turns a blocking finding into a follow-up when its field is renamed, and not
   // The verifier files F1 under a field the rules do not read; everything else is unchanged.
   const findings = example.inputs['findings$'].values ?? {};
   const renamed = { finding: 'F1', unmetCriterion: 'criterion 2' };
+  const driftedFindings = { ...findings, 1: renamed };
   const drifted: MarbleExample = {
     ...example,
     inputs: {
-      findings$: { ...example.inputs['findings$'], values: { ...findings, 1: renamed } },
+      findings$: {
+        ...example.inputs['findings$'],
+        values: driftedFindings,
+        valueMessages: {
+          ...example.inputs['findings$'].valueMessages,
+          1: 'studyEip.content-based-router.model.renamedFinding',
+        },
+      },
     },
     outputs: {
       blocking$: {
-        label: 'blocking$',
+        ...example.outputs['blocking$'],
         marbles: '--------4-(5|)',
         values: { 4: findings['4'], 5: findings['5'] },
       },
       operator$: example.outputs['operator$'],
       followUp$: {
-        label: 'followUp$',
+        ...example.outputs['followUp$'],
         marbles: '--1-2-----|',
         values: { 1: renamed, 2: findings['2'] },
+        valueMessages: {
+          ...example.outputs['followUp$'].valueMessages,
+          1: 'studyEip.content-based-router.model.renamedFinding',
+        },
       },
     },
   };
-  expectMarbleExample(drifted);
-  const { flow: drawn } = flowFromMarbles(drifted, { ...flow, states: {}, held: {} }, parameters);
+  const changed: MarbleExample = {
+    ...drifted,
+    notes: {
+      ...drifted.notes,
+      10: {
+        key: 'studyEip.content-based-router.model.example.notes.10',
+        params: { blocking: Object.keys(drifted.outputs['blocking$'].values ?? {}).length },
+      },
+    },
+  };
+  expectMarbleExample(changed);
+  const { flow: drawn } = flowFromMarbles(
+    changed,
+    { ...flow, states: {}, held: {} },
+    parameters,
+    studyTranslate,
+  );
   expect(hopsAt(drawn.frames[2])).toEqual(['to-board 1']);
+  expect(drawn.frames[10].note).toContain('with 2 blocking findings');
   expect(drawn.frames[2].values['delivered']).toBe(
     'blocking$: nothing; operator$: nothing; followUp$: 1 (finding F1, unmetCriterion criterion 2)',
   );

@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length, normalize } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -36,6 +36,7 @@ const example: WanderParameters = {
   radius: 1,
   arrowSeconds: 1,
 };
+
 const parameters: StudyParameters = { ...example };
 
 it('uses the assigned draft and the exact parameters of its worked example', () => {
@@ -156,8 +157,8 @@ it('shows a narrower patrol from changing only the circle radius, with the same 
 });
 
 it('applies perturbations per update and does not introduce a position-based avoidance force', () => {
-  const normal = model(parameters);
-  const fasterUpdates = model({ ...parameters, timeStep: 0.1 });
+  const normal = model(parameters, studyTranslate);
+  const fasterUpdates = model({ ...parameters, timeStep: 0.1 }, studyTranslate);
   expect(normal.motion.frames[12].seconds).toBeCloseTo(2.4);
   expect(fasterUpdates.motion.frames[12].seconds).toBeCloseTo(1.2);
   expect(fasterUpdates.motion.frames.map(({ values }) => values['angle'])).toEqual(
@@ -170,14 +171,14 @@ it('applies perturbations per update and does not introduce a position-based avo
     example,
   );
   expect(shifted.acceleration).toEqual(calculateWanderStep(state, 2, example).acceleration);
-  expect(() => model({ ...parameters, walkingFraction: 0.5 })).toThrow(
+  expect(() => model({ ...parameters, walkingFraction: 0.5 }, studyTranslate)).toThrow(
     'fixes wander walkingFraction',
   );
 });
 
 it('supplies every selected-moment value and fits the circle, target and vectors in the local drawing', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.initialStep).toBe(2);
   expect(run.moments).toHaveLength(5);
   const selected = run.motion.frames[run.initialStep];
@@ -243,7 +244,7 @@ it('supplies every selected-moment value and fits the circle, target and vectors
 });
 
 it('follows Nia locally so the circle and labelled target stay large and velocity directions remain distinct', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const states = wanderFrames(example);
   expect(states[100].position.x).toBeGreaterThan(70);
   expect(run.motion.trail).toBe(false);
@@ -276,9 +277,12 @@ it('follows Nia locally so the circle and labelled target stay large and velocit
 });
 
 it('makes radius change the target deflection and makes zero nudge scale remove turning', () => {
-  expect(model(parameters).inputs?.map(({ name }) => name)).toEqual(['wanderRadius', 'turnScale']);
-  const narrow = model({ ...parameters, wanderRadius: 0.5 });
-  const wide = model({ ...parameters, wanderRadius: 5 });
+  expect(model(parameters, studyTranslate).inputs?.map(({ name }) => name)).toEqual([
+    'wanderRadius',
+    'turnScale',
+  ]);
+  const narrow = model({ ...parameters, wanderRadius: 0.5 }, studyTranslate);
+  const wide = model({ ...parameters, wanderRadius: 5 }, studyTranslate);
   const narrowTurn = narrow.timeline?.series[1].values[2];
   const wideTurn = wide.timeline?.series[1].values[2];
   if (narrowTurn === undefined || wideTurn === undefined)
@@ -287,8 +291,8 @@ it('makes radius change the target deflection and makes zero nudge scale remove 
   expect(wideTurn).toBeGreaterThan(narrowTurn * 4);
   expect(narrow.motion.frames[2].note).toContain('gentle turns');
   expect(narrow.comparison?.intro).toContain('Both traces now use');
-  const straight = model({ ...parameters, turnScale: 0 });
-  const turning = model({ ...parameters, turnScale: 1.2 });
+  const straight = model({ ...parameters, turnScale: 0 }, studyTranslate);
+  const turning = model({ ...parameters, turnScale: 1.2 }, studyTranslate);
   expect(
     straight.timeline?.series.every(({ values }) => values.every((value) => value === 0)),
   ).toBe(true);
@@ -304,7 +308,7 @@ it('makes radius change the target deflection and makes zero nudge scale remove 
 });
 
 it('keeps every note, reading, label and complete circle sound across input endpoints and their combinations', () => {
-  const offered = model(parameters).inputs ?? [];
+  const offered = model(parameters, studyTranslate).inputs ?? [];
   const cases: readonly StudyParameters[] = [
     parameters,
     ...offered.flatMap((input) =>
@@ -321,7 +325,7 @@ it('keeps every note, reading, label and complete circle sound across input endp
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const changed of cases) {
-    const run = model(changed);
+    const run = model(changed, studyTranslate);
     const bounds = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);

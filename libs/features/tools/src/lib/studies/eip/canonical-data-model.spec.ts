@@ -1,6 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, model } from './canonical-data-model';
@@ -10,7 +11,7 @@ const views = ['table', 'dsl', 'chart'];
 
 /** The model's run, which for this module is always a flow. */
 function flowRun(parameters: StudyParameters): FlowStudyModel {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The canonical model study is drawn as a flow.');
   return run;
 }
@@ -135,8 +136,8 @@ it('opens at the start and names its moments', async () => {
   ]);
   // Every step has its own sentence, not the family's default.
   expect(run.flow.frames.map(({ note }) => note)).toEqual([
-    example.start.note,
-    ...example.steps.map(({ note }) => note),
+    studyMessage(studyTranslate, example.start.note),
+    ...example.steps.map(({ note }) => studyMessage(studyTranslate, note)),
   ]);
 });
 

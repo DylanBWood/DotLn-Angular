@@ -1,8 +1,9 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
+import { studyMessage } from '../study-message';
 import {
   example,
   failureLimit,
@@ -16,7 +17,7 @@ import {
 
 const path = 'libs/features/tools/src/lib/studies/eip/process-manager.ts';
 const record = await loadFlowStudy('eip:131');
-const drawn = model(record.example.parameters);
+const drawn = model(record.example.parameters, studyTranslate);
 if (drawn.family !== 'flow') throw new Error('The model does not draw a flow.');
 const run = drawn;
 const { frames } = run.flow;
@@ -40,7 +41,7 @@ const failing: MarbleExample = {
   },
   outputs: {
     phrases$: {
-      label: 'phrases$',
+      ...example.outputs['phrases$'],
       marbles: '--N-V-F-V-F-V-(S|)',
       values: {
         N: 'resume: next',
@@ -48,10 +49,17 @@ const failing: MarbleExample = {
         F: 'resume: fix',
         S: `stop after ${failureLimit} failed verifications`,
       },
+      valueMessages: {
+        ...example.outputs['phrases$'].valueMessages,
+        S: {
+          key: 'studyEip.process-manager.model.failureStop',
+          params: { failures: failureLimit },
+        },
+      },
     },
   },
   origins: {},
-  moments: [{ label: 'Limit', frame: 14 }],
+  moments: [{ label: 'studyEip.process-manager.model.limitMoment', frame: 14 }],
   notes: {},
 };
 
@@ -146,7 +154,12 @@ it('stops reading reports when the route ends', () => {
 
 it('ends the route at the failure limit instead of sending another repair', () => {
   expectMarbleExample(failing);
-  const stopped = flowFromMarbles(failing, { ...flow, states: {} }, record.example.parameters);
+  const stopped = flowFromMarbles(
+    failing,
+    { ...flow, states: {} },
+    record.example.parameters,
+    studyTranslate,
+  );
   const last = stopped.flow.frames[stopped.flow.frames.length - 1];
   expect(last.step).toBe(14);
   expect(last.hops.map(({ key, link }) => `${key} ${link}`)).toEqual(['S stop']);
@@ -179,7 +192,7 @@ it('names its moments, opens at the start and fills every placeholder', () => {
   for (const frame of frames) for (const name of names) expect(frame.values[name]).toBeDefined();
   // Every frame has its own sentence, and no node's state outgrows the drawing.
   for (const frame of frames) {
-    expect(frame.note).toBe(example.notes?.[frame.step]);
+    expect(frame.note).toBe(studyMessage(studyTranslate, example.notes?.[frame.step] ?? ''));
     for (const state of Object.values(frame.states)) expect(state.length).toBeLessThanOrEqual(40);
   }
 });

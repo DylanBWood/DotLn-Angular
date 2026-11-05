@@ -3,6 +3,8 @@ import { mergeMap } from 'rxjs';
 import type { StudyModelFunction } from '../study-model';
 import { type MarbleExample, marbleModel } from './marbles';
 
+const photos = { a: 'cat', b: 'dog', c: 'owl' };
+
 /**
  * Three photos uploaded to a shared album where each photo carries its own place, so the uploads
  * are independent: each starts the moment its photo is added, they run side by side, and the
@@ -13,37 +15,61 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     photo$: {
-      label: 'photo$',
+      label: 'studyRxjs.merge-map.model.example.inputs.photo.label',
       marbles: '-a-b-c--|',
-      values: { a: 'cat', b: 'dog', c: 'owl' },
+      values: photos,
+
+      valueMessages: {
+        a: 'studyRxjs.merge-map.model.example.inputs.photo.values.a',
+        b: 'studyRxjs.merge-map.model.example.inputs.photo.values.b',
+        c: 'studyRxjs.merge-map.model.example.inputs.photo.values.c',
+      },
     },
   },
   inner: {
     cat: {
-      label: 'upload(cat)',
+      label: 'studyRxjs.merge-map.model.example.inner.cat.label',
       marbles: '-----1|',
       values: { 1: 'cat stored' },
       subscriptions: '-^-----!',
+
+      valueMessages: {
+        '1': 'studyRxjs.merge-map.model.example.inner.cat.values.1',
+      },
     },
     dog: {
-      label: 'upload(dog)',
+      label: 'studyRxjs.merge-map.model.example.inner.dog.label',
       marbles: '-2|',
       values: { 2: 'dog stored' },
       subscriptions: '---^-!',
+
+      valueMessages: {
+        '2': 'studyRxjs.merge-map.model.example.inner.dog.values.2',
+      },
     },
     owl: {
-      label: 'upload(owl)',
+      label: 'studyRxjs.merge-map.model.example.inner.owl.label',
       marbles: '--3|',
       values: { 3: 'owl stored' },
       subscriptions: '-----^--!',
+
+      valueMessages: {
+        '3': 'studyRxjs.merge-map.model.example.inner.owl.values.3',
+      },
     },
   },
-  operator: 'mergeMap((photo) => upload(photo))',
+  operator: 'studyRxjs.merge-map.model.example.operator',
   outputs: {
     stored$: {
-      label: 'stored$',
+      label: 'studyRxjs.merge-map.model.example.outputs.stored.label',
       marbles: '----2-13|',
       values: { 1: 'cat stored', 2: 'dog stored', 3: 'owl stored' },
+
+      valueMessages: {
+        '1': 'studyRxjs.merge-map.model.example.outputs.stored.values.1',
+        '2': 'studyRxjs.merge-map.model.example.outputs.stored.values.2',
+        '3': 'studyRxjs.merge-map.model.example.outputs.stored.values.3',
+      },
     },
   },
   run: ({ inputs: { photo$ }, inner }) => {
@@ -53,22 +79,30 @@ export const example: MarbleExample = {
     return { stored$ };
   },
   moments: [
-    { label: 'cat starts', frame: 1 },
-    { label: 'dog runs beside cat', frame: 3 },
-    { label: 'dog overtakes cat', frame: 4 },
-    { label: 'owl starts at once', frame: 5 },
-    { label: 'Done', frame: 8 },
+    { label: 'studyRxjs.merge-map.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.merge-map.model.example.moments.1.label', frame: 3 },
+    { label: 'studyRxjs.merge-map.model.example.moments.2.label', frame: 4 },
+    { label: 'studyRxjs.merge-map.model.example.moments.3.label', frame: 5 },
+    { label: 'studyRxjs.merge-map.model.example.moments.4.label', frame: 8 },
   ],
   notes: {
-    0: 'No photo has been added yet.',
-    1: 'The user adds cat, a large photo, and its upload starts at once.',
-    3: "dog arrives and its upload starts straight away, beside cat's: nothing waits for anything else.",
-    4: "dog is small, so the server answers it first, and its answer goes out ahead of cat's, which was sent earlier.",
-    5: "dog's upload completes. owl arrives and its upload starts at once, while cat is still uploading.",
-    6: "The server answers cat's upload, the second of the three to be answered.",
-    7: "cat's upload completes and the server answers owl's.",
-    8: "owl's upload completes and the user has finished adding photos, so the output completes: all three are stored, in the order their uploads finished.",
+    0: 'studyRxjs.merge-map.model.example.notes.0',
+    1: 'studyRxjs.merge-map.model.example.notes.1',
+    3: 'studyRxjs.merge-map.model.example.notes.3',
+    4: 'studyRxjs.merge-map.model.example.notes.4',
+    5: 'studyRxjs.merge-map.model.example.notes.5',
+    6: {
+      key: 'studyRxjs.merge-map.model.example.notes.6',
+      params: { uploads: Object.keys(photos).length },
+    },
+    7: 'studyRxjs.merge-map.model.example.notes.7',
+    8: {
+      key: 'studyRxjs.merge-map.model.example.notes.8',
+      params: { stored: Object.keys(photos).length },
+    },
   },
+
+  parameterMessages: { photos: 'studyRxjs.merge-map.record.parameters.photos' },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

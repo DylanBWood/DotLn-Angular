@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:163",
   "work": "aifg",
   "slug": "the-firing-solution",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 5",
+    "by": "studyAifg.the-firing-solution.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.the-firing-solution.record.authored.reviewedBy.item0",
+      "studyAifg.the-firing-solution.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "Pointing directly at the beacon leaves gravity out of the decision. The launcher must spend some of its fixed speed lifting the projectile, leaving less speed for sideways travel. Two different allocations can meet the same beacon: a shallow, quick flight and a taller, slower one. Some requests have no allocation that works; keeping the launcher silent is then a valid result.",
-    "situation": "A harbour signal launcher must reach a stationary beacon on a breakwater with a fixed muzzle speed. Its controller needs a launch velocity and a clear refusal when the beacon is beyond reach."
+    "text": "studyAifg.the-firing-solution.record.intuition.text",
+    "situation": "studyAifg.the-firing-solution.record.intuition.situation"
   },
   "example": {
-    "name": "The harbour launcher and breakwater beacon",
-    "description": "The launcher starts at height {launchHeight} m and aims at a beacon at horizontal position {targetX} m and height {targetHeight} m. Launch speed stays {launchSpeed} m/s and gravity is {gravity} m/s². This request has {solutionCount} direction(s): the low launch velocity is {lowVelocity} m/s and the high velocity is {highVelocity} m/s. Their target times are {lowTime} s and {highTime} s. The comparison changes only target x to {unreachableTargetX} m.",
+    "name": "studyAifg.the-firing-solution.record.example.name",
+    "description": "studyAifg.the-firing-solution.record.example.description",
     "parameters": {
       "startX": 0,
       "launchHeight": 0,
@@ -31,29 +34,29 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Express the beacon relative to the muzzle",
-        "text": "Find horizontal distance d and height difference h from the launcher. The example admits a beacon ahead of the muzzle and at or above the water. With launch speed fixed, direction is the remaining choice. The scene engine has no firing solver; the calculation here is study-local."
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step0.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Check whether a direction can exist",
-        "text": "Substituting the horizontal flight time into the vertical equation gives a quadratic in launch slope. Its discriminant is D = speed⁴ − gravity × (gravity × d² + 2 × h × speed²). Here D is {discriminant}. A negative result returns no shot before any square root is taken. At zero the two candidate slopes coincide and count as one direction."
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step1.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Turn the two slopes into fixed-speed velocities",
-        "text": "Use the minus root for the low slope and the plus root for the high slope. Divide launch speed by √(1 + slope²) for horizontal velocity, then multiply that velocity by the slope for upward velocity. Both vectors retain the requested speed; increasing vertical allocation necessarily reduces horizontal allocation."
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step2.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Choose the shorter flight and inspect both predictions",
-        "text": "Target time is d / horizontalVelocity. The low candidate arrives sooner and is selected here; the high candidate remains visible as an alternative. At {time} s their positions are {lowPosition} and {highPosition}. They are predictions of separate possible launches, not a command to fire twice. Each uses the same constant-gravity position equations, with no steering after launch."
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step3.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step3.text"
       },
       {
-        "title": "Keep contact separate from the preview clock",
-        "text": "Solve each candidate's water-contact time from its vertical quadratic, include that exact event, and hold its dot at the landing point thereafter. The beacon in this example sits at water height, so arriving there and landing coincide. A raised beacon would be a point passed during flight, not a reason to stop a projectile in mid-air."
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step4.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step4.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "d = targetX - startX\nh = targetHeight - launchHeight\nrequire d > 0, targetHeight >= waterHeight, speed > 0, gravity > 0\n\nD = speed⁴ - gravity * (gravity*d² + 2*h*speed²)\nif D < 0: return no launch\nroot = sqrt(D)\n\nslopes = unique([(speed² - root)/(gravity*d),\n                 (speed² + root)/(gravity*d)])\nfor slope in slopes:\n  vx = speed / sqrt(1 + slope²)\n  vy = slope * vx\n  targetTime = d / vx\n  retain { vx, vy, targetTime }\n\nchoose the candidate with the shorter targetTime\nfor each candidate and each preview time t:\n  x = startX + vx*t\n  height = launchHeight + vy*t - gravity*t²/2\n  verticalVelocity = vy - gravity*t\n\nwaterTime = (vy + sqrt(vy² + 2*gravity*launchHeight)) / gravity\ninclude the exact waterTime event between regular samples\nfor t >= waterTime: hold the dot at its water landing point\nnever label a time-limited preview endpoint as contact",
+    "ordinary": "studyAifg.the-firing-solution.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -63,54 +66,54 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/the-firing-solution.model.ts",
-    "textEquivalent": "At {time} s the beacon is at x {targetX} m and height {targetHeight} m; there are {solutionCount} launch directions with D {discriminant}, the chosen low candidate is {lowPosition} and the high alternative is {highPosition}; their target times are {lowTime} s and {highTime} s."
+    "textEquivalent": "studyAifg.the-firing-solution.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "lib_fts ballistic trajectory solver",
+      "project": "studyAifg.the-firing-solution.record.implementations.item0.project",
       "url": "https://github.com/forrestthewoods/lib_fts/blob/350529579db315c3d0c579f70d871ef13400d418/code/fts_ballistic_trajectory.cs",
-      "relevance": "Forrest Smith's C# library supplies launch velocities for ballistic projectiles in Unity. Its stationary-target overload solves the fixed-speed aiming problem in three dimensions.",
-      "explanation": "The solver separates the target offset into horizontal ground distance and vertical difference. It returns zero solutions when the discriminant is negative, uses the two roots to form low and high angles, and builds velocity vectors along the horizontal target direction plus up. Equal angles yield one solution. The same file also contains a separate overload for targets with constant linear velocity."
+      "relevance": "studyAifg.the-firing-solution.record.implementations.item0.relevance",
+      "explanation": "studyAifg.the-firing-solution.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement · §3.5 Predicting Physics · §3.5.3 The Firing Solution",
+      "title": "studyAifg.the-firing-solution.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers the firing solution at this catalogued chapter and section."
+      "supports": "studyAifg.the-firing-solution.record.references.item0.supports"
     },
     {
-      "title": "Forrest Smith · Solving Ballistic Trajectories",
+      "title": "studyAifg.the-firing-solution.record.references.item1.title",
       "url": "https://www.forrestthewoods.com/blog/solving_ballistic_trajectories/",
       "accessed": "2026-11-04",
-      "supports": "The stationary-target derivation eliminates time to obtain two fixed-speed firing angles, one low and one high."
+      "supports": "studyAifg.the-firing-solution.record.references.item1.supports"
     },
     {
-      "title": "fts_ballistic_trajectory.cs · pinned stationary-target solver",
+      "title": "studyAifg.the-firing-solution.record.references.item2.title",
       "url": "https://github.com/forrestthewoods/lib_fts/blob/350529579db315c3d0c579f70d871ef13400d418/code/fts_ballistic_trajectory.cs",
       "accessed": "2026-11-04",
-      "supports": "The public implementation rejects a negative discriminant, deduplicates equal angles and reconstructs fixed-speed launch velocities."
+      "supports": "studyAifg.the-firing-solution.record.references.item2.supports"
     }
   ],
   "limits": [
-    "The moved beacon has a negative discriminant at the configured speed. The comparison leaves its request unserved and draws no invented projectile flight. More aiming precision cannot make this request reachable.",
-    "A valid ballistic solution need not be a safe route. The chosen low arc can hit a wall, while the high arc can meet an overhead obstacle. Both need collision checks in a game world.",
-    "The beacon is stationary. Motion during the longer flight can invalidate a high arc that was correct at launch; a moving-target solver must predict the encounter rather than aim at an old position.",
-    "The calculation assumes constant gravity, no drag and an instantaneous choice of muzzle direction. It does not include turret turn limits, wind, projectile size or an intervening collision. This example accepts only targets ahead of the launcher and at or above the water."
+    "studyAifg.the-firing-solution.record.limits.item0",
+    "studyAifg.the-firing-solution.record.limits.item1",
+    "studyAifg.the-firing-solution.record.limits.item2",
+    "studyAifg.the-firing-solution.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:162",
-      "why": "Use Projectile trajectory when the launch velocity is already known and the question is where or when the projectile lands. It is the forward prediction used to check these candidate launches."
+      "why": "studyAifg.the-firing-solution.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:164",
-      "why": "Use Two-arc ambiguity when both candidates are valid and clearance, flight time or tactical purpose must decide between them."
+      "why": "studyAifg.the-firing-solution.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:166",
-      "why": "Use Iterative targeting when the encounter prediction and aim must be refined together instead of solving once for a stationary beacon."
+      "why": "studyAifg.the-firing-solution.record.nearby.item2.why"
     }
   ]
 }

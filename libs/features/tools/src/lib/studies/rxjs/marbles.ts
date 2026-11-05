@@ -3,6 +3,7 @@ import { TestScheduler } from 'rxjs/testing';
 
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { type StudyMessage, studyMessage, studyParameterValues } from '../study-message';
 import type {
   MarbleEvent,
   MarbleFrame,
@@ -13,106 +14,77 @@ import type {
   StudyWorkedStep,
 } from '../study-model';
 import { secondsPerFrame } from '../study-model';
+import type { StudyTranslate } from '../study-translate';
 
-/** A marble string in the TestScheduler's syntax, with the values its letters stand for. */
+/** Executable values and their presentation are deliberately separate. */
 export interface MarbleString {
   readonly marbles: string;
   readonly values?: Readonly<Record<string, unknown>>;
-  /** What `#` throws. */
   readonly error?: unknown;
+  /** Display messages for the letters, without changing what the stream carries. */
+  readonly valueMessages?: Readonly<Record<string, StudyMessage>>;
+  readonly errorMessage?: StudyMessage;
 }
 
-/** A stream the example subscribes to. */
+/** A stream the example subscribes to. Its label is a presentation message. */
 export interface MarbleInput extends MarbleString {
-  readonly label: string;
-  /** A hot source emits whether or not anything listens; `^` marks where the example subscribes. */
+  readonly label: StudyMessage;
   readonly hot?: boolean;
-  /** The subscription marbles the spec asserts on this input, where the study shows them. */
   readonly subscriptions?: string;
 }
 
-/**
- * A stream an operator opens for one value. Its subscription marbles place it in the diagram, from
- * the `^` where the operator subscribes to the `!` where it is cut off, and the spec asserts them.
- */
+/** A stream opened for a value; its subscription places it in the diagram. */
 export interface MarbleInner extends MarbleString {
-  readonly label: string;
+  readonly label: StudyMessage;
   readonly subscriptions: string;
 }
 
-/** A result the spec asserts. */
+/** An asserted result, optionally read by a late subscriber. */
 export interface MarbleOutput extends MarbleString {
-  readonly label: string;
-  /**
-   * When the spec subscribes to this output, as subscription marbles (`---^` subscribes at frame
-   * 3); the whole diagram from frame 0 when absent. A late subscriber to a shared source shows what
-   * it missed this way, and the drawing starts its lane where it subscribes.
-   */
+  readonly label: StudyMessage;
   readonly subscriptions?: string;
 }
 
-/** The observables the spec makes from the example's strings, and the scheduler running them. */
+/** The streams made from the example's strings, and the scheduler that runs them. */
 export interface MarbleStreams {
   readonly inputs: Readonly<Record<string, Observable<unknown>>>;
   readonly inner: Readonly<Record<string, Observable<unknown>>>;
   readonly scheduler: TestScheduler;
 }
 
-/**
- * An executable marble example. The module exports one; its spec runs `run` under the
- * TestScheduler against these strings, and the drawing reads the same strings, so the two
- * cannot disagree.
- */
+/** One executable example; drawings and specs read the same strings and subscriptions. */
 export interface MarbleExample {
   readonly inputs: Readonly<Record<string, MarbleInput>>;
   readonly inner?: Readonly<Record<string, MarbleInner>>;
-  /** The operator as the diagram names it, in one short line. */
-  readonly operator: string;
+  readonly operator: StudyMessage;
   readonly outputs: Readonly<Record<string, MarbleOutput>>;
-  /** Builds the pipeline the spec runs. The record's RxJS code is this function's body. */
   readonly run: (streams: MarbleStreams) => Readonly<Record<string, Observable<unknown>>>;
-  /**
-   * The frames the browser paints, as marbles, for an example on the animation frame scheduler;
-   * the spec hands them to the TestScheduler's `animate`.
-   */
   readonly animate?: string;
-  /** The moments worth naming, by frame. */
-  readonly moments: readonly { readonly label: string; readonly frame: number }[];
-  /** A sentence for a frame, in place of the one written from its events. */
-  readonly notes?: Readonly<Record<number, string>>;
-  /**
-   * Where an output value of a frame comes from, for the drawing's courier, when the rule below
-   * would pick wrongly: the id of an input or inner stream, or null for a value that rides from
-   * nowhere, such as one a scheduler held back. Without an entry, the courier leaves the inner
-   * stream, else the input, that emits at that frame, or else the one that errors or completes.
-   */
+  readonly moments: readonly {
+    readonly label: StudyMessage;
+    readonly frame: number;
+  }[];
+  readonly notes?: Readonly<Record<number, StudyMessage>>;
+  /** Override a courier's origin with a stream id, or null for no origin. */
   readonly origins?: Readonly<Record<number, string | null>>;
-  /** How to read the drawing, before the family's sentence on how it opens; default when absent. */
-  readonly caption?: string;
+  readonly caption?: StudyMessage;
+  readonly parameterMessages?: Readonly<Record<string, string>>;
 }
 
-/** A marble module exports its example beside the model the drawing reads. */
 export interface MarbleModule {
   readonly example: MarbleExample;
 }
 
-const defaultCaption =
-  'Time runs in frames. A circle is an emission, with its letter; a bar is completion; a cross is an error. A lane that ends in a small hollow ring is where the operator stopped listening to that stream, and what it would have delivered afterwards is not drawn.';
-/** Every marble diagram's caption ends with how it opens and fills in. */
-const openingSentence =
-  'The drawing opens at the end of the run, and an output lane shows only what has been emitted by the selected frame: step back, or press Play where it is offered, to watch each output value arrive from the emission it comes from.';
+const legendByRole = {
+  input: { tone: 'subject', key: 'studyCommon.marbles.legend.input' },
+  inner: { tone: 'other', key: 'studyCommon.marbles.legend.inner' },
+  output: { tone: 'actual', key: 'studyCommon.marbles.legend.output' },
+} as const;
 
-/** What each tone means; a diagram's legend lists only the kinds of line it draws. */
-const legendByRole: Readonly<Record<MarbleLine['role'], StudyLegendEntry>> = {
-  input: { tone: 'subject', label: 'Black · an input stream' },
-  inner: { tone: 'other', label: 'Grey · a stream the operator opened' },
-  output: { tone: 'actual', label: 'Green · the output' },
-};
+export const marbleCaption = (example: MarbleExample, t: StudyTranslate): string =>
+  studyMessage(t, example.caption ?? 'studyCommon.marbles.caption');
 
-/** How to read a marble diagram: the example's own words, or the family's. */
-export const marbleCaption = (example: MarbleExample) => example.caption ?? defaultCaption;
-
-/** A value as the text equivalent names it; the spec names what it received the same way. */
+/** A stable description for mechanism assertions; never used as untranslated drawing prose. */
 export const nameOf = (value: unknown): string => {
   if (value === undefined) return 'undefined';
   if (typeof value === 'string') return value;
@@ -128,11 +100,28 @@ export const nameOf = (value: unknown): string => {
   return String(value);
 };
 
-/**
- * Parses as the TestScheduler's run mode does, where one character is one frame. Outside a run
- * the scheduler's static factor is ten frames a character, so it is set to one for the parse and
- * put back, as run() itself does.
- */
+/** Rich values require an authored message; symbols and numbers have no English payload. */
+export function marbleValue(
+  stream: MarbleString,
+  key: string,
+  value: unknown,
+  t: StudyTranslate,
+): string {
+  const message = stream.valueMessages?.[key];
+  if (message !== undefined) return studyMessage(t, message);
+  if (value === undefined) return t('studyCommon.marbles.undefined');
+  if (value === null) return t('studyCommon.marbles.null');
+  if (typeof value === 'boolean')
+    return t(value ? 'studyCommon.marbles.true' : 'studyCommon.marbles.false');
+  if (typeof value === 'number' || (typeof value === 'string' && value.length === 1))
+    return t('studyCommon.marbles.value', { value });
+  throw new Error(`No display message for marble ${key}.`);
+}
+
+export const marbleError = (stream: MarbleString, t: StudyTranslate): string =>
+  studyMessage(t, stream.errorMessage ?? 'studyCommon.marbles.error');
+
+/** Parse with the same one-character frame factor as TestScheduler.run(). */
 function asRunMode<T>(parse: () => T): T {
   const factor = TestScheduler.frameTimeFactor;
   TestScheduler.frameTimeFactor = 1;
@@ -143,17 +132,13 @@ function asRunMode<T>(parse: () => T): T {
   }
 }
 
-/**
- * Reads a marble string as the TestScheduler reads it in run mode, so a frame here is a frame
- * there: the same parser, once with the letters and once with their values. An event is heard up
- * to and including the frame the subscription ends at, since what ends it is an event of that
- * frame; after that, nothing receives the stream.
- */
+/** Read the scheduler's letters and payloads together, keeping subscription boundaries intact. */
 function eventsOf(
   stream: MarbleString,
   from: number,
   until: number,
   heard: (frame: number) => boolean,
+  t: StudyTranslate,
 ): readonly MarbleEvent[] {
   const letters = asRunMode(() =>
     TestScheduler.parseMarbles(stream.marbles, undefined, undefined, false, true),
@@ -164,18 +149,24 @@ function eventsOf(
   return letters.map(({ frame, notification }, index) => {
     const at = frame + from;
     const rich = values[index].notification;
-    const told = (): Pick<MarbleEvent, 'kind' | 'key' | 'value'> => {
-      if (notification.kind === 'N')
+    const event = (): Pick<MarbleEvent, 'kind' | 'key' | 'value'> => {
+      if (notification.kind === 'N') {
+        const key = String(notification.value);
         return {
           kind: 'next',
-          key: String(notification.value),
-          value: nameOf(rich.kind === 'N' ? rich.value : notification.value),
+          key,
+          value: marbleValue(stream, key, rich.kind === 'N' ? rich.value : notification.value, t),
         };
+      }
       if (notification.kind === 'E')
-        return { kind: 'error', key: '#', value: nameOf(rich.kind === 'E' ? rich.error : 'error') };
-      return { kind: 'complete', key: '|', value: 'complete' };
+        return { kind: 'error', key: '#', value: marbleError(stream, t) };
+      return {
+        kind: 'complete',
+        key: '|',
+        value: t('studyCommon.marbles.complete'),
+      };
     };
-    return { frame: at, ...told(), delivered: heard(at) && at <= until };
+    return { frame: at, ...event(), delivered: heard(at) && at <= until };
   });
 }
 
@@ -184,18 +175,17 @@ const subscription = (marbles: string | undefined) =>
     ? null
     : asRunMode(() => TestScheduler.parseMarblesAsSubscriptions(marbles, true));
 
-/** True when a subscription ended before its stream was done: something was cut off. */
 const cutOff = (events: readonly MarbleEvent[], until: number) =>
   until < Infinity && !events.some(({ kind, frame }) => kind !== 'next' && frame === until);
 
-const linesOf = (example: MarbleExample): readonly MarbleLine[] => {
-  const inputs = Object.entries(example.inputs).map(([id, input]): MarbleLine => {
+const inputLines = (example: MarbleExample, t: StudyTranslate): readonly MarbleLine[] =>
+  Object.entries(example.inputs).map(([id, input]) => {
     const log = subscription(input.subscriptions);
     const until = log?.unsubscribedFrame ?? Infinity;
-    const events = eventsOf(input, 0, until, (frame) => frame >= 0);
+    const events = eventsOf(input, 0, until, (frame) => frame >= 0, t);
     return {
       id,
-      label: input.label,
+      label: studyMessage(t, input.label),
       role: 'input',
       marbles: input.marbles,
       events,
@@ -204,14 +194,16 @@ const linesOf = (example: MarbleExample): readonly MarbleLine[] => {
       cancelled: cutOff(events, until),
     };
   });
-  const inner = Object.entries(example.inner ?? {}).map(([id, stream]): MarbleLine => {
+
+const innerLines = (example: MarbleExample, t: StudyTranslate): readonly MarbleLine[] =>
+  Object.entries(example.inner ?? {}).map(([id, stream]) => {
     const log = subscription(stream.subscriptions);
     const from = log?.subscribedFrame ?? 0;
     const until = log?.unsubscribedFrame ?? Infinity;
-    const events = eventsOf(stream, from, until, () => true);
+    const events = eventsOf(stream, from, until, () => true, t);
     return {
       id,
-      label: stream.label,
+      label: studyMessage(t, stream.label),
       role: 'inner',
       marbles: stream.marbles,
       events,
@@ -220,36 +212,48 @@ const linesOf = (example: MarbleExample): readonly MarbleLine[] => {
       cancelled: cutOff(events, until),
     };
   });
-  // The lane an output value of a frame rides down from: the example's word, or the inner stream,
-  // else the input, that emits at that frame, or else the one that errors or completes there.
-  const sources = [...inner, ...inputs];
-  const originOf = (frame: number): string | undefined => {
-    const named = example.origins?.[frame];
-    if (named === null) return undefined;
-    if (named !== undefined) {
-      const line = sources.find(({ id }) => id === named);
-      if (!line) throw new Error(`origins names ${named}, which is no input or inner stream`);
-      return line.label;
-    }
-    const at = (kinds: readonly MarbleEvent['kind'][]) =>
-      sources.find(({ events }) =>
-        events.some(
-          (event) => event.frame === frame && event.delivered && kinds.includes(event.kind),
-        ),
-      );
-    return (at(['next']) ?? at(['error', 'complete']))?.label;
-  };
-  const outputs = Object.entries(example.outputs).map(([id, output]): MarbleLine => {
+
+/** Prefer an inner emission, then an input, then a completion or error at this frame. */
+function originAt(
+  example: MarbleExample,
+  sources: readonly MarbleLine[],
+  frame: number,
+): string | undefined {
+  const named = example.origins?.[frame];
+  if (named === null) return undefined;
+  if (named !== undefined) {
+    const line = sources.find(({ id }) => id === named);
+    if (!line) throw new Error(`origins names ${named}, which is no input or inner stream`);
+    return line.id;
+  }
+  const at = (kinds: readonly MarbleEvent['kind'][]) =>
+    sources.find(({ events }) =>
+      events.some(
+        (event) => event.frame === frame && event.delivered && kinds.includes(event.kind),
+      ),
+    );
+  return (at(['next']) ?? at(['error', 'complete']))?.id;
+}
+
+const outputLines = (
+  example: MarbleExample,
+  sources: readonly MarbleLine[],
+  t: StudyTranslate,
+): readonly MarbleLine[] =>
+  Object.entries(example.outputs).map(([id, output]) => {
     const log = subscription(output.subscriptions);
     const from = log?.subscribedFrame ?? 0;
     const until = log?.unsubscribedFrame ?? Infinity;
-    const events = eventsOf(output, 0, until, (frame) => frame >= from).map((event) => {
-      const origin = event.kind === 'next' && event.delivered ? originOf(event.frame) : undefined;
+    const events = eventsOf(output, 0, until, (frame) => frame >= from, t).map((event) => {
+      const origin =
+        event.kind === 'next' && event.delivered
+          ? originAt(example, sources, event.frame)
+          : undefined;
       return origin === undefined ? event : { ...event, from: origin };
     });
     return {
       id,
-      label: output.label,
+      label: studyMessage(t, output.label),
       role: 'output',
       marbles: output.marbles,
       events,
@@ -258,89 +262,112 @@ const linesOf = (example: MarbleExample): readonly MarbleLine[] => {
       cancelled: cutOff(events, until),
     };
   });
-  const lines = [...inputs, ...inner, ...outputs];
-  // The drawing finds a value's origin lane by label, so two lines cannot share one.
-  const labels = lines.map(({ label }) => label);
-  const repeated = labels.find((label, index) => labels.indexOf(label) !== index);
-  if (repeated !== undefined) throw new Error(`two lines share the label ${repeated}`);
-  return lines;
-};
 
-/**
- * One sentence on what a frame's events do, in the order the lines are drawn. A value nothing
- * receives is not an event of the diagram: the drawing leaves it out, and so does the sentence.
- */
-function sentenceOf(lines: readonly MarbleLine[], frame: number): string {
+function linesOf(example: MarbleExample, t: StudyTranslate): readonly MarbleLine[] {
+  const inputs = inputLines(example, t);
+  const inner = innerLines(example, t);
+  const lines = [...inputs, ...inner, ...outputLines(example, [...inner, ...inputs], t)];
+  const ids = new Set<string>();
+  for (const { id } of lines) {
+    if (ids.has(id)) throw new Error(`two lines share the id ${id}`);
+    ids.add(id);
+  }
+  return lines;
+}
+
+/** Only received events enter the narration, in drawing order. */
+function sentenceOf(lines: readonly MarbleLine[], frame: number, t: StudyTranslate): string {
   const parts: string[] = [];
   for (const line of lines) {
-    if (line.role === 'inner' && line.subscribedAt === frame) parts.push(`${line.label} is opened`);
+    const { label } = line;
+    if (line.role === 'inner' && line.subscribedAt === frame)
+      parts.push(t('studyCommon.marbles.opened', { label }));
     if (line.role === 'output' && line.subscribedAt === frame && frame > 0)
-      parts.push(`${line.label} subscribes`);
+      parts.push(t('studyCommon.marbles.subscribed', { label }));
     for (const event of line.events.filter((event) => event.frame === frame && event.delivered)) {
-      if (event.kind === 'complete') parts.push(`${line.label} completes`);
-      else if (event.kind === 'error') parts.push(`${line.label} errors with ${event.value}`);
-      else if (event.key === event.value) parts.push(`${line.label} emits ${event.key}`);
-      else parts.push(`${line.label} emits ${event.key} (${event.value})`);
+      const { key, value } = event;
+      if (event.kind === 'complete') parts.push(t('studyCommon.marbles.completed', { label }));
+      else if (event.kind === 'error')
+        parts.push(t('studyCommon.marbles.errored', { label, value }));
+      else
+        parts.push(
+          t(key === value ? 'studyCommon.marbles.emitted' : 'studyCommon.marbles.emittedValue', {
+            label,
+            key,
+            value,
+          }),
+        );
     }
-    if (line.cancelled && line.unsubscribedAt === frame) parts.push(`${line.label} is cut off`);
+    if (line.cancelled && line.unsubscribedAt === frame)
+      parts.push(t('studyCommon.marbles.cutOff', { label }));
   }
-  if (parts.length === 0) return frame === 0 ? 'nothing has happened yet' : 'nothing new happens';
-  return parts.join('; ');
+  if (!parts.length)
+    return t(frame === 0 ? 'studyCommon.marbles.nothingAtStart' : 'studyCommon.marbles.nothingNew');
+  return parts.join(t('studyCommon.marbles.sentenceSeparator'));
 }
 
-/** What each line has done so far, as the worked step lists it. */
-function workedOf(lines: readonly MarbleLine[], frame: number): StudyWorkedStep {
-  return {
-    title: `Frame ${frame}`,
-    lines: lines.map((line) => {
-      const past = line.events.filter((event) => event.frame <= frame && event.delivered);
-      const told = past.map((event) =>
-        event.kind === 'next'
-          ? `${event.key} at ${event.frame}`
-          : `${event.kind} at ${event.frame}`,
-      );
-      const opened =
-        line.role === 'inner' && line.subscribedAt !== undefined && line.subscribedAt <= frame
-          ? [`opened at ${line.subscribedAt}`]
-          : [];
-      const cut =
-        line.cancelled && line.unsubscribedAt !== undefined && line.unsubscribedAt <= frame
-          ? [`cut off at ${line.unsubscribedAt}`]
-          : [];
-      const story = [...opened, ...told, ...cut];
-      return `${line.label}: ${story.length ? story.join(', ') : 'nothing yet'}`;
-    }),
-  };
+function historyOf(line: MarbleLine, frame: number, t: StudyTranslate): string {
+  const past = line.events.filter((event) => event.frame <= frame && event.delivered);
+  const told = past.map((event) =>
+    t(
+      event.kind === 'next'
+        ? 'studyCommon.marbles.valueAt'
+        : event.kind === 'complete'
+          ? 'studyCommon.marbles.completeAt'
+          : 'studyCommon.marbles.errorAt',
+      { key: event.key, frame: event.frame },
+    ),
+  );
+  const opened =
+    line.role === 'inner' && line.subscribedAt !== undefined && line.subscribedAt <= frame
+      ? [t('studyCommon.marbles.openedAt', { frame: line.subscribedAt })]
+      : [];
+  const cut =
+    line.cancelled && line.unsubscribedAt !== undefined && line.unsubscribedAt <= frame
+      ? [t('studyCommon.marbles.cutOffAt', { frame: line.unsubscribedAt })]
+      : [];
+  const story = [...opened, ...told, ...cut];
+  return t('studyCommon.marbles.lineStory', {
+    label: line.label,
+    story: story.length
+      ? story.join(t('studyCommon.marbles.listSeparator'))
+      : t('studyCommon.marbles.nothingYet'),
+  });
 }
 
-/**
- * The values the output lines have delivered up to a frame, as prose lists them; with more than
- * one output, each line's values under its name, so a reader hears which output got what.
- */
-const deliveredSoFar = (lines: readonly MarbleLine[], frame: number) => {
+const workedOf = (
+  lines: readonly MarbleLine[],
+  frame: number,
+  t: StudyTranslate,
+): StudyWorkedStep => ({
+  title: t('studyCommon.marbles.frame', { frame }),
+  lines: lines.map((line) => historyOf(line, frame, t)),
+});
+
+function deliveredSoFar(lines: readonly MarbleLine[], frame: number, t: StudyTranslate): string {
   const listOf = (events: readonly MarbleEvent[]) =>
     events
       .filter((event) => event.kind === 'next' && event.delivered && event.frame <= frame)
-      .map(({ key, value }) => (key === value ? key : `${key} (${value})`))
-      .join(', ') || 'nothing';
+      .map(({ key, value }) =>
+        key === value ? value : t('studyCommon.marbles.keyValue', { key, value }),
+      )
+      .join(t('studyCommon.marbles.listSeparator')) || t('studyCommon.marbles.nothingDelivered');
   const outputs = lines.filter(({ role }) => role === 'output');
   return outputs.length > 1
-    ? outputs.map(({ label, events }) => `${label}: ${listOf(events)}`).join('; ')
+    ? outputs
+        .map(({ label, events }) =>
+          t('studyCommon.marbles.deliveredBy', {
+            label,
+            values: listOf(events),
+          }),
+        )
+        .join(t('studyCommon.marbles.sentenceSeparator'))
     : listOf(outputs[0]?.events ?? []);
-};
+}
 
-/**
- * The drawing's model for an executable marble example. The record's parameters are offered to
- * the prose as values, so a study may name them with `{name}` placeholders.
- */
-export function marbleModel(
-  example: MarbleExample,
-  parameters: StudyParameters = {},
-): MarblesStudyModel {
-  const lines = linesOf(example);
-  // Every frame of the diagram is a step, so Play and the slider run through them one by one, and
-  // the last frame is the last thing received, opened or cut off.
-  const lastFrame = Math.max(
+/** Last received, opened, cut-off or explicitly named frame. */
+const lastFrameOf = (example: MarbleExample, lines: readonly MarbleLine[]): number =>
+  Math.max(
     0,
     ...lines.flatMap(({ events, subscribedAt, unsubscribedAt }) => [
       ...events.filter(({ delivered }) => delivered).map(({ frame }) => frame),
@@ -348,41 +375,59 @@ export function marbleModel(
       ...(unsubscribedAt === undefined ? [] : [unsubscribedAt]),
     ]),
     ...example.moments.map(({ frame }) => frame),
-    0,
   );
-  const shown = Array.from({ length: lastFrame + 1 }, (_, frame) => frame);
-  const stepOf = (frame: number) => Math.max(0, Math.min(lastFrame, frame));
-  const parameterValues = Object.fromEntries(
-    Object.entries(parameters).map(([name, value]) => [name, String(value)]),
-  );
-  const frames: readonly MarbleFrame[] = shown.map((frame) => {
-    const now = sentenceOf(lines, frame);
+
+/** The model translates at the boundary; no translated word enters the pipeline. */
+export function marbleModel(
+  example: MarbleExample,
+  parameters: StudyParameters,
+  t: StudyTranslate,
+): MarblesStudyModel {
+  const lines = linesOf(example, t);
+  const lastFrame = lastFrameOf(example, lines);
+  const extra = studyParameterValues(parameters, t, example.parameterMessages);
+  const frames: readonly MarbleFrame[] = Array.from({ length: lastFrame + 1 }, (_, frame) => {
+    const now = sentenceOf(lines, frame, t);
     return {
       frame,
       seconds: frame * secondsPerFrame,
       values: {
-        ...parameterValues,
+        ...extra,
         frame: String(frame),
         now,
-        delivered: deliveredSoFar(lines, frame),
+        delivered: deliveredSoFar(lines, frame, t),
       },
-      note: example.notes?.[frame] ?? `At frame ${frame}, ${now}.`,
-      worked: workedOf(lines, frame),
+      note:
+        example.notes?.[frame] === undefined
+          ? t('studyCommon.marbles.note', { frame, now })
+          : studyMessage(t, example.notes[frame]),
+      worked: workedOf(lines, frame, t),
     };
   });
   const moments: readonly StudyMoment[] = example.moments.map(({ label, frame }) => ({
-    label,
-    step: stepOf(frame),
+    label: studyMessage(t, label),
+    step: Math.max(0, Math.min(lastFrame, frame)),
   }));
+  const legend: readonly StudyLegendEntry[] = (['input', 'inner', 'output'] as const)
+    .filter((role) => lines.some((line) => line.role === role))
+    .map((role) => ({
+      tone: legendByRole[role].tone,
+      label: t(legendByRole[role].key),
+    }));
   return {
     family: 'marbles',
-    marbles: { lines, operator: example.operator, lastFrame, frames },
-    // The drawing opens on the last frame, the whole run; Play from there runs from the first.
+    marbles: {
+      lines,
+      operator: studyMessage(t, example.operator),
+      lastFrame,
+      frames,
+    },
     initialStep: lastFrame,
     moments,
-    legend: (['input', 'inner', 'output'] as const)
-      .filter((role) => lines.some((line) => line.role === role))
-      .map((role) => legendByRole[role]),
-    caption: `${marbleCaption(example)} ${openingSentence}`,
+    legend,
+    caption: t('studyCommon.marbles.captionWithOpening', {
+      caption: marbleCaption(example, t),
+      opening: t('studyCommon.marbles.opening'),
+    }),
   };
 }

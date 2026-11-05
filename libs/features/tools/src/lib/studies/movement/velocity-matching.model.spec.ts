@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -27,6 +27,7 @@ const example: VelocityMatchingParameters = {
   radius: 1,
   arrowSeconds: 1,
 };
+
 const parameters: StudyParameters = { ...example };
 
 it('uses the assigned draft and the exact parameters of its worked example', () => {
@@ -128,8 +129,8 @@ it('cannot match an unreachable speed and brakes when the velocity to match beco
 });
 
 it('keeps the drawing, chart, arithmetic and accessible prose on the same deterministic run', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(record.example.parameters).toEqual(example);
   expect(run.initialStep).toBe(4);
   expect(run.moments).toHaveLength(4);
@@ -193,12 +194,12 @@ it('keeps the drawing, chart, arithmetic and accessible prose on the same determ
 });
 
 it('makes each live input visibly change the correction and describes overshoot as it happens', () => {
-  expect(model(parameters).inputs?.map(({ name }) => name)).toEqual([
+  expect(model(parameters, studyTranslate).inputs?.map(({ name }) => name)).toEqual([
     'responseTime',
     'maxAcceleration',
   ]);
-  const quick = model({ ...parameters, responseTime: 0.1 });
-  const slow = model({ ...parameters, responseTime: 1 });
+  const quick = model({ ...parameters, responseTime: 0.1 }, studyTranslate);
+  const slow = model({ ...parameters, responseTime: 1 }, studyTranslate);
   expect(quick.timeline?.series[0].values.some((velocity) => velocity > example.cartVelocity)).toBe(
     true,
   );
@@ -210,8 +211,8 @@ it('makes each live input visibly change the correction and describes overshoot 
   expect(slow.motion.frames[5].note).toContain('draw closer');
   expect(quick.motion.frames[5].worked?.lines.join(' ')).toContain('/ 0.10');
   expect(quick.comparison?.intro).toContain('Both traces now use');
-  const weak = model({ ...parameters, maxAcceleration: 1 });
-  const strong = model({ ...parameters, maxAcceleration: 8 });
+  const weak = model({ ...parameters, maxAcceleration: 1 }, studyTranslate);
+  const strong = model({ ...parameters, maxAcceleration: 8 }, studyTranslate);
   expect(weak.motion.frames[1].bodies[0].x).toBe(0.0625);
   expect(strong.motion.frames[1].bodies[0].x).toBe(0.5);
   expect(weak.motion.frames[1].note).toContain('at her limit');
@@ -222,7 +223,7 @@ it('makes each live input visibly change the correction and describes overshoot 
 });
 
 it('keeps notes, rounded readings, labels and charts sound across input endpoints and their combinations', () => {
-  const offered = model(parameters).inputs ?? [];
+  const offered = model(parameters, studyTranslate).inputs ?? [];
   const cases: readonly StudyParameters[] = [
     parameters,
     ...offered.flatMap((input) =>
@@ -239,7 +240,7 @@ it('keeps notes, rounded readings, labels and charts sound across input endpoint
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const changed of cases) {
-    const run = model(changed);
+    const run = model(changed, studyTranslate);
     const bounds = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -289,6 +290,6 @@ it('keeps notes, rounded readings, labels and charts sound across input endpoint
     ])
       expect(text).not.toMatch(/\d+\.\d{3}/);
   }
-  const labels = motionDrawing(model(parameters).motion, 4).bodies;
+  const labels = motionDrawing(model(parameters, studyTranslate).motion, 4).bodies;
   expect(labels[1].x - labels[0].x).toBeGreaterThan(80);
 });

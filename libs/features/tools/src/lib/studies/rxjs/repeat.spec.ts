@@ -14,7 +14,8 @@ import {
 } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './repeat';
@@ -31,20 +32,20 @@ it('attaches the record to the repeat row and reads its code from this module', 
     'libs/features/tools/src/lib/studies/rxjs/repeat.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'check$',
     'check$, run 2',
     'check$, run 3',
     'status$',
   ]);
-  expect(example.operator.length).toBeLessThanOrEqual(40);
+  expect(studyMessage(studyTranslate, example.operator).length).toBeLessThanOrEqual(40);
 });
 
 it('says in its parameters what the drawing shows', async () => {
   const { parameters } = (await loadStudy('rxc:238')).example;
-  const { lines, lastFrame } = marbleModel(example).marbles;
+  const { lines, lastFrame } = marbleModel(example, {}, studyTranslate).marbles;
   expect(lastFrame).toBeLessThanOrEqual(24);
   const runs = lines.filter(({ role }) => role !== 'output');
   expect(runs).toHaveLength(Number(parameters['checks']));
@@ -62,7 +63,7 @@ it('says in its parameters what the drawing shows', async () => {
 });
 
 it('holds back each completion but the last, and tells of the first', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const { lines, frames } = run.marbles;
   const status = lines.find(({ label }) => label === 'status$');
   const ends = lines

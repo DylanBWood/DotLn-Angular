@@ -51,6 +51,25 @@ describe('shared i18n', () => {
     http.verify();
   });
 
+  it('loads a lazy scope below the public base and refuses path traversal or unknown languages', () => {
+    TestBed.configureTestingModule({
+      providers: [...provideTranslocoHttpLoaderTestKit({ basePath: '/console/' }).providers],
+    });
+    const loader = TestBed.inject(TranslocoHttpLoader);
+    const http = TestBed.inject(HttpTestingController);
+    let loaded: unknown;
+    loader.getTranslation('studyAifg/en').subscribe((value) => {
+      loaded = value;
+    });
+    http
+      .expectOne(new URL('/console/i18n/studyAifg/en.json', document.baseURI).href)
+      .flush({ caption: 'A scout moves.' });
+    expect(loaded).toEqual({ caption: 'A scout moves.' });
+    for (const path of ['../en', 'studyAifg/../en', 'studyAifg/fr', '%2e%2e/en', '/en'])
+      expect(() => loader.getTranslation(path)).toThrow('not configured');
+    http.verify();
+  });
+
   it('throws on a missing development key', () => {
     TestBed.configureTestingModule({
       providers: [...provideMissingTranslationHandlerTestKit().providers],

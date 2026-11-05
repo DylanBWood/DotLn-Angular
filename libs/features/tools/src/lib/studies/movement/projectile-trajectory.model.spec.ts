@@ -1,12 +1,13 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
-import type { ProjectileParameters } from './projectile-trajectory.model';
+import { studyTranslate } from '../../../../testing/src';
 import {
   model,
   predictProjectileLanding,
   projectileAt,
   projectileFrames,
+  type ProjectileParameters,
 } from './projectile-trajectory.model';
 
 const example: ProjectileParameters = {
@@ -67,7 +68,11 @@ it('solves the actual landing and inserts it between the fixed preview samples',
   expect(frames.at(-2)?.height).toBeCloseTo(0.55);
   expect(frames.at(-1)?.seconds).toBe(landing.time);
   expect(frames.at(-1)?.x).toBe(landing.x);
-  expect(frames.at(-1)).toMatchObject({ height: 0, verticalVelocity: 0, landed: true });
+  expect(frames.at(-1)).toMatchObject({
+    height: 0,
+    verticalVelocity: 0,
+    landed: true,
+  });
   expect(projectileAt(example, 100)).toEqual(frames.at(-1));
   expect(frames.some(({ height }) => height < 0)).toBe(false);
 });
@@ -88,7 +93,11 @@ it('rejects unreachable heights and past roots instead of inventing a landing', 
 });
 
 it('distinguishes an apex touch, an upward launch on a surface, and immediate downward contact', () => {
-  expect(predictProjectileLanding(example, 15)).toMatchObject({ discriminant: 0, time: 1, x: 12 });
+  expect(predictProjectileLanding(example, 15)).toMatchObject({
+    discriminant: 0,
+    time: 1,
+    x: 12,
+  });
   expect(predictProjectileLanding({ ...example, launchHeight: 0 }).time).toBe(2);
   expect(projectileAt({ ...example, launchHeight: 0, verticalSpeed: -10 }, 0)).toMatchObject({
     height: 0,
@@ -100,13 +109,17 @@ it('distinguishes an apex touch, an upward launch on a surface, and immediate do
 it('does not relabel a time-limited preview as contact', () => {
   const short = { ...example, steps: 10 };
   expect(predictProjectileLanding(short).time).toBeGreaterThan(1);
-  expect(projectileFrames(short).at(-1)).toMatchObject({ seconds: 1, height: 15, landed: false });
-  expect(model({ ...short }).moments.at(-1)?.label).toBe('Preview ends');
+  expect(projectileFrames(short).at(-1)).toMatchObject({
+    seconds: 1,
+    height: 15,
+    landed: false,
+  });
+  expect(model({ ...short }, studyTranslate).moments.at(-1)?.label).toBe('Preview ends');
 });
 
 it('explains the apex, exact contact and the raised-plane failure from its computed states', () => {
-  const run = model(parameters);
-  expect(run).toEqual(model(parameters));
+  const run = model(parameters, studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(run.initialStep).toBe(10);
   expect(run.motion.frames[10].values).toMatchObject({
     time: '1.00',
@@ -127,7 +140,7 @@ it('explains the apex, exact contact and the raised-plane failure from its compu
 
 it('keeps changed-height drawings bounded and removes the cross when no encounter exists', () => {
   for (const landingHeight of [0, 10, 15, 18]) {
-    const run = model({ ...parameters, landingHeight });
+    const run = model({ ...parameters, landingHeight }, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.motion.frames.length).toBeLessThanOrEqual(240);
     for (const frame of run.motion.frames) {
@@ -135,7 +148,10 @@ it('keeps changed-height drawings bounded and removes the cross when no encounte
         ...frame.bodies,
         ...(frame.marks ?? []),
         ...(frame.links ?? []).flatMap(({ from, to }) => [from, to]),
-        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({
+          x: x + dx,
+          y: y + dy,
+        })),
       ];
       for (const point of points) {
         expect(point.x).toBeGreaterThanOrEqual(minX);
@@ -168,6 +184,32 @@ it('supplies every prose placeholder at every selectable frame', async () => {
     record.visual,
   ]);
   const names = [...prose.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/g)].map((match) => match[1]);
-  for (const frame of model(parameters).motion.frames)
+  for (const frame of model(parameters, studyTranslate).motion.frames)
     for (const name of names) expect(frame.values[name]).toBeDefined();
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

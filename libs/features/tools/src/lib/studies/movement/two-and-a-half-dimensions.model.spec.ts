@@ -2,12 +2,13 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 import { length } from '@dotln-angular/scene-engine';
 
+import { studyTranslate } from '../../../../testing/src';
 import type { MotionStudyModel } from '../study-model';
-import type { HalfDimensionsParameters } from './two-and-a-half-dimensions.model';
 import {
   calculateCourierStep,
   concourseHeight,
   courierStates,
+  type HalfDimensionsParameters,
   initialCourierState,
   model,
 } from './two-and-a-half-dimensions.model';
@@ -29,7 +30,7 @@ const example: HalfDimensionsParameters = {
 };
 const parameters: StudyParameters = { ...example };
 const runOf = (changed: StudyParameters = parameters): MotionStudyModel => {
-  return model(changed);
+  return model(changed, studyTranslate);
 };
 
 it('uses the assigned catalog row and the exact parameters worked here', async () => {
@@ -73,7 +74,12 @@ it('stores changing height while every moving frame has the same yaw and an upri
     if (length(state.velocity) > 0) expect(state.yaw).toBeCloseTo(Math.atan2(3, 4), 12);
   }
   const final = states[states.length - 1];
-  expect(final).toMatchObject({ x: 12, height: 3, z: 9, velocity: { x: 0, y: 0 } });
+  expect(final).toMatchObject({
+    x: 12,
+    height: 3,
+    z: 9,
+    velocity: { x: 0, y: 0 },
+  });
   expect(final.yaw).toBeCloseTo(Math.atan2(3, 4), 12);
   expect(courierStates(example)).toEqual(states);
 });
@@ -129,7 +135,10 @@ it('draws a vertical ledge and keeps both views, arrows and surface links in bou
         ...frame.bodies,
         ...(frame.marks ?? []),
         ...(frame.links ?? []).flatMap(({ from, to }) => [from, to]),
-        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({
+          x: x + dx,
+          y: y + dy,
+        })),
       ];
       for (const point of points) {
         expect(point.x).toBeGreaterThanOrEqual(bounds.minX);
@@ -145,4 +154,30 @@ it('draws a vertical ledge and keeps both views, arrows and surface links in bou
     }
   }
   expect(runOf({ ...parameters, rise: 0 }).comparison?.findings[1]).toContain('no height jump');
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

@@ -13,7 +13,7 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     quote$: {
-      label: 'quote$',
+      label: 'studyRxjs.share-replay.model.example.inputs.quote.label',
       // Cold: each subscription starts its own poll, which fetches a quote every four frames.
       marbles: '-a---b---c---d---e---f',
       values: { a: 101, b: 104, c: 102, d: 106, e: 105, f: 108 },
@@ -21,16 +21,16 @@ export const example: MarbleExample = {
       subscriptions: '^',
     },
   },
-  operator: 'quote$.pipe(shareReplay(1))',
+  operator: 'studyRxjs.share-replay.model.example.operator',
   outputs: {
     tile$: {
-      label: 'tile$',
+      label: 'studyRxjs.share-replay.model.example.outputs.tile.label',
       marbles: '-a---b---c---d',
       values: { a: 101, b: 104, c: 102, d: 106 },
       subscriptions: '^--------------!',
     },
     chart$: {
-      label: 'chart$',
+      label: 'studyRxjs.share-replay.model.example.outputs.chart.label',
       marbles: '-------b-c---d',
       values: { b: 104, c: 102, d: 106 },
       subscriptions: '-------^-------!',
@@ -43,24 +43,29 @@ export const example: MarbleExample = {
     return { tile$: shared$, chart$: shared$ };
   },
   moments: [
-    { label: 'Poll starts', frame: 0 },
-    { label: 'Chart gets b at once', frame: 7 },
-    { label: 'Both readers leave', frame: 15 },
-    { label: 'Fetched for no one', frame: 17 },
+    { label: 'studyRxjs.share-replay.model.example.moments.0.label', frame: 0 },
+    { label: 'studyRxjs.share-replay.model.example.moments.1.label', frame: 7 },
+    {
+      label: 'studyRxjs.share-replay.model.example.moments.2.label',
+      frame: 15,
+    },
+    {
+      label: 'studyRxjs.share-replay.model.example.moments.3.label',
+      frame: 17,
+    },
   ],
   notes: {
-    0: 'The tile is on the page from the start. shareReplay makes a memory that holds one quote and starts the poll, once, to fill it.',
-    1: 'The first quote is stored in the memory and shown on the tile.',
-    5: 'The second quote replaces the first in the memory and goes to the tile.',
-    7: 'The user opens the chart. shareReplay hands it the quote in the memory, b, in the same frame, so the chart is never empty. The memory holds one quote, so b is all it replays.',
-    9: 'The third quote reaches both readers and replaces b in the memory.',
-    13: 'The fourth quote reaches both readers.',
-    15: 'The user leaves the page and both readers unsubscribe. shareReplay(1) leaves refCount false, so having no reader does not stop the poll.',
-    17: 'The poll fetches a quote for no one. The request was sent; its answer only replaces the one in the memory.',
-    21: 'The poll fetches again for no one. With refCount left false, it runs for as long as the app does.',
+    0: 'studyRxjs.share-replay.model.example.notes.0',
+    1: 'studyRxjs.share-replay.model.example.notes.1',
+    5: 'studyRxjs.share-replay.model.example.notes.5',
+    7: 'studyRxjs.share-replay.model.example.notes.7',
+    9: 'studyRxjs.share-replay.model.example.notes.9',
+    13: 'studyRxjs.share-replay.model.example.notes.13',
+    15: 'studyRxjs.share-replay.model.example.notes.15',
+    17: 'studyRxjs.share-replay.model.example.notes.17',
+    21: 'studyRxjs.share-replay.model.example.notes.21',
   },
-  caption:
-    "Time runs in frames. A circle is an emission, with its letter. quote$ is the poll; tile$ and chart$ are its two readers, and each lane starts where that reader subscribes. A reader's lane ends in a small ring where it left the page; the poll's lane runs on. Step the frames to follow each quote.",
+  caption: 'studyRxjs.share-replay.model.example.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

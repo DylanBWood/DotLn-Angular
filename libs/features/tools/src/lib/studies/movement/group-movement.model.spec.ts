@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { add, advanceFormation, centroid, distance, length } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -17,6 +17,7 @@ import {
 } from './group-movement.model';
 
 const record = await loadStudy('aifg-b:354');
+
 const parameters: StudyParameters = {
   startX: 0,
   goalX: 16,
@@ -40,6 +41,7 @@ const parameters: StudyParameters = {
   enginePlanningSeconds: 0.25,
   engineAnchorPull: 0.02,
 };
+
 const example = readGroupExample(parameters);
 
 it('uses the draft Lantern squad record and exactly its parameters', () => {
@@ -187,7 +189,7 @@ it('shows a faster anchor exceeding an individual error allowance while respecti
   expect(arrivalSteps(fast, fastExample)).toEqual([81, 87, 81]);
   expect((87 - 81) * example.timeStep).toBeCloseTo(0.6);
   expect((207 - 202) * example.timeStep).toBe(0.5);
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.comparison?.timeline.series.map(({ values }) => values)).toEqual([
     normal.map(maxSlotError),
     fast.map(maxSlotError),
@@ -206,8 +208,8 @@ it('cannot deliver the squad when the medic cannot move', () => {
 });
 
 it('draws and describes the same selected moment, with finite bounds for every mark and vector', () => {
-  const run = model(Object.freeze({ ...parameters }));
-  expect(run).toEqual(model(parameters));
+  const run = model(Object.freeze({ ...parameters }), studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(run.initialStep).toBe(27);
   expect(run.moments.map(({ step }) => step)).toEqual([0, 1, 27, 207, 230]);
   expect(run.timeline?.series.every(({ values }) => values.length === 231)).toBe(true);
@@ -251,7 +253,7 @@ it('draws and describes the same selected moment, with finite bounds for every m
 });
 
 it('explains the relative positions and the medic’s largest gap instead of listing coordinates', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const selected = run.motion.frames[run.initialStep];
   const equivalent = fillValues(record.visual.textEquivalent, selected.values);
   expect(equivalent).toBe(
@@ -269,7 +271,7 @@ it('explains the relative positions and the medic’s largest gap instead of lis
 });
 
 it('lets anchor pace visibly breach the shape allowance and updates the explanation at both slider ends', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   expect(input).toEqual({
     name: 'anchorSpeed',
     label: 'Anchor pace',
@@ -279,8 +281,8 @@ it('lets anchor pace visibly breach the shape allowance and updates the explanat
     step: 0.1,
   });
   if (!input) throw new Error('The anchor pace must be adjustable.');
-  const low = model({ ...parameters, [input.name]: input.min });
-  const high = model({ ...parameters, [input.name]: input.max });
+  const low = model({ ...parameters, [input.name]: input.min }, studyTranslate);
+  const high = model({ ...parameters, [input.name]: input.max }, studyTranslate);
   expect(low.motion.frames[30].bodies[1].x).toBeCloseTo(2.7667321461520906);
   expect(high.motion.frames[30].bodies[1].x).toBeCloseTo(5.8143590380453505);
   expect(low.motion.frames[low.initialStep].values['slotError']).toBe('1.45');
@@ -300,7 +302,7 @@ it('lets anchor pace visibly breach the shape allowance and updates the explanat
 });
 
 it('keeps every offered pace finite, labelled and readable through the whole journey', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   if (!input) throw new Error('The anchor pace must be adjustable.');
   const prose = [
     record.visual.textEquivalent,
@@ -310,7 +312,7 @@ it('keeps every offered pace finite, labelled and readable through the whole jou
   ];
   for (let tick = 0; tick <= Math.round((input.max - input.min) / input.step); tick++) {
     const value = Number((input.min + tick * input.step).toFixed(2));
-    const run = model({ ...parameters, [input.name]: value });
+    const run = model({ ...parameters, [input.name]: value }, studyTranslate);
     expect(run.motion.frames.length).toBeLessThanOrEqual(240);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
     expect(run.moments.every(({ step }) => step >= 0 && step < run.motion.frames.length)).toBe(

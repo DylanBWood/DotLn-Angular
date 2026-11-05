@@ -2,21 +2,26 @@ import { concatMap, delay } from 'rxjs';
 import type { RunHelpers } from 'rxjs/testing';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel, StudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
-import { example, flow, model } from './message-dispatcher';
+import { example, model } from './message-dispatcher';
 
 const path = 'libs/features/tools/src/lib/studies/eip/message-dispatcher.ts';
-const parameters = { performers: 3, inflightLimit: 1, orders: 'orders 29, 30 and 31' };
+const parameters = {
+  performers: 3,
+  inflightLimit: 1,
+  orders: 'orders 29, 30 and 31',
+};
 
 const flowOf = (study: StudyModel): FlowStudyModel => {
   if (study.family !== 'flow') throw new Error('The dispatcher is drawn as a flow.');
   return study;
 };
 
-const run = flowOf(model(parameters));
+const run = flowOf(model(parameters, studyTranslate));
 const { frames, nodes } = run.flow;
 const requests = example.inputs['requests$'];
 
@@ -56,7 +61,7 @@ it('attaches the record to the Message Dispatcher row and reads its code from th
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: path });
   expect(record.example.parameters).toEqual(parameters);
-  const drawn = flowOf(model(record.example.parameters));
+  const drawn = flowOf(model(record.example.parameters, studyTranslate));
   expect(drawn.diagram?.marbles.lines.map(({ label }) => label)).toEqual([
     'requests$',
     'executor on 31',
@@ -109,7 +114,11 @@ it('keeps f waiting for the busy executor, though the verifier and the reviewer 
   expect(heldBy('executor', 4)).toEqual(['i']);
   // The queue is released the frame the executor finishes order 31.
   const executor = run.diagram?.marbles.lines.find(({ label }) => label === 'executor on 31');
-  expect(executor).toMatchObject({ subscribedAt: 2, unsubscribedAt: 7, cancelled: false });
+  expect(executor).toMatchObject({
+    subscribedAt: 2,
+    unsubscribedAt: 7,
+    cancelled: false,
+  });
   expect(heldBy('dispatcher', 7)).toEqual([]);
   expect(heldBy('executor', 7)).toEqual(['f']);
 });
@@ -147,7 +156,10 @@ it('knows kinds of work, not orders: a verify sent during its own fix goes strai
   const testScheduler = scheduler();
   testScheduler.run(({ hot, cold, expectSubscriptions }) => {
     const jobs = coldJobs(cold);
-    const early$ = hot('-i-f-r--x', { ...requests.values, x: 'verify order 30' });
+    const early$ = hot('-i-f-r--x', {
+      ...requests.values,
+      x: 'verify order 30',
+    });
     const { handed$ } = example.run({
       inputs: { requests$: early$ },
       inner: jobs,
@@ -162,8 +174,8 @@ it('knows kinds of work, not orders: a verify sent during its own fix goes strai
 
 it('names every token and box in its caption and stays legible at a narrow width', () => {
   for (const key of Object.keys(requests.values ?? {}))
-    expect(flow.caption, key).toMatch(new RegExp(`(^|[\\s,:])${key}[\\s,]`));
-  for (const { label } of nodes) expect(flow.caption, label).toContain(label);
+    expect(run.caption, key).toMatch(new RegExp(`(^|[\\s,:])${key}[\\s,]`));
+  for (const { label } of nodes) expect(run.caption, label).toContain(label);
   expect(new Set(nodes.map(({ stage }) => stage)).size).toBeLessThanOrEqual(4);
   expect(nodes.length).toBeLessThanOrEqual(8);
   for (const { label } of nodes) {
@@ -177,7 +189,9 @@ it('names every token and box in its caption and stays legible at a narrow width
   expect(nodes.find(({ id }) => id === 'requests')?.kind).toBe('channel');
   for (const { states } of frames)
     for (const text of Object.values(states)) expect(text.length).toBeLessThanOrEqual(40);
-  expect(frames.map(({ note }) => note)).toEqual(frames.map(({ step }) => example.notes?.[step]));
+  expect(frames.map(({ note }) => note)).toEqual(
+    frames.map(({ step }) => studyMessage(studyTranslate, example.notes?.[step] ?? '')),
+  );
   expect(run.moments.map(({ label, step }) => `${label} ${step}`)).toEqual([
     'Handed over 2',
     'Kept waiting 4',
@@ -195,7 +209,9 @@ it('completes once the requests stop and the work is done: the same hand-overs, 
   const inner = example.inner ?? {};
   expectMarbleExample({
     ...example,
-    inputs: { requests$: { ...example.inputs['requests$'], marbles: '-i-f-r--(v|)' } },
+    inputs: {
+      requests$: { ...example.inputs['requests$'], marbles: '-i-f-r--(v|)' },
+    },
     inner: {
       ...inner,
       'review order 29': {
@@ -203,13 +219,19 @@ it('completes once the requests stop and the work is done: the same hand-overs, 
         marbles: '(r|)',
         subscriptions: '------(^!)',
       },
-      'fix order 30': { ...inner['fix order 30'], marbles: '(f|)', subscriptions: '-------(^!)' },
+      'fix order 30': {
+        ...inner['fix order 30'],
+        marbles: '(f|)',
+        subscriptions: '-------(^!)',
+      },
       'verify order 31': {
         ...inner['verify order 31'],
         marbles: '(v|)',
         subscriptions: '---------(^!)',
       },
     },
-    outputs: { handed$: { ...example.outputs['handed$'], marbles: '--i---rf-(v|)' } },
+    outputs: {
+      handed$: { ...example.outputs['handed$'], marbles: '--i---rf-(v|)' },
+    },
   });
 });

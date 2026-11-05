@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, dot, length, subtract } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import type { StudyPoint } from '../study-model';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -30,7 +30,9 @@ const example: SeekParameters = {
   velocitySeconds: 1,
   accelerationSecondsSquared: 2,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const beacon = { x: example.targetX, y: example.targetY };
 
 it('uses the authored Seek record and exactly its example parameters', () => {
@@ -113,7 +115,7 @@ it('overshoots and completes repeated circuits around the fixed beacon within it
       );
     }
   }
-  const selected = states[model(parameters).initialStep];
+  const selected = states[model(parameters, studyTranslate).initialStep];
   expect(selected.position.x).toBeGreaterThan(beacon.x);
   expect(dot(selected.velocity, subtract(beacon, selected.position))).toBeLessThan(0);
   expect(calculateSeekStep(selected, example).acceleration.x).toBeLessThan(0);
@@ -136,7 +138,7 @@ it('removing only sideways velocity replaces the orbit with repeated straight ov
       (state, index) => (state.position.x - beacon.x) * (straight[index].position.x - beacon.x) < 0,
     );
   expect(crossings.length).toBeGreaterThanOrEqual(3);
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.comparison?.timeline.series[0].values).toEqual(
     seekFrames(example).map(({ position }) => distance(position, beacon)),
   );
@@ -157,8 +159,8 @@ it('has no wall constraint: the same pull advances through a hypothetical barrie
 });
 
 it('supplies every prose value, the worked arithmetic and bounds for the complete drawing', () => {
-  const run = model(record.example.parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(record.example.parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.motion.frames.length).toBeLessThanOrEqual(241);
   expect(run.moments).toHaveLength(4);
   const texts = [
@@ -204,10 +206,10 @@ it('supplies every prose value, the worked arithmetic and bounds for the complet
 });
 
 it('changes straight overshoot into an orbit when the sideways start is raised', () => {
-  const input = model(parameters).inputs?.find(({ name }) => name === 'velocityY');
+  const input = model(parameters, studyTranslate).inputs?.find(({ name }) => name === 'velocityY');
   if (!input) throw new Error('Seek must expose the sideways start.');
-  const straight = model({ ...parameters, velocityY: input.min });
-  const sideways = model({ ...parameters, velocityY: input.max });
+  const straight = model({ ...parameters, velocityY: input.min }, studyTranslate);
+  const sideways = model({ ...parameters, velocityY: input.max }, studyTranslate);
   expect(straight.motion.frames.every(({ bodies }) => bodies[0].y === 0)).toBe(true);
   expect(
     Math.max(...sideways.motion.frames.map(({ bodies }) => Math.abs(bodies[0].y))),
@@ -231,7 +233,7 @@ it('changes straight overshoot into an orbit when the sideways start is raised',
 });
 
 it('keeps every offered sideways start readable, labelled and inside the drawing', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   if (!input) throw new Error('Seek must offer a live input.');
   const texts = [
     record.visual.textEquivalent,
@@ -240,7 +242,7 @@ it('keeps every offered sideways start readable, labelled and inside the drawing
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (let value = input.min; value <= input.max; value += input.step) {
-    const run = model({ ...parameters, [input.name]: value });
+    const run = model({ ...parameters, [input.name]: value }, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(Number.isFinite(minX + maxX + minY + maxY)).toBe(true);
     expect(maxX).toBeGreaterThan(minX);

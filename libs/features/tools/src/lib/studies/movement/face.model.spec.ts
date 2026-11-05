@@ -1,7 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -30,7 +30,9 @@ const example: FaceParameters = {
   steps: 160,
   slowMotorSpeed: 10,
 };
+
 const parameters: StudyParameters = Object.freeze({ ...example });
+
 const record = await loadStudy('aifg-a:123');
 
 it('uses the assigned catalogue row, draft authorship and these exact parameters', async () => {
@@ -104,7 +106,10 @@ it('brakes a coincident target without manufacturing a bearing or freezing remai
   });
   const resting = calculateFaceStep({ heading: 45, angularVelocity: 0 }, atCamera, example);
   expect(resting.alignment.next).toEqual({ heading: 45, angularVelocity: 0 });
-  const coincident = model({ ...parameters, targetStartX: 0, targetStartY: 0, targetVelocityX: 0 });
+  const coincident = model(
+    { ...parameters, targetStartX: 0, targetStartY: 0, targetVelocityX: 0 },
+    studyTranslate,
+  );
   expect(
     coincident.motion.frames.every(
       ({ vectors, values }) => vectors?.length === 1 && values['bearing'] === 'undefined',
@@ -162,7 +167,7 @@ it('shows a slow motor falling further behind during the crossing and still miss
         Math.abs(state.angularVelocity - slow[step - 1].angularVelocity) / example.timeStep,
       ).toBeLessThanOrEqual(example.maxAngularAcceleration + 1e-9);
   }
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.findings[0]).toContain('8.87°');
   expect(comparison?.findings[0]).toContain('95.50°');
   expect(comparison?.findings[1]).toContain('55.50°');
@@ -170,7 +175,7 @@ it('shows a slow motor falling further behind during the crossing and still miss
 });
 
 it('draws the camera heading, beacon and present sight ray inside bounds without moving the camera', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const { minX, maxX, minY, maxY } = run.motion.bounds;
   for (const frame of run.motion.frames) {
     expect(frame.bodies).toHaveLength(2);
@@ -206,7 +211,7 @@ it('draws the camera heading, beacon and present sight ray inside bounds without
 });
 
 it('opens at the beacon crossing and explains the exact current bearing and next angular step', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.initialStep).toBe(40);
   expect(run.moments.map(({ step }) => step)).toEqual([0, 40, 80, 112]);
   expect(run.motion.frames[40].values).toMatchObject({
@@ -225,7 +230,7 @@ it('opens at the beacon crossing and explains the exact current bearing and next
 });
 
 it('supplies every prose placeholder and plots the same measured headings, bearings and errors', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const texts = [
     record.visual.textEquivalent,
     record.example.description,
@@ -255,15 +260,18 @@ it('supplies every prose placeholder and plots the same measured headings, beari
 });
 
 it('is repeatable and keeps all bearings and angular motion when the whole harbour is translated', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
-  const moved = model({
-    ...parameters,
-    cameraX: 100,
-    cameraY: -50,
-    targetStartX: 120,
-    targetStartY: -30,
-  });
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
+  const moved = model(
+    {
+      ...parameters,
+      cameraX: 100,
+      cameraY: -50,
+      targetStartX: 120,
+      targetStartY: -30,
+    },
+    studyTranslate,
+  );
   expect(moved.timeline?.seconds).toEqual(run.timeline?.seconds);
   for (const [index, series] of (run.timeline?.series ?? []).entries())
     for (const [step, value] of series.values.entries())
@@ -280,9 +288,9 @@ it('is repeatable and keeps all bearings and angular motion when the whole harbo
 });
 
 it('makes a limited motor and a faster crossing visibly change the live tracking run', () => {
-  const slow = model({ ...parameters, maxAngularSpeed: 10 });
-  const quick = model({ ...parameters, maxAngularSpeed: 120 });
-  expect(model(parameters).inputs?.map(({ name }) => name)).toEqual([
+  const slow = model({ ...parameters, maxAngularSpeed: 10 }, studyTranslate);
+  const quick = model({ ...parameters, maxAngularSpeed: 120 }, studyTranslate);
+  expect(model(parameters, studyTranslate).inputs?.map(({ name }) => name)).toEqual([
     'maxAngularSpeed',
     'targetVelocityX',
   ]);
@@ -297,8 +305,8 @@ it('makes a limited motor and a faster crossing visibly change the live tracking
     slow.comparison?.timeline.series[1].values,
   );
   expect(slow.comparison?.findings[1]).toContain('current camera is still correcting');
-  const fastBeacon = model({ ...parameters, targetVelocityX: -20 });
-  const slowBeacon = model({ ...parameters, targetVelocityX: -5 });
+  const fastBeacon = model({ ...parameters, targetVelocityX: -20 }, studyTranslate);
+  const slowBeacon = model({ ...parameters, targetVelocityX: -5 }, studyTranslate);
   expect(fastBeacon.initialStep).toBe(20);
   expect(slowBeacon.initialStep).toBe(80);
   expect(fastBeacon.motion.frames[160].bodies[1].x).toBe(-60);
@@ -309,7 +317,7 @@ it('makes a limited motor and a faster crossing visibly change the live tracking
 });
 
 it('keeps notes, names, moments, prose and bounds sound across the live ranges', () => {
-  const base = model(parameters);
+  const base = model(parameters, studyTranslate);
   const variants = [parameters];
   for (const input of base.inputs ?? [])
     for (const value of [input.min, (input.min + input.max) / 2, input.max])
@@ -324,7 +332,7 @@ it('keeps notes, names, moments, prose and bounds sound across the live ranges',
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);

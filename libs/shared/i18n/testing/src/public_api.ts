@@ -1,4 +1,5 @@
 export {
+  provideMessageCatalogTestKit,
   provideI18nConfigTokenTestKit,
   provideTranslocoHttpLoaderTestKit,
   provideMissingTranslationHandlerTestKit,

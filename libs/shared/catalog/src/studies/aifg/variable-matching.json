@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:108",
   "work": "aifg",
   "slug": "variable-matching",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 2",
+    "by": "studyAifg.variable-matching.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.variable-matching.record.authored.reviewedBy.item0",
+      "studyAifg.variable-matching.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "Before tuning a steering response, decide what should become alike. Cargo skiff Sora can share a pilot launch’s pace while remaining well behind it. That is success for a velocity instruction and unfinished work for a rendezvous instruction: the selected variable determines what success means.",
-    "situation": "Sora joins a pilot launch travelling down an open channel. The immediate instruction is to share the pilot’s velocity. Position is displayed so the reader can see what this instruction leaves unresolved; orientation and rotation would need their own chosen errors and responses."
+    "text": "studyAifg.variable-matching.record.intuition.text",
+    "situation": "studyAifg.variable-matching.record.intuition.situation"
   },
   "example": {
-    "name": "Sora shares the pilot launch’s pace",
-    "description": "Sora starts at {skiffStart} with velocity {initialVelocity} units/s. The pilot starts at {pilotStart} and maintains {pilotVelocity} units/s. Sora has acceleration limit {maxAcceleration} units/s², speed limit {maxSpeed} units/s and response time {responseTime} s; the motor advances every {timeStep} s. The selected correction direction is {correctionDirection}.",
+    "name": "studyAifg.variable-matching.record.example.name",
+    "description": "studyAifg.variable-matching.record.example.description",
     "parameters": {
       "skiffStart": 0,
       "initialVelocity": 0,
@@ -37,25 +40,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Select the property and its error",
-        "text": "Read velocity from both boats. Pilot velocity minus Sora velocity gives {velocityError} units/s. The position gap is {positionGap} units, but it is not an input to this correction. Selecting position, orientation or rotation would define a different task rather than tune this one."
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step0.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Choose matching or its inverse",
-        "text": "Form a correction target by adding correctionDirection times the velocity error to Sora’s current velocity. The selected direction {correctionDirection} requests {correctionTarget} units/s. Reversing the direction pushes the same property apart; it does not switch from velocity to position."
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step1.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Convert the error to bounded acceleration",
-        "text": "Call scene-engine matchVelocity with that correction target and response time {responseTime} s. Dividing its velocity gap by the response time requests {requestedAcceleration} units/s²; the engine limits this to {acceleration} units/s². The response time sets the correction strength, and an active limit can prevent the requested change."
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step2.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Update the motor and inspect both errors",
-        "text": "The study-local motor adds acceleration times {timeStep} s to velocity, clips speed, and moves both boats. Without either limit clipping, the next velocity error is the current error multiplied by {errorMultiplier}. Sharing a pace does not recover the distance Sora lost while accelerating; the grey link can remain long after the velocity arrows agree."
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step3.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "velocityError = pilotVelocity - skiffVelocity\n\ncorrectionTarget = skiffVelocity + correctionDirection * velocityError\n\nbody = bodyAt(skiffPosition, skiffVelocity, maxSpeed, maxAcceleration)\nacceleration = sceneEngine.matchVelocity(body, point(correctionTarget), responseTime)\n\nskiffVelocity = clamp(skiffVelocity + acceleration * timeStep,\n                      -maxSpeed, maxSpeed)\nskiffPosition = skiffPosition + skiffVelocity * timeStep\npilotPosition = pilotPosition + pilotVelocity * timeStep",
+    "ordinary": "studyAifg.variable-matching.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -65,52 +68,52 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/variable-matching.model.ts",
-    "textEquivalent": "At {seconds} s, Sora is at {skiffPosition} travelling at {skiffVelocity} units/s and the pilot is at {pilotPosition} travelling at {pilotVelocity} units/s; the translated velocity arrows differ by {velocityError} units/s, the grey position link spans {positionGap} units, and the correction requests {correctionTarget} units/s using acceleration {acceleration} units/s²."
+    "textEquivalent": "studyAifg.variable-matching.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "gdx-ai 1.8.2 · MatchVelocity",
+      "project": "studyAifg.variable-matching.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
-      "relevance": "gdx-ai is a Java game-AI library whose MatchVelocity behaviour makes the choice of kinematic property explicit. It is a concrete velocity instance of the broader matching pattern.",
-      "explanation": "The method subtracts the owner’s linear velocity from the target’s, divides by timeToTarget, and limits the result to the allowed linear acceleration. It returns zero angular acceleration. Target position is never read by that calculation, so the class alone supplies no position correction."
+      "relevance": "studyAifg.variable-matching.record.implementations.item0.relevance",
+      "explanation": "studyAifg.variable-matching.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement, §3.3.2 Variable Matching",
+      "title": "studyAifg.variable-matching.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers Variable matching in Chapter 3 Movement, section 3.3.2 Variable Matching."
+      "supports": "studyAifg.variable-matching.record.references.item0.supports"
     },
     {
-      "title": "gdx-ai 1.8.2 · MatchVelocity.java",
+      "title": "studyAifg.variable-matching.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
       "accessed": "2026-11-04",
-      "supports": "A public steering behaviour calculates bounded linear acceleration from target-minus-owner velocity divided by response time, without reading target position."
+      "supports": "studyAifg.variable-matching.record.references.item1.supports"
     }
   ],
   "limits": [
-    "If Sora’s real goal is to meet the pilot, velocity matching leaves that goal unfinished. Even exactly equal velocities preserve any position gap, and the distance lost during acceleration remains.",
-    "The reversed correction is a diagnostic inverse, not a useful rendezvous controller. It grows the velocity mismatch until the speed cap stops further velocity divergence, while the position gap keeps growing.",
-    "Sora cannot match a pilot pace beyond its speed limit. The steering response can keep requesting acceleration while the motor clips every update.",
-    "The error multiplier applies only when neither the acceleration cap nor the speed cap clips the update. The initial capped update demonstrates why response time alone is not a deadline for exact agreement."
+    "studyAifg.variable-matching.record.limits.item0",
+    "studyAifg.variable-matching.record.limits.item1",
+    "studyAifg.variable-matching.record.limits.item2",
+    "studyAifg.variable-matching.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:110",
-      "why": "Reach for Seek when the chosen task is to close a position displacement towards the pilot rather than copy its velocity."
+      "why": "studyAifg.variable-matching.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:111",
-      "why": "Reach for Flee for the inverse direction of a position-based attraction; it opens displacement from a point rather than reversing a velocity correction."
+      "why": "studyAifg.variable-matching.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:116",
-      "why": "Reach for Align when Sora should match an orientation. An angular target needs its own error representation and turn response."
+      "why": "studyAifg.variable-matching.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:118",
-      "why": "Read Velocity matching for the specific steering behaviour used here, once the choice of property is settled."
+      "why": "studyAifg.variable-matching.record.nearby.item3.why"
     }
   ]
 }

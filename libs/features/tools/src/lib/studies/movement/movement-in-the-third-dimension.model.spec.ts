@@ -1,13 +1,14 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import type { MotionStudyModel } from '../study-model';
-import type { ThirdDimensionParameters } from './movement-in-the-third-dimension.model';
 import {
   calculateThirdDimensionStep,
   droneAxes,
   initialDroneState,
   model,
+  type ThirdDimensionParameters,
   thirdDimensionStates,
   volumeLength,
 } from './movement-in-the-third-dimension.model';
@@ -30,7 +31,7 @@ const example: ThirdDimensionParameters = {
 };
 const parameters: StudyParameters = { ...example };
 const runOf = (changed: StudyParameters = parameters): MotionStudyModel => {
-  return model(changed);
+  return model(changed, studyTranslate);
 };
 
 it('uses the assigned catalog record and the exact parameters worked here', async () => {
@@ -128,7 +129,10 @@ it('provides the coordinates, pose, worked arithmetic and aligned chart at every
   });
   expect(run.motion.frames[0].worked?.lines[0]).toContain('length 17.00');
   expect(run.motion.frames[run.initialStep].note).toContain('independently');
-  expect(run.motion.frames.at(-1)?.values).toMatchObject({ distance: '0.00', speed: '0.00' });
+  expect(run.motion.frames.at(-1)?.values).toMatchObject({
+    distance: '0.00',
+    speed: '0.00',
+  });
   expect(run.timeline?.seconds).toEqual(run.motion.frames.map(({ seconds }) => seconds));
   expect(run.timeline?.series[0].values.at(-1)).toBe(8);
   for (const moment of run.moments) expect(run.motion.frames[moment.step]).toBeDefined();
@@ -143,7 +147,10 @@ it('holds all visible positions and wing endpoints within the drawing after inpu
         ...frame.bodies,
         ...(frame.marks ?? []),
         ...(frame.links ?? []).flatMap(({ from, to }) => [from, to]),
-        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+        ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({
+          x: x + dx,
+          y: y + dy,
+        })),
       ];
       for (const point of points) {
         expect(point.x).toBeGreaterThanOrEqual(bounds.minX);
@@ -167,4 +174,30 @@ it('retains the previous yaw for a purely vertical direction', () => {
   expect(next.position.x).toBe(0);
   expect(next.position.z).toBe(0);
   expect(next.position.y).toBe(0.25);
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

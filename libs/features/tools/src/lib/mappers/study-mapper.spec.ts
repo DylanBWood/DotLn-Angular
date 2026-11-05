@@ -1,13 +1,17 @@
 import type { ConceptStudy, Tool } from '@dotln-angular/models';
 
-import { flowStudyModel, marbleFlowStudyModel } from '../composites/study-visuals/fixtures';
+import {
+  fixtureTranslate,
+  flowStudyModel,
+  marbleFlowStudyModel,
+} from '../composites/study-visuals/fixtures';
 import { marbleModel } from '../studies/rxjs/marbles';
 import type { StudyModel } from '../studies/study-model';
 import { clampStep, mapStudy } from './study-mapper';
 
 const reader = { step: null, view: 'motion', expanded: [], playing: false, inputs: {} } as const;
 const studyFixture: ConceptStudy = {
-  schema: 'concept-study-v0',
+  schema: 'concept-study-v1',
   id: 'sample:1',
   work: 'aifg',
   slug: 'flock',
@@ -60,14 +64,27 @@ const record = {
 const marbles = marbleModel(
   {
     inputs: {
-      source$: { label: 'source$', marbles: '-a-b|', values: { a: 'first', b: 'second' } },
+      source$: {
+        label: 'source$',
+        marbles: '-a-b|',
+        values: { a: 'first', b: 'second' },
+        valueMessages: { a: 'first', b: 'second' },
+      },
     },
     operator: 'map((value) => value)',
-    outputs: { out$: { label: 'out$', marbles: '-a-b|', values: { a: 'first', b: 'second' } } },
+    outputs: {
+      out$: {
+        label: 'out$',
+        marbles: '-a-b|',
+        values: { a: 'first', b: 'second' },
+        valueMessages: { a: 'first', b: 'second' },
+      },
+    },
     run: ({ inputs }) => ({ out$: inputs['source$'] }),
     moments: [{ label: 'Second', frame: 3 }],
   },
   { sheep: 3 },
+  fixtureTranslate,
 );
 
 it('draws a marbles model in its own family, with the frame’s sentence in the prose', () => {

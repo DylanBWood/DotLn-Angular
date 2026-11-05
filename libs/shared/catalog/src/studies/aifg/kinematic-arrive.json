@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:101",
   "work": "aifg",
   "slug": "kinematic-arrive",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 9",
+    "by": "studyAifg.kinematic-arrive.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.kinematic-arrive.record.authored.reviewedBy.item0",
+      "studyAifg.kinematic-arrive.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "The archive trolley treats its remaining journey as a fresh request at every update: cover the gap within the chosen response time. Far from the charger, that request exceeds its speed cap. Nearby, the same calculation asks for less speed. The trolley adopts the requested velocity immediately, so its slowing comes from smaller requests rather than simulated braking.",
-    "situation": "A trolley in an archive animation needs to approach its charging marker smoothly, while the animation can set its velocity directly."
+    "text": "studyAifg.kinematic-arrive.record.intuition.text",
+    "situation": "studyAifg.kinematic-arrive.record.intuition.situation"
   },
   "example": {
-    "name": "The archive trolley approaches its charger",
-    "description": "The trolley starts at {start} on a straight aisle and heads for a charging marker at {target}. Its speed cap is {maxSpeed} units/s, time to target {timeToTarget} s and satisfaction radius {satisfactionRadius} units. Each update advances {timeStep} s; the run contains {steps} updates. The outer circle has the derived radius {taperDistance}, where the speed cap stops binding. This executable uses a study-local velocity rule: the public scene engine has acceleration-based Arrive, but no direct-velocity kinematic arrival helper.",
+    "name": "studyAifg.kinematic-arrive.record.example.name",
+    "description": "studyAifg.kinematic-arrive.record.example.description",
     "parameters": {
       "start": 0,
       "target": 11,
@@ -30,25 +33,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Measure the signed journey left",
-        "text": "Subtract the trolley position from the marker position. The sign chooses the direction of travel; the magnitude is the distance used by the stop decision. At this moment the trolley is at {position}, leaving {distance} units."
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step0.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Accept a region, keeping its error",
-        "text": "This model includes the boundary: distance at or below {satisfactionRadius} units accepts the current place. It assigns zero velocity and leaves the trolley there. Acceptance does not place it exactly on the marker, and it can stop immediately because the model carries no momentum."
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step1.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Turn the remaining journey into velocity",
-        "text": "Outside the accepted region, divide the signed offset by {timeToTarget} s and clamp the result to the speed cap. No separate slowing-radius input is needed: tapering begins at maxSpeed × timeToTarget, currently {taperDistance} units from the marker. The assigned velocity now is {velocity} units/s."
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step2.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Advance with that assigned velocity",
-        "text": "Multiply velocity by the update duration, then add the displacement to position. This update moves {displacement} units to {nextPosition}. Where the speed cap is inactive and the stop has not been accepted, the next signed error equals the old error multiplied by 1 − dt / timeToTarget, currently {errorFactor}."
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step3.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "offset = target - position\ndistance = abs(offset)\n\nif distance <= satisfactionRadius:\n  return { position: position, velocity: 0 }\n\nrequestedVelocity = offset / timeToTarget\nvelocity = clamp(requestedVelocity, -maxSpeed, maxSpeed)\n\nnextPosition = position + velocity * timeStep\nreturn { position: nextPosition, velocity: velocity }",
+    "ordinary": "studyAifg.kinematic-arrive.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -58,59 +61,59 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/kinematic-arrive.model.ts",
-    "textEquivalent": "The archive trolley is at {position}, {distance} units from the charging marker at {target}; it is {accepted}, assigns velocity {velocity} units/s and will move {displacement} units to {nextPosition}, with an outer taper circle of radius {taperDistance} and an inner acceptance circle of radius {satisfactionRadius}."
+    "textEquivalent": "studyAifg.kinematic-arrive.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "Ian Millington’s historical aicore library",
+      "project": "studyAifg.kinematic-arrive.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/kinematic.cpp",
-      "relevance": "aicore is a C++ game-AI library containing a concrete KinematicArrive implementation. Its maintainer labels the repository historical and says it has not kept pace with the third edition, so it is a readable implementation rather than a current book reference.",
-      "explanation": "KinematicArrive computes the target offset, clears its linear output inside a strict squared-radius test, otherwise divides the offset by timeToTarget and caps its magnitude at maxSpeed. The accompanying header describes kinematic output as a velocity reached immediately. This makes the direct velocity contract explicit; the routine itself does not advance the character position."
+      "relevance": "studyAifg.kinematic-arrive.record.implementations.item0.relevance",
+      "explanation": "studyAifg.kinematic-arrive.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.2 Kinematic Movement Algorithms, §3.2.1 Seek: Kinematic arrive",
+      "title": "studyAifg.kinematic-arrive.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers Kinematic arrive at the Chapter 3, §3.2.1 Seek location mapped by this catalogue; no chapter text is quoted or used here."
+      "supports": "studyAifg.kinematic-arrive.record.references.item0.supports"
     },
     {
-      "title": "aicore · KinematicArrive implementation at a pinned revision",
+      "title": "studyAifg.kinematic-arrive.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/kinematic.cpp",
       "accessed": "2026-11-04",
-      "supports": "The implementation divides target offset by timeToTarget, caps speed and clears its linear output inside its radius."
+      "supports": "studyAifg.kinematic-arrive.record.references.item1.supports"
     },
     {
-      "title": "aicore · Kinematic movement contract at the same revision",
+      "title": "studyAifg.kinematic-arrive.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/include/aicore/kinematic.h",
       "accessed": "2026-11-04",
-      "supports": "The header distinguishes immediate kinematic velocity from acceleration-based movement and declares the arrival parameters."
+      "supports": "studyAifg.kinematic-arrive.record.references.item2.supports"
     },
     {
-      "title": "aicore · Maintainer’s historical-status note",
+      "title": "studyAifg.kinematic-arrive.record.references.item3.title",
       "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/README.md",
       "accessed": "2026-11-04",
-      "supports": "The maintainer describes the repository as historical and says the code did not keep up with later corrections and the third edition."
+      "supports": "studyAifg.kinematic-arrive.record.references.item3.supports"
     }
   ],
   "limits": [
-    "In the comparison, only time to target becomes {shortTimeToTarget} s while updates remain {timeStep} s apart. Requests can then carry the trolley past the marker between samples. A capped run can keep crossing without entering the accepted region; a speed cap alone does not guarantee arrival.",
-    "Stopping within the radius preserves a positional error. A charging interaction that requires exact placement needs an explicit placement policy beyond this acceptance rule.",
-    "Immediate velocity changes suit this animation contract. A trolley with limited acceleration needs a dynamic movement rule; this model neither simulates braking distance nor avoids obstacles."
+    "studyAifg.kinematic-arrive.record.limits.item0",
+    "studyAifg.kinematic-arrive.record.limits.item1",
+    "studyAifg.kinematic-arrive.record.limits.item2"
   ],
   "nearby": [
     {
       "id": "aifg-a:102",
-      "why": "Use Satisfaction radius when deciding how much placement error the charger can accept; it separates that decision from the speed taper."
+      "why": "studyAifg.kinematic-arrive.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:112",
-      "why": "Use Arrive when the trolley must change velocity through acceleration and cannot adopt each smaller request immediately."
+      "why": "studyAifg.kinematic-arrive.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:100",
-      "why": "Use Kinematic seek when the target is being followed continuously and slowing for a stationary destination is unnecessary."
+      "why": "studyAifg.kinematic-arrive.record.nearby.item2.why"
     }
   ]
 }

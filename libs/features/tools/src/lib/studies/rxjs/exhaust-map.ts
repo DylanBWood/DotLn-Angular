@@ -11,32 +11,52 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     press$: {
-      label: 'press$',
+      label: 'studyRxjs.exhaust-map.model.example.inputs.press.label',
       marbles: '-a-b----c-d|',
       values: { a: 'draft 1', b: 'draft 2', c: 'draft 3', d: 'draft 4' },
+
+      valueMessages: {
+        a: 'studyRxjs.exhaust-map.model.example.inputs.press.values.a',
+        b: 'studyRxjs.exhaust-map.model.example.inputs.press.values.b',
+        c: 'studyRxjs.exhaust-map.model.example.inputs.press.values.c',
+        d: 'studyRxjs.exhaust-map.model.example.inputs.press.values.d',
+      },
     },
   },
   // Only the drafts exhaustMap takes have a save: a press it turns away never calls save at all.
   inner: {
     'draft 1': {
-      label: 'save(draft 1)',
+      label: 'studyRxjs.exhaust-map.model.example.inner.draft-1.label',
       marbles: '----1|',
       values: { 1: 'draft 1 saved' },
       subscriptions: '-^----!',
+
+      valueMessages: {
+        '1': 'studyRxjs.exhaust-map.model.example.inner.draft-1.values.1',
+      },
     },
     'draft 3': {
-      label: 'save(draft 3)',
+      label: 'studyRxjs.exhaust-map.model.example.inner.draft-3.label',
       marbles: '----3|',
       values: { 3: 'draft 3 saved' },
       subscriptions: '--------^----!',
+
+      valueMessages: {
+        '3': 'studyRxjs.exhaust-map.model.example.inner.draft-3.values.3',
+      },
     },
   },
-  operator: 'exhaustMap((draft) => save(draft))',
+  operator: 'studyRxjs.exhaust-map.model.example.operator',
   outputs: {
     saved$: {
-      label: 'saved$',
+      label: 'studyRxjs.exhaust-map.model.example.outputs.saved.label',
       marbles: '-----1------3|',
       values: { 1: 'draft 1 saved', 3: 'draft 3 saved' },
+
+      valueMessages: {
+        '1': 'studyRxjs.exhaust-map.model.example.outputs.saved.values.1',
+        '3': 'studyRxjs.exhaust-map.model.example.outputs.saved.values.3',
+      },
     },
   },
   run: ({ inputs: { press$ }, inner }) => {
@@ -46,30 +66,33 @@ export const example: MarbleExample = {
     return { saved$ };
   },
   moments: [
-    { label: 'draft 1 opens a save', frame: 1 },
-    { label: 'draft 2 while busy', frame: 3 },
-    { label: 'draft 3 opens a save', frame: 8 },
-    { label: 'draft 4 while busy', frame: 10 },
-    { label: 'Done', frame: 13 },
+    { label: 'studyRxjs.exhaust-map.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.exhaust-map.model.example.moments.1.label', frame: 3 },
+    { label: 'studyRxjs.exhaust-map.model.example.moments.2.label', frame: 8 },
+    { label: 'studyRxjs.exhaust-map.model.example.moments.3.label', frame: 10 },
+    { label: 'studyRxjs.exhaust-map.model.example.moments.4.label', frame: 13 },
   ],
   notes: {
-    0: 'Nothing has been pressed yet.',
-    1: 'The first press brings draft 1. Nothing is running, so save(draft 1) is opened.',
-    2: 'save(draft 1) is running and has not answered yet.',
-    3: 'The second press brings draft 2 while save(draft 1) is still running, so exhaustMap opens nothing for it and save(draft 1) carries on.',
-    4: 'save(draft 1) is still running, so a press now would also open nothing.',
-    5: 'save(draft 1) answers, and the answer goes straight to the output.',
-    6: 'save(draft 1) completes. Nothing is running now, so the next press will open a save.',
-    7: 'Nothing is running and nothing is pressed: the button is free.',
-    8: 'The third press brings draft 3. Nothing is running, so save(draft 3) is opened.',
-    9: 'save(draft 3) is running and has not answered yet.',
-    10: 'The fourth press brings draft 4 while save(draft 3) is running, so again nothing is opened.',
-    11: 'The form closes and press$ completes. save(draft 3) is still running, so the output stays open.',
-    12: 'save(draft 3) answers, and the answer goes to the output.',
-    13: 'save(draft 3) completes. press$ has completed and nothing is running, so the output completes.',
+    0: 'studyRxjs.exhaust-map.model.example.notes.0',
+    1: 'studyRxjs.exhaust-map.model.example.notes.1',
+    2: 'studyRxjs.exhaust-map.model.example.notes.2',
+    3: 'studyRxjs.exhaust-map.model.example.notes.3',
+    4: 'studyRxjs.exhaust-map.model.example.notes.4',
+    5: 'studyRxjs.exhaust-map.model.example.notes.5',
+    6: 'studyRxjs.exhaust-map.model.example.notes.6',
+    7: 'studyRxjs.exhaust-map.model.example.notes.7',
+    8: 'studyRxjs.exhaust-map.model.example.notes.8',
+    9: 'studyRxjs.exhaust-map.model.example.notes.9',
+    10: 'studyRxjs.exhaust-map.model.example.notes.10',
+    11: 'studyRxjs.exhaust-map.model.example.notes.11',
+    12: 'studyRxjs.exhaust-map.model.example.notes.12',
+    13: 'studyRxjs.exhaust-map.model.example.notes.13',
   },
-  caption:
-    'Time runs in frames. A circle is an emission, with its letter, and a bar is completion. Each save lane starts below the press that opened it; a press with no save lane below it was turned away while a save ran, so save was never called for b or d. Step the frames to follow each press.',
+  caption: 'studyRxjs.exhaust-map.model.example.caption',
+
+  parameterMessages: {
+    drafts: 'studyRxjs.exhaust-map.record.parameters.drafts',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

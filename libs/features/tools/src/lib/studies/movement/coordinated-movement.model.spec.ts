@@ -2,6 +2,7 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 import { centroid, distance, length, slotPosition, subtract } from '@dotln-angular/scene-engine';
 
+import { studyTranslate } from '../../../../testing/src';
 import {
   coordinatedMovementFrames,
   type CoordinatedMovementParameters,
@@ -61,7 +62,11 @@ it('centres the line and assigns Scanner, Camera and Radio distinct role-compati
     { unitId: 'camera', slot: 1, slotRole: 'centre', cost: 0 },
     { unitId: 'radio', slot: 2, slotRole: 'right', cost: 0 },
   ]);
-  expect(coordinationErrors(state)).toEqual({ camera: 0, mean: 0, anchorLag: 0 });
+  expect(coordinationErrors(state)).toEqual({
+    camera: 0,
+    mean: 0,
+    anchorLag: 0,
+  });
 });
 
 it('moves the reference first and works Camera through the first bounded acceleration', () => {
@@ -112,7 +117,10 @@ it('preserves the abreast relationship at equal capability and respects each mov
 
 it('exposes an individual falling behind although every assignment remains valid', () => {
   const normal = coordinatedMovementFrames(example);
-  const slow = coordinatedMovementFrames({ ...example, cameraSpeed: example.failureCameraSpeed });
+  const slow = coordinatedMovementFrames({
+    ...example,
+    cameraSpeed: example.failureCameraSpeed,
+  });
   const normalPeak = Math.max(...normal.map((state) => coordinationErrors(state).camera));
   const slowPeak = Math.max(...slow.map((state) => coordinationErrors(state).camera));
   expect(slow[0].members.map(({ position }) => position)).toEqual(
@@ -135,24 +143,28 @@ it('exposes an individual falling behind although every assignment remains valid
 });
 
 it('ties the slot drawing, numerical readout and comparison to the same frames', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const first = run.motion.frames[0];
   expect(first.bodies).toHaveLength(3);
   expect(first.marks?.filter(({ shape }) => shape === 'ring')).toHaveLength(3);
   expect(first.links).toHaveLength(3);
-  expect(first.values).toMatchObject({ scannerY: '-4.0000', cameraY: '0.0000', radioY: '4.0000' });
+  expect(first.values).toMatchObject({
+    scannerY: '-4.0000',
+    cameraY: '0.0000',
+    radioY: '4.0000',
+  });
   expect(first.worked?.lines.join(' ')).toContain('0.2352, 0.0000');
   expect(first.worked?.lines.join(' ')).toContain('0.7056, 0.0000');
   expect(run.timeline?.series.map(({ values }) => values.length)).toEqual([161, 161]);
   expect(run.comparison?.timeline.series.map(({ values }) => values.length)).toEqual([161, 161]);
   expect(run.motion.frames[run.initialStep].values['cameraError']).toBeDefined();
   expect(run.motion.frames.at(-1)?.worked?.note).toContain('does not assert');
-  const same = model({ ...parameters, cameraSpeed: example.failureCameraSpeed });
+  const same = model({ ...parameters, cameraSpeed: example.failureCameraSpeed }, studyTranslate);
   expect(same.comparison?.findings[1]).toContain('same run');
 });
 
 it('keeps every visible position inside the drawing when following ability changes', () => {
-  const run = model({ ...parameters, cameraSpeed: 0.5, anchorSpeed: 2 });
+  const run = model({ ...parameters, cameraSpeed: 0.5, anchorSpeed: 2 }, studyTranslate);
   const { minX, maxX, minY, maxY } = run.motion.bounds;
   for (const frame of run.motion.frames) {
     expect(frame.bodies).toHaveLength(3);
@@ -163,5 +175,34 @@ it('keeps every visible position inside the drawing when following ability chang
       expect(point.y).toBeLessThanOrEqual(maxY);
     }
   }
-  expect(run.motion.frames[0].values).toMatchObject({ cameraSpeed: '0.5', anchorSpeed: '2' });
+  expect(run.motion.frames[0].values).toMatchObject({
+    cameraSpeed: '0.5',
+    anchorSpeed: '2',
+  });
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

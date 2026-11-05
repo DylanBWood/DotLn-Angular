@@ -143,7 +143,7 @@ export function marblesDrawing(model: MarblesModel, step: number): MarblesDrawin
   const axisY = (line: MarbleLine) => laneTop(line) + axisOffset;
   /** The lane an output value of the stepped frame rides down from, as the model names it. */
   const originOf = (from: string | undefined) =>
-    from === undefined ? undefined : model.lines.find(({ label }) => label === from);
+    from === undefined ? undefined : model.lines.find(({ id }) => id === from);
   const couriers: DrawnCourier[] = [];
   for (const line of model.lines) {
     const tone = toneOf(line);

@@ -2,6 +2,7 @@ import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 import { loadStudy } from '@dotln-angular/tools/testing';
 
+import { studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import {
@@ -37,7 +38,7 @@ const initial: OutputState = {
   rotation: 0,
 };
 const runModel = (inputs: StudyParameters = parameters) => {
-  return model(inputs);
+  return model(inputs, studyTranslate);
 };
 
 it('binds the record, example, executable and mechanism blocks to its catalog row', async () => {
@@ -67,7 +68,10 @@ it('applies one linear and angular output with arithmetic a reader can check', (
 });
 
 it('clears both output channels at the pulse boundary and keeps existing motion', () => {
-  expect(outputAt(0.75, example)).toEqual({ linear: { x: 0, y: 2 }, angular: 0.5 });
+  expect(outputAt(0.75, example)).toEqual({
+    linear: { x: 0, y: 2 },
+    angular: 0.5,
+  });
   expect(outputAt(1, example)).toEqual({ linear: { x: 0, y: 0 }, angular: 0 });
   const run = outputSteps(example);
   expect(run[4].state).toEqual({
@@ -165,13 +169,17 @@ it('opens after the pulse and connects every prose placeholder to every frame', 
     'coincide',
   );
   expect(runModel({ ...parameters, pulseSeconds: 2 }).initialStep).toBe(8);
-  expect(model(parameters)).toEqual(model(parameters));
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
 });
 
 it('keeps both tugs and the velocity arrows inside the drawing for the offered inputs', () => {
   for (const linearAccelerationY of [0, 3]) {
     for (const pulseSeconds of [0.5, 2]) {
-      const run = runModel({ ...parameters, linearAccelerationY, pulseSeconds });
+      const run = runModel({
+        ...parameters,
+        linearAccelerationY,
+        pulseSeconds,
+      });
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       for (const [index, frame] of run.motion.frames.entries()) {
         const points = [
@@ -195,4 +203,30 @@ it('keeps both tugs and the velocity arrows inside the drawing for the offered i
       expect(timelineDrawing(comparison.timeline, null).series).toHaveLength(2);
     }
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

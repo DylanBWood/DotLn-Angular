@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -102,7 +102,7 @@ it('accepts an endpoint already in tolerance without spending a midpoint guess',
   expect(endpoint.status).toBe('hit');
   expect(endpoint.attempts).toEqual([]);
   expect(endpoint.endpointHit?.angle).toBe(example.upperAngle);
-  const view = model({ ...parameters, targetX: upper });
+  const view = model({ ...parameters, targetX: upper }, studyTranslate);
   expect(view.motion.frames[0].note).toContain('without a midpoint guess');
   expect(view.motion.frames[0].values['error']).toBe('0.00');
 });
@@ -115,7 +115,7 @@ it('reports the genuine remaining miss when only the midpoint budget is reduced'
   expect(short.attempts).toHaveLength(2);
   for (const { error } of short.attempts)
     expect(Math.abs(error ?? 0)).toBeGreaterThan(example.tolerance);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.findings.join(' ')).toContain('budget-exhausted after 2');
   const shortValues = comparison?.timeline.series[1].values ?? [];
   expect(shortValues[shortValues.length - 1]).toBeGreaterThan(example.tolerance);
@@ -129,7 +129,7 @@ it('rejects an unusable bracket without claiming the target is unreachable every
   const twoArcs = { ...example, lowerAngle: 10, upperAngle: 80 };
   expect(searchTarget(twoArcs).status).toBe('unbracketed');
   expect(simulateTargetFlight(40, twoArcs).range).toBeGreaterThan(example.targetX);
-  const held = model({ ...parameters, targetX: 10 });
+  const held = model({ ...parameters, targetX: 10 }, studyTranslate);
   expect(held.motion.frames).toHaveLength(2);
   expect(held.motion.frames.every(({ values }) => values['status'] === 'unbracketed')).toBe(true);
   expect(held.motion.frames[0].note).toContain('same side');
@@ -138,21 +138,27 @@ it('rejects an unusable bracket without claiming the target is unreachable every
 it('refuses a flight without a measured impact and exposes model mismatch as a real miss', () => {
   const unfinished = { ...example, flightSteps: 1 };
   expect(simulateTargetFlight(example.upperAngle, unfinished).range).toBeNull();
-  expect(searchTarget(unfinished)).toMatchObject({ status: 'flight-unfinished', attempts: [] });
-  const view = model({ ...parameters, flightSteps: 1 });
+  expect(searchTarget(unfinished)).toMatchObject({
+    status: 'flight-unfinished',
+    attempts: [],
+  });
+  const view = model({ ...parameters, flightSteps: 1 }, studyTranslate);
   expect(view.timeline).toBeNull();
   expect(view.comparison).toBeUndefined();
   const normal = searchTarget(example);
   const accepted = normal.attempts[normal.attempts.length - 1];
-  const altered = simulateTargetFlight(accepted.angle, { ...example, drag: 0.4 });
+  const altered = simulateTargetFlight(accepted.angle, {
+    ...example,
+    drag: 0.4,
+  });
   expect(Math.abs((altered.range ?? Number.POSITIVE_INFINITY) - example.targetX)).toBeGreaterThan(
     example.tolerance,
   );
 });
 
 it('keeps the diagram, arithmetic, live inputs, chart and accessible prose on the same run', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.motion.frames.length).toBe(searchTarget(example).attempts.length + 1);
   expect(run.motion.frames.length).toBeLessThanOrEqual(240);
   expect(run.motion.frames[0].values['status']).toBe('bracket-ready');
@@ -175,7 +181,7 @@ it('keeps the diagram, arithmetic, live inputs, chart and accessible prose on th
     ),
   ];
   for (const changed of cases) {
-    const view = model(changed);
+    const view = model(changed, studyTranslate);
     expect(view.motion.frames.length).toBeGreaterThan(1);
     for (const moment of view.moments) expect(view.motion.frames[moment.step]).toBeDefined();
     for (const frame of view.motion.frames) {
@@ -205,4 +211,42 @@ it('keeps the diagram, arithmetic, live inputs, chart and accessible prose on th
       ).toBe(true);
     }
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
+});
+
+it('translates a terminal status without changing the search decision', () => {
+  const run = model({ ...parameters, maxIterations: 2 }, (key, values) =>
+    key === 'studyAifg.iterative-targeting.model.statuses.budgetExhausted'
+      ? 'LOCAL BUDGET EXHAUSTED'
+      : studyTranslate(key, values),
+  );
+
+  expect(run.motion.frames.at(-1)?.values['status']).toBe('LOCAL BUDGET EXHAUSTED');
+  expect(run.motion.frames.at(-1)?.note).toContain('search reports failure');
+  expect(run.comparison?.findings[0]).toContain('LOCAL BUDGET EXHAUSTED');
 });

@@ -23,9 +23,11 @@ export interface StudyReaderState {
 export const clampStep = (model: StudyModel, step: number | null) =>
   Math.max(0, Math.min(ticksOf(model).length - 1, Math.round(step ?? model.initialStep)));
 
-const nextStudy = (id: Tool['id'], studied: readonly Tool[]) => {
+const nextStudy = (id: Tool['id'], studied: readonly Tool[], titleOf: (tool: Tool) => string) => {
   const next = studied[studied.findIndex((tool) => tool.id === id) + 1];
-  return next && studied.some((tool) => tool.id === id) ? { id: next.id, title: next.title } : null;
+  return next && studied.some((tool) => tool.id === id)
+    ? { id: next.id, title: titleOf(next) }
+    : null;
 };
 
 /** The drawing at the selected moment, in the shape of the family the model is for. */
@@ -81,6 +83,7 @@ export function mapStudy(
   reader: StudyReaderState,
   tools: readonly Tool[],
   studiedInOrder: readonly Tool[] = [],
+  titleOf: (tool: Tool) => string = (tool) => tool.title,
 ): StudyView {
   const step = model ? clampStep(model, reader.step) : 0;
   const tick = model ? ticksOf(model)[step] : undefined;
@@ -124,8 +127,8 @@ export function mapStudy(
     references: record.references,
     nearby: record.nearby.flatMap(({ id, why }) => {
       const tool = tools.find((candidate) => candidate.id === id);
-      return tool ? [{ id, title: tool.title, why }] : [];
+      return tool ? [{ id, title: titleOf(tool), why }] : [];
     }),
-    next: nextStudy(record.id, studiedInOrder),
+    next: nextStudy(record.id, studiedInOrder, titleOf),
   };
 }

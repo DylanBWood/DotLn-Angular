@@ -3,6 +3,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { length } from '@dotln-angular/scene-engine';
 import { loadStudy } from '@dotln-angular/tools/testing';
 
+import { studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import {
@@ -33,7 +34,7 @@ const state = (position: number, velocity: number) => ({
   velocity: { x: velocity, y: 0 },
 });
 const runModel = (inputs: StudyParameters = parameters) => {
-  return model(inputs);
+  return model(inputs, studyTranslate);
 };
 
 it('binds its record, mechanism blocks and nearby ids to the catalog', async () => {
@@ -133,7 +134,7 @@ it('opens on the verified disagreement and carries every prose placeholder on ev
   expect(runModel({ ...parameters, arrivalEnabled: 0 }).motion.frames[12].values['member']).toBe(
     'Seek',
   );
-  expect(model(parameters)).toEqual(model(parameters));
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
 });
 
 it('keeps bodies, requests and slowing zones in view for either selectable member', () => {
@@ -165,4 +166,30 @@ it('keeps bodies, requests and slowing zones in view for either selectable membe
     if (!comparison) throw new Error('Steering behaviours compares the other family member.');
     expect(timelineDrawing(comparison.timeline, null).series).toHaveLength(2);
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

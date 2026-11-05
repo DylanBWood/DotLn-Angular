@@ -1,5 +1,5 @@
 import { flowModel } from '../../../studies/flow';
-import { flowFixture, marbleFlowStudyModel } from '../fixtures';
+import { fixtureTranslate, flowFixture, marbleFlowStudyModel } from '../fixtures';
 import { flowDrawing, wrapText } from './flow-drawing';
 
 it('wraps a name at its spaces and leaves a long word whole', () => {
@@ -124,35 +124,39 @@ it('marks the nodes a moving message leaves or reaches, and only those', () => {
 });
 
 /** Four nodes in three stages: a sender, a buffer, a reader beside it, and a sink the sender skips to. */
-const crowded = flowModel({
-  nodes: [
-    { id: 'sender', label: 'Sender', stage: 0 },
-    { id: 'buffer', label: 'Buffer', stage: 1 },
-    { id: 'sink', label: 'Sink', stage: 2 },
-  ],
-  links: [
-    { id: 'in', from: 'sender', to: 'buffer' },
-    { id: 'skip', from: 'sender', to: 'sink', label: 'copy' },
-    { id: 'out', from: 'buffer', to: 'sink' },
-  ],
-  messages: Object.fromEntries(
-    ['1', '2', '3', '4', '5', '6', '7'].map((key) => [key, { key, content: `event ${key}` }]),
-  ),
-  start: { note: 'Nothing yet.' },
-  steps: [
-    {
-      moves: [{ message: '1', link: 'in' }],
-      held: { buffer: ['1', '2', '3', '4', '5', '6', '7'] },
-      note: 'The buffer holds seven.',
-    },
-    {
-      moves: ['2', '3', '4', '5'].map((message) => ({ message, link: 'out' })),
-      note: 'Four leave together.',
-    },
-    { moves: [{ message: '6', link: 'skip' }], note: 'A copy skips the buffer.' },
-  ],
-  moments: [],
-}).flow;
+const crowded = flowModel(
+  {
+    nodes: [
+      { id: 'sender', label: 'Sender', stage: 0 },
+      { id: 'buffer', label: 'Buffer', stage: 1 },
+      { id: 'sink', label: 'Sink', stage: 2 },
+    ],
+    links: [
+      { id: 'in', from: 'sender', to: 'buffer' },
+      { id: 'skip', from: 'sender', to: 'sink', label: 'copy' },
+      { id: 'out', from: 'buffer', to: 'sink' },
+    ],
+    messages: Object.fromEntries(
+      ['1', '2', '3', '4', '5', '6', '7'].map((key) => [key, { key, content: `event ${key}` }]),
+    ),
+    start: { note: 'Nothing yet.' },
+    steps: [
+      {
+        moves: [{ message: '1', link: 'in' }],
+        held: { buffer: ['1', '2', '3', '4', '5', '6', '7'] },
+        note: 'The buffer holds seven.',
+      },
+      {
+        moves: ['2', '3', '4', '5'].map((message) => ({ message, link: 'out' })),
+        note: 'Four leave together.',
+      },
+      { moves: [{ message: '6', link: 'skip' }], note: 'A copy skips the buffer.' },
+    ],
+    moments: [],
+  },
+  {},
+  fixtureTranslate,
+).flow;
 
 it('draws messages that cannot sit apart on one line as one capsule naming them all', () => {
   const drawing = flowDrawing(crowded, 2);

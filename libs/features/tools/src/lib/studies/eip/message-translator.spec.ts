@@ -1,9 +1,10 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, flow, model, toToolV1 } from './message-translator';
@@ -12,7 +13,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/message-translator.t
 
 /** The model's run, which for this module is always a flow. */
 function flowRun(parameters: StudyParameters): FlowStudyModel {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The translator study is drawn as a flow.');
   return run;
 }
@@ -37,7 +38,7 @@ const unknownShape: MarbleExample = {
   ...example,
   inputs: {
     records$: {
-      label: 'records$',
+      ...example.inputs['records$'],
       marbles: '-txc|',
       values: {
         t: { id: 'eip:60', schema: 'tool-v0' },
@@ -45,17 +46,28 @@ const unknownShape: MarbleExample = {
         c: { id: 'eip:146', schema: 'tool-v0' },
       },
       subscriptions: '^-!',
+      valueMessages: {
+        ...example.inputs['records$'].valueMessages,
+        x: {
+          key: 'studyEip.message-translator.model.unknownRow',
+          params: { id: 'eip:145', schema: 'tool-v2' },
+        },
+      },
     },
   },
   outputs: {
     rows$: {
-      label: 'rows$',
+      ...example.outputs['rows$'],
       marbles: '-T#',
       values: { T: translated('eip:60') },
       error: new Error('no translation from tool-v2'),
+      errorMessage: {
+        key: 'studyEip.message-translator.model.unknownShapeError',
+        params: { schema: 'tool-v2' },
+      },
     },
   },
-  moments: [{ label: 'Refused', frame: 2 }],
+  moments: [{ label: 'studyEip.message-translator.model.refusedMoment', frame: 2 }],
   notes: {},
 };
 
@@ -115,14 +127,19 @@ it('keeps the id, marks what the older shape lacks and refuses any other shape',
 it('loses every later row when one row cannot be translated', () => {
   expectMarbleExample(unknownShape);
   // This run's chunk holds t, x and c, and the Tools home gets only T: the boxes hold what it sends.
-  const run = flowFromMarbles(unknownShape, {
-    ...flow,
-    held: {
-      0: { chunk: ['t', 'x', 'c'] },
-      1: { chunk: ['x', 'c'], home: ['T'] },
-      2: { chunk: ['c'] },
+  const run = flowFromMarbles(
+    unknownShape,
+    {
+      ...flow,
+      held: {
+        0: { chunk: ['t', 'x', 'c'] },
+        1: { chunk: ['x', 'c'], home: ['T'] },
+        2: { chunk: ['c'] },
+      },
     },
-  });
+    {},
+    studyTranslate,
+  );
   // The unknown row reaches the translator, nothing leaves for it, and c is never read.
   expect(hopsOf(run)).toEqual([[], ['read t', 'answer T'], ['read x']]);
   expect(
@@ -157,7 +174,7 @@ it('opens at the start and names its moments by frame', async () => {
   ]);
   // Every frame carries the module's own sentence, in the flow's words.
   expect(run.flow.frames.map(({ note }) => note)).toEqual(
-    run.flow.frames.map(({ step }) => example.notes?.[step]),
+    run.flow.frames.map(({ step }) => studyMessage(studyTranslate, example.notes?.[step] ?? '')),
   );
 });
 
@@ -188,8 +205,8 @@ it('names the translator in its RxJS reading, on the code that runs', async () =
     '// records$ is the tool-v0 channel; rows$ is the tool-v1 channel the Tools home reads',
     '  // the translator: each record becomes one tool-v1 row as it arrives, or is refused',
   ]);
-  expect(example.operator).toBe('map((record) => toToolV1(record))');
-  expect(reading).toContain(example.operator);
+  expect(studyMessage(studyTranslate, example.operator)).toBe('map((record) => toToolV1(record))');
+  expect(reading).toContain(studyMessage(studyTranslate, example.operator));
 });
 
 it('stays within what the flow drawing reads at a narrow width', async () => {

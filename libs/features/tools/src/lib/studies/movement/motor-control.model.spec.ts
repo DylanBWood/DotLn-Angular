@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import {
   model,
   motorControlFrames,
@@ -21,7 +22,7 @@ const example: MotorControlParameters = {
 const parameters: StudyParameters = { ...example };
 
 const motionModel = (values: StudyParameters = parameters) => {
-  return model(values);
+  return model(values, studyTranslate);
 };
 
 it('uses the draft record parameters for the Motor control row', async () => {
@@ -131,7 +132,7 @@ it('reruns its inputs deterministically and keeps positions, arrows and charts w
     for (const motorBrake of [1, 4, 6]) {
       const changed = { ...parameters, initialSpeed, motorBrake };
       const run = motionModel(changed);
-      expect(model(changed)).toEqual(run);
+      expect(model(changed, studyTranslate)).toEqual(run);
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       for (const frame of run.motion.frames) {
         for (const body of frame.bodies) {
@@ -158,4 +159,30 @@ it('reruns its inputs deterministically and keeps positions, arrows and charts w
     same.comparison?.timeline.series[1].values,
   );
   expect(same.comparison?.note).toContain('same run');
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

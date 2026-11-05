@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import { actuatorFrames, type ActuatorParameters, actuatorStep, model } from './actuator.model';
 
 const example: ActuatorParameters = {
@@ -16,7 +17,7 @@ const example: ActuatorParameters = {
 const parameters: StudyParameters = { ...example };
 
 const motionModel = (values: StudyParameters = parameters) => {
-  return model(values);
+  return model(values, studyTranslate);
 };
 
 it('uses the draft record parameters for the Actuator row', async () => {
@@ -66,7 +67,12 @@ it('matches a feasible velocity gradually without closing the marker position ga
 
 it('caps an infeasible velocity channel while preserving the unmet original agreement', () => {
   const first = actuatorStep({ position: 0, velocity: 0 }, example, example.impossibleSpeed);
-  expect(first).toMatchObject({ agreed: 12, feasible: 8, rawAcceleration: 16, acceleration: 3 });
+  expect(first).toMatchObject({
+    agreed: 12,
+    feasible: 8,
+    rawAcceleration: 16,
+    acceleration: 3,
+  });
   const normal = actuatorFrames(example);
   const impossible = actuatorFrames(example, example.impossibleSpeed);
   expect(impossible[0]).toEqual(normal[0]);
@@ -133,7 +139,7 @@ it('reruns its inputs deterministically and keeps bodies, arrows and chart serie
     for (const maxSpeed of [4, 8, 14]) {
       const changed = { ...parameters, beltSpeed, maxSpeed };
       const run = motionModel(changed);
-      expect(model(changed)).toEqual(run);
+      expect(model(changed, studyTranslate)).toEqual(run);
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       for (const frame of run.motion.frames) {
         for (const body of frame.bodies) {
@@ -163,4 +169,30 @@ it('reruns its inputs deterministically and keeps bodies, arrows and chart serie
     same.comparison?.timeline.series[1].values,
   );
   expect(same.comparison?.note).toContain('same run');
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

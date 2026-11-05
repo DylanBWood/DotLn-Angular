@@ -1,4 +1,5 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowModel } from '../study-model';
 import { example, model } from './request-reply';
 
@@ -7,7 +8,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/request-reply.ts';
 /** The record's own run of the example, with the parameters it ships, as the flow it draws. */
 async function recordRun() {
   const record = await loadFlowStudy('eip:83');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The model does not draw a flow.');
   return { record, run };
 }
@@ -51,10 +52,10 @@ it('attaches the record to the Request-Reply row and draws it from this module',
       .map(({ label, kind }) => `${label} ${kind}`),
   ).toEqual(['Outbox channel', 'Event log channel']);
   // The parameters the prose names are the commands the flow sends.
-  expect(example.messages['command1']?.content).toContain(
+  expect(studyMessage(studyTranslate, example.messages['command1']?.content)).toContain(
     String(record.example.parameters['first']),
   );
-  expect(example.messages['command2']?.content).toContain(
+  expect(studyMessage(studyTranslate, example.messages['command2']?.content)).toContain(
     String(record.example.parameters['second']),
   );
 });

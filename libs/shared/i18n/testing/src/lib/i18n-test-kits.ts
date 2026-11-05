@@ -10,6 +10,7 @@ import {
 import {
   I18nConfig,
   I18nConfigToken,
+  MessageCatalog,
   MissingTranslationHandler,
   TranslocoHttpLoader,
 } from '../../../src';
@@ -59,6 +60,7 @@ export function provideDotlnI18nTestKit(options: I18nTestKitOptions = {}) {
     langs,
     providers: [
       ...kit.providers,
+      MessageCatalog,
       importProvidersFrom(
         TranslocoTestingModule.forRoot({
           langs,
@@ -78,5 +80,9 @@ export function provideDotlnI18nTestKit(options: I18nTestKitOptions = {}) {
 }
 
 export function provideTPipeTestKit(options: I18nTestKitOptions = {}) {
+  return provideDotlnI18nTestKit(options);
+}
+
+export function provideMessageCatalogTestKit(options: I18nTestKitOptions = {}) {
   return provideDotlnI18nTestKit(options);
 }

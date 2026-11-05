@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length, separate, zero } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -30,7 +30,9 @@ const example: SeparationParameters = {
   laneOffset: 5,
   accelerationScale: 1,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const gapOf = (pair: ShelfPair) => distance(pair[0].position, pair[1].position);
 
 it('uses the draft record and exactly its example parameters', () => {
@@ -174,9 +176,9 @@ it('shows overlap before inward motion reverses when only initial speed changes'
 });
 
 it('gives every moment the record values and bounds all footprints and vector tips', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const before = structuredClone(parameters);
-  expect(model(parameters)).toEqual(run);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(parameters).toEqual(before);
   expect(run.motion.frames).toHaveLength(61);
   expect(run.initialStep).toBe(0);
@@ -225,7 +227,7 @@ it('gives every moment the record values and bounds all footprints and vector ti
 });
 
 it('plots the actual gaps and keeps the failure comparison on the same time samples', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (!run.timeline || !run.comparison) throw new Error('The shelf study needs both charts.');
   const square = separationFrames(example, 2);
   const linear = separationFrames(example, 1);
@@ -255,8 +257,8 @@ it('plots the actual gaps and keeps the failure comparison on the same time samp
 });
 
 it('lets inward speed expose overlap and neighbour range change the first push', () => {
-  const resting = model(parameters);
-  const closing = model({ ...parameters, inwardSpeed: 4 });
+  const resting = model(parameters, studyTranslate);
+  const closing = model({ ...parameters, inwardSpeed: 4 }, studyTranslate);
   expect(resting.motion.frames[0].note).toContain('start at rest');
   expect(closing.motion.frames[0].note).toContain('still closing');
   expect(closing.motion.frames[closing.initialStep].note).toContain('footprints overlap');
@@ -265,8 +267,8 @@ it('lets inward speed expose overlap and neighbour range change the first push',
     resting.motion.frames[1].bodies[0].x,
   );
   expect(closing.comparison?.findings[1]).toContain('same run');
-  const short = model({ ...parameters, threshold: 2.5 });
-  const broad = model({ ...parameters, threshold: 6 });
+  const short = model({ ...parameters, threshold: 2.5 }, studyTranslate);
+  const broad = model({ ...parameters, threshold: 6 }, studyTranslate);
   // At gap 2, inverse-square gives 6/4 - 6/6.25 = 0.54, or 6/4 - 6/36 = 4/3.
   expect(short.motion.frames[0].vectors?.[0].dx).toBeCloseTo(-0.54);
   expect(broad.motion.frames[0].vectors?.[0].dx).toBeCloseTo(-4 / 3);
@@ -279,11 +281,11 @@ it('lets inward speed expose overlap and neighbour range change the first push',
 });
 
 it('keeps notes, rounded readings, names and all geometry sound at each slider endpoint', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['inwardSpeed', 'threshold']);
   for (const input of inputs)
     for (const value of [input.min, input.max]) {
-      const run = model({ ...parameters, [input.name]: value });
+      const run = model({ ...parameters, [input.name]: value }, studyTranslate);
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       expect(run.initialStep).toBeGreaterThanOrEqual(0);
       expect(run.initialStep).toBeLessThan(run.motion.frames.length);

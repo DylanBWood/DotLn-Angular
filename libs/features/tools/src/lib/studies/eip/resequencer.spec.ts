@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowStudyModel } from '../study-model';
@@ -13,7 +13,7 @@ const parameters = { nextSequence: 1, events: 6 };
 
 /** The model's run, which this module always draws as a flow. */
 function drawn(values: StudyParameters = parameters): FlowStudyModel {
-  const run = model(values);
+  const run = model(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The resequencer is drawn as a flow.');
   return run;
 }
@@ -138,12 +138,21 @@ it('never sends a redelivered event twice, but keeps it in the buffer for good',
 });
 
 it('needs one expected number per log: a counter shared by two logs keeps one log’s events for good', () => {
-  const first = (n: number): LogEvent => ({ eventId: `evt_${n}`, type: 'from the first log' });
-  const second = (n: number): LogEvent => ({ eventId: `evt_${n}`, type: 'from the second log' });
+  const first = (n: number): LogEvent => ({
+    eventId: `evt_${n}`,
+    type: 'from the first log',
+  });
+  const second = (n: number): LogEvent => ({
+    eventId: `evt_${n}`,
+    type: 'from the second log',
+  });
   const arrivals = [first(1), second(1), second(2), first(2)];
   // Fold them through one counter, as one resequencer serving both logs would, keeping every run
   // it lets out.
-  const initial: { readonly holding: Holding; readonly sent: readonly LogEvent[] } = {
+  const initial: {
+    readonly holding: Holding;
+    readonly sent: readonly LogEvent[];
+  } = {
     holding: start,
     sent: [],
   };
@@ -163,9 +172,9 @@ it('opens at the start, with the moments of the run named', () => {
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['evt_3 held', 3],
     ['Gap fills', 4],
-    ['Two held', 7],
+    ['2 held', 7],
     ['evt_4 arrives', 8],
-    ['Run of three', 9],
+    ['Run of 3', 9],
   ]);
 });
 
@@ -175,6 +184,8 @@ it('completes once the bus ends: the same runs at the same frames, then the end'
   expectMarbleExample({
     ...example,
     inputs: { bus$: { ...example.inputs['bus$'], marbles: '-1-32-56(4|)' } },
-    outputs: { inOrder$: { ...example.outputs['inOrder$'], marbles: '--1--(23)(456|)' } },
+    outputs: {
+      inOrder$: { ...example.outputs['inOrder$'], marbles: '--1--(23)(456|)' },
+    },
   });
 });

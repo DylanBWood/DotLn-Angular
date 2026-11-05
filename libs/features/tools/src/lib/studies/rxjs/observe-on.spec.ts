@@ -10,7 +10,7 @@ import {
 } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { marblesDrawing } from '../../composites/study-visuals/marbles/marbles-drawing';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
@@ -32,9 +32,9 @@ it('attaches the record to the observeOn row and reads its code from this module
     'libs/features/tools/src/lib/studies/rxjs/observe-on.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'progress$',
     'repaint',
     'bar$',
@@ -45,7 +45,7 @@ it('attaches the record to the observeOn row and reads its code from this module
 
 it('names in its parameters the reports, the failure and the paint interval the marbles declare', async () => {
   const { parameters } = (await loadStudy('rxc:230')).example;
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const line = (label: string) => marbles.lines.find((candidate) => candidate.label === label);
   const reports = line('progress$')?.events.filter(({ kind }) => kind === 'next') ?? [];
   expect(parameters['reports']).toBe(
@@ -62,14 +62,18 @@ it('names in its parameters the reports, the failure and the paint interval the 
 });
 
 it('holds every report and the error until a paint, and delivers them in order', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const heard = marbles.lines
     .find(({ label }) => label === 'bar$')
     ?.events.map(({ frame, kind, value }) => `${frame} ${kind} ${value}`);
   expect(heard).toEqual(['3 next 10%', '3 next 30%', '7 next 60%', '7 error connection lost']);
   // The upload's own subscription ends when it fails, a frame before the bar hears the failure.
   const source = marbles.lines.find(({ label }) => label === 'progress$');
-  expect(source).toMatchObject({ subscribedAt: 0, unsubscribedAt: 6, cancelled: false });
+  expect(source).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 6,
+    cancelled: false,
+  });
   // Every event of the diagram is received, and every frame is a step.
   expect(marbles.lines.flatMap(({ events }) => events).every(({ delivered }) => delivered)).toBe(
     true,
@@ -78,7 +82,7 @@ it('holds every report and the error until a paint, and delivers them in order',
 });
 
 it('tells of the first paint and names each delivery in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[3];
   expect(telling.frame).toBe(3);
   expect(telling.values['now']).toBe(
@@ -170,7 +174,7 @@ it('cancels what is still queued when the bar unsubscribes before the paint', ()
 });
 
 it('rides no value down at a paint: the reports left progress$ frames earlier and waited', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const bar = marbles.lines.find(({ id }) => id === 'bar$');
   expect(bar?.events.filter(({ kind }) => kind === 'next').map(({ from }) => from)).toEqual([
     undefined,

@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { matchVelocity, type SteeringBody } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -49,7 +49,12 @@ it('uses the assigned record, exact example parameters and matching mechanism bl
 
 it('uses the engine’s acceleration and works through the initial run-up by hand', () => {
   const first = jumpRunUpStep({ x: 0, velocity: 0 }, example);
-  expect(first).toEqual({ requestedAcceleration: 16, acceleration: 4, velocity: 1, x: 0.25 });
+  expect(first).toEqual({
+    requestedAcceleration: 16,
+    acceleration: 4,
+    velocity: 1,
+    x: 0.25,
+  });
   const body: SteeringBody = {
     position: { x: 0, y: 0 },
     velocity: { x: 0, y: 0 },
@@ -89,7 +94,11 @@ it('requires both marker position and velocity, preserving the actual accepted h
   expect(canTakeOff(7.5, 0, example)).toBe(false);
   expect(canTakeOff(6, 4, example)).toBe(false);
   expect(canTakeOff(7.55, 3.95, example)).toBe(true);
-  const accepted = jumpPointFrames({ ...example, startX: 7.55, initialVelocity: 3.95 });
+  const accepted = jumpPointFrames({
+    ...example,
+    startX: 7.55,
+    initialVelocity: 3.95,
+  });
   expect(accepted[0]).toMatchObject({
     phase: 'airborne',
     x: 7.55,
@@ -148,21 +157,30 @@ it('rejects the late start at the correct position because its velocity is still
   expect(Math.abs(late[3].x - example.markerX)).toBe(0);
   expect(Math.abs(late[3].velocity - example.requiredVelocity)).toBe(1);
   expect(late.every(({ height, takeoffX }) => height === 0 && takeoffX === null)).toBe(true);
-  expect(model(parameters).comparison?.findings[0]).toContain(
+  expect(model(parameters, studyTranslate).comparison?.findings[0]).toContain(
     'rejects launch at 7.50 m with velocity error 1.00 m/s',
   );
-  const series = model(parameters).comparison?.timeline.series[1].values ?? [];
+  const series = model(parameters, studyTranslate).comparison?.timeline.series[1].values ?? [];
   expect(series.slice(3).every((value) => value === 1)).toBe(true);
 });
 
 it('exposes sampled marker skips, unreachable speed and a tolerance-accepted pad miss', () => {
   const skipped = jumpPointFrames({ ...example, markerX: 8 });
-  expect(skipped[skipped.length - 1]).toMatchObject({ x: 8.5, velocity: 4, phase: 'rejected' });
+  expect(skipped[skipped.length - 1]).toMatchObject({
+    x: 8.5,
+    velocity: 4,
+    phase: 'rejected',
+  });
   expect(skipped.some(({ phase }) => phase === 'airborne')).toBe(false);
   const capped = jumpPointFrames({ ...example, maxSpeed: 2 });
   expect(capped.every(({ velocity }) => velocity <= 2)).toBe(true);
   expect(capped[capped.length - 1].phase).toBe('rejected');
-  const narrow = { ...example, startX: 7.55, initialVelocity: 3.95, padHalfWidth: 0.01 };
+  const narrow = {
+    ...example,
+    startX: 7.55,
+    initialVelocity: 3.95,
+    padHalfWidth: 0.01,
+  };
   const accepted = jumpPointFrames(narrow);
   const end = accepted[accepted.length - 1];
   expect(accepted[0].phase).toBe('airborne');
@@ -170,12 +188,15 @@ it('exposes sampled marker skips, unreachable speed and a tolerance-accepted pad
   expect(end.x).toBeCloseTo(15.45, 10);
   expect(Math.abs(end.x - jumpPadCentre(narrow))).toBeGreaterThan(narrow.padHalfWidth);
   expect(
-    model({
-      ...parameters,
-      startX: 7.55,
-      initialVelocity: 3.95,
-      padHalfWidth: 0.01,
-    }).motion.frames.at(-1)?.note,
+    model(
+      {
+        ...parameters,
+        startX: 7.55,
+        initialVelocity: 3.95,
+        padHalfWidth: 0.01,
+      },
+      studyTranslate,
+    ).motion.frames.at(-1)?.note,
   ).toContain('outside the receiving pad');
 });
 
@@ -183,13 +204,13 @@ it('keeps a bounded unfinished run honest instead of inventing a take-off or lan
   const short = jumpPointFrames({ ...example, steps: 2 });
   expect(short).toHaveLength(3);
   expect(short[2].phase).toBe('run-up');
-  expect(model({ ...parameters, steps: 2 }).comparison?.findings[0]).toContain(
+  expect(model({ ...parameters, steps: 2 }, studyTranslate).comparison?.findings[0]).toContain(
     'bounded horizon in the run-up phase',
   );
 });
 
 it('keeps arithmetic, charts, labels, moments and accessible prose consistent across live inputs', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.initialStep).toBe(9);
   expect(run.motion.frames[9].values).toMatchObject({
     phase: 'airborne',
@@ -219,10 +240,10 @@ it('keeps arithmetic, charts, labels, moments and accessible prose consistent ac
     ),
   ];
   for (const changed of cases) {
-    const view = model(changed);
+    const view = model(changed, studyTranslate);
     expect(view.motion.frames.length).toBeGreaterThan(1);
     expect(view.motion.frames.length).toBeLessThanOrEqual(240);
-    expect(model(changed)).toEqual(view);
+    expect(model(changed, studyTranslate)).toEqual(view);
     for (const moment of view.moments) expect(view.motion.frames[moment.step]).toBeDefined();
     for (const frame of view.motion.frames) {
       for (const text of texts) expect(placeholdersIn(fillValues(text, frame.values))).toEqual([]);
@@ -256,4 +277,41 @@ it('keeps arithmetic, charts, labels, moments and accessible prose consistent ac
       ).toBe(true);
     }
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
+});
+
+it('translates an unfinished phase inside the comparison finding', () => {
+  const run = model({ ...parameters, steps: 2 }, (key, values) =>
+    key === 'studyAifg.jump-points.model.phases.runUp'
+      ? 'LOCAL RUN-UP'
+      : studyTranslate(key, values),
+  );
+
+  expect(run.motion.frames[0].values['phase']).toBe('LOCAL RUN-UP');
+  expect(run.comparison?.findings[0]).toContain('LOCAL RUN-UP');
 });

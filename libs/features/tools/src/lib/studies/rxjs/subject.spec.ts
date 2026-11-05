@@ -1,13 +1,15 @@
 import { defer, ObjectUnsubscribedError, of, share, Subject } from 'rxjs';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './subject';
 
 /** One line of the drawing, by its label. */
 const lineOf = (label: string) => {
-  const line = marbleModel(example).marbles.lines.find((candidate) => candidate.label === label);
+  const line = marbleModel(example, {}, studyTranslate).marbles.lines.find(
+    (candidate) => candidate.label === label,
+  );
   if (line === undefined) throw new Error(`The drawing has no line labelled ${label}.`);
   return line;
 };
@@ -45,7 +47,7 @@ it('attaches the record to the Subject row and reads its code from this module',
     logOpensAt: lineOf('log$').subscribedAt,
     latecomerArrivesAt: lineOf('latecomer$').subscribedAt,
   });
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
   if (run.family !== 'marbles') throw new Error('The model is not a marble diagram.');
   expect(run.marbles.lines.map(({ label }) => label)).toEqual([
@@ -73,7 +75,7 @@ it('hands each press to everyone listening at that frame and nothing from before
 });
 
 it('tells of press 2 reaching both listeners and names each moment', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[6];
   expect(telling.frame).toBe(6);
   expect(telling.values['now']).toBe(

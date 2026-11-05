@@ -122,7 +122,7 @@ it('exposes a tested TypeScript model on request and omits the claim for an illu
     'Executable model',
   );
   expect(element.querySelector('.executable-model[open]')).toBeNull();
-  expect(element.querySelector('[data-testid="model-module"]')?.textContent).toBe(
+  expect(element.querySelector('[data-testid="model-module"]')?.textContent?.trim()).toBe(
     'libs/movement/example.model.ts',
   );
   expect(element.querySelector('[data-testid="model-spec"]')?.textContent).toContain(

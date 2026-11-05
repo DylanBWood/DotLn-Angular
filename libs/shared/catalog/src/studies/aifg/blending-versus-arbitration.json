@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:143",
   "work": "aifg",
   "slug": "blending-versus-arbitration",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 4",
+    "by": "studyAifg.blending-versus-arbitration.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.blending-versus-arbitration.record.authored.reviewedBy.item0",
+      "studyAifg.blending-versus-arbitration.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "A delivery trolley receives two instructions: go right to the delivery mark, and obey a marshal asking it to move left. Combining their strength answers a different question from deciding whose instruction wins. Equal opposing requests can leave a blend silent. Giving the marshal precedence produces a clear action, but handing control back to delivery can abruptly reverse the requested acceleration.",
-    "situation": "The trolley should normally continue its delivery, yet a temporary marshal instruction may deserve control while it remains active. A weight expresses influence; a priority expresses authority. The example makes both policies visible on the same fading signal so that neither meaning has to be guessed from a single path."
+    "text": "studyAifg.blending-versus-arbitration.record.intuition.text",
+    "situation": "studyAifg.blending-versus-arbitration.record.intuition.situation"
   },
   "example": {
-    "name": "The museum trolley and the fading marshal signal",
-    "description": "Two lanes replay the same trolley starting at x = {startX}, with the marshal marker at {marshalX} and delivery at {targetX}. Engine seek produces each directional request at {maxAcceleration} units/s². The marshal's signal holds at full strength for {holdSeconds} s, then fades linearly over {fadeSeconds} s. The blend uses marshalWeight {marshalWeight} and goalWeight {goalWeight}; arbitration tries the capped marshal group before delivery and requires magnitude above epsilon {epsilon}. Both use {timeStep} s updates, a {maxSpeed} units/s speed cap and {steps} updates. The comparison changes only marshalWeight to {heavierWeight}.",
+    "name": "studyAifg.blending-versus-arbitration.record.example.name",
+    "description": "studyAifg.blending-versus-arbitration.record.example.description",
     "parameters": {
       "startX": 0,
       "marshalX": -30,
@@ -35,25 +38,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Give both policies the same instructions",
-        "text": "Sample the held-then-fading marshal signal from elapsed time. Engine seek points towards each marker; scale only the marshal request by that signal. At this moment the signal is {signal}, the marshal request {marshalRequest} units/s² and the delivery request {goalRequest} units/s². The signal envelope is study-local input, rather than a claim about a collision sensor. Each lane calculates seek from its own current trolley position."
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step0.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Combine influence with engine blend",
-        "text": "Multiply each request by its weight, sum the vectors and cap the result at maxAcceleration. These weights are multipliers, not probabilities and not a weighted mean. Opposite requests can erase each other before capping. The blended acceleration is currently {blendAcceleration} units/s²; equal authority is not inferred from a zero result."
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step1.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Select authority with engine firstActive",
-        "text": "Build each weighted group using engine blend so each already respects the acceleration cap, then pass marshal first and delivery second to engine firstActive. It returns the first group whose magnitude is strictly above epsilon; it returns zero if neither qualifies. The current winner is {winner}, producing {priorityAcceleration} units/s². A small change across epsilon can hand control to a request pointing the opposite way. Blending within groups and arbitrating between them is also a useful combination of the two rules."
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step2.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Apply acceleration without inventing an instant turn",
-        "text": "Update each lane's velocity with its chosen acceleration, cap speed and advance position using the updated velocity. The blended trolley is at {blendX}, moving at signed velocity {blendSpeed}; priority is at {priorityX}, moving at {prioritySpeed}. The chart measures acceleration, so a jump when the winner changes is a change of request. The trolley's velocity still takes time to reverse."
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step3.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "signal = clamp(1 - (elapsed - holdSeconds) / fadeSeconds, 0, 1)\nmarshal = engine.seek(trolley, marshalMarker) * signal\ngoal = engine.seek(trolley, deliveryMarker)\n\nmarshalTerm = { acceleration: marshal, weight: marshalWeight }\ngoalTerm = { acceleration: goal, weight: goalWeight }\nblended = engine.blend([marshalTerm, goalTerm], maxAcceleration)\n\nmarshalGroup = engine.blend([marshalTerm], maxAcceleration)\ngoalGroup = engine.blend([goalTerm], maxAcceleration)\narbitrated = engine.firstActive([marshalGroup, goalGroup], epsilon)\n\nfor each policy's own trolley state:\n  acceleration = policy == blend ? blended : arbitrated\n  velocity = clipLength(velocity + acceleration * timeStep, maxSpeed)\n  position = position + velocity * timeStep",
+    "ordinary": "studyAifg.blending-versus-arbitration.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -63,58 +66,58 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/blending-versus-arbitration.model.ts",
-    "textEquivalent": "At {elapsed} s the marshal signal is {signal}; the blended trolley is at x {blendX} with acceleration {blendAcceleration} units/s², while the priority trolley is at x {priorityX} with acceleration {priorityAcceleration} units/s² and selects {winner}."
+    "textEquivalent": "studyAifg.blending-versus-arbitration.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "gdx-ai · BlendedSteering and PrioritySteering",
+      "project": "studyAifg.blending-versus-arbitration.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
-      "relevance": "gdx-ai is a Java game-AI library with separate reusable combination behaviours. Its source gives a concrete design for combining influence with weights and authority with an ordered threshold test.",
-      "explanation": "BlendedSteering evaluates its children, accumulates each output multiplied by its weight and limits the resulting linear acceleration. PrioritySteering evaluates children in order and returns when the squared steering magnitude exceeds epsilon squared. Its documentation explicitly allows blended groups inside that priority list. The priority implementation returns the final child's small output if every child fails its threshold, which is a detail to check when adopting the library."
+      "relevance": "studyAifg.blending-versus-arbitration.record.implementations.item0.relevance",
+      "explanation": "studyAifg.blending-versus-arbitration.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "Ian Millington · AI for Games, Chapter 3 Movement, §3.4.1 Blending and Arbitration",
+      "title": "studyAifg.blending-versus-arbitration.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers blending and arbitration in Chapter 3 Movement, §3.4.1 Blending and Arbitration."
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item0.supports"
     },
     {
-      "title": "gdx-ai 1.8.2 · BlendedSteering source",
+      "title": "studyAifg.blending-versus-arbitration.record.references.item1.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
       "accessed": "2026-11-04",
-      "supports": "The implementation accumulates weighted child steering and caps linear acceleration; its weights need not sum to a unit total."
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item1.supports"
     },
     {
-      "title": "gdx-ai 1.8.2 · PrioritySteering source",
+      "title": "studyAifg.blending-versus-arbitration.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
       "accessed": "2026-11-04",
-      "supports": "The implementation selects the first child above an epsilon magnitude test, and its documentation describes placing blended behaviour groups in priority order."
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item2.supports"
     }
   ],
   "limits": [
-    "A blend can stall even though both children request movement. Raising the marshal weight removes this example's exact initial cancellation but changes the balance throughout the fade; a large multiplier does not give the marshal unconditional precedence.",
-    "Priority is decisive about authority, but a threshold crossing can abruptly change acceleration direction. With noisy signals it can repeatedly switch winners; this example uses a monotonic signal and therefore demonstrates a single handover rather than claiming to solve chatter.",
-    "A selected acceleration does not immediately reverse a moving trolley. Braking distance and the fixed update interval still matter under either combination rule.",
-    "The marshal envelope is a scripted instruction and the markers are directional targets. Neither run detects walls or tests the safety of the marshal's request. Arbitration can faithfully prioritise a poor request, just as blending can combine poor requests smoothly."
+    "studyAifg.blending-versus-arbitration.record.limits.item0",
+    "studyAifg.blending-versus-arbitration.record.limits.item1",
+    "studyAifg.blending-versus-arbitration.record.limits.item2",
+    "studyAifg.blending-versus-arbitration.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:144",
-      "why": "Use Weighted blending when several compatible requests should all influence the trolley and the important design question is their relative strength."
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:149",
-      "why": "Use Priority steering when the marshal must take control whenever its group is active. It develops the ordered decision used in the lower lane."
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:150",
-      "why": "Use Epsilon threshold when tuning what counts as an active request, especially if a nearly silent marshal signal keeps taking control or noise makes winners switch."
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:146",
-      "why": "Use Equilibria in blending to diagnose the stationary upper-lane trolley before changing weights or introducing a fallback."
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item3.why"
     }
   ]
 }

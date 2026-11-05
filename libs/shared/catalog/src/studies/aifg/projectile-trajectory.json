@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:162",
   "work": "aifg",
   "slug": "projectile-trajectory",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 5",
+    "by": "studyAifg.projectile-trajectory.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.projectile-trajectory.record.authored.reviewedBy.item0",
+      "studyAifg.projectile-trajectory.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "A flare's last visible preview point is not necessarily where it lands. First ask when its height meets the surface; then use that same time to find its horizontal position. At the top of the arc its vertical velocity vanishes, but it still travels sideways. The launch has already determined its flight; nothing is steering it towards the cross.",
-    "situation": "A harbour watchkeeper wants to place a marker where a signal flare from the dock roof will meet the water, before releasing it."
+    "text": "studyAifg.projectile-trajectory.record.intuition.text",
+    "situation": "studyAifg.projectile-trajectory.record.intuition.situation"
   },
   "example": {
-    "name": "The dock-roof signal flare",
-    "description": "The flare leaves the dock roof at height {launchHeight} m with horizontal velocity {horizontalSpeed} m/s and upward velocity {verticalSpeed} m/s. Gravity is {gravity} m/s² and the selected landing height is {landingHeight} m. Samples are {timeStep} s apart, but the predicted encounter is {landingResult}. The comparison changes only the selected height to {unreachableHeight} m.",
+    "name": "studyAifg.projectile-trajectory.record.example.name",
+    "description": "studyAifg.projectile-trajectory.record.example.description",
     "parameters": {
       "startX": 0,
       "launchHeight": 10,
@@ -31,25 +34,25 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Give the two axes one clock",
-        "text": "Use metres, seconds and positive height upwards. Horizontal velocity stays constant; gravity reduces vertical velocity. The scene engine has no projectile predictor, so this study evaluates the constant-gravity equations locally. The drawing reverses height only when converting it to screen coordinates."
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step0.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Solve the height encounter before the range",
-        "text": "Set height(t) equal to the selected height and form D. The current D is {discriminant}. A negative D means the requested height is never reached. Otherwise take the later nonnegative root: it is the descent encounter, or a touch at the apex. A negative later root means both encounters were in the past. Multiply the accepted time by horizontal velocity to locate the cross."
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step1.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Evaluate the flight at a selected time",
-        "text": "Use the same t in both position equations and in vertical velocity. At this moment the flare is at horizontal position {x} m and height {height} m, with vertical velocity {verticalVelocity} m/s. The height chart and the drawing read these same calculated states; the arrow shows velocity multiplied by the sample interval."
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step2.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step2.text"
       },
       {
-        "title": "End at the event, not at a convenient sample",
-        "text": "If the next preview sample would pass contact, evaluate the exact root instead and finish there. The selected surface absorbs the flare, so velocity becomes zero after contact. With no future encounter, show only the bounded free-flight preview and no landing cross. Raising the requested height above the {apexHeight} m apex must produce no landing, rather than a guessed point."
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step3.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "require gravity > 0\nuse x rightwards and height upwards\nhorizontalVelocity = launchHorizontalVelocity\nverticalAcceleration = -gravity\n\nD = launchVerticalVelocity² + 2 * gravity * (launchHeight - selectedHeight)\nlandingTime = none\nif D >= 0:\n  laterRoot = (launchVerticalVelocity + sqrt(D)) / gravity\n  if laterRoot >= 0: landingTime = laterRoot\nlandingX = startX + horizontalVelocity * landingTime, when it exists\n\nfor previewTime = 0, dt, 2*dt, ... horizon:\n  t = min(previewTime, landingTime), when a landing exists\n  x = startX + horizontalVelocity * t\n  height = launchHeight + launchVerticalVelocity*t - gravity*t²/2\n  verticalVelocity = launchVerticalVelocity - gravity*t\n  record the state at t\n\n  if landingTime exists and previewTime >= landingTime:\n    set height to selectedHeight and velocity to zero after contact\n    end the preview at landingTime\nwithout a future encounter, draw no landing cross",
+    "ordinary": "studyAifg.projectile-trajectory.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -59,54 +62,54 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/projectile-trajectory.model.ts",
-    "textEquivalent": "At {time} s the dock flare is {phase}, at horizontal position {x} m and height {height} m, with vertical velocity {verticalVelocity} m/s; the line marks height {landingHeight} m and its predicted encounter is {landingResult}."
+    "textEquivalent": "studyAifg.projectile-trajectory.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "Forrest Smith's Unity ballistic-trajectory demo",
+      "project": "studyAifg.projectile-trajectory.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/forrestthewoods/lib_fts/350529579db315c3d0c579f70d871ef13400d418/projects/unity/ballistic_trajectory/Assets/Scripts/BallisticMotion.cs",
-      "relevance": "This Unity demo moves ballistic objects in a running game scene. BallisticMotion.cs is its movement component, distinct from the library that chooses launch directions.",
-      "explanation": "FixedUpdate uses current and previous position in a Verlet-style update, adds an accumulated impulse times the fixed interval, and adds downward acceleration times the interval squared. It then points the object along its movement and clears the impulse. A height cutoff destroys an object that has fallen too far; this file does not solve an exact landing event."
+      "relevance": "studyAifg.projectile-trajectory.record.implementations.item0.relevance",
+      "explanation": "studyAifg.projectile-trajectory.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement · §3.5 Predicting Physics · §3.5.2 Projectile Trajectory",
+      "title": "studyAifg.projectile-trajectory.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "The book covers projectile trajectory at this catalogued chapter and section."
+      "supports": "studyAifg.projectile-trajectory.record.references.item0.supports"
     },
     {
-      "title": "OpenStax University Physics Volume 1 · §4.3 Projectile Motion",
+      "title": "studyAifg.projectile-trajectory.record.references.item1.title",
       "url": "https://openstax.org/books/university-physics-volume-1/pages/4-3-projectile-motion",
       "accessed": "2026-11-04",
-      "supports": "With air resistance neglected, horizontal velocity is constant and height follows the constant-gravity quadratic; the vertical calculation determines the shared flight time."
+      "supports": "studyAifg.projectile-trajectory.record.references.item1.supports"
     },
     {
-      "title": "BallisticMotion.cs · pinned Unity demo source",
+      "title": "studyAifg.projectile-trajectory.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/forrestthewoods/lib_fts/350529579db315c3d0c579f70d871ef13400d418/projects/unity/ballistic_trajectory/Assets/Scripts/BallisticMotion.cs",
       "accessed": "2026-11-04",
-      "supports": "The demo advances positions with a fixed-step Verlet-style gravity update and removes objects at a height cutoff."
+      "supports": "studyAifg.projectile-trajectory.record.references.item2.supports"
     }
   ],
   "limits": [
-    "A requested height above the flare's apex has no real encounter time. The comparison exposes this failure; a square root of a negative value is not a landing prediction.",
-    "A height encounter is only a candidate landing. This model treats the selected height as an unlimited absorbing plane and does not test the extent of a platform, a wall on the way, or an earlier collision. A raised height can also be crossed on ascent; the later root deliberately selects descent.",
-    "The equations assume constant gravity and no air resistance, wind or lift. An accurate root for those assumptions can still disagree with a game that applies drag or a different numerical update.",
-    "The preview has a finite time limit. A final preview sample is not proof of contact; a known landing can lie beyond that limit."
+    "studyAifg.projectile-trajectory.record.limits.item0",
+    "studyAifg.projectile-trajectory.record.limits.item1",
+    "studyAifg.projectile-trajectory.record.limits.item2",
+    "studyAifg.projectile-trajectory.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:163",
-      "why": "Use The firing solution when the beacon is known and the launch direction must be chosen. This study starts after the launch velocity has already been chosen."
+      "why": "studyAifg.projectile-trajectory.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:165",
-      "why": "Use Projectiles with drag when air resistance changes velocity during flight and the constant-gravity path no longer predicts the flare."
+      "why": "studyAifg.projectile-trajectory.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:161",
-      "why": "Use Aiming and shooting for the wider decision of when to fire and what to aim at; the trajectory answers where one committed launch goes."
+      "why": "studyAifg.projectile-trajectory.record.nearby.item2.why"
     }
   ]
 }

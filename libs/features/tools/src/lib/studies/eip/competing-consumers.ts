@@ -16,7 +16,47 @@ import type { MarbleExample } from '../rxjs/marbles';
 import type { StudyModelFunction } from '../study-model';
 
 /** What the planner sends, by the letter the marble strings use. */
-const orders = { a: 'order 31', b: 'order 32', c: 'order 33', d: 'order 34' } as const;
+const orders = {
+  a: 'order 31',
+  b: 'order 32',
+  c: 'order 33',
+  d: 'order 34',
+} as const;
+
+const outputs: MarbleExample['outputs'] = {
+  session1$: {
+    label: 'studyEip.competing-consumers.model.example.outputs.session1.label',
+    marbles: '--a',
+    values: { a: orders.a },
+    valueMessages: {
+      a: 'studyEip.competing-consumers.model.example.outputs.session1.values.a',
+    },
+  },
+  session2$: {
+    label: 'studyEip.competing-consumers.model.example.outputs.session2.label',
+    marbles: '----b----d',
+    values: { b: orders.b, d: orders.d },
+    valueMessages: {
+      b: 'studyEip.competing-consumers.model.example.outputs.session2.values.b',
+      d: 'studyEip.competing-consumers.model.example.outputs.session2.values.d',
+    },
+  },
+  session3$: {
+    label: 'studyEip.competing-consumers.model.example.outputs.session3.label',
+    marbles: '------c',
+    values: { c: orders.c },
+    valueMessages: {
+      c: 'studyEip.competing-consumers.model.example.outputs.session3.values.c',
+    },
+  },
+};
+
+const orderCount = Object.keys(orders).length;
+const receiverCount = Object.keys(outputs).length;
+const deliveryCount = Object.values(outputs).reduce(
+  (sum, stream) => sum + Object.keys(stream.values ?? {}).length,
+  0,
+);
 
 /**
  * The planner sends the same four orders as in the Publish-Subscribe Channel study, at the same
@@ -28,28 +68,47 @@ const orders = { a: 'order 31', b: 'order 32', c: 'order 33', d: 'order 34' } as
 export const example: MarbleExample = {
   inputs: {
     orders$: {
-      label: 'orders$',
+      label: 'studyEip.competing-consumers.model.example.inputs.orders.label',
       // Hot: the planner sends at its own pace, whether or not a session is free.
       hot: true,
       marbles: '-a-b-c-d',
       values: orders,
       subscriptions: '^',
+
+      valueMessages: {
+        a: 'studyEip.competing-consumers.model.example.inputs.orders.values.a',
+        b: 'studyEip.competing-consumers.model.example.inputs.orders.values.b',
+        c: 'studyEip.competing-consumers.model.example.inputs.orders.values.c',
+        d: 'studyEip.competing-consumers.model.example.inputs.orders.values.d',
+      },
     },
   },
   // The work on an order: it emits nothing and completes when the order is done. Order 31 is the
   // longest piece of work, so the session given it first is the last of the first three to finish.
   inner: {
-    'order 31': { label: 'work(order 31)', marbles: '---------|', subscriptions: '--^--------!' },
-    'order 32': { label: 'work(order 32)', marbles: '-----|', subscriptions: '----^----!' },
-    'order 33': { label: 'work(order 33)', marbles: '----|', subscriptions: '------^---!' },
-    'order 34': { label: 'work(order 34)', marbles: '---|', subscriptions: '---------^--!' },
+    'order 31': {
+      label: 'studyEip.competing-consumers.model.example.inner.order-31.label',
+      marbles: '---------|',
+      subscriptions: '--^--------!',
+    },
+    'order 32': {
+      label: 'studyEip.competing-consumers.model.example.inner.order-32.label',
+      marbles: '-----|',
+      subscriptions: '----^----!',
+    },
+    'order 33': {
+      label: 'studyEip.competing-consumers.model.example.inner.order-33.label',
+      marbles: '----|',
+      subscriptions: '------^---!',
+    },
+    'order 34': {
+      label: 'studyEip.competing-consumers.model.example.inner.order-34.label',
+      marbles: '---|',
+      subscriptions: '---------^--!',
+    },
   },
-  operator: 'zip(queued$, free$): each order to one free session',
-  outputs: {
-    session1$: { label: 'session1$', marbles: '--a', values: { a: orders.a } },
-    session2$: { label: 'session2$', marbles: '----b----d', values: { b: orders.b, d: orders.d } },
-    session3$: { label: 'session3$', marbles: '------c', values: { c: orders.c } },
-  },
+  operator: 'studyEip.competing-consumers.model.example.operator',
+  outputs,
   run: ({ inputs, inner }) => {
     // The orders are strings; the cast names their type for zip.
     const orders$ = inputs['orders$'] as Observable<string>;
@@ -81,29 +140,57 @@ export const example: MarbleExample = {
     };
   },
   moments: [
-    { label: 'Order 31 sent', frame: 1 },
-    { label: 'One session gets it', frame: 2 },
-    { label: 'Order 34 waits', frame: 7 },
-    { label: 'First free takes 34', frame: 9 },
-    { label: 'All done', frame: 12 },
+    {
+      label: 'studyEip.competing-consumers.model.example.moments.0.label',
+      frame: 1,
+    },
+    {
+      label: 'studyEip.competing-consumers.model.example.moments.1.label',
+      frame: 2,
+    },
+    {
+      label: 'studyEip.competing-consumers.model.example.moments.2.label',
+      frame: 7,
+    },
+    {
+      label: 'studyEip.competing-consumers.model.example.moments.3.label',
+      frame: 9,
+    },
+    {
+      label: 'studyEip.competing-consumers.model.example.moments.4.label',
+      frame: 12,
+    },
   ],
   notes: {
-    0: 'Sessions 1, 2 and 3 are listening on the Order queue, all free. The planner has sent nothing yet.',
-    1: 'The planner sends order 31 to the Order queue, once. It does not know which session will take it.',
-    2: 'The Order queue gives order 31 to Session 1, the first free session in line. Only Session 1 has it; Sessions 2 and 3 never see it.',
-    3: 'The planner sends order 32 to the Order queue.',
-    4: 'The Order queue gives order 32 to Session 2, the next free session. Session 1 is still working on order 31.',
-    5: 'The planner sends order 33 to the Order queue.',
-    6: 'The Order queue gives order 33 to Session 3, the last free session. All three are now working.',
-    7: 'The planner sends order 34 to the Order queue. No session is free, so the order waits there.',
-    8: 'Order 34 still waits in the Order queue, because all three sessions are still working.',
-    9: 'Session 2 finishes order 32 first, and the Order queue gives it order 34 at once. Session 1 would be next in turn but is still working on order 31.',
-    10: 'Session 3 finishes order 33 and is free. The Order queue is empty, so it is given nothing.',
-    11: 'Session 1 finishes order 31, after order 33 although it started first.',
-    12: 'Session 2 finishes order 34. Each of the four orders went to exactly one session: four orders, four deliveries.',
+    0: 'studyEip.competing-consumers.model.example.notes.0',
+    1: 'studyEip.competing-consumers.model.example.notes.1',
+    2: 'studyEip.competing-consumers.model.example.notes.2',
+    3: 'studyEip.competing-consumers.model.example.notes.3',
+    4: 'studyEip.competing-consumers.model.example.notes.4',
+    5: 'studyEip.competing-consumers.model.example.notes.5',
+    6: {
+      key: 'studyEip.competing-consumers.model.example.notes.6',
+      params: { consumers: receiverCount },
+    },
+    7: 'studyEip.competing-consumers.model.example.notes.7',
+    8: {
+      key: 'studyEip.competing-consumers.model.example.notes.8',
+      params: { consumers: receiverCount },
+    },
+    9: 'studyEip.competing-consumers.model.example.notes.9',
+    10: 'studyEip.competing-consumers.model.example.notes.10',
+    11: 'studyEip.competing-consumers.model.example.notes.11',
+    12: {
+      key: 'studyEip.competing-consumers.model.example.notes.12',
+      params: { orders: orderCount, deliveries: deliveryCount },
+    },
   },
-  caption:
-    'Time runs in frames. orders$ is what the planner sends: a, b, c and d are orders 31, 32, 33 and 34. Each work lane runs from the frame a session is given that order to the frame it finishes, a bar marking the end. Each lane below the band is what one session is given, and every order appears on exactly one of them.',
+  caption: 'studyEip.competing-consumers.model.example.caption',
+
+  parameterMessages: {
+    orders: 'studyEip.competing-consumers.record.parameters.orders',
+    work: 'studyEip.competing-consumers.record.parameters.work',
+  },
 };
 
 /**
@@ -112,11 +199,38 @@ export const example: MarbleExample = {
  */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'planner', label: 'Planner', stage: 0, row: 1 },
-    { id: 'queue', label: 'Order queue', stage: 1, row: 1, kind: 'channel', tone: 'subject' },
-    { id: 'session1', label: 'Session 1', stage: 2, row: 0 },
-    { id: 'session2', label: 'Session 2', stage: 2, row: 1 },
-    { id: 'session3', label: 'Session 3', stage: 2, row: 2 },
+    {
+      id: 'planner',
+      label: 'studyEip.competing-consumers.model.flow.nodes.0.label',
+      stage: 0,
+      row: 1,
+    },
+    {
+      id: 'queue',
+      label: 'studyEip.competing-consumers.model.flow.nodes.1.label',
+      stage: 1,
+      row: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'session1',
+      label: 'studyEip.competing-consumers.model.flow.nodes.2.label',
+      stage: 2,
+      row: 0,
+    },
+    {
+      id: 'session2',
+      label: 'studyEip.competing-consumers.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'session3',
+      label: 'studyEip.competing-consumers.model.flow.nodes.4.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
     { id: 'send', from: 'planner', to: 'queue' },
@@ -134,19 +248,33 @@ export const flow: MarbleFlow = {
   // Each box says what that box does or is doing; the tokens inside it say which orders it has.
   states: {
     0: {
-      planner: 'knows no session',
-      queue: 'gives each order to one session',
-      session1: 'free',
-      session2: 'free',
-      session3: 'free',
+      planner: 'studyEip.competing-consumers.model.flow.states.0.planner',
+      queue: 'studyEip.competing-consumers.model.flow.states.0.queue',
+      session1: 'studyEip.competing-consumers.model.flow.states.0.session1',
+      session2: 'studyEip.competing-consumers.model.flow.states.0.session2',
+      session3: 'studyEip.competing-consumers.model.flow.states.0.session3',
     },
-    2: { session1: 'working on 31' },
-    4: { session2: 'working on 32' },
-    6: { session3: 'working on 33' },
-    9: { session2: 'working on 34' },
-    10: { session3: 'free' },
-    11: { session1: 'free' },
-    12: { session2: 'free' },
+    2: {
+      session1: 'studyEip.competing-consumers.model.flow.states.2.session1',
+    },
+    4: {
+      session2: 'studyEip.competing-consumers.model.flow.states.4.session2',
+    },
+    6: {
+      session3: 'studyEip.competing-consumers.model.flow.states.6.session3',
+    },
+    9: {
+      session2: 'studyEip.competing-consumers.model.flow.states.9.session2',
+    },
+    10: {
+      session3: 'studyEip.competing-consumers.model.flow.states.10.session3',
+    },
+    11: {
+      session1: 'studyEip.competing-consumers.model.flow.states.11.session1',
+    },
+    12: {
+      session2: 'studyEip.competing-consumers.model.flow.states.12.session2',
+    },
   },
   // The queue has an order from its arriving until a session is given it; a session keeps every
   // order it has been given.
@@ -160,8 +288,11 @@ export const flow: MarbleFlow = {
     7: { queue: ['d'] },
     9: { queue: [], session2: ['b', 'd'] },
   },
-  caption:
-    'Each token is one order: a is order 31, b 32, c 33 and d 34. The Planner is the role that files orders; the Order queue, drawn as a pipe, is the point-to-point channel; Sessions 1, 2 and 3 are three agent sessions reading from it, the competing consumers. A token inside the queue is an order waiting for a free session, and the tokens inside a session are the orders that session has been given. The words in a box say what that box does or is doing. A token is green while it moves, and a box a token leaves or reaches is outlined in green. The Planner sends an order on one step, and from the next the queue gives it to one free session only.',
+  caption: {
+    key: 'studyEip.competing-consumers.model.flow.caption',
+    params: { consumers: receiverCount },
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

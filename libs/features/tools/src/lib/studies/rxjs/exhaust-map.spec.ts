@@ -1,7 +1,7 @@
 import type { Observable } from 'rxjs';
 import { type RunHelpers, TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { example, model } from './exhaust-map';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
@@ -33,9 +33,9 @@ it('attaches the record to the exhaustMap row and reads its code from this modul
   );
   expect(record.visual.family).toBe('marbles');
   expect(record.visual.model).toBe(record.pseudocode.executable.module);
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'press$',
     'save(draft 1)',
     'save(draft 3)',
@@ -47,7 +47,7 @@ it('states the timing the marbles run: the drafts pressed and when a save answer
   const { parameters } = (await loadStudy('rxc:149')).example;
   const drafts = Object.values(example.inputs['press$'].values ?? {}).map(String);
   expect(parameters['drafts']).toBe(`${drafts.slice(0, -1).join(', ')} and ${drafts.at(-1)}`);
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   for (const save of marbles.lines.filter(({ role }) => role === 'inner')) {
     const started = save.subscribedAt ?? 0;
     const answer = save.events.find(({ kind }) => kind === 'next');
@@ -75,7 +75,7 @@ it('calls save only for the drafts it takes, and opens nothing for a press it tu
     helpers.expectObservable(saved$).toBe('-----1------3|', example.outputs['saved$'].values);
   });
   expect(asked).toEqual(['draft 1', 'draft 3']);
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const opened = marbles.lines
     .filter(({ role }) => role === 'inner')
     .map(({ subscribedAt }) => subscribedAt);
@@ -106,7 +106,7 @@ it('stays busy after a save answers until that save completes', () => {
 });
 
 it('keeps the output open after the presses complete until the running save completes', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const end = (label: string) =>
     marbles.lines
       .find((line) => line.label === label)
@@ -118,7 +118,7 @@ it('keeps the output open after the presses complete until the running save comp
 });
 
 it('tells of the press that arrives while a save runs and names each moment', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   expect(run.marbles.frames.map(({ frame }) => frame)).toEqual(
     Array.from({ length: 14 }, (_, frame) => frame),
   );
@@ -142,7 +142,10 @@ it('tells of the press that arrives while a save runs and names each moment', ()
 it('turns away every later press when a save never completes, as the limits say', () => {
   const scheduler = testScheduler();
   scheduler.run((helpers) => {
-    const saves = { 'draft 1': helpers.cold('----1-'), 'draft 3': helpers.cold('----3|') };
+    const saves = {
+      'draft 1': helpers.cold('----1-'),
+      'draft 3': helpers.cold('----3|'),
+    };
     const saved$ = runWithSaves(scheduler, helpers, saves);
     helpers.expectObservable(saved$).toBe('-----1');
     helpers.expectSubscriptions(saves['draft 3'].subscriptions).toBe([]);

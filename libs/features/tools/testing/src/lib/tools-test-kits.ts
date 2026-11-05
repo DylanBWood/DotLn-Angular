@@ -1,7 +1,11 @@
 import { provideRouter } from '@angular/router';
 
 import { createCatalogLoader } from '@dotln-angular/catalog';
-import { catalogFixture, provideCatalogTestKit } from '@dotln-angular/catalog/testing';
+import {
+  catalogFixture,
+  provideCatalogTestKit,
+  studyFixture,
+} from '@dotln-angular/catalog/testing';
 import { provideStorageTokenTestKit } from '@dotln-angular/data-access/testing';
 import { provideDotlnI18nTestKit } from '@dotln-angular/i18n/testing';
 import type {
@@ -16,10 +20,36 @@ import { provideDotlnUi } from '@dotln-angular/ui';
 
 import { ToolsFacade } from '../../../src/lib/facades/tools.facade';
 import { ToolsHomeFacade } from '../../../src/lib/facades/tools-home.facade';
+import { translateStudy } from '../../../src/lib/studies/study-record';
+import { studyMessages, studyTranslate } from './study-translations';
 import en from './tools-en.json';
 
 const provideToolsBase = (tools: readonly Tool[], studies?: readonly ConceptStudy[]) => {
-  const catalog = provideCatalogTestKit(tools, studies);
+  const fixtureMessages: Record<string, string> = {};
+  const localized = (studies ?? [studyFixture]).map((record) =>
+    translateStudy(record, (text) => {
+      if (text.startsWith('study')) return text;
+      const key = `item${Object.keys(fixtureMessages).length}`;
+      fixtureMessages[key] = text;
+      return `studyAifg.fixture.${key}`;
+    }),
+  );
+  const catalog = provideCatalogTestKit(tools, localized);
+  const titles = Object.fromEntries(tools.map(({ id, title }) => [id, title]));
+  const scopes = {
+    ...studyMessages,
+    studyAifg: {
+      ...studyMessages.studyAifg,
+      fixture: fixtureMessages,
+      titles: { ...studyMessages.studyAifg.titles, ...titles },
+    },
+  };
+  const langs = {
+    en,
+    ...Object.fromEntries(
+      Object.entries(scopes).map(([scope, messages]) => [`${scope}/en`, messages]),
+    ),
+  };
   const storage = provideStorageTokenTestKit();
   return {
     catalog,
@@ -28,7 +58,7 @@ const provideToolsBase = (tools: readonly Tool[], studies?: readonly ConceptStud
       ...provideDotlnStateTestKit().providers,
       ...storage.providers,
       ...catalog.providers,
-      ...provideDotlnI18nTestKit({ langs: { en } }).providers,
+      ...provideDotlnI18nTestKit({ langs }).providers,
       provideRouter([]),
       provideDotlnUi(),
     ],
@@ -68,7 +98,7 @@ export type DrawnStudy = ConceptStudy & {
 export async function loadStudy(id: ToolId): Promise<DrawnStudy> {
   const study = await createCatalogLoader().study(id);
   if (!study?.visual || !study.pseudocode.executable) throw new Error(`No drawn study of ${id}.`);
-  return study as DrawnStudy;
+  return translateStudy(study, studyTranslate) as DrawnStudy;
 }
 
 /** A study drawn as a flow, whether or not its example also runs as marbles. */
@@ -81,5 +111,5 @@ export async function loadFlowStudy(id: ToolId): Promise<FlowStudy> {
   const study = await createCatalogLoader().study(id);
   if (study?.visual?.family !== 'flow' || !study.visual.model)
     throw new Error(`No flow study of ${id}.`);
-  return study as FlowStudy;
+  return translateStudy(study, studyTranslate) as FlowStudy;
 }

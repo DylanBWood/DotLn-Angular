@@ -1,4 +1,5 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel, StudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import { example, model } from './channel-adapter';
@@ -11,7 +12,7 @@ const flowOf = (study: StudyModel): FlowStudyModel => {
   return study;
 };
 
-const run = flowOf(model(parameters));
+const run = flowOf(model(parameters, studyTranslate));
 const { frames, links, nodes } = run.flow;
 const linkOf = (id: string) => links.find((link) => link.id === id);
 
@@ -27,7 +28,7 @@ it('attaches the record to the Channel Adapter row and draws it from this module
   expect(record.pseudocode.executable).toBeNull();
   expect(record.pseudocode.rxjs?.startsWith('// Illustrative: ')).toBe(true);
   expect(record.example.parameters).toEqual(parameters);
-  const drawn = flowOf(model(record.example.parameters));
+  const drawn = flowOf(model(record.example.parameters, studyTranslate));
   expect(drawn.diagram).toBeNull();
   expect(drawn.initialStep).toBe(0);
   // Every frame supplies each value the record's prose reads.
@@ -125,8 +126,8 @@ it('moves one message at each step and names every token and box in its caption'
   for (const { states } of frames)
     for (const text of Object.values(states)) expect(text.length).toBeLessThanOrEqual(40);
   expect(frames.map(({ note }) => note)).toEqual([
-    example.start.note,
-    ...example.steps.map(({ note }) => note),
+    studyMessage(studyTranslate, example.start.note),
+    ...example.steps.map(({ note }) => studyMessage(studyTranslate, note)),
   ]);
   expect(run.moments.map(({ step }) => step)).toEqual([1, 2, 4, 7, 8]);
 });

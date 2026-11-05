@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "aifg-a:196",
   "work": "aifg",
   "slug": "movement-in-the-third-dimension",
   "authored": {
-    "by": "Codex gpt-6.1-sol, study author 8",
+    "by": "studyAifg.movement-in-the-third-dimension.record.authored.by",
     "on": "2026-11-04",
-    "reviewedBy": ["Codex gpt-6.1-sol, factual critic", "Codex gpt-6.1-sol, reading critic"],
+    "reviewedBy": [
+      "studyAifg.movement-in-the-third-dimension.record.authored.reviewedBy.item0",
+      "studyAifg.movement-in-the-third-dimension.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "A beacon above an atrium can share its ground coordinates with a drone that is still far below it. Height must participate in the steering calculation and in the success check. The nose also needs an elevation as well as a compass direction, while rolling the wings remains a separate choice.",
-    "situation": "An inspection drone approaches a maintenance beacon in open air. A ground-plane adapter can put its shadow in the right place without putting the drone at the beacon."
+    "text": "studyAifg.movement-in-the-third-dimension.record.intuition.text",
+    "situation": "studyAifg.movement-in-the-third-dimension.record.intuition.situation"
   },
   "example": {
-    "name": "The atrium inspection drone",
-    "description": "The drone starts at rest and approaches the beacon at ({targetX}, {targetY}, {targetZ}), with y meaning height and z depth. It has total speed limit {maxSpeed} units/s, acceleration limit {maxAcceleration} units/s² and fixed steps of {timeStep} s. Its nose immediately follows velocity; roll is the independent {roll}° inspection pose. The last partial step is clamped to the target, which makes this a representation study rather than a braking or aircraft simulation.",
+    "name": "studyAifg.movement-in-the-third-dimension.record.example.name",
+    "description": "studyAifg.movement-in-the-third-dimension.record.example.description",
     "parameters": {
       "startX": 0,
       "startY": 0,
@@ -36,21 +39,21 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Keep the height component in the request",
-        "text": "Subtract the full position from the beacon position, normalise that offset and multiply by the acceleration limit. The volume normalisation shares one acceleration budget across all axes. This step is local: the public scene engine exports planar Vec2 steering, so passing its Seek an extra height property would not create volume steering. The comparison changes only the height weight from {verticalWeight} to {flatVerticalWeight}."
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step0.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Integrate a bounded velocity in the volume",
-        "text": "Add acceleration multiplied by the step time, then cap the length of the complete velocity vector at {maxSpeed} units/s. Move using that capped velocity. On this straight approach, clamp the last partial step to the effective target and stop; that explicit teaching rule avoids repeated passes through the beacon and provides no physical braking guarantee."
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step1.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Specify the pose as well as the direction",
-        "text": "Yaw comes from velocity in x/z; pitch comes from its height component relative to horizontal speed. Retain the last direction when stopped, and keep the previous yaw for a purely vertical direction. The roll command rotates the wing about the nose without changing the flight path. Local pose construction uses the public engine’s deterministic sine and cosine, then projects the nose, wing and height connector onto the motion drawing."
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step2.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step2.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "effectiveTarget = beacon\neffectiveTarget.y = position.y + verticalWeight * (beacon.y - position.y)\noffset = effectiveTarget - position\nacceleration = length3(offset) == 0 ? zero3\n  : offset * maxAcceleration / length3(offset)  // local volume Seek\n\ncandidateVelocity = capLength3(velocity + acceleration * dt, maxSpeed)\nnextVelocity = candidateVelocity\ntravel = candidateVelocity * dt\nif length3(travel) >= length3(offset):\n  nextPosition = effectiveTarget; nextVelocity = zero3\nelse:\n  nextPosition = position + travel\n\nif horizontalLength(candidateVelocity) > 0:\n  yaw = atan2(candidateVelocity.z, candidateVelocity.x)\nif length3(candidateVelocity) > 0:\n  pitch = atan2(candidateVelocity.y, horizontalLength(candidateVelocity))\nroll = rollCommand\npose = localForwardAndRolledWing(yaw, pitch, roll)\nproject(nextPosition, pose, groundProjection)  // drawing only",
+    "ordinary": "studyAifg.movement-in-the-third-dimension.record.pseudocode.ordinary",
     "rxjs": null,
     "executable": {
       "kind": "typescript",
@@ -60,64 +63,64 @@
   "visual": {
     "family": "motion",
     "model": "libs/features/tools/src/lib/studies/movement/movement-in-the-third-dimension.model.ts",
-    "textEquivalent": "At {seconds} s the drone is at ({x}, {y}, {z}), {distance} units from the beacon, moving at {speed} units/s; its nose has yaw {yaw}° and pitch {pitch}°, and its wing has independent roll {roll}° above a ground projection at height {groundHeight}."
+    "textEquivalent": "studyAifg.movement-in-the-third-dimension.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "Yuka · Vehicle and SeekBehavior",
+      "project": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.project",
       "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/Vehicle.js",
-      "relevance": "Yuka is a JavaScript game-AI library whose vehicle and steering types work with Vector3. It provides a public example of steering operating in a volume.",
-      "explanation": "SeekBehavior constructs a maximum-speed desired velocity towards a Vector3 target and returns its difference from current velocity. Vehicle asks its steering manager for force, divides by mass, integrates velocity, caps total speed and updates position. It can turn towards the next position, or use a smoothed velocity for orientation. The smoothing changes orientation rather than the integrated position."
+      "relevance": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.relevance",
+      "explanation": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.explanation"
     }
   ],
   "references": [
     {
-      "title": "AI for Games, third edition · Chapter 3 Movement, §3.9 Movement in the Third Dimension",
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item0.title",
       "url": "https://doi.org/10.1201/9781351053303",
       "accessed": "2026-11-04",
-      "supports": "Bibliographic pointer to the book topic at Chapter 3, §3.9, as located by the catalog. DOI content negotiation confirmed the book identity and edition; chapter text was not read."
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item0.supports"
     },
     {
-      "title": "Craig Reynolds · Steering Behaviors for Autonomous Characters, A Simple Vehicle Model",
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item1.title",
       "url": "https://www.red3d.com/cwr/steer/gdc99/",
       "accessed": "2026-11-04",
-      "supports": "The vehicle discussion distinguishes spatial vectors from orientation, explains that forward direction leaves roll undecided, and separates simple steering from physically richer locomotion."
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item1.supports"
     },
     {
-      "title": "Yuka v0.7.6 · Vehicle.js",
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item2.title",
       "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/Vehicle.js",
       "accessed": "2026-11-04",
-      "supports": "Vehicle integrates Vector3 acceleration and velocity, limits speed and optionally updates orientation from raw or smoothed velocity."
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item2.supports"
     },
     {
-      "title": "Yuka v0.7.6 · SeekBehavior.js",
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item3.title",
       "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/behaviors/SeekBehavior.js",
       "accessed": "2026-11-04",
-      "supports": "SeekBehavior forms a desired Vector3 velocity towards its target and subtracts current velocity."
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item3.supports"
     }
   ],
   "limits": [
-    "Discarding the height offset can make the drone stop beneath the beacon. The comparison measures full spatial distance, so a successful ground projection cannot conceal the remaining height gap.",
-    "Immediate yaw and pitch changes plus a final-step stop do not respect angular acceleration, inertia, braking distance or lift. The commanded roll is an inspection pose, not an aerodynamic rule that generates a turn.",
-    "Yaw is undetermined for a purely vertical velocity. This model retains its previous yaw there; a full orientation controller must also decide how to turn smoothly between poses.",
-    "Open-air point steering supplies no obstacle volume or swept collision test. Keeping height in the state does not make a route through an atrium roof safe."
+    "studyAifg.movement-in-the-third-dimension.record.limits.item0",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item1",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item2",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item3"
   ],
   "nearby": [
     {
       "id": "aifg-a:90",
-      "why": "Use the simpler upright representation for a ground character whose height follows a level or a jump while its facing needs only yaw."
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item0.why"
     },
     {
       "id": "aifg-a:197",
-      "why": "Read this when choosing how rotations compose becomes the problem, rather than which spatial direction the drone should travel."
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item1.why"
     },
     {
       "id": "aifg-a:198",
-      "why": "Use quaternion orientation when the inspection drone needs stored and interpolated full poses instead of this immediate yaw/pitch/roll display."
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item2.why"
     },
     {
       "id": "aifg-a:199",
-      "why": "Read this to examine which linear steering calculations can be extended by changing the vector space, as the local volume step does here."
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item3.why"
     }
   ]
 }

@@ -5,3 +5,5 @@ export { TranslocoHttpLoader } from './lib/transloco-http-loader';
 export { MissingTranslationHandler } from './lib/missing-translation-handler';
 export { TPipe } from './lib/t.pipe';
 export { translateSignal } from '@jsverse/transloco';
+export { MessageCatalog, provideMessageCatalog } from './lib/message-catalog';
+export type { TranslateMessage } from './lib/message-catalog';

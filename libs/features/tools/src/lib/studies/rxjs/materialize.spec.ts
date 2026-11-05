@@ -1,7 +1,7 @@
 import { catchError, dematerialize, materialize, of, throwError, toArray } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './materialize';
@@ -23,9 +23,12 @@ it('attaches the record to the materialize row and reads its code from this modu
     'libs/features/tools/src/lib/studies/rxjs/materialize.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual(['import$', 'log$']);
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
+    'import$',
+    'log$',
+  ]);
 });
 
 it('says in its parameters what the drawing shows', async () => {
@@ -37,7 +40,7 @@ it('says in its parameters what the drawing shows', async () => {
 });
 
 it('turns the failure into a record and completes, and opens there', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const { lines, frames } = run.marbles;
   const log = lines.find(({ label }) => label === 'log$');
   expect(log?.events.map(({ kind, frame }) => `${kind} ${frame}`)).toEqual([
@@ -88,7 +91,10 @@ it('leaves nothing for a later catchError to catch', () => {
       materialize(),
       catchError(() => of('fallback')),
     );
-    expectObservable(caught$).toBe('-a(e|)', { a: next('row 1'), e: failure('broken') });
+    expectObservable(caught$).toBe('-a(e|)', {
+      a: next('row 1'),
+      e: failure('broken'),
+    });
   });
 });
 
@@ -116,7 +122,10 @@ it('keeps an Error object as it was thrown, which JSON then writes as an empty o
     .pipe(materialize())
     .subscribe((record) => records.push(record));
   expect(records).toHaveLength(1);
-  expect(records[0]).toMatchObject({ kind: 'E', error: new Error('row 3 is unreadable') });
+  expect(records[0]).toMatchObject({
+    kind: 'E',
+    error: new Error('row 3 is unreadable'),
+  });
   expect(JSON.parse(JSON.stringify(records[0]))).toEqual({
     kind: 'E',
     error: {},

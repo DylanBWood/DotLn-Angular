@@ -200,8 +200,8 @@ by title and carries the studied mark. Long unbroken titles wrap. Enter opens th
 `ToolsFacade`, in `libs/features/tools/src/lib/facades/tools.facade.ts`, derives one
 view model and handles intents. The container connects shelf, contents, reading mapper,
 search and history; presentational components receive inputs and emit intent outputs.
-Source text is untranslated data; host-authored framing uses the message system. The
-house menu stays in the lazy Tools route, so opening a facet downloads no further
+Authored study text and framing use the message system, including model-generated narration.
+A record field is not an exemption from translation. The house menu stays in the lazy Tools route, so opening a facet downloads no further
 script.
 
 The surface's look is refined through repeated rendered pairs. A preference informs the next
@@ -223,11 +223,14 @@ beside it. The operator's direction for what a study is lives in the launchpad's
 
 `ConceptStudy`, in `libs/shared/models/src/lib/concept-study.ts`, is one JSON file per study at
 `libs/shared/catalog/src/studies/<work>/<slug>.json`, validated by the closed
-`concept-study-v0.schema.json`. It carries the authored state, the intuition with a situation it
+`concept-study-v1.schema.json`. Reader-visible fields contain message keys, resolved from
+`apps/dotln/public/i18n/studyAifg/en.json`, `studyRxjs/en.json` or `studyEip/en.json`;
+the corresponding work loads on demand, together with the small shared `studyCommon` catalog.
+IDs, source URLs, module paths, dates and simulation parameters retain their machine meaning. It carries the authored state, the intuition with a situation it
 serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
 RxJS reading and executable module, the visual, implementations, references, limits and nearby
 concepts. A stream study's `pseudocode.executable` is `{ kind: 'rxjs', module }`, its RxJS reading
-is the pipeline that module runs, and its visual is the `marbles` family over the same module. A
+resolves to the pipeline that module runs, and its visual is the `marbles` family over the same module. A
 messaging study's visual is the `flow` family; when its example runs, its `pseudocode.executable`
 is `{ kind: 'rxjs', module }` as well, and the flow is drawn from that same module. A change to the record's shape after it has shipped is a new schema version, never an
 edit of `concept-study-v0`.
@@ -238,6 +241,14 @@ page shows each step beside its own lines. Prose reads the selected moment throu
 placeholders in the example's description, the text equivalent, the mechanism's steps and the
 limits, so a number a model computes never lives in prose.
 
+`MessageCatalog` loads only the requested language scopes; `ToolsFacade` waits for
+both code and messages, exposes a failed load for retry, and ignores superseded
+responses. Changing language reloads presentation for the same reading.
+The drawing and explanation templates retain `translate="no"` on resolved content
+to prevent a browser from translating it again. This is not an authored-text
+exemption: record keys, model message consumers and the rendered model corpus are
+checked upstream. New machine symbols or paths displayed directly use a house
+message template too.
 Each work's records load as one lazy chunk, `studies/<work>.ts`, beside the tool data and apart
 from it, so a regenerated join never touches a study. A new work's chunk also needs an entry in
 `studyChunks` in `catalog-loader.ts`.
@@ -245,8 +256,15 @@ from it, so a regenerated join never touches a study. A new work's chunk also ne
 ### The models
 
 A model module, `libs/features/tools/src/lib/studies/<subject>/<slug>.model.ts` with a spec beside
-it, exports `model`: a pure function from the record's parameters to the example's run
-(`StudyModel` in `studies/study-model.ts`). It returns the frames the drawing reads, a timeline, the
+it, exports `model(parameters, translate)`: a pure composition of the simulation and its presentation
+(`StudyModel` in `studies/study-model.ts`). Movement `.simulation.ts` files own
+the mechanism, `.presentation.ts` files describe frames and explanations, and the
+entry module composes them. A run retains the step calculations and next states
+that its presentation needs, so frame labels, worked arithmetic and comparisons
+read the same results that advanced the simulation. Existing state-only helpers
+can project those samples for callers that need only a trajectory. Shared
+formatting and drawing helpers replace repeated plumbing. The translator is a presentation dependency; changing language never
+changes physics or executable stream values. The result contains the frames the drawing reads, a timeline, the
 named moments, the legend and caption, and, where they help, each moment's note, the worked
 arithmetic of that moment, a comparison that makes a failure visible and the inputs a reader may
 change. `studies/study-models.ts` lists the modules by the path the record names, and each loads
@@ -263,7 +281,8 @@ the outputs and their subscriptions as marble strings in the TestScheduler's syn
 line, the named moments and the notes, and `run`, the pipeline over those streams. Its `model`
 builds the drawing from that same example through `marbleModel` in `studies/rxjs/marbles.ts`, which
 parses the strings with the TestScheduler's own parser in run mode, so a frame in the drawing is a
-frame in the test. The spec calls `expectMarbleExample` from `marble-testing.ts`, which runs the
+frame in the test. Display labels, value descriptions and errors use message keys separately from
+the raw stream payloads. The spec calls `expectMarbleExample` from `marble-testing.ts`, which runs the
 pipeline under the TestScheduler, asserts every output's marbles, every inner stream's subscription
 marbles (an inner stream must declare them, since they place it in the drawing) and every input's
 declared ones, then holds the drawing to the run: what the model draws as delivered on each output
@@ -271,7 +290,9 @@ is what the output delivered, frame for frame, and a cold input the example does
 subscribed at frame 0, where the model draws it. The model names where each output value comes
 from, for the courier that rides down while playing: the example's `origins` where it names one (a
 stream id, or null for a value a scheduler held back), else the inner stream, then the input, that
-emits at that frame, else the one that errors or completes there.
+emits at that frame, else the one that errors or completes there. Origin references retain
+stable stream IDs through the drawing; labels may translate to the same visible text. The
+builder rejects duplicate IDs across input, inner and output lanes.
 
 A messaging study's module, `libs/features/tools/src/lib/studies/eip/<slug>.ts` with a spec beside
 it, exports `model` built by one of the two builders in `studies/flow.ts`. `flowModel` reads a flow
@@ -377,7 +398,8 @@ the record whether it is illustrative or executable.
 ### The check and the coverage
 
 `npm run studies:check`, `tools/scripts/catalog/check-studies.mjs`, runs inside `check:fixtures`. It
-validates every record against the schema, resolves its id, work and nearby ids against the catalog,
+validates every shipped record against v1, checks that every message exists, resolves
+the English prose for semantic checks, resolves its id, work and nearby ids against the catalog,
 checks that a model or executable module exists with a spec beside it, matches the mechanism's steps
 to the pseudocode's blocks, refuses a draft and a record with fewer than two different reviewers, and
 compares `studies-summary.json` with the records. `--write-summary` rewrites the summary, a stale
@@ -404,8 +426,14 @@ gate does.
 
 A batch is authored by a fan-out: authors with two concepts each, a factual critic who opens every
 reference and implementation and checks each supports its claim, and a reading critic who reads as
-the operator would. Each author receives the record contract, its catalog rows, a decided study as
-the worked example and the rules; a rewrite continues the same author. A stream batch's authors
+the operator would. Each author receives the current record contract, its catalog rows, a decided study as
+a worked example, and the house rules. The critics judge those rules independently:
+all visible study text uses messages, mechanisms are separate from presentation,
+and useful shared helpers keep code readable and efficient. A reused example grants
+no exemption. The gate rejects untranslated presentation fields, missing study keys
+and model functions above 80 nonblank, noncomment lines; the complete model suite
+also tests translation coverage and numeric behavior. These are guardrails, not
+a target for artificial function splitting; a rewrite continues the same author. A stream batch's authors
 deliver an executable module and its spec beside each record, and the factual critic runs each spec
 and records the result beside its findings. A batch whose examples come from the platform or from
 this app states each as an analogy and names the public record it reads, and its factual critic

@@ -227,7 +227,7 @@
   </section>
   @if (vm.next; as next) {
     <p class="next">
-      <a translate="no" [attr.href]="hrefFor()(next.id)" (click)="follow($event, next.id)">
+      <a [attr.href]="hrefFor()(next.id)" (click)="follow($event, next.id)" translate="no">
         {{ 'tools.study.nextStudy' | t: { title: next.title } }}
       </a>
     </p>

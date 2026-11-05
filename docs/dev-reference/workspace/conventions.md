@@ -101,9 +101,11 @@ and the command trinity. See [state rules](../../ai-reference/state-rules.md).
 Use Transloco through the house `t` pipe for template strings and the house
 `translateSignal` export in class code. Keep translation files under
 `apps/dotln/public/i18n/`. Run `npm run i18n:check` for missing and extra keys.
-Typed translation keys remain a later feature. Source-provided board titles,
-labels, questions and values are data under `translate="no"`. The template check
-still refuses literal host text inside that marker and requires `t` for framing.
+Typed translation keys remain a later feature. Authored study text and generated narration use lazy work-specific catalogs through
+`MessageCatalog`. Record fields receive the same message-system review as templates;
+metadata, numeric values and executable inputs retain their machine meaning. The
+template check refuses untranslated literal text, and the study checks inspect
+record keys and model presentation too.
 
 ## 10. Dependency injection
 
@@ -136,7 +138,9 @@ mark unreassigned members `readonly`.
 ## 13. Lint and TypeScript
 
 Use ESLint flat configuration with angular-eslint, strict TypeScript, Prettier
-and `.editorconfig`. Unused variables warn; prefix an intentionally unused
+and `.editorconfig`. Study model functions are limited to 80 nonblank, noncomment
+lines to catch growing mixed responsibilities; choose useful composition rather
+than splitting code just to meet that ceiling. Unused variables warn; prefix an intentionally unused
 argument or variable with `_`. TypeScript `private` members are refused in favor
 of `#private`. Prefer signal APIs and readonly outputs. A lint or compiler
 suppression is an exceptional, documented choice, never the fix for a failing

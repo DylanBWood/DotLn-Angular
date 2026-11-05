@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -14,6 +14,7 @@ import {
 } from './slot-assignment.model';
 
 const record = await loadStudy('aifg-a:186');
+
 const parameters: StudyParameters = {
   'cost.reserve.front': 0.1,
   'cost.reserve.flank': 0.2,
@@ -31,6 +32,7 @@ const parameters: StudyParameters = {
   spacing: 2,
   decisionSeconds: 1,
 };
+
 const example = readSlotExample(parameters);
 
 it('uses the draft Beacon gate record and exactly its parameters', () => {
@@ -112,7 +114,7 @@ it('demonstrates a non-optimal greedy result by changing only Ari’s flank cost
   expect(assignmentCost(allocate(changed)) - assignmentCost(cheapestComplete(changed))).toBeCloseTo(
     0.3,
   );
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series.map(({ values }) => values)).toEqual([
     [0, 0, 0.1, 0.1 + 0.2],
     [0, 0, 0.1, 1],
@@ -122,7 +124,7 @@ it('demonstrates a non-optimal greedy result by changing only Ari’s flank cost
 });
 
 it('reveals real reservation links, with the full cost table beside the selected decision', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.motion.frames).toHaveLength(4);
   expect(run.motion.frames.map(({ seconds }) => seconds)).toEqual([0, 1, 2, 3]);
   expect(run.initialStep).toBe(2);
@@ -152,7 +154,7 @@ it('reveals real reservation links, with the full cost table beside the selected
 });
 
 it('keeps allocation independent of geometry and supplies a complete text equivalent at every decision', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const moved = readSlotExample({ ...parameters, unitX: -14 });
   expect(allocate(moved)).toEqual(allocate(example));
   const names = [
@@ -171,11 +173,11 @@ it('keeps allocation independent of geometry and supplies a complete text equiva
       expect(position.y).toBeLessThan(run.motion.bounds.maxY);
     }
   }
-  expect(model(Object.freeze({ ...parameters }))).toEqual(run);
+  expect(model(Object.freeze({ ...parameters }), studyTranslate)).toEqual(run);
 });
 
 it('changes the visible order and links at the live cost cut-off, with a greedy failure before it', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   expect(input).toEqual({
     name: 'cost.reserve.flank',
     label: 'Ari’s flank cost',
@@ -185,8 +187,8 @@ it('changes the visible order and links at the live cost cut-off, with a greedy 
     step: 0.1,
   });
   if (!input) throw new Error('The flank cost must be adjustable.');
-  const low = model({ ...parameters, [input.name]: input.min });
-  const high = model({ ...parameters, [input.name]: input.max });
+  const low = model({ ...parameters, [input.name]: input.min }, studyTranslate);
+  const high = model({ ...parameters, [input.name]: input.max }, studyTranslate);
   expect(low.motion.frames[2].values['order']).toBe('Bryn → Cleo → Ari');
   expect(high.motion.frames[2].values['counts']).toBe('Ari 2, Bryn 1, Cleo 2');
   expect(high.motion.frames[2].values['order']).toBe('Bryn → Ari → Cleo');
@@ -195,7 +197,7 @@ it('changes the visible order and links at the live cost cut-off, with a greedy 
   expect(low.motion.frames[3].links).not.toEqual(high.motion.frames[3].links);
   expect(low.timeline?.series[0].values[3]).toBeCloseTo(0.2);
   expect(high.timeline?.series[0].values[3]).toBeCloseTo(0.7);
-  const expensive = model({ ...parameters, [input.name]: 0.9 });
+  const expensive = model({ ...parameters, [input.name]: 0.9 }, studyTranslate);
   expect(expensive.motion.frames[3].values['rosterOutcome']).toBe(
     'the greedy roster costs 0.30 more than the minimum',
   );
@@ -209,7 +211,7 @@ it('changes the visible order and links at the live cost cut-off, with a greedy 
 });
 
 it('keeps every offered cost step readable, labelled, bounded and consistent with the prose', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   if (!input) throw new Error('The flank cost must be adjustable.');
   const prose = [
     record.visual.textEquivalent,
@@ -219,7 +221,7 @@ it('keeps every offered cost step readable, labelled, bounded and consistent wit
   ];
   for (let tick = 0; tick <= Math.round((input.max - input.min) / input.step); tick++) {
     const value = Number((input.min + tick * input.step).toFixed(2));
-    const run = model({ ...parameters, [input.name]: value });
+    const run = model({ ...parameters, [input.name]: value }, studyTranslate);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
     expect(run.moments.every(({ step }) => step >= 0 && step < run.motion.frames.length)).toBe(
       true,

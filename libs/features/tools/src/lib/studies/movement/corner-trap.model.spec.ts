@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import {
   calculateCornerStep,
   type CornerParameters,
@@ -109,19 +110,19 @@ it('breaks the cancellation by keeping the upper ray without inventing a recover
 });
 
 it('draws the positive-y upper hit and recovery above the lower hit', () => {
-  const frame = model(parameters).motion.frames[0];
+  const frame = model(parameters, studyTranslate).motion.frames[0];
   const upper = frame.marks?.find(({ label }) => label === 'upper hit');
   const lower = frame.marks?.find(({ label }) => label === 'lower hit');
   expect(upper?.y).toBeCloseTo(-1.5);
   expect(lower?.y).toBeCloseTo(1.5);
-  const recovery = model({ ...parameters, winnerRay: 1 }).motion.frames[1];
+  const recovery = model({ ...parameters, winnerRay: 1 }, studyTranslate).motion.frames[1];
   expect(recovery.bodies[0].y).toBe(-0.25);
   expect(recovery.values['y']).toBe('0.25');
 });
 
 it('keeps the drawing, worked arithmetic and failure comparison on the same run', () => {
-  const run = model(parameters);
-  expect(run).toEqual(model(parameters));
+  const run = model(parameters, studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(run.motion.frames).toHaveLength(9);
   expect(run.initialStep).toBe(0);
   const frame = run.motion.frames[0];
@@ -146,7 +147,10 @@ it('keeps the drawing, worked arithmetic and failure comparison on the same run'
       ...moment.bodies,
       ...(moment.marks ?? []),
       ...(moment.links ?? []).flatMap(({ from, to }) => [from, to]),
-      ...(moment.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+      ...(moment.vectors ?? []).map(({ x, y, dx, dy }) => ({
+        x: x + dx,
+        y: y + dy,
+      })),
     ];
     for (const { x, y } of points) {
       expect(x).toBeGreaterThan(minX);
@@ -156,4 +160,30 @@ it('keeps the drawing, worked arithmetic and failure comparison on the same run'
     }
     expect(Object.values(moment.values).every((value) => !value.includes('NaN'))).toBe(true);
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

@@ -1,9 +1,9 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import type { MotionStudyModel } from '../study-model';
-import type { FleeParameters } from './flee.model';
-import { calculateFleeStep, fleeFrames, model } from './flee.model';
+import { calculateFleeStep, fleeFrames, type FleeParameters, model } from './flee.model';
 
 const example: FleeParameters = {
   start: 5,
@@ -23,7 +23,7 @@ const example: FleeParameters = {
 const parameters: StudyParameters = { ...example };
 
 const viewOf = (input: StudyParameters = parameters): MotionStudyModel => {
-  return model(input);
+  return model(input, studyTranslate);
 };
 
 it('uses the Flee row and exactly the parameters used by the worked example', async () => {
@@ -152,11 +152,42 @@ it('contains the radius, all positions and both vector endpoints when the inputs
 
 it('keeps changed values in the prose and identifies coincident comparison runs', () => {
   const changed = viewOf({ ...parameters, start: 0, maxAcceleration: 4 });
-  expect(changed.motion.frames[0].values).toMatchObject({ start: '0.00', maxAcceleration: '4.00' });
+  expect(changed.motion.frames[0].values).toMatchObject({
+    start: '0.00',
+    maxAcceleration: '4.00',
+  });
   expect(changed.comparison?.intro).toContain('Both runs now start');
   expect(changed.comparison?.timeline.series[0].values).toEqual(
     changed.comparison?.timeline.series[1].values,
   );
-  expect(() => model({ ...parameters, engineRadius: 12 })).toThrow('engine radius of 20');
-  expect(model(parameters)).toEqual(model(parameters));
+  expect(() => model({ ...parameters, engineRadius: 12 }, studyTranslate)).toThrow(
+    'engine radius of 20',
+  );
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });

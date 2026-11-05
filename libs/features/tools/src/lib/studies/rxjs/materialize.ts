@@ -16,22 +16,34 @@ const reason = 'row 3 is unreadable';
 export const example: MarbleExample = {
   inputs: {
     import$: {
-      label: 'import$',
+      label: 'studyRxjs.materialize.model.example.inputs.import.label',
       marbles: '-a--b--#',
       values: { a: 'row 1', b: 'row 2' },
       error: reason,
       subscriptions: '^------!',
+
+      valueMessages: {
+        a: 'studyRxjs.materialize.model.example.inputs.import.values.a',
+        b: 'studyRxjs.materialize.model.example.inputs.import.values.b',
+      },
+      errorMessage: 'studyRxjs.materialize.model.example.inputs.import.error',
     },
   },
-  operator: 'materialize()',
+  operator: 'studyRxjs.materialize.model.example.operator',
   outputs: {
     log$: {
-      label: 'log$',
+      label: 'studyRxjs.materialize.model.example.outputs.log.label',
       marbles: '-a--b--(e|)',
       values: {
         a: { kind: 'N', value: 'row 1', hasValue: true },
         b: { kind: 'N', value: 'row 2', hasValue: true },
         e: { kind: 'E', error: reason, hasValue: false },
+      },
+
+      valueMessages: {
+        a: 'studyRxjs.materialize.model.example.outputs.log.values.a',
+        b: 'studyRxjs.materialize.model.example.outputs.log.values.b',
+        e: 'studyRxjs.materialize.model.example.outputs.log.values.e',
       },
     },
   },
@@ -40,20 +52,24 @@ export const example: MarbleExample = {
     return { log$ };
   },
   moments: [
-    { label: 'First row', frame: 1 },
-    { label: 'Second row', frame: 4 },
-    { label: 'The failure, as a record', frame: 7 },
+    { label: 'studyRxjs.materialize.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.materialize.model.example.moments.1.label', frame: 4 },
+    { label: 'studyRxjs.materialize.model.example.moments.2.label', frame: 7 },
   ],
-  caption:
-    'Time runs in frames, left to right. A circle is an emission, with its letter, and a bar is completion. The cross on import$ is its error: materialize sends it on as the record e and then completes log$, so log$ ends in a bar rather than a cross. Step the frames to follow each record.',
+  caption: 'studyRxjs.materialize.model.example.caption',
   notes: {
-    0: 'The log panel has subscribed; nothing has been imported yet.',
-    1: 'The first row arrives. materialize does not pass the row itself on: it emits a record of kind N whose value is the row.',
-    2: 'The import is reading its second row; the log has nothing new.',
-    4: 'The second row arrives and leaves as a second record of kind N.',
-    5: 'The import is reading its third row.',
-    7: 'The import fails. log$ does not fail with it: materialize emits the failure as a record of kind E carrying the reason, and then completes log$. A subscriber that handles only values still learns why the import stopped.',
+    0: 'studyRxjs.materialize.model.example.notes.0',
+    1: 'studyRxjs.materialize.model.example.notes.1',
+    2: 'studyRxjs.materialize.model.example.notes.2',
+    4: 'studyRxjs.materialize.model.example.notes.4',
+    5: 'studyRxjs.materialize.model.example.notes.5',
+    7: 'studyRxjs.materialize.model.example.notes.7',
+  },
+
+  parameterMessages: {
+    rows: 'studyRxjs.materialize.record.parameters.rows',
+    reason: 'studyRxjs.materialize.record.parameters.reason',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

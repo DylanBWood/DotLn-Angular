@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import {
   calculateCombinationStep,
   type CombinationParameters,
@@ -115,8 +116,8 @@ it('keeps velocity continuous through a winner change and respects both motion c
 });
 
 it('makes the drawing, chart, worked calculation and weight comparison inspectable together', () => {
-  const run = model(parameters);
-  expect(run).toEqual(model(parameters));
+  const run = model(parameters, studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(run.initialStep).toBe(12);
   expect(run.motion.frames).toHaveLength(21);
   expect(run.motion.frames[0].values).toMatchObject({
@@ -144,7 +145,10 @@ it('makes the drawing, chart, worked calculation and weight comparison inspectab
       ...frame.bodies,
       ...(frame.marks ?? []),
       ...(frame.links ?? []).flatMap(({ from, to }) => [from, to]),
-      ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
+      ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({
+        x: x + dx,
+        y: y + dy,
+      })),
     ];
     for (const { x, y } of points) {
       expect(x).toBeGreaterThan(minX);
@@ -155,4 +159,30 @@ it('makes the drawing, chart, worked calculation and weight comparison inspectab
     expect(frame.values['winner']).toBeDefined();
     expect(Object.values(frame.values).every((value) => !value.includes('NaN'))).toBe(true);
   }
+});
+
+it('translates presentation at the boundary while preserving computed motion', () => {
+  const english = model(parameters, studyTranslate);
+  const translated = model(
+    parameters,
+    (key, values) => `translated: ${studyTranslate(key, values)}`,
+  );
+
+  expect(translated.caption).toBe(`translated: ${english.caption}`);
+  expect(translated.motion.frames[0].note).toMatch(/^translated: /);
+  expect(translated.motion.frames[0].worked?.title).toMatch(/^translated: /);
+  expect(translated.timeline?.title).toMatch(/^translated: /);
+  expect(translated.comparison?.title).toMatch(/^translated: /);
+  expect(translated.motion.bounds).toEqual(english.motion.bounds);
+  expect(
+    translated.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  ).toEqual(
+    english.motion.frames.map(({ seconds, bodies }) => ({
+      seconds,
+      points: bodies.map(({ x, y }) => ({ x, y })),
+    })),
+  );
 });
