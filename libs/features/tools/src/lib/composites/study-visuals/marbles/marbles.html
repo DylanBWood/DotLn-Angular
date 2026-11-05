@@ -2,10 +2,10 @@
 <svg
   [attr.viewBox]="view.viewBox"
   role="img"
-  translate="no"
   [attr.aria-label]="textEquivalent()"
   [class.gliding]="glides()"
   [style.--marbles-frame]="frameSeconds"
+  translate="no"
 >
   <line
     #cursor
@@ -87,7 +87,7 @@
         [attr.data-tone]="marble.tone"
       />
       <text text-anchor="middle" [attr.x]="marble.x" [attr.y]="marble.y + marble.r * 0.38">
-        {{ marble.key }}
+        {{ 'tools.study.symbol' | t: { symbol: marble.key } }}
       </text>
     </g>
   }
@@ -100,7 +100,7 @@
         [attr.data-tone]="courier.tone"
       />
       <text text-anchor="middle" [attr.x]="courier.x" [attr.y]="courier.y1 + courier.r * 0.38">
-        {{ courier.key }}
+        {{ 'tools.study.symbol' | t: { symbol: courier.key } }}
       </text>
     </g>
   }
@@ -114,7 +114,7 @@
   <g class="ticks">
     @for (tick of view.ticks; track $index) {
       <text class="tick" [attr.x]="tick.x" [attr.y]="tick.y" [attr.text-anchor]="tick.anchor">
-        {{ tick.text }}
+        {{ 'tools.study.number' | t: { value: tick.text } }}
       </text>
     }
   </g>

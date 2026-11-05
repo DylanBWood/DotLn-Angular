@@ -1,4 +1,5 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { ticksOf } from '../study-model';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -9,7 +10,7 @@ const path = 'libs/features/tools/src/lib/studies/eip/command-message.ts';
 const parameters = { order: 41, commandId: 7 };
 
 const flowOf = (values: Readonly<Record<string, number | string>>): FlowStudyModel => {
-  const run = model(values);
+  const run = model(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The command study draws a flow.');
   return run;
 };
@@ -36,7 +37,7 @@ it('attaches the record to the Command Message row and draws it from this module
     ...record.mechanism.steps.flatMap(({ text }) => placeholdersIn(text)),
     ...record.limits.flatMap(placeholdersIn),
   ];
-  const ticks = ticksOf(model(record.example.parameters));
+  const ticks = ticksOf(model(record.example.parameters, studyTranslate));
   for (const tick of ticks) for (const name of names) expect(tick.values[name], name).toBeDefined();
 });
 
@@ -44,12 +45,16 @@ it('carries the procedure, its argument and the id inside the command', () => {
   // The command is drawn as its id, and each result as the letter of the session sending it.
   const command = example.messages[String(parameters.commandId)];
   expect(command.key).toBe(String(parameters.commandId));
-  expect(command.content).toContain('verify');
-  expect(command.content).toContain(`order ${parameters.order}`);
-  expect(command.content).toContain(`id ${parameters.commandId}`);
+  expect(studyMessage(studyTranslate, command.content)).toContain('verify');
+  expect(studyMessage(studyTranslate, command.content)).toContain(`order ${parameters.order}`);
+  expect(studyMessage(studyTranslate, command.content)).toContain(`id ${parameters.commandId}`);
   // Each result names the command it answers, so it can be matched to the request.
-  expect(example.messages['b'].content).toBe(`result for ${parameters.commandId} from B`);
-  expect(example.messages['a'].content).toBe(`result for ${parameters.commandId} from A`);
+  expect(studyMessage(studyTranslate, example.messages['b'].content)).toBe(
+    `result for ${parameters.commandId} from B`,
+  );
+  expect(studyMessage(studyTranslate, example.messages['a'].content)).toBe(
+    `result for ${parameters.commandId} from A`,
+  );
 });
 
 it('keeps the command on the channel while both sessions are busy, then gives it to one', () => {
@@ -101,7 +106,7 @@ it('returns each result as a message of its own, two of them for one request', (
   expect(heldAt(7, 'store')).toEqual(['b']);
   expect(hopsAt(8)).toEqual(['a on a-result']);
   expect(heldAt(8, 'store')).toEqual(['b', 'a']);
-  expect(stateAt(8, 'store')).toBe('two results for 7');
+  expect(stateAt(8, 'store')).toBe('2 results for 7');
   expect(heldAt(8, 'sessionA')).toEqual([]);
   expect(heldAt(8, 'sessionB')).toEqual([]);
 });
@@ -121,7 +126,7 @@ it('opens at the start and says so in the text equivalent', async () => {
     { label: 'One taker', step: 3 },
     { label: 'Sent again', step: 5 },
     { label: 'Run twice', step: 6 },
-    { label: 'Two results', step: 8 },
+    { label: '2 results', step: 8 },
   ]);
   expect(run.legend.map(({ tone }) => tone)).toEqual(['subject', 'other', 'actual', 'muted']);
   const text = fillValues(record.visual.textEquivalent, frame(3).values);
@@ -133,7 +138,7 @@ it('opens at the start and says so in the text equivalent', async () => {
 
 it('explains every box and token in its caption, in the drawing the family makes', () => {
   const caption = run.caption;
-  for (const { label } of example.nodes) expect(caption).toContain(label);
+  for (const { label } of run.flow.nodes) expect(caption).toContain(label);
   for (const { key } of Object.values(example.messages)) expect(caption).toContain(`${key} `);
   // The family draws the pattern's part with a bold name and puts the words inside each box.
   expect(caption).toContain('bold name');

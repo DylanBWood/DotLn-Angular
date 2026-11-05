@@ -1,10 +1,23 @@
-import { tap } from 'rxjs';
+import { tap, TimeoutError } from 'rxjs';
 import type { RunHelpers } from 'rxjs/testing';
 import { TestScheduler } from 'rxjs/testing';
 import { expect } from 'vitest';
 
+import { studyTranslate } from '../../../../testing/src';
+import type { MarbleLine } from '../study-model';
+import type { StudyTranslate } from '../study-translate';
 import type { MarbleExample } from './marbles';
-import { marbleModel, nameOf } from './marbles';
+import { marbleError, marbleModel, marbleValue, nameOf } from './marbles';
+
+// Two TimeoutErrors are the same failure when their message and info agree. RxJS records each
+// one's stack as an own property, which differs by where it was made, so the comparison leaves it
+// out; any other value is compared as usual.
+expect.addEqualityTesters([
+  function sameTimeout(a, b, testers) {
+    if (!(a instanceof TimeoutError) || !(b instanceof TimeoutError)) return undefined;
+    return a.message === b.message && this.equals(a.info, b.info, testers);
+  },
+]);
 
 type Logged = ReturnType<RunHelpers['cold']> | ReturnType<RunHelpers['hot']>;
 
@@ -12,7 +25,7 @@ type Logged = ReturnType<RunHelpers['cold']> | ReturnType<RunHelpers['hot']>;
 interface Delivered {
   readonly frame: number;
   readonly kind: 'next' | 'error' | 'complete';
-  readonly value: string;
+  readonly value: unknown;
 }
 
 /**
@@ -23,7 +36,11 @@ interface Delivered {
  * subscribed at frame 0, where the model draws it. A spec beside a module calls this, so the
  * strings the drawing reads are the strings the test passed.
  */
-export function expectMarbleExample(example: MarbleExample): void {
+export function expectMarbleExample(
+  example: MarbleExample,
+  t: StudyTranslate = studyTranslate,
+): void {
+  if (t === studyTranslate) expectDeclaredPresentation(example);
   const delivered: Record<string, Delivered[]> = {};
   let inputs: [string, Logged][] = [];
   const scheduler = new TestScheduler((actual, expected) => expect(actual).toEqual(expected));
@@ -52,12 +69,19 @@ export function expectMarbleExample(example: MarbleExample): void {
       delivered[id] = record;
       const observed = actual.pipe(
         tap({
-          next: (value) =>
-            record.push({ frame: scheduler.now(), kind: 'next', value: nameOf(value) }),
+          next: (value) => record.push({ frame: scheduler.now(), kind: 'next', value }),
           error: (error: unknown) =>
-            record.push({ frame: scheduler.now(), kind: 'error', value: nameOf(error) }),
+            record.push({
+              frame: scheduler.now(),
+              kind: 'error',
+              value: error,
+            }),
           complete: () =>
-            record.push({ frame: scheduler.now(), kind: 'complete', value: 'complete' }),
+            record.push({
+              frame: scheduler.now(),
+              kind: 'complete',
+              value: 'complete',
+            }),
         }),
       );
       expectObservable(observed, output.subscriptions).toBe(
@@ -74,7 +98,7 @@ export function expectMarbleExample(example: MarbleExample): void {
     }
   });
   // The drawing is built from the same strings and placed by the same subscriptions.
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, t);
   expect(marbles.frames.length).toBeGreaterThan(1);
   for (const line of marbles.lines.filter(({ role }) => role === 'output'))
     expect(
@@ -82,7 +106,7 @@ export function expectMarbleExample(example: MarbleExample): void {
         .filter((event) => event.delivered)
         .map(({ frame, kind, value }) => ({ frame, kind, value })),
       `the drawing's ${line.label} is not what the run delivered`,
-    ).toEqual(delivered[line.id]);
+    ).toEqual(renderedDeliveries(delivered[line.id], line, example, t));
   for (const [id, stream] of inputs) {
     const input = example.inputs[id];
     if (input?.hot || input?.subscriptions !== undefined) continue;
@@ -90,5 +114,41 @@ export function expectMarbleExample(example: MarbleExample): void {
     expect(first ?? 0, `${input?.label} is drawn from frame 0 but was first subscribed later`).toBe(
       0,
     );
+  }
+}
+
+/** Compare the drawing with the actual delivered payload through its presentation boundary. */
+function renderedDeliveries(
+  delivered: readonly Delivered[],
+  line: MarbleLine,
+  example: MarbleExample,
+  t: StudyTranslate,
+) {
+  const events = line.events.filter(({ delivered }) => delivered);
+  expect(events).toHaveLength(delivered.length);
+  const stream = example.outputs[line.id];
+  return delivered.map(({ frame, kind, value }, index) => ({
+    frame,
+    kind,
+    value:
+      kind === 'next'
+        ? marbleValue(stream, events[index].key, value, t)
+        : kind === 'error'
+          ? marbleError(stream, t)
+          : t('studyCommon.marbles.complete'),
+  }));
+}
+
+/** English value descriptions must still name the exact payloads the scheduler receives. */
+function expectDeclaredPresentation(example: MarbleExample): void {
+  for (const stream of [
+    ...Object.values(example.inputs),
+    ...Object.values(example.inner ?? {}),
+    ...Object.values(example.outputs),
+  ]) {
+    for (const [key, value] of Object.entries(stream.values ?? {}))
+      expect(marbleValue(stream, key, value, studyTranslate)).toBe(nameOf(value));
+    if (stream.error !== undefined)
+      expect(marbleError(stream, studyTranslate)).toBe(nameOf(stream.error));
   }
 }

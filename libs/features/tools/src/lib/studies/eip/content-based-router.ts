@@ -45,6 +45,11 @@ const findings = {
   5: { finding: 'F5', unmet: 'criterion 4', choice: 'waive or repair' },
 } as const satisfies Readonly<Record<number, Finding>>;
 
+const findingCount = Object.keys(findings).length;
+const blockingCount = Object.values(findings).filter(
+  (finding) => routeOf(finding) === 'blocking',
+).length;
+
 /**
  * A verifier files five findings, one every other step, and a router reads each and sends it on,
  * the step after, on exactly one of three channels: blocking to the executor, operator to the
@@ -54,22 +59,50 @@ const findings = {
 export const example: MarbleExample = {
   inputs: {
     findings$: {
-      label: 'findings$',
+      label: 'studyEip.content-based-router.model.example.inputs.findings.label',
       // Hot: the verifier files its findings whether or not anything is listening.
       hot: true,
       marbles: '-1-2-3-4-5|',
       values: findings,
+
+      valueMessages: {
+        '1': 'studyEip.content-based-router.model.example.inputs.findings.values.1',
+        '2': 'studyEip.content-based-router.model.example.inputs.findings.values.2',
+        '3': 'studyEip.content-based-router.model.example.inputs.findings.values.3',
+        '4': 'studyEip.content-based-router.model.example.inputs.findings.values.4',
+        '5': 'studyEip.content-based-router.model.example.inputs.findings.values.5',
+      },
     },
   },
-  operator: 'map to a route, delay(1), share, filter per route',
+  operator: 'studyEip.content-based-router.model.example.operator',
   outputs: {
     blocking$: {
-      label: 'blocking$',
+      label: 'studyEip.content-based-router.model.example.outputs.blocking.label',
       marbles: '--1-----4-(5|)',
       values: { 1: findings[1], 4: findings[4], 5: findings[5] },
+
+      valueMessages: {
+        '1': 'studyEip.content-based-router.model.example.outputs.blocking.values.1',
+        '4': 'studyEip.content-based-router.model.example.outputs.blocking.values.4',
+        '5': 'studyEip.content-based-router.model.example.outputs.blocking.values.5',
+      },
     },
-    operator$: { label: 'operator$', marbles: '------3---|', values: { 3: findings[3] } },
-    followUp$: { label: 'followUp$', marbles: '----2-----|', values: { 2: findings[2] } },
+    operator$: {
+      label: 'studyEip.content-based-router.model.example.outputs.operator.label',
+      marbles: '------3---|',
+      values: { 3: findings[3] },
+      valueMessages: {
+        '3': 'studyEip.content-based-router.model.example.outputs.operator.values.3',
+      },
+    },
+    followUp$: {
+      label: 'studyEip.content-based-router.model.example.outputs.followUp.label',
+      marbles: '----2-----|',
+      values: { 2: findings[2] },
+      valueMessages: {
+        '2': 'studyEip.content-based-router.model.example.outputs.followUp.values.2',
+      },
+    },
   },
   run: ({ inputs }) => {
     // Each number stands for one finding, as the values above say.
@@ -95,27 +128,52 @@ export const example: MarbleExample = {
     return { blocking$, operator$, followUp$ };
   },
   moments: [
-    { label: 'F1 is blocking', frame: 2 },
-    { label: 'The default route', frame: 4 },
-    { label: 'To the operator', frame: 6 },
-    { label: 'First match wins', frame: 9 },
-    { label: 'All routed', frame: 10 },
+    {
+      label: 'studyEip.content-based-router.model.example.moments.0.label',
+      frame: 2,
+    },
+    {
+      label: 'studyEip.content-based-router.model.example.moments.1.label',
+      frame: 4,
+    },
+    {
+      label: 'studyEip.content-based-router.model.example.moments.2.label',
+      frame: 6,
+    },
+    {
+      label: 'studyEip.content-based-router.model.example.moments.3.label',
+      frame: 9,
+    },
+    {
+      label: 'studyEip.content-based-router.model.example.moments.4.label',
+      frame: 10,
+    },
   ],
   notes: {
-    0: 'The Verifier has five findings to file. The Finding router holds its rules: blocking first, then operator, and follow-up for anything else. Nothing has been sent.',
-    1: 'The Verifier sends finding 1, F1, to the Finding router. F1 leaves acceptance criterion 2 unmet, so the blocking rule, tried first, fits.',
-    2: 'The Finding router sends F1 on, unchanged, to the Executor on the blocking channel, for the change to be repaired.',
-    3: 'The Verifier sends F2, a stale line in an index, to the Finding router. It has no unmet criterion, no regression and no decision for the operator, so no rule fits.',
-    4: 'With no rule fitting, the Finding router sends F2 down the default route, follow-up, to the Board.',
-    5: 'The Verifier sends F3 to the Finding router. F3 asks whether to widen the scope of the work, a decision that belongs to the operator alone, so the operator rule fits.',
-    6: 'The Finding router sends F3 to the Operator on the operator channel.',
-    7: 'The Verifier sends F4 to the Finding router. Test probe 3 shows the change breaking something the main branch already did, a regression, so the blocking rule fits.',
-    8: 'The Finding router sends F4 to the Executor, which now has F1 and F4.',
-    9: 'The Verifier sends F5, its last finding, to the Finding router. F5 leaves criterion 4 unmet and also asks whether to waive it, so both rules fit; blocking is tried first and wins.',
-    10: 'The Finding router sends F5 to the Executor, and the findings end. Each went to exactly one box, unchanged; with three blocking findings this verification fails and the change goes back for repair.',
+    0: {
+      key: 'studyEip.content-based-router.model.example.notes.0',
+      params: { findings: findingCount },
+    },
+    1: 'studyEip.content-based-router.model.example.notes.1',
+    2: 'studyEip.content-based-router.model.example.notes.2',
+    3: 'studyEip.content-based-router.model.example.notes.3',
+    4: 'studyEip.content-based-router.model.example.notes.4',
+    5: 'studyEip.content-based-router.model.example.notes.5',
+    6: 'studyEip.content-based-router.model.example.notes.6',
+    7: 'studyEip.content-based-router.model.example.notes.7',
+    8: 'studyEip.content-based-router.model.example.notes.8',
+    9: 'studyEip.content-based-router.model.example.notes.9',
+    10: {
+      key: 'studyEip.content-based-router.model.example.notes.10',
+      params: { blocking: blockingCount },
+    },
   },
-  caption:
-    "Time runs in frames, one event to a frame. findings$ is what the verifier files: 1 to 5 are findings F1 to F5. blocking$, operator$ and followUp$ are the router's three channels, and each finding leaves on one of them one frame after it arrives.",
+  caption: 'studyEip.content-based-router.model.example.caption',
+
+  parameterMessages: {
+    findings: 'studyEip.content-based-router.record.parameters.findings',
+    rules: 'studyEip.content-based-router.record.parameters.rules',
+  },
 };
 
 /**
@@ -124,14 +182,42 @@ export const example: MarbleExample = {
  */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'verifier', label: 'Verifier', stage: 0 },
-    { id: 'router', label: 'Finding router', stage: 1, tone: 'subject' },
-    { id: 'executor', label: 'Executor', stage: 2 },
-    { id: 'operator', label: 'Operator', stage: 2, row: 1 },
-    { id: 'board', label: 'Board', stage: 2, row: 2 },
+    {
+      id: 'verifier',
+      label: 'studyEip.content-based-router.model.flow.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'router',
+      label: 'studyEip.content-based-router.model.flow.nodes.1.label',
+      stage: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'executor',
+      label: 'studyEip.content-based-router.model.flow.nodes.2.label',
+      stage: 2,
+    },
+    {
+      id: 'operator',
+      label: 'studyEip.content-based-router.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'board',
+      label: 'studyEip.content-based-router.model.flow.nodes.4.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
-    { id: 'file', from: 'verifier', to: 'router', label: 'findings' },
+    {
+      id: 'file',
+      from: 'verifier',
+      to: 'router',
+      label: 'studyEip.content-based-router.model.flow.links.0.label',
+    },
     { id: 'to-executor', from: 'router', to: 'executor' },
     { id: 'to-operator', from: 'router', to: 'operator' },
     { id: 'to-board', from: 'router', to: 'board' },
@@ -144,22 +230,73 @@ export const flow: MarbleFlow = {
   },
   states: {
     0: {
-      verifier: 'five findings to file',
-      router: 'blocking, then operator, else follow-up',
-      executor: 'blocking: none yet',
-      operator: 'operator: none yet',
-      board: 'follow-up: none yet',
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.0.verifier',
+        params: { remaining: findingCount - 0 },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.0.router',
+      executor: 'studyEip.content-based-router.model.flow.states.0.executor',
+      operator: 'studyEip.content-based-router.model.flow.states.0.operator',
+      board: 'studyEip.content-based-router.model.flow.states.0.board',
     },
-    1: { verifier: 'four to file', router: 'F1: unmet criterion, so blocking' },
-    2: { router: 'waiting', executor: 'blocking: F1' },
-    3: { verifier: 'three to file', router: 'F2: no rule fits, so follow-up' },
-    4: { router: 'waiting', board: 'follow-up: F2' },
-    5: { verifier: 'two to file', router: 'F3: a decision, so operator' },
-    6: { router: 'waiting', operator: 'operator: F3' },
-    7: { verifier: 'one to file', router: 'F4: a regression, so blocking' },
-    8: { router: 'waiting', executor: 'blocking: F1, F4' },
-    9: { verifier: 'all five filed', router: 'F5 fits both, blocking first' },
-    10: { router: 'all five routed', executor: 'blocking: F1, F4, F5' },
+    1: {
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.1.verifier',
+        params: { remaining: findingCount - 1 },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.1.router',
+    },
+    2: {
+      router: 'studyEip.content-based-router.model.flow.states.2.router',
+      executor: 'studyEip.content-based-router.model.flow.states.2.executor',
+    },
+    3: {
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.3.verifier',
+        params: { remaining: findingCount - 2 },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.3.router',
+    },
+    4: {
+      router: 'studyEip.content-based-router.model.flow.states.4.router',
+      board: 'studyEip.content-based-router.model.flow.states.4.board',
+    },
+    5: {
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.5.verifier',
+        params: { remaining: findingCount - 3 },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.5.router',
+    },
+    6: {
+      router: 'studyEip.content-based-router.model.flow.states.6.router',
+      operator: 'studyEip.content-based-router.model.flow.states.6.operator',
+    },
+    7: {
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.7.verifier',
+        params: { remaining: findingCount - 4 },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.7.router',
+    },
+    8: {
+      router: 'studyEip.content-based-router.model.flow.states.8.router',
+      executor: 'studyEip.content-based-router.model.flow.states.8.executor',
+    },
+    9: {
+      verifier: {
+        key: 'studyEip.content-based-router.model.flow.states.9.verifier',
+        params: { count: findingCount },
+      },
+      router: 'studyEip.content-based-router.model.flow.states.9.router',
+    },
+    10: {
+      router: {
+        key: 'studyEip.content-based-router.model.flow.states.10.router',
+        params: { count: findingCount },
+      },
+      executor: 'studyEip.content-based-router.model.flow.states.10.executor',
+    },
   },
   held: {
     1: { router: ['1'] },
@@ -173,8 +310,8 @@ export const flow: MarbleFlow = {
     9: { router: ['5'] },
     10: { router: [], executor: ['1', '4', '5'] },
   },
-  caption:
-    "Each token is one finding, numbered as the verifier numbers it: token 1 is F1, and so on to 5. The Verifier reviews a change and files the findings. The Finding router reads each one, holds it for a step while it chooses, then sends it on. The Executor, which repairs the change, receives blocking findings; the Operator, the person directing the work, receives decisions that are theirs alone; the Board, a list of later work, receives everything else as a follow-up. The words in a box say what that box holds or has decided, and a destination's words start with the route it receives. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.",
+  caption: 'studyEip.content-based-router.model.flow.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

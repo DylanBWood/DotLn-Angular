@@ -3,6 +3,9 @@ import { defer, repeat } from 'rxjs';
 import type { StudyModelFunction } from '../study-model';
 import { type MarbleExample, marbleModel } from './marbles';
 
+/** Which declared runs have ended at the two completion milestones the narration names. */
+const completedRuns = { first: ['check$'], second: ['check$', 'second'] };
+
 /**
  * A page asks for a build's status three times, waiting after each answer. The check is cold, as
  * an HTTP request is: each subscription sends a new request and reads the build as it is at that
@@ -13,32 +16,50 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     check$: {
-      label: 'check$',
+      label: 'studyRxjs.repeat.model.example.inputs.check.label',
       marbles: '--q|',
       values: { q: 'queued' },
       subscriptions: '^--!',
+
+      valueMessages: {
+        q: 'studyRxjs.repeat.model.example.inputs.check.values.q',
+      },
     },
   },
   inner: {
     second: {
-      label: 'check$, run 2',
+      label: 'studyRxjs.repeat.model.example.inner.second.label',
       marbles: '--r|',
       values: { r: 'running' },
       subscriptions: '-----^--!',
+
+      valueMessages: {
+        r: 'studyRxjs.repeat.model.example.inner.second.values.r',
+      },
     },
     third: {
-      label: 'check$, run 3',
+      label: 'studyRxjs.repeat.model.example.inner.third.label',
       marbles: '--p|',
       values: { p: 'passed' },
       subscriptions: '----------^--!',
+
+      valueMessages: {
+        p: 'studyRxjs.repeat.model.example.inner.third.values.p',
+      },
     },
   },
-  operator: 'repeat({ count: 3, delay: 2 })',
+  operator: 'studyRxjs.repeat.model.example.operator',
   outputs: {
     status$: {
-      label: 'status$',
+      label: 'studyRxjs.repeat.model.example.outputs.status.label',
       marbles: '--q----r----p|',
       values: { q: 'queued', r: 'running', p: 'passed' },
+
+      valueMessages: {
+        q: 'studyRxjs.repeat.model.example.outputs.status.values.q',
+        r: 'studyRxjs.repeat.model.example.outputs.status.values.r',
+        p: 'studyRxjs.repeat.model.example.outputs.status.values.p',
+      },
     },
   },
   run: ({ inputs, inner }) => {
@@ -50,30 +71,37 @@ export const example: MarbleExample = {
     return { status$ };
   },
   moments: [
-    { label: 'First answer', frame: 2 },
-    { label: 'Run 1 completes', frame: 3 },
-    { label: 'Run 2 starts', frame: 5 },
-    { label: 'Run 3 starts', frame: 10 },
-    { label: 'Done', frame: 13 },
+    { label: 'studyRxjs.repeat.model.example.moments.0.label', frame: 2 },
+    { label: 'studyRxjs.repeat.model.example.moments.1.label', frame: 3 },
+    { label: 'studyRxjs.repeat.model.example.moments.2.label', frame: 5 },
+    { label: 'studyRxjs.repeat.model.example.moments.3.label', frame: 10 },
+    { label: 'studyRxjs.repeat.model.example.moments.4.label', frame: 13 },
   ],
-  caption:
-    'Time runs in frames, left to right. A circle is an emission, with its letter, and a bar is completion. Each grey lane is check$ subscribed again by repeat; the bar that ends each run is held back from status$ until the last run, so status$ has a single bar, at the end. Step the frames to follow each run.',
+  caption: 'studyRxjs.repeat.model.example.caption',
   notes: {
-    0: 'The page subscribes to status$, so check$ sends its first request.',
-    1: 'The first request is out; its answer is not back yet.',
-    2: 'The first answer, queued, arrives and goes straight through to status$.',
-    3: 'check$ completes, but status$ does not. repeat counts one finished run, sees that the count is not reached and starts the timer for its delay.',
-    4: 'repeat is waiting out its delay. No request is out.',
-    5: 'The timer fires. repeat subscribes to check$ again, and the new subscription sends a new request.',
-    6: 'The second request is out.',
-    7: 'The second answer, running, goes straight through.',
-    8: 'The second run completes. Two runs are finished, so repeat waits once more.',
-    9: 'repeat is waiting out its delay before the last request.',
-    10: 'The timer fires, and repeat subscribes to check$ for the third and last time.',
-    11: 'The third request is out.',
-    12: 'The third answer, passed, goes straight through.',
-    13: 'The third run completes. That is the count, so repeat completes status$ instead of waiting again.',
+    0: 'studyRxjs.repeat.model.example.notes.0',
+    1: 'studyRxjs.repeat.model.example.notes.1',
+    2: 'studyRxjs.repeat.model.example.notes.2',
+    3: {
+      key: 'studyRxjs.repeat.model.example.notes.3',
+      params: { completed: completedRuns.first.length },
+    },
+    4: 'studyRxjs.repeat.model.example.notes.4',
+    5: 'studyRxjs.repeat.model.example.notes.5',
+    6: 'studyRxjs.repeat.model.example.notes.6',
+    7: 'studyRxjs.repeat.model.example.notes.7',
+    8: {
+      key: 'studyRxjs.repeat.model.example.notes.8',
+      params: { completed: completedRuns.second.length },
+    },
+    9: 'studyRxjs.repeat.model.example.notes.9',
+    10: 'studyRxjs.repeat.model.example.notes.10',
+    11: 'studyRxjs.repeat.model.example.notes.11',
+    12: 'studyRxjs.repeat.model.example.notes.12',
+    13: 'studyRxjs.repeat.model.example.notes.13',
   },
+
+  parameterMessages: { answers: 'studyRxjs.repeat.record.parameters.answers' },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { centroid, length } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -17,6 +17,7 @@ import {
 } from './flocking.model';
 
 const record = await loadStudy('aifg-a:145');
+
 const parameters: StudyParameters = {
   startX: 0,
   spacing: 4,
@@ -38,6 +39,7 @@ const parameters: StudyParameters = {
   steps: 200,
   crowdedSeparationWeight: 0,
 };
+
 const p = readFlockingParameters(parameters);
 
 it('uses exactly the draft record’s parameters and pairs each mechanism step with its code', () => {
@@ -104,7 +106,7 @@ it('makes piling up visible after changing only the separation weight', () => {
   expect(Math.min(...normal.map(nearestPair))).toBeGreaterThan(2 * p.radius);
   expect(Math.min(...crowded.map(nearestPair))).toBeLessThan(2 * p.radius);
   expect(velocitySpread(crowded[p.steps])).toBeLessThan(0.01);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(normal.map(nearestPair));
   expect(comparison?.timeline.series[1].values).toEqual(crowded.map(nearestPair));
   expect(comparison?.timeline.reference).toBe(1.6);
@@ -149,8 +151,8 @@ it('does not promise collision prevention between samples for a fast crossing', 
 });
 
 it('supplies every prose value, keeps all geometry inside bounds and plots the same run', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.motion.frames.length).toBeLessThanOrEqual(240);
   expect(run.moments).toHaveLength(4);
   expect(run.initialStep).toBe(0);
@@ -201,7 +203,7 @@ it('supplies every prose value, keeps all geometry inside bounds and plots the s
 });
 
 it('separates the opening contributions into named rows with visible arrowheads', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const first = run.motion.frames[0];
   const vectors = first.vectors ?? [];
   expect(new Set(vectors.map(({ y }) => y)).size).toBe(5);
@@ -225,10 +227,10 @@ it('separates the opening contributions into named rows with visible arrowheads'
 });
 
 it('uses live controls to expose piling up and a crossing that fades before the field line', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['separationWeight', 'cruiseWeight']);
-  const withoutSeparation = model({ ...parameters, separationWeight: 0 });
-  const strongSeparation = model({ ...parameters, separationWeight: 2 });
+  const withoutSeparation = model({ ...parameters, separationWeight: 0 }, studyTranslate);
+  const strongSeparation = model({ ...parameters, separationWeight: 2 }, studyTranslate);
   expect(withoutSeparation.motion.frames[0].vectors?.[0].dy).toBeCloseTo(0);
   expect(strongSeparation.motion.frames[0].vectors?.[0].dy).toBe(-6);
   expect(withoutSeparation.motion.frames.at(-1)?.values['gap']).not.toBe(
@@ -239,8 +241,8 @@ it('uses live controls to expose piling up and a crossing that fades before the 
   expect(withoutSeparation.comparison?.timeline.series[0].values).toEqual(
     withoutSeparation.comparison?.timeline.series[1].values,
   );
-  const noDrive = model({ ...parameters, cruiseWeight: 0 });
-  const strongDrive = model({ ...parameters, cruiseWeight: 2 });
+  const noDrive = model({ ...parameters, cruiseWeight: 0 }, studyTranslate);
+  const strongDrive = model({ ...parameters, cruiseWeight: 2 }, studyTranslate);
   const finalX = (run: ReturnType<typeof model>) =>
     centroid((run.motion.frames.at(-1)?.bodies ?? []).map(({ x, y }) => ({ x, y }))).x;
   expect(finalX(noDrive)).toBeLessThan(p.crossingX);
@@ -251,7 +253,7 @@ it('uses live controls to expose piling up and a crossing that fades before the 
 });
 
 it('keeps notes, prose, labels and all geometry sound at input endpoints and combined extremes', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs).toHaveLength(2);
   const variants = [
     parameters,
@@ -273,7 +275,7 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -313,8 +315,8 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
         expect(x >= minX && x <= maxX && y >= minY && y <= maxY).toBe(true);
       }
       const drawing = motionDrawing(run.motion, step);
-      const labels = [...drawing.bodies, ...drawing.marks].flatMap(({ x, labelY, label }) =>
-        label ? [{ x, y: labelY, text: label }] : [],
+      const labels = [...drawing.bodies, ...drawing.marks].flatMap(
+        ({ labelX: x, labelY, label }) => (label ? [{ x, y: labelY, text: label }] : []),
       );
       const height = Number(drawing.viewBox.split(' ')[3]);
       for (const label of labels) {

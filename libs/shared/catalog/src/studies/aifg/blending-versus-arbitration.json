@@ -1,0 +1,123 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:143",
+  "work": "aifg",
+  "slug": "blending-versus-arbitration",
+  "authored": {
+    "by": "studyAifg.blending-versus-arbitration.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.blending-versus-arbitration.record.authored.reviewedBy.item0",
+      "studyAifg.blending-versus-arbitration.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.blending-versus-arbitration.record.intuition.text",
+    "situation": "studyAifg.blending-versus-arbitration.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.blending-versus-arbitration.record.example.name",
+    "description": "studyAifg.blending-versus-arbitration.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "marshalX": -30,
+      "targetX": 30,
+      "maxAcceleration": 6,
+      "maxSpeed": 4,
+      "marshalWeight": 1,
+      "goalWeight": 1,
+      "holdSeconds": 1,
+      "fadeSeconds": 2,
+      "epsilon": 0.5,
+      "timeStep": 0.25,
+      "steps": 20,
+      "heavierWeight": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step0.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step1.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step2.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step3.title",
+        "text": "studyAifg.blending-versus-arbitration.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.blending-versus-arbitration.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/blending-versus-arbitration.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/blending-versus-arbitration.model.ts",
+    "textEquivalent": "studyAifg.blending-versus-arbitration.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.blending-versus-arbitration.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
+      "relevance": "studyAifg.blending-versus-arbitration.record.implementations.item0.relevance",
+      "explanation": "studyAifg.blending-versus-arbitration.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.blending-versus-arbitration.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.blending-versus-arbitration.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/BlendedSteering.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.blending-versus-arbitration.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/PrioritySteering.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.blending-versus-arbitration.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.blending-versus-arbitration.record.limits.item0",
+    "studyAifg.blending-versus-arbitration.record.limits.item1",
+    "studyAifg.blending-versus-arbitration.record.limits.item2",
+    "studyAifg.blending-versus-arbitration.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:144",
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:149",
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:150",
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:146",
+      "why": "studyAifg.blending-versus-arbitration.record.nearby.item3.why"
+    }
+  ]
+}

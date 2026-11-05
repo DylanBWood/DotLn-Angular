@@ -43,4 +43,14 @@ svg {
   stroke-width: 4;
   @include tones.stroke-tones;
 }
+.label-guide {
+  stroke: var(--dotln-border-strong);
+  stroke-width: 1;
+}
+.label {
+  paint-order: stroke;
+  stroke: var(--dotln-surface);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
 @include tones.reading;

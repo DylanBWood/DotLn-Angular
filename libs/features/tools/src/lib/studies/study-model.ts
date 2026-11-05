@@ -1,5 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import type { StudyTranslate } from './study-translate';
+
 /** What a mark in a drawing stands for. The family turns this into its colour and line. */
 export type StudyTone = 'subject' | 'target' | 'actual' | 'desired' | 'other' | 'zone' | 'muted';
 
@@ -136,7 +138,7 @@ export interface MarbleEvent {
    */
   readonly delivered: boolean;
   /**
-   * For an output value, the label of the lane it rides down from in the drawing; absent for a
+   * For an output value, the stable id of the lane it rides down from in the drawing; absent for a
    * value that comes from nowhere drawable, such as one a scheduler held back.
    */
   readonly from?: string;
@@ -323,7 +325,7 @@ export function ticksOf(model: StudyModel): readonly StudyTick[] {
 }
 
 /** A model module exports this: the record's parameters in, the example's run out. */
-export type StudyModelFunction = (parameters: StudyParameters) => StudyModel;
+export type StudyModelFunction = (parameters: StudyParameters, t: StudyTranslate) => StudyModel;
 
 export interface StudyModelModule {
   readonly model: StudyModelFunction;

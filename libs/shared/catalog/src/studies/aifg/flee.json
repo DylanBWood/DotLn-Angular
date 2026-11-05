@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:111",
+  "work": "aifg",
+  "slug": "flee",
+  "authored": {
+    "by": "studyAifg.flee.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.flee.record.authored.reviewedBy.item0",
+      "studyAifg.flee.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.flee.record.intuition.text",
+    "situation": "studyAifg.flee.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.flee.record.example.name",
+    "description": "studyAifg.flee.record.example.description",
+    "parameters": {
+      "start": 5,
+      "threat": 0,
+      "initialVelocity": 0,
+      "maxSpeed": 6,
+      "maxAcceleration": 8,
+      "engineRadius": 20,
+      "timeStep": 0.25,
+      "steps": 40,
+      "bodyRadius": 0.5,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 1,
+      "arrowLane": 3,
+      "padding": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.flee.record.mechanism.steps.step0.title",
+        "text": "studyAifg.flee.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.flee.record.mechanism.steps.step1.title",
+        "text": "studyAifg.flee.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.flee.record.mechanism.steps.step2.title",
+        "text": "studyAifg.flee.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.flee.record.mechanism.steps.step3.title",
+        "text": "studyAifg.flee.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.flee.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/flee.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/flee.model.ts",
+    "textEquivalent": "studyAifg.flee.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.flee.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Flee.java",
+      "relevance": "studyAifg.flee.record.implementations.item0.relevance",
+      "explanation": "studyAifg.flee.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.flee.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.flee.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.flee.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Flee.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.flee.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.flee.record.limits.item0",
+    "studyAifg.flee.record.limits.item1",
+    "studyAifg.flee.record.limits.item2",
+    "studyAifg.flee.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:110",
+      "why": "studyAifg.flee.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:122",
+      "why": "studyAifg.flee.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:131",
+      "why": "studyAifg.flee.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "studyAifg.flee.record.nearby.item3.why"
+    }
+  ]
+}

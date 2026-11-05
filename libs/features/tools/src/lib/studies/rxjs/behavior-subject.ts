@@ -15,24 +15,39 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     presses$: {
-      label: 'presses$',
+      label: 'studyRxjs.behavior-subject.model.example.inputs.presses.label',
       marbles: '---r---r--p',
       values: { r: 'running', p: 'paused' },
       subscriptions: '^',
+
+      valueMessages: {
+        r: 'studyRxjs.behavior-subject.model.example.inputs.presses.values.r',
+        p: 'studyRxjs.behavior-subject.model.example.inputs.presses.values.p',
+      },
     },
   },
-  operator: "status = new BehaviorSubject('paused')",
+  operator: 'studyRxjs.behavior-subject.model.example.operator',
   outputs: {
     button$: {
-      label: 'button$',
+      label: 'studyRxjs.behavior-subject.model.example.outputs.button.label',
       marbles: 'p--r---r--p',
       values: { r: 'running', p: 'paused' },
+
+      valueMessages: {
+        r: 'studyRxjs.behavior-subject.model.example.outputs.button.values.r',
+        p: 'studyRxjs.behavior-subject.model.example.outputs.button.values.p',
+      },
     },
     panel$: {
-      label: 'panel$',
+      label: 'studyRxjs.behavior-subject.model.example.outputs.panel.label',
       marbles: '-----r-r--p',
       values: { r: 'running', p: 'paused' },
       subscriptions: '-----^',
+
+      valueMessages: {
+        r: 'studyRxjs.behavior-subject.model.example.outputs.panel.values.r',
+        p: 'studyRxjs.behavior-subject.model.example.outputs.panel.values.p',
+      },
     },
   },
   run: ({ inputs }) => {
@@ -46,21 +61,39 @@ export const example: MarbleExample = {
     return { button$, panel$ };
   },
   moments: [
-    { label: 'Starts paused', frame: 0 },
-    { label: 'Play', frame: 3 },
-    { label: 'Panel subscribes', frame: 5 },
-    { label: 'Play again', frame: 7 },
-    { label: 'Pause', frame: 10 },
+    {
+      label: 'studyRxjs.behavior-subject.model.example.moments.0.label',
+      frame: 0,
+    },
+    {
+      label: 'studyRxjs.behavior-subject.model.example.moments.1.label',
+      frame: 3,
+    },
+    {
+      label: 'studyRxjs.behavior-subject.model.example.moments.2.label',
+      frame: 5,
+    },
+    {
+      label: 'studyRxjs.behavior-subject.model.example.moments.3.label',
+      frame: 7,
+    },
+    {
+      label: 'studyRxjs.behavior-subject.model.example.moments.4.label',
+      frame: 10,
+    },
   ],
   notes: {
-    0: 'The status starts as paused, and the button subscribes: it is handed paused at once, before anything is pressed.',
-    3: 'Play is pressed. The subject replaces paused with running and hands it to the button, its only listener so far.',
-    5: 'The panel opens and subscribes. It is handed the held status, running, at once: it does not wait for the next press, and it never learns that the scene was paused before.',
-    7: 'Play is pressed again. The status was already running, but the subject does not compare: both listeners hear running again.',
-    10: 'Pause is pressed. The subject replaces running with paused and hands it to both listeners in the same frame.',
+    0: 'studyRxjs.behavior-subject.model.example.notes.0',
+    3: 'studyRxjs.behavior-subject.model.example.notes.3',
+    5: 'studyRxjs.behavior-subject.model.example.notes.5',
+    7: 'studyRxjs.behavior-subject.model.example.notes.7',
+    10: 'studyRxjs.behavior-subject.model.example.notes.10',
   },
-  caption:
-    'Time runs in frames. presses$ is what the subject is fed; each line below the band is one listener, drawn from the frame it subscribes and starting with the value the subject holds then: the button from frame 0 and the panel from frame 5. A circle is a status it hears, with its letter. Step the frames to follow each press.',
+  caption: 'studyRxjs.behavior-subject.model.example.caption',
+
+  parameterMessages: {
+    initial: 'studyRxjs.behavior-subject.record.parameters.initial',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

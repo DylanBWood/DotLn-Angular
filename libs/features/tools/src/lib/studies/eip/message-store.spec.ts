@@ -1,14 +1,17 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, model } from './message-store';
 
 const modulePath = 'libs/features/tools/src/lib/studies/eip/message-store.ts';
 // The record's parameters: which kind of record the log keeps whole and which as an envelope.
-const parameters = { keptInFull: 'verification reports', envelopeOnly: 'evidence' };
+const parameters = {
+  keptInFull: 'verification reports',
+  envelopeOnly: 'evidence',
+};
 
 const run = (): FlowStudyModel => {
-  const result = model(parameters);
+  const result = model(parameters, studyTranslate);
   if (result.family !== 'flow') throw new Error('The message store is drawn as a flow.');
   return result;
 };

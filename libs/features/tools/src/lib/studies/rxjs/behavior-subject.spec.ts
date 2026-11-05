@@ -7,14 +7,16 @@ import {
 } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { example, model } from './behavior-subject';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 
 /** One line of the drawing, by its label. */
 const lineOf = (label: string) => {
-  const line = marbleModel(example).marbles.lines.find((candidate) => candidate.label === label);
+  const line = marbleModel(example, {}, studyTranslate).marbles.lines.find(
+    (candidate) => candidate.label === label,
+  );
   if (line === undefined) throw new Error(`The drawing has no line labelled ${label}.`);
   return line;
 };
@@ -52,7 +54,7 @@ it('attaches the record to the BehaviorSubject row and reads its code from this 
     panelOpensAt: lineOf('panel$').subscribedAt,
   });
   expect(heardOn('button$')[0]).toBe(`0 ${record.example.parameters['initial']}`);
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
   if (run.family !== 'marbles') throw new Error('The model is not a marble diagram.');
   expect(run.marbles.lines.map(({ label }) => label)).toEqual(['presses$', 'button$', 'panel$']);
@@ -66,7 +68,7 @@ it('hands each new subscriber the held status at once and passes on a repeat', (
 });
 
 it('tells of the panel being handed the held status and names each moment', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[5];
   expect(telling.frame).toBe(5);
   // Subscribing and being handed the held value happen in the same frame.

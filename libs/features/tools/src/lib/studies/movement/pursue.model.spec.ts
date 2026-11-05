@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import type { StudyPoint } from '../study-model';
@@ -39,6 +39,7 @@ const example: PursueParameters = {
   velocitySeconds: 1,
   accelerationSecondsSquared: 0.5,
 };
+
 const parameters: StudyParameters = { ...example };
 
 it('uses the authored Pursue record and exactly its example parameters', () => {
@@ -155,7 +156,7 @@ it('misses the reversed runner by a hand-checkable amount without leaking the fu
   expect(turned[turnStep + 1].ash).not.toEqual(normal[turnStep + 1].ash);
   expect(Math.max(...turned.map(({ forecastError }) => forecastError))).toBeGreaterThan(9);
   for (const frame of turned.slice(turnStep)) expect(frame.forecastError).toBeCloseTo(0, 10);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(
     normal.map(({ forecastError }) => forecastError),
   );
@@ -197,8 +198,8 @@ it('does not constrain the seek step to a route around a quay wall', () => {
 });
 
 it('keeps the drawing, prose, worked numbers and chart on the same run', () => {
-  const run = model(record.example.parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(record.example.parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.motion.frames).toHaveLength(81);
   expect(run.moments).toHaveLength(4);
   const texts = [
@@ -248,10 +249,12 @@ it('keeps the drawing, prose, worked numbers and chart on the same run', () => {
 });
 
 it('moves the aim further ahead and increases reversal error with a longer prediction cap', () => {
-  const input = model(parameters).inputs?.find(({ name }) => name === 'maxPrediction');
+  const input = model(parameters, studyTranslate).inputs?.find(
+    ({ name }) => name === 'maxPrediction',
+  );
   if (!input) throw new Error('Pursue must expose the prediction cap.');
-  const short = model({ ...parameters, maxPrediction: input.min });
-  const long = model({ ...parameters, maxPrediction: input.max });
+  const short = model({ ...parameters, maxPrediction: input.min }, studyTranslate);
+  const long = model({ ...parameters, maxPrediction: input.max }, studyTranslate);
   expect(short.motion.frames[0].marks?.[0].x).toBeCloseTo(1.125);
   expect(long.motion.frames[0].marks?.[0].x).toBeCloseTo(13.5);
   expect(short.motion.frames[0].values['leadDistance']).toBe('1.13');
@@ -270,7 +273,7 @@ it('moves the aim further ahead and increases reversal error with a longer predi
 });
 
 it('keeps every offered cap readable with truthful moments, outcomes and separated names', () => {
-  const input = model(parameters).inputs?.[0];
+  const input = model(parameters, studyTranslate).inputs?.[0];
   if (!input) throw new Error('Pursue must offer a live input.');
   const texts = [
     record.visual.textEquivalent,
@@ -279,7 +282,7 @@ it('keeps every offered cap readable with truthful moments, outcomes and separat
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (let value = input.min; value <= input.max; value += input.step) {
-    const run = model({ ...parameters, [input.name]: value });
+    const run = model({ ...parameters, [input.name]: value }, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(Number.isFinite(minX + maxX + minY + maxY)).toBe(true);
     expect(maxX).toBeGreaterThan(minX);
@@ -330,13 +333,13 @@ it('keeps every offered cap readable with truthful moments, outcomes and separat
       expect(labels.map(({ label }) => label).sort()).toEqual(['Aim', 'Ash', 'Reed']);
       for (const [index, label] of labels.entries()) {
         const halfWidth = (label.label?.length ?? 0) * 8;
-        expect(label.x - halfWidth >= 0 && label.x + halfWidth <= 600 && label.labelY >= 24).toBe(
-          true,
-        );
+        expect(
+          label.labelX - halfWidth >= 0 && label.labelX + halfWidth <= 600 && label.labelY >= 24,
+        ).toBe(true);
         for (const vector of drawing.vectors) {
           const entirelyBeside =
-            Math.min(vector.x1, vector.x2) > label.x + halfWidth + 6 ||
-            Math.max(vector.x1, vector.x2) < label.x - halfWidth - 6;
+            Math.min(vector.x1, vector.x2) > label.labelX + halfWidth + 6 ||
+            Math.max(vector.x1, vector.x2) < label.labelX - halfWidth - 6;
           const entirelyAboveOrBelow =
             Math.min(vector.y1, vector.y2) > label.labelY + 10 ||
             Math.max(vector.y1, vector.y2) < label.labelY - 30;
@@ -345,7 +348,7 @@ it('keeps every offered cap readable with truthful moments, outcomes and separat
         for (const other of labels.slice(index + 1))
           expect(
             Math.abs(label.labelY - other.labelY) >= 24 ||
-              Math.abs(label.x - other.x) >= halfWidth + (other.label?.length ?? 0) * 8,
+              Math.abs(label.labelX - other.labelX) >= halfWidth + (other.label?.length ?? 0) * 8,
           ).toBe(true);
       }
     }

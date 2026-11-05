@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { centroid, distance, length, slotPosition } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import {
@@ -17,6 +17,7 @@ import {
 const record = await loadStudy('aifg-a:177');
 
 const parameters: StudyParameters = record.example.parameters;
+
 const example = readEscortParameters(parameters);
 
 it('starts the named escort in distinct, centred engine slots', () => {
@@ -120,7 +121,7 @@ it('shows the failure from changing only the lag limit while retaining the gentl
     tight[example.steps].formation.anchor.x,
   );
   for (const state of loose) expect(escortLag(state)).toBeLessThanOrEqual(12 + 1e-10);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(tight.map(escortSlotError));
   expect(comparison?.timeline.series[1].values).toEqual(loose.map(escortSlotError));
   expect(comparison?.findings[0]).toContain('4.00 units with the tight limit and 12.00');
@@ -177,12 +178,14 @@ it('applies the pull once per update and refuses stale engine arithmetic', () =>
   // With no motion or cap, one pull leaves 10 * 0.98; two leave 10 * 0.98 squared.
   expect(whole.formation.anchor.x).toBeCloseTo(9.8, 12);
   expect(half.formation.anchor.x).toBeCloseTo(9.604, 12);
-  expect(() => model({ ...parameters, anchorPull: 0.03 })).toThrow('fixed anchor rule');
+  expect(() => model({ ...parameters, anchorPull: 0.03 }, studyTranslate)).toThrow(
+    'fixed anchor rule',
+  );
 });
 
 it('connects the prose, selected cap, drawings and chart to the same deterministic run', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.initialStep).toBe(8);
   expect(run.motion.frames).toHaveLength(121);
   expect(run.moments.length).toBeGreaterThanOrEqual(3);
@@ -216,19 +219,19 @@ it('connects the prose, selected cap, drawings and chart to the same determinist
 });
 
 it('lets a looser lag limit visibly stretch the escort and faster motors advance the whole group', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['lagLimit', 'memberSpeed']);
   const lagInput = inputs.find(({ name }) => name === 'lagLimit');
   const speedInput = inputs.find(({ name }) => name === 'memberSpeed');
   if (!lagInput || !speedInput) throw new Error('The escort needs lag and motor controls.');
-  const tight = model({ ...parameters, lagLimit: lagInput.min });
-  const loose = model({ ...parameters, lagLimit: lagInput.max });
+  const tight = model({ ...parameters, lagLimit: lagInput.min }, studyTranslate);
+  const loose = model({ ...parameters, lagLimit: lagInput.max }, studyTranslate);
   expect(tight.motion.frames.at(-1)?.values['lag']).toBe('4.00');
   expect(loose.motion.frames.at(-1)?.values['lag']).toBe('10.00');
   expect(Math.max(...(loose.timeline?.series[1].values ?? []))).toBeCloseTo(10, 10);
   expect(Math.max(...(tight.timeline?.series[1].values ?? []))).toBeCloseTo(4, 10);
-  const slow = model({ ...parameters, memberSpeed: speedInput.min });
-  const fast = model({ ...parameters, memberSpeed: speedInput.max });
+  const slow = model({ ...parameters, memberSpeed: speedInput.min }, studyTranslate);
+  const fast = model({ ...parameters, memberSpeed: speedInput.max }, studyTranslate);
   const slowLast = slow.motion.frames.at(-1);
   const fastLast = fast.motion.frames.at(-1);
   if (!slowLast || !fastLast) throw new Error('Each motor setting needs a final frame.');
@@ -237,13 +240,13 @@ it('lets a looser lag limit visibly stretch the escort and faster motors advance
 });
 
 it('keeps notes, displayed precision, labels and every drawn extent sound throughout the input ranges', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   const placeholders = [...JSON.stringify(record).matchAll(/\{([a-zA-Z][a-zA-Z0-9]*)\}/g)].map(
     (match) => match[1],
   );
   for (const input of inputs)
     for (const value of [input.min, input.max]) {
-      const run = model({ ...parameters, [input.name]: value });
+      const run = model({ ...parameters, [input.name]: value }, studyTranslate);
       expect(run.initialStep).toBeGreaterThanOrEqual(0);
       expect(run.initialStep).toBeLessThan(run.motion.frames.length);
       for (const moment of run.moments) {
@@ -282,7 +285,7 @@ it('keeps notes, displayed precision, labels and every drawn extent sound throug
         for (const [index, label] of labels.entries())
           for (const other of labels.slice(index + 1))
             if (Math.abs(label.labelY - other.labelY) < 24)
-              expect(Math.abs(label.x - other.x)).toBeGreaterThan(
+              expect(Math.abs(label.labelX - other.labelX)).toBeGreaterThan(
                 ((label.label?.length ?? 0) + (other.label?.length ?? 0)) * 7.2,
               );
       }

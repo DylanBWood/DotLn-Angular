@@ -1,0 +1,128 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:105",
+  "work": "aifg",
+  "slug": "steering-behaviors",
+  "authored": {
+    "by": "studyAifg.steering-behaviors.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.steering-behaviors.record.authored.reviewedBy.item0",
+      "studyAifg.steering-behaviors.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.steering-behaviors.record.intuition.text",
+    "situation": "studyAifg.steering-behaviors.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.steering-behaviors.record.example.name",
+    "description": "studyAifg.steering-behaviors.record.example.description",
+    "parameters": {
+      "initialPosition": 0,
+      "initialVelocity": 0,
+      "target": 24,
+      "maxSpeed": 6,
+      "maxAcceleration": 4,
+      "radius": 0.5,
+      "slowRadius": 10,
+      "targetRadius": 1,
+      "responseTime": 0.25,
+      "arrivalEnabled": 1,
+      "timeStep": 0.25,
+      "steps": 80
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.steering-behaviors.record.mechanism.steps.step0.title",
+        "text": "studyAifg.steering-behaviors.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.steering-behaviors.record.mechanism.steps.step1.title",
+        "text": "studyAifg.steering-behaviors.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.steering-behaviors.record.mechanism.steps.step2.title",
+        "text": "studyAifg.steering-behaviors.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.steering-behaviors.record.mechanism.steps.step3.title",
+        "text": "studyAifg.steering-behaviors.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.steering-behaviors.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/steering-behaviors.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/steering-behaviors.model.ts",
+    "textEquivalent": "studyAifg.steering-behaviors.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.steering-behaviors.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringBehavior.java",
+      "relevance": "studyAifg.steering-behaviors.record.implementations.item0.relevance",
+      "explanation": "studyAifg.steering-behaviors.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.steering-behaviors.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-behaviors.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.steering-behaviors.record.references.item1.title",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-behaviors.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.steering-behaviors.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringBehavior.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-behaviors.record.references.item2.supports"
+    },
+    {
+      "title": "studyAifg.steering-behaviors.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Seek.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-behaviors.record.references.item3.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.steering-behaviors.record.limits.item0",
+    "studyAifg.steering-behaviors.record.limits.item1",
+    "studyAifg.steering-behaviors.record.limits.item2",
+    "studyAifg.steering-behaviors.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:142",
+      "why": "studyAifg.steering-behaviors.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:108",
+      "why": "studyAifg.steering-behaviors.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:110",
+      "why": "studyAifg.steering-behaviors.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "studyAifg.steering-behaviors.record.nearby.item3.why"
+    }
+  ]
+}

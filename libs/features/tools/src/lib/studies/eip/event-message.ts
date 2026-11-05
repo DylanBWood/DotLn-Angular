@@ -1,5 +1,31 @@
 import { type FlowExample, flowModel } from '../flow';
+import type { StudyMessage } from '../study-message';
 import type { StudyModelFunction } from '../study-model';
+
+const verifiedAt = 10 * 60;
+const reviewedAt = verifiedAt + 12;
+const firstReadAt = verifiedAt + 5;
+const lastReadAt = verifiedAt + 30;
+const staleAfter = 20;
+
+const clockTime = (minutes: number) =>
+  `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
+
+/** The sweep reads numeric clock data; its state describes the resulting age and judgment. */
+export function sweepState(now: number, announced: number, threshold: number): StudyMessage {
+  const age = now - announced;
+  const time = clockTime(now);
+  return {
+    key: 'studyEip.event-message.model.sweepState',
+    params: { time, age },
+    messages: {
+      status:
+        age >= threshold
+          ? 'studyEip.event-message.model.stale'
+          : 'studyEip.event-message.model.fresh',
+    },
+  };
+}
 
 /**
  * Order 41 passes verification at 10:00 and moves to final review at 10:12. Each change is
@@ -11,12 +37,42 @@ import type { StudyModelFunction } from '../study-model';
  */
 export const example: FlowExample = {
   nodes: [
-    { id: 'lifecycle', label: 'Lifecycle', stage: 0 },
-    { id: 'store', label: 'Event store', stage: 1, kind: 'channel' },
-    { id: 'beacon', label: 'Beacon', stage: 1, row: 1, kind: 'channel', tone: 'subject' },
-    { id: 'quality', label: 'Quality watcher', stage: 2 },
-    { id: 'intent', label: 'Intent watcher', stage: 2, row: 1 },
-    { id: 'sweep', label: 'Sweep', stage: 2, row: 2 },
+    {
+      id: 'lifecycle',
+      label: 'studyEip.event-message.model.example.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'store',
+      label: 'studyEip.event-message.model.example.nodes.1.label',
+      stage: 1,
+      kind: 'channel',
+    },
+    {
+      id: 'beacon',
+      label: 'studyEip.event-message.model.example.nodes.2.label',
+      stage: 1,
+      row: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'quality',
+      label: 'studyEip.event-message.model.example.nodes.3.label',
+      stage: 2,
+    },
+    {
+      id: 'intent',
+      label: 'studyEip.event-message.model.example.nodes.4.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'sweep',
+      label: 'studyEip.event-message.model.example.nodes.5.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
     { id: 'append', from: 'lifecycle', to: 'store' },
@@ -27,77 +83,114 @@ export const example: FlowExample = {
   ],
   // One letter for each piece of news, so the same news reads the same on both channels.
   messages: {
-    v: { key: 'v', content: 'verified, pass, at 10:00' },
-    r: { key: 'r', content: 'final review, at 10:12' },
+    v: {
+      key: 'v',
+      content: {
+        key: 'studyEip.event-message.model.example.messages.v.content',
+        params: { time: clockTime(verifiedAt) },
+      },
+    },
+    r: {
+      key: 'r',
+      content: {
+        key: 'studyEip.event-message.model.example.messages.r.content',
+        params: { time: clockTime(reviewedAt) },
+      },
+    },
   },
   start: {
     states: {
-      lifecycle: 'order 41 is verifying',
-      store: 'earlier entries kept',
-      beacon: 'says verifying, 09:40',
-      sweep: 'threshold: 20 minutes',
+      lifecycle: 'studyEip.event-message.model.example.start.states.lifecycle',
+      store: 'studyEip.event-message.model.example.start.states.store',
+      beacon: 'studyEip.event-message.model.example.start.states.beacon',
+      sweep: {
+        key: 'studyEip.event-message.model.example.start.states.sweep',
+        params: { threshold: staleAfter },
+      },
     },
-    note: 'Nothing has moved yet: order 41 is still being verified.',
+    note: 'studyEip.event-message.model.example.start.note',
   },
   steps: [
     {
       moves: [{ message: 'v', link: 'append' }],
-      states: { lifecycle: 'verification passed', store: 'has the 10:00 entry' },
+      states: {
+        lifecycle: 'studyEip.event-message.model.example.steps.0.states.lifecycle',
+        store: 'studyEip.event-message.model.example.steps.0.states.store',
+      },
       held: { store: ['v'] },
-      note: 'At 10:00 the verification passes, and the lifecycle sends v, the news of it, to the event store as it happens. v names no reader and asks nothing of anyone.',
+      note: 'studyEip.event-message.model.example.steps.0.note',
     },
     {
       moves: [{ message: 'v', link: 'emit' }],
-      states: { beacon: 'says verified, 10:00' },
+      states: {
+        beacon: 'studyEip.event-message.model.example.steps.1.states.beacon',
+      },
       held: { beacon: ['v'] },
-      note: 'Because of that entry, the lifecycle also writes v to the order’s beacon, replacing what the beacon said before.',
+      note: 'studyEip.event-message.model.example.steps.1.note',
     },
     {
       moves: [
         { message: 'v', link: 'to-quality' },
         { message: 'v', link: 'to-intent' },
       ],
-      states: { quality: 'notes a pass for 41', intent: 'expects final review next' },
-      note: 'The event store hands v to both watchers. Each draws its own conclusion; neither was told what to do, and the lifecycle knows of neither.',
+      states: {
+        quality: 'studyEip.event-message.model.example.steps.2.states.quality',
+        intent: 'studyEip.event-message.model.example.steps.2.states.intent',
+      },
+      note: 'studyEip.event-message.model.example.steps.2.note',
     },
     {
       moves: [{ message: 'v', link: 'read' }],
-      states: { sweep: '10:05: fresh, 5 min old' },
-      note: 'At 10:05 the sweep reads v from the beacon. The news is under the threshold, so the sweep labels it fresh; reading it leaves it on the beacon.',
+      states: {
+        sweep: sweepState(firstReadAt, verifiedAt, staleAfter),
+      },
+      note: 'studyEip.event-message.model.example.steps.3.note',
     },
     {
       moves: [{ message: 'r', link: 'append' }],
-      states: { lifecycle: 'final review began', store: 'has 10:00 and 10:12' },
+      states: {
+        lifecycle: 'studyEip.event-message.model.example.steps.4.states.lifecycle',
+        store: 'studyEip.event-message.model.example.steps.4.states.store',
+      },
       held: { store: ['v', 'r'] },
-      note: 'At 10:12 the order moves to final review, and the lifecycle sends r, the news of it, to the event store.',
+      note: 'studyEip.event-message.model.example.steps.4.note',
     },
     {
-      states: { lifecycle: 'beacon write failed' },
-      note: 'The lifecycle tries to write r to the beacon, but the write fails with a warning. Nothing reaches the beacon, so it still holds v.',
+      states: {
+        lifecycle: 'studyEip.event-message.model.example.steps.5.states.lifecycle',
+      },
+      note: 'studyEip.event-message.model.example.steps.5.note',
     },
     {
       moves: [
         { message: 'r', link: 'to-quality' },
         { message: 'r', link: 'to-intent' },
       ],
-      states: { quality: 'notes review began', intent: 'awaits the review' },
-      note: 'The event store hands r to both watchers, so anyone reading the event store sees the order in final review.',
+      states: {
+        quality: 'studyEip.event-message.model.example.steps.6.states.quality',
+        intent: 'studyEip.event-message.model.example.steps.6.states.intent',
+      },
+      note: 'studyEip.event-message.model.example.steps.6.note',
     },
     {
       moves: [{ message: 'v', link: 'read' }],
-      states: { sweep: '10:30: stale, 30 min old' },
-      note: 'At 10:30 the sweep reads the beacon again and gets v. It still says verified, but it is past the 20-minute threshold, so the sweep labels it stale instead of reporting a phase the order has left.',
+      states: {
+        sweep: sweepState(lastReadAt, verifiedAt, staleAfter),
+      },
+      note: {
+        key: 'studyEip.event-message.model.example.steps.7.note',
+        params: { threshold: staleAfter },
+      },
     },
   ],
   moments: [
-    { label: 'Announced', step: 1 },
-    { label: 'Each reacts', step: 3 },
-    { label: 'Fresh', step: 4 },
-    { label: 'Beacon missed', step: 6 },
-    { label: 'Stale', step: 8 },
+    { label: 'studyEip.event-message.model.example.moments.0.label', step: 1 },
+    { label: 'studyEip.event-message.model.example.moments.1.label', step: 3 },
+    { label: 'studyEip.event-message.model.example.moments.2.label', step: 4 },
+    { label: 'studyEip.event-message.model.example.moments.3.label', step: 6 },
+    { label: 'studyEip.event-message.model.example.moments.4.label', step: 8 },
   ],
-  caption:
-    'Each box is one part of the example. The Lifecycle, the part of DotLn that records each step of a work order, announces every change to order 41. The Event store pipe keeps every announcement for whoever reads it, and the Quality watcher and Intent watcher each read it and keep their own account. The event messages, v and r, are what the pattern is about; Beacon, the pipe with the bold name, is the channel where their age is judged: it keeps only the latest announcement, and the Sweep, an agent that looks at it now and then, judges how old that is. A token is a message: v is the news that order 41 was verified at 10:00, and r is the news that it moved to final review at 10:12; the same letter in two boxes is the same news on two channels. A token is green while it moves and outlined inside the box that holds it; a box a message leaves or reaches is outlined in green, and the words inside each box say what it knows or is doing. Reading the beacon leaves its token in place. Step forward to move the messages on.',
+  caption: 'studyEip.event-message.model.example.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => flowModel(example, parameters, t);

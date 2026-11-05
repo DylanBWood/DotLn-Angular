@@ -126,6 +126,8 @@
       "flowView": "Flow",
       "marblesView": "Marbles",
       "time": "Time · {{seconds}} seconds",
+      "symbol": "{{symbol}}",
+      "number": "{{value}}",
       "frameOf": "Frame {{frame}} of {{last}}",
       "stepOf": "Step {{frame}} of {{last}}",
       "previous": "Step back",
@@ -145,6 +147,11 @@
         "current": "This calculation follows the selected moment on the timeline.",
         "show": "Show this moment in the diagram",
         "precision": "Displayed values are rounded to two decimal places; the calculation uses full precision."
+      },
+      "model": {
+        "label": "Executable model",
+        "path": "{{module}}",
+        "spec": "The TypeScript model runs this example and is tested in {{spec}}. The ordinary pseudocode above explains its steps."
       },
       "codeGuide": {
         "title": "Read the pseudocode",
@@ -175,7 +182,8 @@
       "howToRead": "How to read this drawing",
       "exampleDetails": "The example in full",
       "nextStudy": "Next study: {{title}}",
-      "timelineView": "Chart"
+      "timelineView": "Chart",
+      "chartGuide": "Each line follows the same example over time. The vertical line marks the selected time; dots mark the series values there. Read each line against the labelled axes."
     },
     "targets": {
       "unit": "unit",

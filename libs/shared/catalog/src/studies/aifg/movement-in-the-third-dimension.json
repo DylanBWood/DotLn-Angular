@@ -1,0 +1,126 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:196",
+  "work": "aifg",
+  "slug": "movement-in-the-third-dimension",
+  "authored": {
+    "by": "studyAifg.movement-in-the-third-dimension.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.movement-in-the-third-dimension.record.authored.reviewedBy.item0",
+      "studyAifg.movement-in-the-third-dimension.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.movement-in-the-third-dimension.record.intuition.text",
+    "situation": "studyAifg.movement-in-the-third-dimension.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.movement-in-the-third-dimension.record.example.name",
+    "description": "studyAifg.movement-in-the-third-dimension.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "startZ": 0,
+      "targetX": 9,
+      "targetY": 8,
+      "targetZ": 12,
+      "maxSpeed": 4,
+      "maxAcceleration": 4,
+      "timeStep": 0.25,
+      "steps": 24,
+      "rollDegrees": 30,
+      "verticalWeight": 1,
+      "flatVerticalWeight": 0,
+      "wingSpan": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step0.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step1.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step2.title",
+        "text": "studyAifg.movement-in-the-third-dimension.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.movement-in-the-third-dimension.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/movement-in-the-third-dimension.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/movement-in-the-third-dimension.model.ts",
+    "textEquivalent": "studyAifg.movement-in-the-third-dimension.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/Vehicle.js",
+      "relevance": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.relevance",
+      "explanation": "studyAifg.movement-in-the-third-dimension.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item1.title",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/Vehicle.js",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item2.supports"
+    },
+    {
+      "title": "studyAifg.movement-in-the-third-dimension.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/Mugen87/yuka/v0.7.6/src/steering/behaviors/SeekBehavior.js",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.movement-in-the-third-dimension.record.references.item3.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.movement-in-the-third-dimension.record.limits.item0",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item1",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item2",
+    "studyAifg.movement-in-the-third-dimension.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:90",
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:197",
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:198",
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:199",
+      "why": "studyAifg.movement-in-the-third-dimension.record.nearby.item3.why"
+    }
+  ]
+}

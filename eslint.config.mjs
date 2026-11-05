@@ -190,4 +190,11 @@ export default [
     files: ['**/mappers/**/*.ts'],
     rules: { 'no-restricted-imports': restrictions([...domainImports, ...behaviorImports]) },
   },
+  {
+    files: ['**/src/lib/studies/**/*.ts'],
+    ignores: ['**/*.spec.ts', '**/*-testing.ts'],
+    rules: {
+      'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
+    },
+  },
 ];

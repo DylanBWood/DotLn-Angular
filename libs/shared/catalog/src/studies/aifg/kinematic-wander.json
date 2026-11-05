@@ -1,0 +1,104 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:103",
+  "work": "aifg",
+  "slug": "kinematic-wander",
+  "authored": {
+    "by": "studyAifg.kinematic-wander.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.kinematic-wander.record.authored.reviewedBy.item0",
+      "studyAifg.kinematic-wander.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.kinematic-wander.record.intuition.text",
+    "situation": "studyAifg.kinematic-wander.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.kinematic-wander.record.example.name",
+    "description": "studyAifg.kinematic-wander.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "startHeading": 0,
+      "speed": 6,
+      "maxRotation": 1,
+      "seed": 1,
+      "timeStep": 0.1,
+      "steps": 120,
+      "failureRotation": 40
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step0.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step1.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.kinematic-wander.record.mechanism.steps.step2.title",
+        "text": "studyAifg.kinematic-wander.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.kinematic-wander.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/kinematic-wander.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/kinematic-wander.model.ts",
+    "textEquivalent": "studyAifg.kinematic-wander.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.kinematic-wander.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicWander.cs",
+      "relevance": "studyAifg.kinematic-wander.record.implementations.item0.relevance",
+      "explanation": "studyAifg.kinematic-wander.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.kinematic-wander.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-wander.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.kinematic-wander.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicWander.cs",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-wander.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.kinematic-wander.record.limits.item0",
+    "studyAifg.kinematic-wander.record.limits.item1",
+    "studyAifg.kinematic-wander.record.limits.item2"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:104",
+      "why": "studyAifg.kinematic-wander.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:125",
+      "why": "studyAifg.kinematic-wander.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:127",
+      "why": "studyAifg.kinematic-wander.record.nearby.item2.why"
+    }
+  ]
+}

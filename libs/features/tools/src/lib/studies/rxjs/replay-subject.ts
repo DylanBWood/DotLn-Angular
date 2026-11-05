@@ -11,6 +11,9 @@ const reports = {
   e: 'docs ok',
 } as const;
 
+const verifierReplay = ['b', 'c'];
+const auditorReplay = ['d', 'e'];
+
 /**
  * A run's report log: an executor posts its reports into a ReplaySubject that keeps the newest
  * two. A dashboard subscribed from the start hears each report as it is posted. A verifier who
@@ -22,33 +25,65 @@ const reports = {
 export const example: MarbleExample = {
   inputs: {
     report$: {
-      label: 'report$',
+      label: 'studyRxjs.replay-subject.model.example.inputs.report.label',
       // The executor posts whether or not anyone is listening.
       hot: true,
       marbles: '^a-b-c----d--e-|',
       values: reports,
       // The log is the only subscriber to the reports, however many subscribe to the log.
       subscriptions: '^--------------!',
+
+      valueMessages: {
+        a: 'studyRxjs.replay-subject.model.example.inputs.report.values.a',
+        b: 'studyRxjs.replay-subject.model.example.inputs.report.values.b',
+        c: 'studyRxjs.replay-subject.model.example.inputs.report.values.c',
+        d: 'studyRxjs.replay-subject.model.example.inputs.report.values.d',
+        e: 'studyRxjs.replay-subject.model.example.inputs.report.values.e',
+      },
     },
   },
-  operator: 'new ReplaySubject(2)',
+  operator: 'studyRxjs.replay-subject.model.example.operator',
   outputs: {
     dashboard$: {
-      label: 'dashboard$',
+      label: 'studyRxjs.replay-subject.model.example.outputs.dashboard.label',
       marbles: '-a-b-c----d--e-|',
       values: reports,
+
+      valueMessages: {
+        a: 'studyRxjs.replay-subject.model.example.outputs.dashboard.values.a',
+        b: 'studyRxjs.replay-subject.model.example.outputs.dashboard.values.b',
+        c: 'studyRxjs.replay-subject.model.example.outputs.dashboard.values.c',
+        d: 'studyRxjs.replay-subject.model.example.outputs.dashboard.values.d',
+        e: 'studyRxjs.replay-subject.model.example.outputs.dashboard.values.e',
+      },
     },
     verifier$: {
-      label: 'verifier$',
-      marbles: '------(bc)d--e-|',
+      label: 'studyRxjs.replay-subject.model.example.outputs.verifier.label',
+      marbles: `------(${verifierReplay.join('')})d--e-|`,
       values: reports,
       subscriptions: '------^',
+
+      valueMessages: {
+        a: 'studyRxjs.replay-subject.model.example.outputs.verifier.values.a',
+        b: 'studyRxjs.replay-subject.model.example.outputs.verifier.values.b',
+        c: 'studyRxjs.replay-subject.model.example.outputs.verifier.values.c',
+        d: 'studyRxjs.replay-subject.model.example.outputs.verifier.values.d',
+        e: 'studyRxjs.replay-subject.model.example.outputs.verifier.values.e',
+      },
     },
     auditor$: {
-      label: 'auditor$',
-      marbles: '------------------(de|)',
+      label: 'studyRxjs.replay-subject.model.example.outputs.auditor.label',
+      marbles: `------------------(${auditorReplay.join('')}|)`,
       values: reports,
       subscriptions: '------------------^',
+
+      valueMessages: {
+        a: 'studyRxjs.replay-subject.model.example.outputs.auditor.values.a',
+        b: 'studyRxjs.replay-subject.model.example.outputs.auditor.values.b',
+        c: 'studyRxjs.replay-subject.model.example.outputs.auditor.values.c',
+        d: 'studyRxjs.replay-subject.model.example.outputs.auditor.values.d',
+        e: 'studyRxjs.replay-subject.model.example.outputs.auditor.values.e',
+      },
     },
   },
   run: ({ inputs: { report$ } }) => {
@@ -58,24 +93,51 @@ export const example: MarbleExample = {
     return { dashboard$: log, verifier$: log, auditor$: log };
   },
   moments: [
-    { label: 'First report', frame: 1 },
-    { label: 'Verifier joins', frame: 6 },
-    { label: 'Run completes', frame: 15 },
-    { label: 'Auditor joins', frame: 18 },
+    {
+      label: 'studyRxjs.replay-subject.model.example.moments.0.label',
+      frame: 1,
+    },
+    {
+      label: 'studyRxjs.replay-subject.model.example.moments.1.label',
+      frame: 6,
+    },
+    {
+      label: 'studyRxjs.replay-subject.model.example.moments.2.label',
+      frame: 15,
+    },
+    {
+      label: 'studyRxjs.replay-subject.model.example.moments.3.label',
+      frame: 18,
+    },
   ],
   notes: {
-    0: 'The log is empty. The dashboard has subscribed; nobody else has yet.',
-    1: 'The first report, lint ok, is posted. The log records it and the dashboard hears it.',
-    3: 'types ok is posted. The log now holds two reports, as many as it keeps.',
-    5: 'tests ok is posted. To keep only the newest two, the log lets go of lint ok; the dashboard heard it at the time.',
-    6: 'The verifier subscribes. The log hands it the two reports it holds, types ok and then tests ok, at once and before anything new is posted. lint ok is not among them: the log no longer holds it.',
-    10: 'build ok is posted. The dashboard and the verifier both hear it live; the log now holds tests ok and build ok.',
-    13: 'docs ok is posted and both hear it. The log holds build ok and docs ok.',
-    15: 'The run completes, and so do the dashboard and the verifier. The log keeps its last two reports.',
-    18: 'The auditor subscribes after the run is over. It is handed build ok and docs ok and then completes at once: a finished ReplaySubject still replays.',
+    0: 'studyRxjs.replay-subject.model.example.notes.0',
+    1: 'studyRxjs.replay-subject.model.example.notes.1',
+    3: {
+      key: 'studyRxjs.replay-subject.model.example.notes.3',
+      params: { held: verifierReplay.length },
+    },
+    5: {
+      key: 'studyRxjs.replay-subject.model.example.notes.5',
+      params: { kept: verifierReplay.length },
+    },
+    6: {
+      key: 'studyRxjs.replay-subject.model.example.notes.6',
+      params: { replayed: verifierReplay.length },
+    },
+    10: 'studyRxjs.replay-subject.model.example.notes.10',
+    13: 'studyRxjs.replay-subject.model.example.notes.13',
+    15: {
+      key: 'studyRxjs.replay-subject.model.example.notes.15',
+      params: { kept: auditorReplay.length },
+    },
+    18: 'studyRxjs.replay-subject.model.example.notes.18',
   },
-  caption:
-    'Time runs in frames. A circle is an emission, with its letter; a bar is completion. A subscriber’s lane starts at the frame it subscribes, and circles bunched within one frame arrive together, in order, inside the subscribe call. Step the frames to follow the log.',
+  caption: 'studyRxjs.replay-subject.model.example.caption',
+
+  parameterMessages: {
+    reports: 'studyRxjs.replay-subject.record.parameters.reports',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

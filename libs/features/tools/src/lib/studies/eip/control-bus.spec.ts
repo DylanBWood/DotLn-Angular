@@ -1,4 +1,5 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, model } from './control-bus';
@@ -8,7 +9,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/control-bus.ts';
 const parameters = { pause: 'analysis:', direction: 'go ahead' };
 
 const run = (): FlowStudyModel => {
-  const result = model(parameters);
+  const result = model(parameters, studyTranslate);
   if (result.family !== 'flow') throw new Error('The control bus is drawn as a flow.');
   return result;
 };
@@ -71,8 +72,10 @@ it('keeps evidence on the work queue and every question, command and answer on t
     'go ahead',
   ]);
   // The pause and the direction are the phrases the record names.
-  expect(example.messages['pause'].content).toBe(parameters.pause);
-  expect(example.messages['direction'].content).toBe(parameters.direction);
+  expect(studyMessage(studyTranslate, example.messages['pause'].content)).toBe(parameters.pause);
+  expect(studyMessage(studyTranslate, example.messages['direction'].content)).toBe(
+    parameters.direction,
+  );
   expect(flow.frames[0].values).toMatchObject(parameters);
   // The bus only carries: it holds nothing and has nothing to say about itself.
   for (const frame of flow.frames) {

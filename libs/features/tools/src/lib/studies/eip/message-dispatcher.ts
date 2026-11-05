@@ -31,7 +31,7 @@ export const example: MarbleExample = {
   inputs: {
     // Requests are sent whether or not anything is reading the channel, so the source is hot.
     requests$: {
-      label: 'requests$',
+      label: 'studyEip.message-dispatcher.model.example.inputs.requests.label',
       hot: true,
       marbles: '-i-f-r--v',
       values: {
@@ -40,44 +40,74 @@ export const example: MarbleExample = {
         r: 'review order 29',
         v: 'verify order 31',
       },
+
+      valueMessages: {
+        i: 'studyEip.message-dispatcher.model.example.inputs.requests.values.i',
+        f: 'studyEip.message-dispatcher.model.example.inputs.requests.values.f',
+        r: 'studyEip.message-dispatcher.model.example.inputs.requests.values.r',
+        v: 'studyEip.message-dispatcher.model.example.inputs.requests.values.v',
+      },
     },
   },
   inner: {
     'implement order 31': {
-      label: 'executor on 31',
+      label: 'studyEip.message-dispatcher.model.example.inner.implement-order-31.label',
       marbles: 'i----|',
       values: { i: 'implement order 31' },
       subscriptions: '--^----!',
+
+      valueMessages: {
+        i: 'studyEip.message-dispatcher.model.example.inner.implement-order-31.values.i',
+      },
     },
     'review order 29': {
-      label: 'reviewer on 29',
+      label: 'studyEip.message-dispatcher.model.example.inner.review-order-29.label',
       marbles: 'r',
       values: { r: 'review order 29' },
       subscriptions: '------^',
+
+      valueMessages: {
+        r: 'studyEip.message-dispatcher.model.example.inner.review-order-29.values.r',
+      },
     },
     'fix order 30': {
-      label: 'executor on 30',
+      label: 'studyEip.message-dispatcher.model.example.inner.fix-order-30.label',
       marbles: 'f',
       values: { f: 'fix order 30' },
       subscriptions: '-------^',
+
+      valueMessages: {
+        f: 'studyEip.message-dispatcher.model.example.inner.fix-order-30.values.f',
+      },
     },
     'verify order 31': {
-      label: 'verifier on 31',
+      label: 'studyEip.message-dispatcher.model.example.inner.verify-order-31.label',
       marbles: 'v',
       values: { v: 'verify order 31' },
       subscriptions: '---------^',
+
+      valueMessages: {
+        v: 'studyEip.message-dispatcher.model.example.inner.verify-order-31.values.v',
+      },
     },
   },
-  operator: 'delay(1), groupBy(kind of work), then concatMap(perform) for each performer',
+  operator: 'studyEip.message-dispatcher.model.example.operator',
   outputs: {
     handed$: {
-      label: 'handed$',
+      label: 'studyEip.message-dispatcher.model.example.outputs.handed.label',
       marbles: '--i---rf-v',
       values: {
         i: 'implement order 31',
         f: 'fix order 30',
         r: 'review order 29',
         v: 'verify order 31',
+      },
+
+      valueMessages: {
+        i: 'studyEip.message-dispatcher.model.example.outputs.handed.values.i',
+        f: 'studyEip.message-dispatcher.model.example.outputs.handed.values.f',
+        r: 'studyEip.message-dispatcher.model.example.outputs.handed.values.r',
+        v: 'studyEip.message-dispatcher.model.example.outputs.handed.values.v',
       },
     },
   },
@@ -98,36 +128,81 @@ export const example: MarbleExample = {
     return { handed$ };
   },
   moments: [
-    { label: 'Handed over', frame: 2 },
-    { label: 'Kept waiting', frame: 4 },
-    { label: 'Overtaken', frame: 6 },
-    { label: 'Queue released', frame: 7 },
-    { label: 'All busy', frame: 9 },
+    {
+      label: 'studyEip.message-dispatcher.model.example.moments.0.label',
+      frame: 2,
+    },
+    {
+      label: 'studyEip.message-dispatcher.model.example.moments.1.label',
+      frame: 4,
+    },
+    {
+      label: 'studyEip.message-dispatcher.model.example.moments.2.label',
+      frame: 6,
+    },
+    {
+      label: 'studyEip.message-dispatcher.model.example.moments.3.label',
+      frame: 7,
+    },
+    {
+      label: 'studyEip.message-dispatcher.model.example.moments.4.label',
+      frame: 9,
+    },
   ],
   notes: {
-    0: 'No request has been sent. The dispatcher is the only reader of the Requests channel, and the executor, the verifier and the reviewer are all idle.',
-    1: 'A request to implement order 31, i, comes down the Requests channel to the dispatcher.',
-    2: "The dispatcher reads i: implementing is the executor's work and the executor is idle, so the dispatcher hands i to it.",
-    3: 'A request to fix order 30, f, comes down the channel to the dispatcher.',
-    4: "The dispatcher reads f: fixing is the executor's work too, and the executor is busy, so f waits in the dispatcher although the verifier and the reviewer are idle.",
-    5: 'A request to review order 29, r, comes down the channel to the dispatcher.',
-    6: 'The dispatcher reads r and hands it straight to the idle reviewer: r arrived after f but starts first.',
-    7: 'The executor finishes order 31, and the dispatcher hands it f, the request that was waiting for it.',
-    8: 'A request to verify order 31, v, comes down the channel to the dispatcher.',
-    9: 'The dispatcher reads v and hands it straight to the idle verifier. Every performer is now busy and nothing waits.',
+    0: 'studyEip.message-dispatcher.model.example.notes.0',
+    1: 'studyEip.message-dispatcher.model.example.notes.1',
+    2: 'studyEip.message-dispatcher.model.example.notes.2',
+    3: 'studyEip.message-dispatcher.model.example.notes.3',
+    4: 'studyEip.message-dispatcher.model.example.notes.4',
+    5: 'studyEip.message-dispatcher.model.example.notes.5',
+    6: 'studyEip.message-dispatcher.model.example.notes.6',
+    7: 'studyEip.message-dispatcher.model.example.notes.7',
+    8: 'studyEip.message-dispatcher.model.example.notes.8',
+    9: 'studyEip.message-dispatcher.model.example.notes.9',
   },
-  caption:
-    "Time runs in frames, one event to a frame. requests$ is the Requests channel: i, f, r and v are the requests to implement order 31, fix order 30, review order 29 and verify order 31. Each lane below it is one performer's work on one request, opened when the dispatcher hands that request over; a bar is where the performer finishes. handed$ shows each request at the frame its performer takes it up.",
+  caption: 'studyEip.message-dispatcher.model.example.caption',
+
+  parameterMessages: {
+    orders: 'studyEip.message-dispatcher.record.parameters.orders',
+  },
 };
 
 /** The dispatcher and its three performers, with each line of the example routed to its link. */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'requests', label: 'Requests', stage: 0, row: 1, kind: 'channel' },
-    { id: 'dispatcher', label: 'Dispatcher', stage: 1, row: 1, tone: 'subject' },
-    { id: 'executor', label: 'Executor', stage: 2, row: 0 },
-    { id: 'verifier', label: 'Verifier', stage: 2, row: 1 },
-    { id: 'reviewer', label: 'Reviewer', stage: 2, row: 2 },
+    {
+      id: 'requests',
+      label: 'studyEip.message-dispatcher.model.flow.nodes.0.label',
+      stage: 0,
+      row: 1,
+      kind: 'channel',
+    },
+    {
+      id: 'dispatcher',
+      label: 'studyEip.message-dispatcher.model.flow.nodes.1.label',
+      stage: 1,
+      row: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'executor',
+      label: 'studyEip.message-dispatcher.model.flow.nodes.2.label',
+      stage: 2,
+      row: 0,
+    },
+    {
+      id: 'verifier',
+      label: 'studyEip.message-dispatcher.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'reviewer',
+      label: 'studyEip.message-dispatcher.model.flow.nodes.4.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
     { id: 'take', from: 'requests', to: 'dispatcher' },
@@ -138,24 +213,51 @@ export const flow: MarbleFlow = {
   // The output says which performer took each request up, so it routes by letter.
   routes: {
     requests$: 'take',
-    handed$: { i: 'to-executor', f: 'to-executor', r: 'to-reviewer', v: 'to-verifier' },
+    handed$: {
+      i: 'to-executor',
+      f: 'to-executor',
+      r: 'to-reviewer',
+      v: 'to-verifier',
+    },
   },
   states: {
     0: {
-      dispatcher: 'nothing to hand out',
-      executor: 'idle',
-      verifier: 'idle',
-      reviewer: 'idle',
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.0.dispatcher',
+      executor: 'studyEip.message-dispatcher.model.flow.states.0.executor',
+      verifier: 'studyEip.message-dispatcher.model.flow.states.0.verifier',
+      reviewer: 'studyEip.message-dispatcher.model.flow.states.0.reviewer',
     },
-    1: { dispatcher: 'has i' },
-    2: { dispatcher: 'nothing waiting', executor: 'implementing order 31' },
-    3: { dispatcher: 'has f' },
-    4: { dispatcher: 'f waiting for the executor' },
-    5: { dispatcher: 'f waiting; has r' },
-    6: { dispatcher: 'f waiting for the executor', reviewer: 'reviewing order 29' },
-    7: { dispatcher: 'nothing waiting', executor: 'fixing order 30' },
-    8: { dispatcher: 'has v' },
-    9: { dispatcher: 'nothing waiting', verifier: 'verifying order 31' },
+    1: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.1.dispatcher',
+    },
+    2: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.2.dispatcher',
+      executor: 'studyEip.message-dispatcher.model.flow.states.2.executor',
+    },
+    3: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.3.dispatcher',
+    },
+    4: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.4.dispatcher',
+    },
+    5: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.5.dispatcher',
+    },
+    6: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.6.dispatcher',
+      reviewer: 'studyEip.message-dispatcher.model.flow.states.6.reviewer',
+    },
+    7: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.7.dispatcher',
+      executor: 'studyEip.message-dispatcher.model.flow.states.7.executor',
+    },
+    8: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.8.dispatcher',
+    },
+    9: {
+      dispatcher: 'studyEip.message-dispatcher.model.flow.states.9.dispatcher',
+      verifier: 'studyEip.message-dispatcher.model.flow.states.9.verifier',
+    },
   },
   held: {
     1: { dispatcher: ['i'] },
@@ -167,8 +269,8 @@ export const flow: MarbleFlow = {
     8: { dispatcher: ['v'] },
     9: { dispatcher: [], verifier: ['v'] },
   },
-  caption:
-    'Each token is one request: i asks for order 31 to be implemented, f for order 30 to be fixed, r for order 29 to be reviewed and v for order 31 to be verified. Requests is the channel they arrive on, and the Dispatcher is its only reader: it chooses the performer for each request and keeps a request waiting while that performer is busy. The Executor implements and fixes orders, the Verifier checks them and the Reviewer gives them a final review; each works on one request at a time. The words in a box say what that box is doing or holding. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.',
+  caption: 'studyEip.message-dispatcher.model.flow.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

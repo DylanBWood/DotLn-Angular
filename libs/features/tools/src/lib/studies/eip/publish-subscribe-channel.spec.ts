@@ -1,16 +1,16 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowStudyModel, StudyModelFunction } from '../study-model';
 import { placeholdersIn } from '../study-text';
-import { example, flow, model } from './publish-subscribe-channel';
+import { copyTotals, example, flow, model } from './publish-subscribe-channel';
 
 /** A study's run, which a flow study's model always draws as a flow. */
 function flowOf(study: StudyModelFunction, values: StudyParameters): FlowStudyModel {
-  const run = study(values);
+  const run = study(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The study is not drawn as a flow.');
   return run;
 }
@@ -41,7 +41,10 @@ it('runs the topic example against the marbles both drawings show', () => {
 it('attaches the record to the Publish-Subscribe Channel row and reads this module', async () => {
   const record = await loadFlowStudy('eip:65');
   expect(record.visual.model).toBe(modulePath);
-  expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: modulePath });
+  expect(record.pseudocode.executable).toEqual({
+    kind: 'rxjs',
+    module: modulePath,
+  });
   expect(record.example.parameters).toEqual(parameters);
   const run = flowOf(model, record.example.parameters);
   expect(run.family).toBe('flow');
@@ -130,7 +133,7 @@ it('gives a session that subscribes late only what is published after it joins',
     outputs: {
       ...example.outputs,
       session3$: {
-        label: 'session3$',
+        ...example.outputs['session3$'],
         marbles: '--------d',
         values: { d: 'order 34' },
         subscriptions: `${'-'.repeat(parameters.lateJoin)}^`,
@@ -139,8 +142,23 @@ it('gives a session that subscribes late only what is published after it joins',
   };
   expectMarbleExample(late);
   // Session 3's box holds only what it received: nothing until d.
+  const countedLate: MarbleExample = {
+    ...late,
+    notes: {
+      ...late.notes,
+      8: {
+        key: 'studyEip.publish-subscribe-channel.model.example.notes.8',
+        params: copyTotals(late.inputs['orders$'].values ?? {}, late.outputs),
+      },
+    },
+  };
+  expect(copyTotals(late.inputs['orders$'].values ?? {}, late.outputs)).toEqual({
+    orders: 4,
+    subscribers: 3,
+    copies: 9,
+  });
   const run = flowFromMarbles(
-    late,
+    countedLate,
     {
       ...flow,
       held: Object.fromEntries(
@@ -151,8 +169,10 @@ it('gives a session that subscribes late only what is published after it joins',
       ),
     },
     parameters,
+    studyTranslate,
   );
   expect(received(run, 'to-session3')).toEqual(['d']);
+  expect(run.flow.frames[8].note).toContain('4 orders, 9 copies');
   expect([2, 4, 6].map((step) => heldAt(run, step, 'session3'))).toEqual([[], [], []]);
   expect(heldAt(run, 8, 'session3')).toEqual(['d']);
   expect(received(run, 'to-session1')).toEqual(['a', 'b', 'c', 'd']);
@@ -171,7 +191,11 @@ it('completes once the planner stops: every session gets every copy, then the en
   expectMarbleExample({
     ...example,
     inputs: {
-      orders$: { ...example.inputs['orders$'], marbles: '-a-b-c-(d|)', subscriptions: '^------!' },
+      orders$: {
+        ...example.inputs['orders$'],
+        marbles: '-a-b-c-(d|)',
+        subscriptions: '^------!',
+      },
     },
     outputs: {
       session1$: { ...example.outputs['session1$'], marbles: ended },

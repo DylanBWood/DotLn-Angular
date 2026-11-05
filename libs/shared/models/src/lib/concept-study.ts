@@ -54,11 +54,13 @@ export interface StudyReference {
 }
 
 /**
- * One concept studied from several sides, in its author's own words. A representation the idea
+ * One concept studied from several sides. In v1, authored text fields hold message keys;
+ * machine identifiers, URLs, dates and example parameters keep their original meaning.
+ * A representation the idea
  * does not need is null or an empty list, never filled to match the other studies.
  */
 export interface ConceptStudy {
-  readonly schema: 'concept-study-v0';
+  readonly schema: 'concept-study-v1';
   readonly id: ToolId;
   readonly work: WorkSlug;
   readonly slug: string;

@@ -12,6 +12,9 @@ export default defineConfig(() => ({
     name: 'tools',
     watch: false,
     maxWorkers: 2,
+    // The study sweeps rerun whole models at every slider setting. A hosted runner takes about
+    // three times a workstation's time for them, which reaches the default of five seconds.
+    testTimeout: 20_000,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],

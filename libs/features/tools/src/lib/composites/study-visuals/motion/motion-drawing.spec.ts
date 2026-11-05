@@ -36,6 +36,7 @@ it('derives every coordinate of a moment from the bounds', () => {
     y: 150,
     arrow: null,
     label: 'Noor',
+    labelX: 300,
     labelY: 134,
   });
   expect(drawing.vectors).toMatchObject([{ x1: 60, y1: 60, x2: 90, y2: 30, tone: 'actual' }]);
@@ -91,4 +92,51 @@ it('draws where a body has just been, and nothing before the first moment', () =
 it('stays inside the run for a step past either end', () => {
   expect(motionDrawing(model, 99).bodies[0].x).toBe(180);
   expect(motionDrawing(model, -5).bodies).toHaveLength(2);
+});
+
+it('keeps names apart at a shared position without moving the bodies or wall mark', () => {
+  const crowded: MotionModel = {
+    bounds: { minX: 0, maxX: 100, minY: 0, maxY: 50 },
+    frames: [
+      {
+        seconds: 0,
+        values: {},
+        bodies: [
+          { id: 'a', x: 50, y: 25, label: 'Courier' },
+          { id: 'b', x: 50, y: 25, label: 'WWWW' },
+        ],
+        marks: [{ x: 50, y: 25, shape: 'cross', label: 'Gate' }],
+      },
+    ],
+  };
+  const drawing = motionDrawing(crowded, 0);
+  const points = [...drawing.bodies, ...drawing.marks];
+  expect(points.map(({ x, y }) => ({ x, y }))).toEqual(Array(3).fill({ x: 300, y: 150 }));
+  expect(points.map(({ label }) => label)).toEqual(['Courier', 'WWWW', 'Gate']);
+  expect(new Set(points.map(({ labelY }) => labelY)).size).toBe(3);
+  expect(crowded.frames[0].bodies[0].x).toBe(50);
+});
+
+it('brings names at every edge inside the drawing, keeping their physical anchors', () => {
+  const drawing = motionDrawing(
+    {
+      ...model,
+      frames: [
+        {
+          seconds: 0,
+          values: {},
+          bodies: [
+            { id: 'left', x: 0, y: 0, label: 'Harbour launcher' },
+            { id: 'right', x: 100, y: 50, label: 'Delivery' },
+          ],
+        },
+      ],
+    },
+    0,
+  );
+  expect(drawing.bodies[0]).toMatchObject({ x: 0, y: 0, label: 'Harbour launcher' });
+  expect(drawing.bodies[0].labelX).toBeGreaterThan(100);
+  expect(drawing.bodies[0].labelY).toBeGreaterThanOrEqual(26);
+  expect(drawing.bodies[1]).toMatchObject({ x: 600, y: 300, label: 'Delivery' });
+  expect(drawing.bodies[1].labelX).toBeLessThan(600);
 });

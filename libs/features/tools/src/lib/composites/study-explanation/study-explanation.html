@@ -10,7 +10,7 @@
       <ol class="code-explanations" role="list">
         @for (step of vm.steps; track $index) {
           <li>
-            <h5 translate="no" [id]="stepHeading($index)">
+            <h5 [id]="stepHeading($index)" translate="no">
               {{ 'tools.study.codeGuide.step' | t: { index: $index + 1, title: step.title } }}
             </h5>
             <details class="code-lines">
@@ -26,6 +26,17 @@
         }
       </ol>
     </section>
+    @if (vm.executableModel; as executable) {
+      <details class="executable-model">
+        <summary>{{ 'tools.study.model.label' | t }}</summary>
+        <p class="note" data-testid="model-module">
+          {{ 'tools.study.model.path' | t: { module: executable.module } }}
+        </p>
+        <p class="note" data-testid="model-spec">
+          {{ 'tools.study.model.spec' | t: { spec: executable.spec } }}
+        </p>
+      </details>
+    }
     @if (vm.worked; as worked) {
       <section class="worked-step">
         <h4 translate="no">{{ worked.title }}</h4>

@@ -5,7 +5,39 @@
       "work": "aifg",
       "studies": [
         {
+          "id": "aifg-a:90",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:94",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:101",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:102",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:103",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:105",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:108",
+          "state": "checked"
+        },
+        {
           "id": "aifg-a:110",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:111",
           "state": "checked"
         },
         {
@@ -37,6 +69,22 @@
           "state": "checked"
         },
         {
+          "id": "aifg-a:134",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:137",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:139",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:143",
+          "state": "checked"
+        },
+        {
           "id": "aifg-a:144",
           "state": "checked"
         },
@@ -57,6 +105,30 @@
           "state": "checked"
         },
         {
+          "id": "aifg-a:157",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:162",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:163",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:166",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:169",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:173",
+          "state": "checked"
+        },
+        {
           "id": "aifg-a:174",
           "state": "checked"
         },
@@ -74,6 +146,14 @@
         },
         {
           "id": "aifg-a:186",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:192",
+          "state": "checked"
+        },
+        {
+          "id": "aifg-a:196",
           "state": "checked"
         },
         {

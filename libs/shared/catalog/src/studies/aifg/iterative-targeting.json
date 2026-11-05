@@ -1,0 +1,110 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:166",
+  "work": "aifg",
+  "slug": "iterative-targeting",
+  "authored": {
+    "by": "studyAifg.iterative-targeting.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.iterative-targeting.record.authored.reviewedBy.item0",
+      "studyAifg.iterative-targeting.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.iterative-targeting.record.intuition.text",
+    "situation": "studyAifg.iterative-targeting.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.iterative-targeting.record.example.name",
+    "description": "studyAifg.iterative-targeting.record.example.description",
+    "parameters": {
+      "targetX": 6,
+      "launchSpeed": 10,
+      "gravity": 10,
+      "drag": 0.2,
+      "timeStep": 0.1,
+      "flightSteps": 40,
+      "lowerAngle": 0,
+      "upperAngle": 40,
+      "tolerance": 0.02,
+      "maxIterations": 10,
+      "shortBudget": 2,
+      "guessSeconds": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step0.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step1.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step2.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.iterative-targeting.record.mechanism.steps.step3.title",
+        "text": "studyAifg.iterative-targeting.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.iterative-targeting.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/iterative-targeting.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/iterative-targeting.model.ts",
+    "textEquivalent": "studyAifg.iterative-targeting.record.visual.textEquivalent"
+  },
+  "implementations": [],
+  "references": [
+    {
+      "title": "studyAifg.iterative-targeting.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.iterative-targeting.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.iterative-targeting.record.references.item1.title",
+      "url": "https://www.gnu.org/software/gsl/doc/html/roots.html",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.iterative-targeting.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.iterative-targeting.record.limits.item0",
+    "studyAifg.iterative-targeting.record.limits.item1",
+    "studyAifg.iterative-targeting.record.limits.item2",
+    "studyAifg.iterative-targeting.record.limits.item3",
+    "studyAifg.iterative-targeting.record.limits.item4"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:165",
+      "why": "studyAifg.iterative-targeting.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:163",
+      "why": "studyAifg.iterative-targeting.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:164",
+      "why": "studyAifg.iterative-targeting.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:167",
+      "why": "studyAifg.iterative-targeting.record.nearby.item3.why"
+    }
+  ]
+}

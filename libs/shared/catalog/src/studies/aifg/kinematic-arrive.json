@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:101",
+  "work": "aifg",
+  "slug": "kinematic-arrive",
+  "authored": {
+    "by": "studyAifg.kinematic-arrive.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.kinematic-arrive.record.authored.reviewedBy.item0",
+      "studyAifg.kinematic-arrive.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.kinematic-arrive.record.intuition.text",
+    "situation": "studyAifg.kinematic-arrive.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.kinematic-arrive.record.example.name",
+    "description": "studyAifg.kinematic-arrive.record.example.description",
+    "parameters": {
+      "start": 0,
+      "target": 11,
+      "maxSpeed": 4,
+      "timeToTarget": 1,
+      "satisfactionRadius": 0.2,
+      "timeStep": 0.5,
+      "steps": 32,
+      "shortTimeToTarget": 0.2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step0.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step1.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step2.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.kinematic-arrive.record.mechanism.steps.step3.title",
+        "text": "studyAifg.kinematic-arrive.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.kinematic-arrive.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/kinematic-arrive.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/kinematic-arrive.model.ts",
+    "textEquivalent": "studyAifg.kinematic-arrive.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.kinematic-arrive.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/kinematic.cpp",
+      "relevance": "studyAifg.kinematic-arrive.record.implementations.item0.relevance",
+      "explanation": "studyAifg.kinematic-arrive.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.kinematic-arrive.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-arrive.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.kinematic-arrive.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/src/kinematic.cpp",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-arrive.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.kinematic-arrive.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/include/aicore/kinematic.h",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-arrive.record.references.item2.supports"
+    },
+    {
+      "title": "studyAifg.kinematic-arrive.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/idmillington/aicore/52fc032d2d605265e7ec2cc93c949d10efc70f5d/README.md",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.kinematic-arrive.record.references.item3.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.kinematic-arrive.record.limits.item0",
+    "studyAifg.kinematic-arrive.record.limits.item1",
+    "studyAifg.kinematic-arrive.record.limits.item2"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:102",
+      "why": "studyAifg.kinematic-arrive.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "studyAifg.kinematic-arrive.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:100",
+      "why": "studyAifg.kinematic-arrive.record.nearby.item2.why"
+    }
+  ]
+}

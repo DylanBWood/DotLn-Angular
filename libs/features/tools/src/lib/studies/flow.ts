@@ -1,6 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
 import { marbleCaption, type MarbleExample, marbleModel } from './rxjs/marbles';
+import { type StudyMessage, studyMessage, studyParameterValues } from './study-message';
 import type {
   FlowFrame,
   FlowHop,
@@ -9,91 +10,105 @@ import type {
   FlowNode,
   FlowStudyModel,
   FlowToken,
+  MarblesStudyModel,
   StudyLegendEntry,
   StudyMoment,
   StudyWorkedStep,
 } from './study-model';
 import { secondsPerFrame } from './study-model';
+import type { StudyTranslate } from './study-translate';
 
-/** A message of a hand-written flow, declared once by id and moved by its steps. */
+/** A message's identity stays executable; its content is a presentation message. */
 export interface FlowMessage {
   readonly key: string;
-  readonly content: string;
+  readonly content: StudyMessage;
 }
 
-/** What changes at one step of a hand-written flow. */
+export interface FlowWorkedStep {
+  readonly title: StudyMessage;
+  readonly lines: readonly StudyMessage[];
+  readonly note?: StudyMessage;
+}
+
+/** One change to a hand-written flow, with holdings named by message id. */
 export interface FlowStep {
-  /** The messages that cross a link now, by message id, each arriving at the link's far end. */
-  readonly moves?: readonly { readonly message: string; readonly link: string }[];
-  /**
-   * The states that change now, by node id. A node keeps its state until a later step names it
-   * again, and an empty string clears it.
-   */
-  readonly states?: Readonly<Record<string, string>>;
-  /** What a node holds after this step, by message id; kept until a later step names the node. */
+  readonly moves?: readonly {
+    readonly message: string;
+    readonly link: string;
+  }[];
+  /** Changes persist; an empty string clears a state. */
+  readonly states?: Readonly<Record<string, StudyMessage>>;
   readonly held?: Readonly<Record<string, readonly string[]>>;
-  /** One plain sentence on what happens at this step. */
-  readonly note: string;
-  readonly worked?: StudyWorkedStep;
+  readonly note: StudyMessage;
+  readonly worked?: FlowWorkedStep;
 }
 
-/** What every flow names, whichever way its steps are written. */
 interface FlowShape {
+  readonly nodes: readonly (Omit<FlowNode, 'label'> & {
+    readonly label: StudyMessage;
+  })[];
+  readonly links: readonly (Omit<FlowLink, 'label'> & {
+    readonly label?: StudyMessage;
+  })[];
+  readonly caption?: StudyMessage;
+  readonly parameterMessages?: Readonly<Record<string, string>>;
+}
+
+interface RenderedFlowShape {
   readonly nodes: readonly FlowNode[];
   readonly links: readonly FlowLink[];
-  /** How to read the drawing; the family's own sentence when absent. */
-  readonly caption?: string;
+  readonly caption: string;
 }
 
-/** A flow written step by step: the example of a study whose idea is not a stream to run. */
+/** A structure, data model or protocol written step by step instead of pretending to run. */
 export interface FlowExample extends FlowShape {
   readonly messages: Readonly<Record<string, FlowMessage>>;
-  /** Step 0, before anything moves: the states and holdings the example starts from. */
   readonly start: Omit<FlowStep, 'moves'>;
-  /** The steps after the start, in order: the first is step 1. */
   readonly steps: readonly FlowStep[];
-  readonly moments: readonly { readonly label: string; readonly step: number }[];
+  readonly moments: readonly {
+    readonly label: StudyMessage;
+    readonly step: number;
+  }[];
 }
 
-/**
- * A flow over an executable marble example. Each frame of the diagram is a step of the flow, and
- * each emission the run delivers crosses the link its line is routed to, so the flow drawing, the
- * marble drawing and the marble spec all read the same strings.
- */
+/** Each frame of the executable example is one step, routed by line id and marble letter. */
 export interface MarbleFlow extends FlowShape {
-  /**
-   * The link a line's emissions cross, by the line's id in the example: one link for the whole
-   * line, or a link for each letter when one line carries messages from several senders. A line
-   * with no route crosses no link, as an inner stream an operator opens usually does not.
-   */
   readonly routes: Readonly<Record<string, string | Readonly<Record<string, string>>>>;
-  /** The states that change at a frame, by node id, carried forward as a hand-written flow's are. */
-  readonly states?: Readonly<Record<number, Readonly<Record<string, string>>>>;
-  /** What a node holds after a frame, as the letters of the messages, carried forward. */
+  readonly states?: Readonly<Record<number, Readonly<Record<string, StudyMessage>>>>;
   readonly held?: Readonly<Record<number, Readonly<Record<string, readonly string[]>>>>;
 }
 
-const defaultCaption =
-  'A token is a message, with its letter: green while it moves at the selected step, outlined while a node holds it. A node a message leaves or reaches at the step is outlined in green, and the words inside a node say what it holds or decides. Step forward to move the messages on.';
+const renderedShape = (shape: FlowShape, t: StudyTranslate): RenderedFlowShape => ({
+  nodes: shape.nodes.map((node) => ({
+    ...node,
+    label: studyMessage(t, node.label),
+  })),
+  links: shape.links.map((link) => ({
+    ...link,
+    label: link.label === undefined ? undefined : studyMessage(t, link.label),
+  })),
+  caption: studyMessage(t, shape.caption ?? 'studyCommon.flow.caption'),
+});
 
-/** How the marble diagram of a flow follows it, after the diagram's own caption. */
-const diagramSentence =
-  'Each frame of the diagram is the same step of the flow, and switching between the two keeps the moment; an output lane shows only what has been emitted by the selected frame.';
-
-/** What each tone of a flow means; a legend lists only the kinds the flow draws. */
-const legendOf = (nodes: readonly FlowNode[], held: boolean): readonly StudyLegendEntry[] => [
+const legendOf = (
+  nodes: readonly FlowNode[],
+  held: boolean,
+  t: StudyTranslate,
+): readonly StudyLegendEntry[] => [
   ...(nodes.some(({ tone }) => tone === 'subject')
-    ? [{ tone: 'subject' as const, label: 'Bold name · the part the pattern names' }]
+    ? [
+        {
+          tone: 'subject' as const,
+          label: t('studyCommon.flow.legend.subject'),
+        },
+      ]
     : []),
-  { tone: 'other', label: 'Grey outline · the endpoints around it; a tinted pipe is a channel' },
-  {
-    tone: 'actual',
-    label: 'Green · a message moving at this step, and the nodes it leaves or reaches',
-  },
-  ...(held ? [{ tone: 'muted' as const, label: 'Outlined · a message a node is holding' }] : []),
+  { tone: 'other', label: t('studyCommon.flow.legend.other') },
+  { tone: 'actual', label: t('studyCommon.flow.legend.actual') },
+  ...(held ? [{ tone: 'muted' as const, label: t('studyCommon.flow.legend.muted') }] : []),
 ];
 
-/** Refuses a flow whose parts name something it does not have, so a spec fails at once. */
+/** Refuse invalid identities before constructing any displayed frame. */
 function checkShape({ nodes, links }: FlowShape) {
   const ids = new Set(nodes.map(({ id }) => id));
   if (ids.size !== nodes.length) throw new Error('Two nodes of the flow share an id.');
@@ -104,51 +119,71 @@ function checkShape({ nodes, links }: FlowShape) {
     throw new Error('Two links of the flow share an id.');
 }
 
-function checkNodes(nodes: readonly FlowNode[], named: Readonly<Record<string, unknown>>) {
+function checkNodes(nodes: FlowShape['nodes'], named: Readonly<Record<string, unknown>>) {
   for (const id of Object.keys(named))
     if (!nodes.some((node) => node.id === id)) throw new Error(`The flow has no node ${id}.`);
 }
 
-/** A node's name in prose, as the drawing labels it. */
-const nameOf = (nodes: readonly FlowNode[], id: string) =>
-  nodes.find((node) => node.id === id)?.label ?? id;
+const nodeName = (nodes: readonly FlowNode[], id: string): string => {
+  const node = nodes.find((node) => node.id === id);
+  if (!node) throw new Error(`The flow has no node ${id}.`);
+  return node.label;
+};
 
-/** What moves at a step, in a sentence: each message, where it goes and the channel it uses. */
-function movesSentence(shape: FlowShape, hops: readonly FlowHop[]) {
-  if (!hops.length) return 'nothing moves';
+/** A complete message template owns the channel phrase, so word order can change with locale. */
+function movesSentence(
+  shape: RenderedFlowShape,
+  hops: readonly FlowHop[],
+  t: StudyTranslate,
+): string {
+  if (!hops.length) return t('studyCommon.flow.nothingMoves');
   return hops
     .map(({ key, content, link: id }) => {
       const link = shape.links.find((candidate) => candidate.id === id);
-      const from = nameOf(shape.nodes, link?.from ?? '');
-      const to = nameOf(shape.nodes, link?.to ?? '');
-      const label = link?.label ? ` on ${link.label}` : '';
-      return `${key} (${content}) moves from ${from} to ${to}${label}`;
+      if (!link) throw new Error(`The flow has no link ${id}.`);
+      const params = {
+        key,
+        content,
+        from: nodeName(shape.nodes, link.from),
+        to: nodeName(shape.nodes, link.to),
+      };
+      return link.label
+        ? t('studyCommon.flow.moveOnChannel', {
+            ...params,
+            channel: link.label,
+          })
+        : t('studyCommon.flow.move', params);
     })
-    .join('; ');
+    .join(t('studyCommon.flow.sentenceSeparator'));
 }
 
-const statesSentence = (nodes: readonly FlowNode[], states: Readonly<Record<string, string>>) =>
+const statesSentence = (
+  nodes: readonly FlowNode[],
+  states: Readonly<Record<string, string>>,
+  t: StudyTranslate,
+): string =>
   nodes
     .filter(({ id }) => states[id])
-    .map(({ id, label }) => `${label}: ${states[id]}`)
-    .join('; ') || 'no state to report';
+    .map(({ id, label }) => t('studyCommon.flow.state', { label, state: states[id] }))
+    .join(t('studyCommon.flow.sentenceSeparator')) || t('studyCommon.flow.noState');
 
 const heldSentence = (
   nodes: readonly FlowNode[],
   held: Readonly<Record<string, readonly FlowToken[]>>,
-) =>
+  t: StudyTranslate,
+): string =>
   nodes
     .filter(({ id }) => held[id]?.length)
-    .map(({ id, label }) => `${label} holds ${held[id].map(({ key }) => key).join(', ')}`)
-    .join('; ') || 'nothing is held';
+    .map(({ id, label }) =>
+      t('studyCommon.flow.held', {
+        label,
+        keys: held[id].map(({ key }) => key).join(t('studyCommon.flow.listSeparator')),
+      }),
+    )
+    .join(t('studyCommon.flow.sentenceSeparator')) || t('studyCommon.flow.nothingHeld');
 
-/** The record's parameters as text, so the prose may name them with `{name}` placeholders. */
-const parameterValues = (parameters: StudyParameters) =>
-  Object.fromEntries(Object.entries(parameters).map(([name, value]) => [name, String(value)]));
-
-/** One frame of a flow from what has moved and what is now held. */
 function frameOf(
-  shape: FlowShape,
+  shape: RenderedFlowShape,
   step: number,
   hops: readonly FlowHop[],
   states: Readonly<Record<string, string>>,
@@ -156,8 +191,9 @@ function frameOf(
   extra: Readonly<Record<string, string>>,
   note: string | undefined,
   worked: StudyWorkedStep | undefined,
+  t: StudyTranslate,
 ): FlowFrame {
-  const moves = movesSentence(shape, hops);
+  const moves = movesSentence(shape, hops, t);
   return {
     step,
     seconds: step * secondsPerFrame,
@@ -168,28 +204,52 @@ function frameOf(
       ...extra,
       step: String(step),
       moves,
-      states: statesSentence(shape.nodes, states),
-      held: heldSentence(shape.nodes, held),
+      states: statesSentence(shape.nodes, states, t),
+      held: heldSentence(shape.nodes, held, t),
     },
-    note: note ?? (step === 0 ? 'Nothing has moved yet.' : `At step ${step}, ${moves}.`),
+    note:
+      note ??
+      (step === 0 ? t('studyCommon.flow.startNote') : t('studyCommon.flow.note', { step, moves })),
     worked,
   };
 }
 
-/** States after a step: the earlier ones, with this step's changes, an empty string clearing one. */
+/** Translate new states once; keep earlier states until changed or explicitly cleared. */
 const nextStates = (
   states: Readonly<Record<string, string>>,
-  changes: Readonly<Record<string, string>> = {},
-) =>
+  changes: Readonly<Record<string, StudyMessage>> = {},
+  t: StudyTranslate,
+): Readonly<Record<string, string>> =>
   Object.fromEntries(
-    Object.entries({ ...states, ...changes }).filter(([, text]) => text !== ''),
-  ) as Readonly<Record<string, string>>;
+    Object.entries({
+      ...states,
+      ...Object.fromEntries(
+        Object.entries(changes).map(([id, message]) => [
+          id,
+          message === '' ? '' : studyMessage(t, message),
+        ]),
+      ),
+    }).filter(([, text]) => text !== ''),
+  );
+
+const workedStep = (
+  worked: FlowWorkedStep | undefined,
+  t: StudyTranslate,
+): StudyWorkedStep | undefined =>
+  worked === undefined
+    ? undefined
+    : {
+        title: studyMessage(t, worked.title),
+        lines: worked.lines.map((line) => studyMessage(t, line)),
+        note: worked.note === undefined ? undefined : studyMessage(t, worked.note),
+      };
 
 function studyOf(
-  shape: FlowShape,
+  shape: RenderedFlowShape,
   frames: readonly FlowFrame[],
   moments: readonly StudyMoment[],
   diagram: FlowStudyModel['diagram'],
+  t: StudyTranslate,
 ): FlowStudyModel {
   const last = frames.length - 1;
   for (const { label, step } of moments)
@@ -199,89 +259,116 @@ function studyOf(
     family: 'flow',
     flow,
     diagram,
-    // A flow opens at its start, before anything moves, so a reader steps through it in order.
     initialStep: 0,
     moments,
     legend: legendOf(
       shape.nodes,
       frames.some(({ held }) => Object.values(held).some((tokens) => tokens.length)),
+      t,
     ),
-    caption: shape.caption ?? defaultCaption,
+    caption: shape.caption,
   };
 }
 
-/** The drawing's model for a flow written step by step. */
-export function flowModel(example: FlowExample, parameters: StudyParameters = {}): FlowStudyModel {
-  checkShape(example);
+function handWrittenFrames(
+  example: FlowExample,
+  shape: RenderedFlowShape,
+  parameters: StudyParameters,
+  t: StudyTranslate,
+): readonly FlowFrame[] {
   const tokenOf = (id: string): FlowToken => {
     const message = example.messages[id];
     if (!message) throw new Error(`The flow has no message ${id}.`);
-    return message;
+    return { key: message.key, content: studyMessage(t, message.content) };
   };
-  const values = parameterValues(parameters);
+  const values = studyParameterValues(parameters, t, example.parameterMessages);
   let states: Readonly<Record<string, string>> = {};
   let held: Readonly<Record<string, readonly FlowToken[]>> = {};
-  const frames = [{ ...example.start, moves: [] }, ...example.steps].map(
-    (step, index): FlowFrame => {
-      checkNodes(example.nodes, { ...step.states, ...step.held });
-      const hops = (step.moves ?? []).map(({ message, link }): FlowHop => {
-        if (!example.links.some(({ id }) => id === link))
-          throw new Error(`The flow has no link ${link}.`);
-        return { ...tokenOf(message), link };
-      });
-      states = nextStates(states, step.states);
-      held = {
-        ...held,
-        ...Object.fromEntries(
-          Object.entries(step.held ?? {}).map(([node, ids]) => [node, ids.map(tokenOf)]),
-        ),
-      };
-      return frameOf(example, index, hops, states, held, values, step.note, step.worked);
-    },
-  );
-  return studyOf(example, frames, example.moments, null);
+  return [{ ...example.start, moves: [] }, ...example.steps].map((step, index): FlowFrame => {
+    checkNodes(example.nodes, { ...step.states, ...step.held });
+    const hops = (step.moves ?? []).map(({ message, link }): FlowHop => {
+      if (!example.links.some(({ id }) => id === link))
+        throw new Error(`The flow has no link ${link}.`);
+      return { ...tokenOf(message), link };
+    });
+    states = nextStates(states, step.states, t);
+    held = {
+      ...held,
+      ...Object.fromEntries(
+        Object.entries(step.held ?? {}).map(([node, ids]) => [node, ids.map(tokenOf)]),
+      ),
+    };
+    return frameOf(
+      shape,
+      index,
+      hops,
+      states,
+      held,
+      values,
+      studyMessage(t, step.note),
+      workedStep(step.worked, t),
+      t,
+    );
+  });
 }
 
-/**
- * The drawing's model for a flow over an executable marble example: the flow's steps are the
- * diagram's frames, and the model carries the diagram too, so a reader can switch to it.
- */
-export function flowFromMarbles(
-  example: MarbleExample,
-  flow: MarbleFlow,
-  parameters: StudyParameters = {},
+export function flowModel(
+  example: FlowExample,
+  parameters: StudyParameters,
+  t: StudyTranslate,
 ): FlowStudyModel {
-  checkShape(flow);
-  const run = marbleModel(example, parameters);
-  const { lines } = run.marbles;
+  checkShape(example);
+  const shape = renderedShape(example, t);
+  const moments = example.moments.map(({ label, step }) => ({
+    label: studyMessage(t, label),
+    step,
+  }));
+  return studyOf(shape, handWrittenFrames(example, shape, parameters, t), moments, null, t);
+}
+
+function checkedRoutes(flow: MarbleFlow, run: MarblesStudyModel) {
+  const { lines, frames } = run.marbles;
   for (const id of Object.keys(flow.routes))
     if (!lines.some((line) => line.id === id)) throw new Error(`The example has no line ${id}.`);
-  const linkOf = (lineId: string, key: string) => {
+  const steps = new Set(frames.map(({ frame }) => frame));
+  for (const at of [...Object.keys(flow.states ?? {}), ...Object.keys(flow.held ?? {})])
+    if (!steps.has(Number(at))) throw new Error(`The flow has no step ${at}.`);
+  return (lineId: string, key: string): string | undefined => {
     const route = flow.routes[lineId];
     const link = typeof route === 'string' ? route : route?.[key];
     if (link !== undefined && !flow.links.some(({ id }) => id === link))
       throw new Error(`The flow has no link ${link}.`);
     return link;
   };
-  // A held message is named by its letter; what it says is what the example's values say.
-  const events = lines.flatMap((line) => line.events);
-  const contentOf = (key: string) => {
-    const event = events.find((candidate) => candidate.key === key);
-    if (!event) throw new Error(`The example has no message ${key}.`);
-    return event.value;
-  };
-  // A state or a holding is set at a step of the run, so it names a frame the run has.
-  const steps = new Set(run.marbles.frames.map(({ frame }) => frame));
-  for (const at of [...Object.keys(flow.states ?? {}), ...Object.keys(flow.held ?? {})])
-    if (!steps.has(Number(at))) throw new Error(`The flow has no step ${at}.`);
+}
+
+/** Use the already rendered event value for both a moving token and a held copy of it. */
+function heldMessages(run: MarblesStudyModel) {
+  const events = run.marbles.lines.flatMap((line) => line.events);
+  return (keys: readonly string[]): readonly FlowToken[] =>
+    keys.map((key) => {
+      const event = events.find((candidate) => candidate.key === key);
+      if (!event) throw new Error(`The example has no message ${key}.`);
+      return { key, content: event.value };
+    });
+}
+
+function marbleFrames(
+  example: MarbleExample,
+  flow: MarbleFlow,
+  shape: RenderedFlowShape,
+  run: MarblesStudyModel,
+  t: StudyTranslate,
+): readonly FlowFrame[] {
+  const linkOf = checkedRoutes(flow, run);
+  const tokensOf = heldMessages(run);
   let states: Readonly<Record<string, string>> = {};
   let held: Readonly<Record<string, readonly FlowToken[]>> = {};
-  const frames = run.marbles.frames.map((marbleFrame): FlowFrame => {
-    const { frame } = marbleFrame;
+  return run.marbles.frames.map(({ frame, values, worked }): FlowFrame => {
     const changes = flow.states?.[frame] ?? {};
     const holding = flow.held?.[frame] ?? {};
     checkNodes(flow.nodes, { ...changes, ...holding });
-    const hops = lines.flatMap(({ id, events }) =>
+    const hops = run.marbles.lines.flatMap(({ id, events }) =>
       events
         .filter((event) => event.frame === frame && event.kind === 'next' && event.delivered)
         .flatMap((event): FlowHop[] => {
@@ -289,31 +376,49 @@ export function flowFromMarbles(
           return link ? [{ key: event.key, content: event.value, link }] : [];
         }),
     );
-    states = nextStates(states, changes);
+    states = nextStates(states, changes, t);
     held = {
       ...held,
-      ...Object.fromEntries(
-        Object.entries(holding).map(([node, keys]) => [
-          node,
-          keys.map((key) => ({ key, content: contentOf(key) })),
-        ]),
-      ),
+      ...Object.fromEntries(Object.entries(holding).map(([node, keys]) => [node, tokensOf(keys)])),
     };
-    // The marble frame's values stay readable too: {frame}, {now} and {delivered}.
+    const note = example.notes?.[frame];
     return frameOf(
-      flow,
+      shape,
       frame,
       hops,
       states,
       held,
-      marbleFrame.values,
-      example.notes?.[frame],
-      marbleFrame.worked,
+      values,
+      note === undefined ? undefined : studyMessage(t, note),
+      worked,
+      t,
     );
   });
-  return studyOf(flow, frames, run.moments, {
-    marbles: run.marbles,
-    legend: run.legend,
-    caption: `${marbleCaption(example)} ${diagramSentence}`,
-  });
+}
+
+/** The stream, flow and marble drawings all keep the same frames and payload identities. */
+export function flowFromMarbles(
+  example: MarbleExample,
+  flow: MarbleFlow,
+  parameters: StudyParameters,
+  t: StudyTranslate,
+): FlowStudyModel {
+  checkShape(flow);
+  const shape = renderedShape(flow, t);
+  const run = marbleModel(example, parameters, t);
+  const frames = marbleFrames(example, flow, shape, run, t);
+  return studyOf(
+    shape,
+    frames,
+    run.moments,
+    {
+      marbles: run.marbles,
+      legend: run.legend,
+      caption: t('studyCommon.flow.diagramCaption', {
+        caption: marbleCaption(example, t),
+        diagram: t('studyCommon.flow.diagram'),
+      }),
+    },
+    t,
+  );
 }

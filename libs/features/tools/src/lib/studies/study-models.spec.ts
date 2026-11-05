@@ -1,9 +1,12 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { ConceptStudy } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../testing/src';
 import { flowDrawing } from '../composites/study-visuals/flow/flow-drawing';
+import { motionDrawing } from '../composites/study-visuals/motion/motion-drawing';
 import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
+import { translateStudy } from './study-record';
 import { placeholdersIn } from './study-text';
 
 const records = async () => {
@@ -12,7 +15,9 @@ const records = async () => {
   const found = await Promise.all(
     studies.works.flatMap(({ studies }) => studies.map(({ id }) => loader.study(id))),
   );
-  return found.filter((study): study is ConceptStudy => study !== null);
+  return found
+    .filter((study): study is ConceptStudy => study !== null)
+    .map((study) => translateStudy(study, studyTranslate));
 };
 
 it('lists a model for exactly the paths the records name', async () => {
@@ -24,7 +29,7 @@ it('runs every model from its record in the family the record declares, and each
   for (const record of await records()) {
     if (!record.visual?.model) continue;
     const { model } = await studyModels[record.visual.model]();
-    const run = model(record.example.parameters);
+    const run = model(record.example.parameters, studyTranslate);
     expect(run.family, record.slug).toBe(record.visual.family);
     const ticks = ticksOf(run);
     expect(ticks.length, record.slug).toBeGreaterThan(1);
@@ -45,7 +50,7 @@ it('draws a token for each message moving at a step of a flow, and none where no
   for (const record of await records()) {
     if (record.visual?.family !== 'flow' || !record.visual.model) continue;
     const { model } = await studyModels[record.visual.model]();
-    const run = model(record.example.parameters);
+    const run = model(record.example.parameters, studyTranslate);
     if (run.family !== 'flow') continue;
     for (const frame of run.flow.frames)
       for (const direction of ['across', 'down'] as const) {
@@ -70,7 +75,7 @@ it('rests every moving message on its line clear of every box, both ways', async
   for (const record of await records()) {
     if (record.visual?.family !== 'flow' || !record.visual.model) continue;
     const { model } = await studyModels[record.visual.model]();
-    const run = model(record.example.parameters);
+    const run = model(record.example.parameters, studyTranslate);
     if (run.family !== 'flow') continue;
     for (const frame of run.flow.frames)
       for (const direction of ['across', 'down'] as const) {
@@ -96,9 +101,9 @@ it('stays a sound example across the whole range of every input a model offers',
   for (const record of await records()) {
     if (!record.visual?.model) continue;
     const { model } = await studyModels[record.visual.model]();
-    for (const input of model(record.example.parameters).inputs ?? [])
+    for (const input of model(record.example.parameters, studyTranslate).inputs ?? [])
       for (const value of [input.min, input.max]) {
-        const run = model({ ...record.example.parameters, [input.name]: value });
+        const run = model({ ...record.example.parameters, [input.name]: value }, studyTranslate);
         const where = `${record.slug}: ${input.name} = ${value}`;
         expect(ticksOf(run).length, where).toBeGreaterThan(1);
         if (run.family !== 'motion') continue;
@@ -110,4 +115,97 @@ it('stays a sound example across the whole range of every input a model offers',
           }
       }
   }
+});
+
+it('keeps every supplied movement name visible and apart on every frame', async () => {
+  const problems: string[] = [];
+  for (const record of await records()) {
+    if (!record.visual?.model) continue;
+    const run = (await studyModels[record.visual.model]()).model(
+      record.example.parameters,
+      studyTranslate,
+    );
+    if (run.family !== 'motion') continue;
+    for (const [step, frame] of run.motion.frames.entries()) {
+      const drawing = motionDrawing(run.motion, step);
+      const source = [...frame.bodies, ...(frame.marks ?? [])].filter(({ label }) => label);
+      const labels = [...drawing.bodies, ...drawing.marks].filter(({ label }) => label);
+      if (source.length !== labels.length)
+        problems.push(`${record.slug} frame ${step}: missing name`);
+      for (const [i, label] of labels.entries()) {
+        // Even a narrow screen uses at most 24 drawing units of font height. Keep lines apart
+        // when their conservative name widths overlap; the browser suite checks the real glyphs.
+        for (const other of labels.slice(i + 1)) {
+          if (
+            Math.abs(label.labelY - other.labelY) < 30 &&
+            Math.abs(label.labelX - other.labelX) <
+              ((label.label?.length ?? 0) + (other.label?.length ?? 0)) * 6
+          )
+            problems.push(`${record.slug} frame ${step}: ${label.label} / ${other.label}`);
+        }
+      }
+    }
+  }
+  expect(problems).toEqual([]);
+});
+
+it('routes visible narration through messages across every model and its input boundaries', async () => {
+  const fields = new Set([
+    'label',
+    'caption',
+    'note',
+    'title',
+    'intro',
+    'xLabel',
+    'yLabel',
+    'unit',
+    'operator',
+    'content',
+    'value',
+  ]);
+  const problems: string[] = [];
+  const translated = (key: string, parameters?: Readonly<Record<string, string | number>>) =>
+    `§${studyTranslate(key, parameters)}`;
+  const inspect = (value: unknown, path: string, visible = false) => {
+    if (typeof value === 'string') {
+      if (
+        visible &&
+        /[a-zA-Z]/.test(value) &&
+        !value.includes('§') &&
+        !/^[+-]?[\d.]+e[+-]?\d+$/i.test(value)
+      )
+        problems.push(path);
+      return;
+    }
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) {
+      value.forEach((entry, index) => inspect(entry, `${path}[${index}]`, visible));
+      return;
+    }
+    for (const [key, entry] of Object.entries(value))
+      inspect(
+        entry,
+        `${path}.${key}`,
+        fields.has(key) ||
+          ['lines', 'findings', 'states', 'values'].some((field) => path.endsWith(`.${field}`)) ||
+          (Array.isArray(entry) && ['lines', 'findings'].includes(key)),
+      );
+  };
+  for (const record of await records()) {
+    if (!record.visual?.model) continue;
+    const { model } = await studyModels[record.visual.model]();
+    const initial = model(record.example.parameters, studyTranslate);
+    const inputs = [
+      record.example.parameters,
+      ...(initial.inputs ?? []).flatMap((input) =>
+        [input.min, input.max].map((value) => ({
+          ...record.example.parameters,
+          [input.name]: value,
+        })),
+      ),
+    ];
+    for (const [index, parameters] of inputs.entries())
+      inspect(model(parameters, translated), `${record.slug} case ${index}`);
+  }
+  expect(problems).toEqual([]);
 });

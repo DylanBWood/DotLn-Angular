@@ -57,7 +57,7 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 | `libs/shared/utils`                | `R` and `RA` with house declarations and upstream-derived specs                          |
 | `libs/shared/i18n`                 | Transloco loading, missing keys, `TPipe`; `testing` entry point                          |
 | `libs/shared/ui`                   | House components, the plain and field skins, and the lazy `@dotln-angular/ui/menu` entry |
-| `libs/shared/models`               | Shared types and the versioned contracts: the board, `tool-v1` and `concept-study-v0`    |
+| `libs/shared/models`               | Shared types and the versioned contracts: the board, `tool-v1` and `concept-study-v1`    |
 | `libs/shared/events`               | Every event group, by source tier                                                        |
 | `libs/shared/state`                | App stores: feature flags, errors and navigation                                         |
 | `libs/shared/data-access`          | Commands, persistence, interceptors and the mock-worker start                            |

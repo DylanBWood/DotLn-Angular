@@ -1,13 +1,15 @@
 import { defer, EMPTY, map, type Observable, of, shareReplay, startWith, Subject } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './start-with';
 
 const line = (label: string) => {
-  const found = marbleModel(example).marbles.lines.find((each) => each.label === label);
+  const found = marbleModel(example, {}, studyTranslate).marbles.lines.find(
+    (each) => each.label === label,
+  );
   if (!found) throw new Error(`No line ${label}.`);
   return found;
 };
@@ -38,8 +40,8 @@ it('attaches the record to the startWith row and reads its code from this module
     'libs/features/tools/src/lib/studies/rxjs/start-with.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  expect(model(record.example.parameters).family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(model(record.example.parameters, studyTranslate).family).toBe('marbles');
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'status$',
     'panel$',
     'latePanel$',
@@ -48,14 +50,20 @@ it('attaches the record to the startWith row and reads its code from this module
 
 it('keeps the values the prose names equal to the run', async () => {
   const { parameters } = (await loadStudy('rxc:199')).example;
-  expect(line('panel$').events[0]).toMatchObject({ frame: 0, value: parameters['seed'] });
+  expect(line('panel$').events[0]).toMatchObject({
+    frame: 0,
+    value: parameters['seed'],
+  });
   expect(line('latePanel$').subscribedAt).toBe(parameters['latePanel']);
   expect(line('latePanel$').events[0]).toMatchObject({
     frame: parameters['latePanel'],
     value: parameters['seed'],
   });
   const status = line('status$').events;
-  expect(status[0]).toMatchObject({ kind: 'next', frame: parameters['firstReport'] });
+  expect(status[0]).toMatchObject({
+    kind: 'next',
+    frame: parameters['firstReport'],
+  });
   expect(status[status.length - 1]).toMatchObject({
     kind: 'complete',
     frame: parameters['completes'],
@@ -79,7 +87,7 @@ it('subscribes to the source once for each panel, each time after its seed', () 
 });
 
 it('tells of the seed and names each panel’s seed in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[0];
   expect(telling.frame).toBe(0);
   expect(telling.values['now']).toBe('panel$ emits w (waiting)');

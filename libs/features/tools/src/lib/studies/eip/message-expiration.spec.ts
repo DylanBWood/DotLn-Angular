@@ -1,15 +1,15 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
-import { example, flow, model, queueWithLimit, timeToLive } from './message-expiration';
+import { example, model, queueWithLimit, timeToLive } from './message-expiration';
 
 const path = 'libs/features/tools/src/lib/studies/eip/message-expiration.ts';
 
 /** The example run from the record's own parameters, which this module always draws as a flow. */
 async function drawn(): Promise<FlowStudyModel> {
-  const run = model((await loadFlowStudy('eip:91')).example.parameters);
+  const run = model((await loadFlowStudy('eip:91')).example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The study is drawn as a flow.');
   return run;
 }
@@ -100,7 +100,7 @@ it('sends the request past its limit to the dead letter channel and verifies the
   ]);
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['First one verified', 2],
-    ['Two waiting', 5],
+    ['2 waiting', 5],
     ["b's last good step", 7],
     ['b expires', 8],
     ['c verified', 9],
@@ -126,9 +126,9 @@ it('writes a note for every step and keeps the two drawings on the same steps', 
   // Every state fits in its box, and every name reads at a narrow width.
   const states = run.flow.frames.flatMap(({ states: now }) => Object.values(now));
   expect(states.every((text) => text.length <= 40)).toBe(true);
-  expect(flow.nodes.every(({ label }) => label.split(' ').every((word) => word.length <= 10))).toBe(
-    true,
-  );
+  expect(
+    run.flow.nodes.every(({ label }) => label.split(' ').every((word) => word.length <= 10)),
+  ).toBe(true);
 });
 
 it('loses the younger request instead when the limit is raised', () => {
@@ -141,21 +141,26 @@ it('loses the younger request instead when the limit is raised', () => {
     inner: {
       ...verifications,
       'verify order 32': {
-        label: 'verification(32)',
+        label: 'studyEip.message-expiration.model.verification32',
         marbles: '---|',
         subscriptions: '---------^--!',
       },
     },
     outputs: {
       toVerifier$: {
-        label: 'toVerifier$',
+        ...example.outputs['toVerifier$'],
         marbles: '--a------b',
         values: { a: 'verify order 31', b: 'verify order 32' },
+        valueMessages: {
+          ...example.outputs['toVerifier$'].valueMessages,
+          b: example.inputs['request$'].valueMessages?.['b'] ?? '',
+        },
       },
       deadLetter$: {
-        label: 'deadLetter$',
+        ...example.outputs['deadLetter$'],
         marbles: '------------c',
         values: { c: 'verify order 33' },
+        valueMessages: { c: example.inputs['request$'].valueMessages?.['c'] ?? '' },
       },
     },
     run: queueWithLimit(6),

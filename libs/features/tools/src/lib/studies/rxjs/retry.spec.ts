@@ -1,7 +1,7 @@
 import { defer, EMPTY, from, retry, throwError, timer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { count, delay, example, model } from './retry';
@@ -20,9 +20,9 @@ it('attaches the record to the retry row and reads its code from this module', a
   expect(record.visual.family).toBe('marbles');
   expect(record.example.parameters['count']).toBe(count);
   expect(record.example.parameters['delay']).toBe(delay);
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'attempt 1',
     'attempt 2',
     'attempt 3',
@@ -31,7 +31,7 @@ it('attaches the record to the retry row and reads its code from this module', a
 });
 
 it('starts each attempt the delay after the last one failed, and lets no error through', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const attempts = marbles.lines.filter(({ role }) => role === 'inner');
   expect(
     attempts.map(({ subscribedAt, unsubscribedAt }) => [subscribedAt, unsubscribedAt]),
@@ -46,7 +46,7 @@ it('starts each attempt the delay after the last one failed, and lets no error t
 });
 
 it('keeps the value of a failed attempt, so the board shows the 10:02 twice', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   expect(run.marbles.frames[run.marbles.frames.length - 1].values['delivered']).toBe(
     'a (10:02), a (10:02), b (10:15)',
   );

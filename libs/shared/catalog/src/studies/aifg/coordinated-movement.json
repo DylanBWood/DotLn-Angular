@@ -1,0 +1,129 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:173",
+  "work": "aifg",
+  "slug": "coordinated-movement",
+  "authored": {
+    "by": "studyAifg.coordinated-movement.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.coordinated-movement.record.authored.reviewedBy.item0",
+      "studyAifg.coordinated-movement.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.coordinated-movement.record.intuition.text",
+    "situation": "studyAifg.coordinated-movement.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.coordinated-movement.record.example.name",
+    "description": "studyAifg.coordinated-movement.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "startY": 0,
+      "targetX": 48,
+      "targetY": 0,
+      "spacing": 4,
+      "memberSpeed": 6,
+      "cameraSpeed": 6,
+      "failureCameraSpeed": 1,
+      "maxAcceleration": 8,
+      "slowRadius": 4,
+      "targetRadius": 0,
+      "responseTime": 0.5,
+      "anchorSpeed": 1,
+      "lagLimit": 6,
+      "timeStep": 0.1,
+      "steps": 160,
+      "radius": 0.4,
+      "preferredCost": 0,
+      "otherCost": 2,
+      "seed": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step0.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step1.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step2.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.coordinated-movement.record.mechanism.steps.step3.title",
+        "text": "studyAifg.coordinated-movement.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.coordinated-movement.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/coordinated-movement.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/coordinated-movement.model.ts",
+    "textEquivalent": "studyAifg.coordinated-movement.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.coordinated-movement.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "relevance": "studyAifg.coordinated-movement.record.implementations.item0.relevance",
+      "explanation": "studyAifg.coordinated-movement.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.coordinated-movement.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.coordinated-movement.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.coordinated-movement.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/Formation.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.coordinated-movement.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.coordinated-movement.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/fma/FormationMotionModerator.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.coordinated-movement.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.coordinated-movement.record.limits.item0",
+    "studyAifg.coordinated-movement.record.limits.item1",
+    "studyAifg.coordinated-movement.record.limits.item2"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:35",
+      "why": "studyAifg.coordinated-movement.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:177",
+      "why": "studyAifg.coordinated-movement.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:186",
+      "why": "studyAifg.coordinated-movement.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:191",
+      "why": "studyAifg.coordinated-movement.record.nearby.item3.why"
+    }
+  ]
+}

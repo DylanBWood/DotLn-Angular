@@ -11,89 +11,193 @@ import type { StudyModelFunction } from '../study-model';
  */
 export const example: FlowExample = {
   nodes: [
-    { id: 'board', label: 'Board', stage: 0 },
-    { id: 'adapter', label: 'Adapter', stage: 1, tone: 'subject' },
-    { id: 'api', label: 'HTTP API', stage: 2 },
+    {
+      id: 'board',
+      label: 'studyEip.channel-adapter.model.example.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'adapter',
+      label: 'studyEip.channel-adapter.model.example.nodes.1.label',
+      stage: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'api',
+      label: 'studyEip.channel-adapter.model.example.nodes.2.label',
+      stage: 2,
+    },
   ],
   // The board and the adapter meet on the app's event stream; the adapter and the API over HTTP.
   links: [
-    { id: 'publish', from: 'board', to: 'adapter', label: 'events' },
-    { id: 'deliver', from: 'adapter', to: 'board', label: 'events' },
-    { id: 'request', from: 'adapter', to: 'api', label: 'HTTP' },
-    { id: 'response', from: 'api', to: 'adapter', label: 'HTTP' },
+    {
+      id: 'publish',
+      from: 'board',
+      to: 'adapter',
+      label: 'studyEip.channel-adapter.model.example.links.0.label',
+    },
+    {
+      id: 'deliver',
+      from: 'adapter',
+      to: 'board',
+      label: 'studyEip.channel-adapter.model.example.links.1.label',
+    },
+    {
+      id: 'request',
+      from: 'adapter',
+      to: 'api',
+      label: 'studyEip.channel-adapter.model.example.links.2.label',
+    },
+    {
+      id: 'response',
+      from: 'api',
+      to: 'adapter',
+      label: 'studyEip.channel-adapter.model.example.links.3.label',
+    },
   ],
   // Lower case is the first load, capitals the refresh after it.
   messages: {
-    l: { key: 'l', content: 'load' },
-    g: { key: 'g', content: 'GET /uifa-board-v1' },
-    d: { key: 'd', content: '200 with the board document' },
-    s: { key: 's', content: 'loadSuccess with the document' },
-    L: { key: 'L', content: 'load' },
-    G: { key: 'G', content: 'GET /uifa-board-v1' },
-    E: { key: 'E', content: 'HTTP 500' },
-    F: { key: 'F', content: 'loadFailure with an app error' },
+    l: {
+      key: 'l',
+      content: 'studyEip.channel-adapter.model.example.messages.l.content',
+    },
+    g: {
+      key: 'g',
+      content: 'studyEip.channel-adapter.model.example.messages.g.content',
+    },
+    d: {
+      key: 'd',
+      content: 'studyEip.channel-adapter.model.example.messages.d.content',
+    },
+    s: {
+      key: 's',
+      content: 'studyEip.channel-adapter.model.example.messages.s.content',
+    },
+    L: {
+      key: 'L',
+      content: 'studyEip.channel-adapter.model.example.messages.L.content',
+    },
+    G: {
+      key: 'G',
+      content: 'studyEip.channel-adapter.model.example.messages.G.content',
+    },
+    E: {
+      key: 'E',
+      content: 'studyEip.channel-adapter.model.example.messages.E.content',
+    },
+    F: {
+      key: 'F',
+      content: 'studyEip.channel-adapter.model.example.messages.F.content',
+    },
   },
   start: {
-    states: { board: 'no document', adapter: 'listening for load', api: 'answers HTTP only' },
-    note: 'The board has opened with no document. The adapter listens on the event stream for load; the HTTP API knows nothing of events.',
+    states: {
+      board: 'studyEip.channel-adapter.model.example.start.states.board',
+      adapter: 'studyEip.channel-adapter.model.example.start.states.adapter',
+      api: 'studyEip.channel-adapter.model.example.start.states.api',
+    },
+    note: 'studyEip.channel-adapter.model.example.start.note',
   },
   steps: [
     {
       moves: [{ message: 'l', link: 'publish' }],
-      states: { board: 'waiting for its document', adapter: 'serving l' },
+      states: {
+        board: 'studyEip.channel-adapter.model.example.steps.0.states.board',
+        adapter: 'studyEip.channel-adapter.model.example.steps.0.states.adapter',
+      },
       held: { adapter: ['l'] },
-      note: 'The board publishes l, a load event, on the event stream, and the adapter, which listens for load, takes it.',
+      note: 'studyEip.channel-adapter.model.example.steps.0.note',
     },
     {
       moves: [{ message: 'g', link: 'request' }],
-      states: { adapter: 'waiting for the reply', api: 'serving g' },
-      note: 'The adapter turns l into g, a GET for /uifa-board-v1, and sends it to the HTTP API through BoardApi.',
+      states: {
+        adapter: 'studyEip.channel-adapter.model.example.steps.1.states.adapter',
+        api: 'studyEip.channel-adapter.model.example.steps.1.states.api',
+      },
+      note: 'studyEip.channel-adapter.model.example.steps.1.note',
     },
     {
       moves: [{ message: 'd', link: 'response' }],
-      states: { adapter: 'has the reply to l', api: 'answered 200' },
+      states: {
+        adapter: 'studyEip.channel-adapter.model.example.steps.2.states.adapter',
+        api: 'studyEip.channel-adapter.model.example.steps.2.states.api',
+      },
       held: { adapter: ['l', 'd'] },
-      note: 'The HTTP API answers the adapter with d, a 200 reply carrying the board document.',
+      note: 'studyEip.channel-adapter.model.example.steps.2.note',
     },
     {
       moves: [{ message: 's', link: 'deliver' }],
-      states: { board: 'shows the document', adapter: 'listening for load' },
+      states: {
+        board: 'studyEip.channel-adapter.model.example.steps.3.states.board',
+        adapter: 'studyEip.channel-adapter.model.example.steps.3.states.adapter',
+      },
       held: { adapter: [], board: ['s'] },
-      note: 'The adapter wraps the document in s, a loadSuccess event, and publishes it on the event stream, where the board takes it.',
+      note: 'studyEip.channel-adapter.model.example.steps.3.note',
     },
     {
       moves: [{ message: 'L', link: 'publish' }],
-      states: { board: 'shows it; refresh asked', adapter: 'serving L' },
+      states: {
+        board: 'studyEip.channel-adapter.model.example.steps.4.states.board',
+        adapter: 'studyEip.channel-adapter.model.example.steps.4.states.adapter',
+      },
       held: { adapter: ['L'] },
-      note: 'The reader asks for a refresh, and the board publishes L, a second load event, which the adapter takes.',
+      note: 'studyEip.channel-adapter.model.example.steps.4.note',
     },
     {
       moves: [{ message: 'G', link: 'request' }],
-      states: { adapter: 'waiting for the reply', api: 'serving G' },
-      note: 'The adapter sends G, the same GET as before, to the HTTP API.',
+      states: {
+        adapter: 'studyEip.channel-adapter.model.example.steps.5.states.adapter',
+        api: 'studyEip.channel-adapter.model.example.steps.5.states.api',
+      },
+      note: 'studyEip.channel-adapter.model.example.steps.5.note',
     },
     {
       moves: [{ message: 'E', link: 'response' }],
-      states: { adapter: 'has a failure for L', api: 'answered 500' },
+      states: {
+        adapter: 'studyEip.channel-adapter.model.example.steps.6.states.adapter',
+        api: 'studyEip.channel-adapter.model.example.steps.6.states.api',
+      },
       held: { adapter: ['L', 'E'] },
-      note: 'This time the HTTP API answers the adapter with E, an HTTP 500 reply.',
+      note: 'studyEip.channel-adapter.model.example.steps.6.note',
     },
     {
       moves: [{ message: 'F', link: 'deliver' }],
-      states: { board: 'unavailable, no document', adapter: 'listening for load' },
+      states: {
+        board: 'studyEip.channel-adapter.model.example.steps.7.states.board',
+        adapter: 'studyEip.channel-adapter.model.example.steps.7.states.adapter',
+      },
       held: { adapter: [], board: ['F'] },
-      note: 'The adapter turns the failure into F, a loadFailure event carrying an app error, and publishes it on the event stream, where the board takes it.',
+      note: 'studyEip.channel-adapter.model.example.steps.7.note',
     },
   ],
   moments: [
-    { label: 'load published', step: 1 },
-    { label: 'event becomes GET', step: 2 },
-    { label: 'reply becomes event', step: 4 },
-    { label: 'error reply', step: 7 },
-    { label: 'failure as event', step: 8 },
+    {
+      label: 'studyEip.channel-adapter.model.example.moments.0.label',
+      step: 1,
+    },
+    {
+      label: 'studyEip.channel-adapter.model.example.moments.1.label',
+      step: 2,
+    },
+    {
+      label: 'studyEip.channel-adapter.model.example.moments.2.label',
+      step: 4,
+    },
+    {
+      label: 'studyEip.channel-adapter.model.example.moments.3.label',
+      step: 7,
+    },
+    {
+      label: 'studyEip.channel-adapter.model.example.moments.4.label',
+      step: 8,
+    },
   ],
-  caption:
-    "Each token is one message. Lower-case tokens belong to the first load and capitals to the refresh: l and L are the load event, g and G the GET /uifa-board-v1 request, d the API's 200 reply carrying the board document, E its HTTP 500 reply, s the loadSuccess event carrying the document and F the loadFailure event carrying an app error. The Board is the board page with its store, which publishes load and keeps what comes back; the Adapter is the store's command feature calling BoardApi; the HTTP API is the app's own API, which answers HTTP and knows nothing of events. The lines marked events are the app's event stream, and the lines marked HTTP are plain HTTP. The words in a box say what that box is doing or holding. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.",
+  caption: 'studyEip.channel-adapter.model.example.caption',
+
+  parameterMessages: {
+    route: 'studyEip.channel-adapter.record.parameters.route',
+    failure: 'studyEip.channel-adapter.record.parameters.failure',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => flowModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => flowModel(example, parameters, t);

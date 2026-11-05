@@ -1,0 +1,111 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:157",
+  "work": "aifg",
+  "slug": "actuator",
+  "authored": {
+    "by": "studyAifg.actuator.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.actuator.record.authored.reviewedBy.item0",
+      "studyAifg.actuator.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.actuator.record.intuition.text",
+    "situation": "studyAifg.actuator.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.actuator.record.example.name",
+    "description": "studyAifg.actuator.record.example.description",
+    "parameters": {
+      "beltSpeed": 6,
+      "impossibleSpeed": 12,
+      "initialSpeed": 0,
+      "maxSpeed": 8,
+      "maxAcceleration": 3,
+      "responseTime": 0.5,
+      "timeStep": 0.25,
+      "steps": 48
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.actuator.record.mechanism.steps.step0.title",
+        "text": "studyAifg.actuator.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.actuator.record.mechanism.steps.step1.title",
+        "text": "studyAifg.actuator.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.actuator.record.mechanism.steps.step2.title",
+        "text": "studyAifg.actuator.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.actuator.record.mechanism.steps.step3.title",
+        "text": "studyAifg.actuator.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.actuator.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/actuator.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/actuator.model.ts",
+    "textEquivalent": "studyAifg.actuator.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.actuator.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "relevance": "studyAifg.actuator.record.implementations.item0.relevance",
+      "explanation": "studyAifg.actuator.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.actuator.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.actuator.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.actuator.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.actuator.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.actuator.record.limits.item0",
+    "studyAifg.actuator.record.limits.item1",
+    "studyAifg.actuator.record.limits.item2"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:153",
+      "why": "studyAifg.actuator.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:194",
+      "why": "studyAifg.actuator.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:158",
+      "why": "studyAifg.actuator.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:192",
+      "why": "studyAifg.actuator.record.nearby.item3.why"
+    }
+  ]
+}

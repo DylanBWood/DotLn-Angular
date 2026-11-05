@@ -1,7 +1,58 @@
 import { combineLatest, map, type Observable } from 'rxjs';
 
+import type { StudyMessage } from '../study-message';
 import type { StudyModelFunction } from '../study-model';
 import { type MarbleExample, marbleModel } from './marbles';
+
+interface Budgets {
+  readonly a: number;
+  readonly b: number;
+}
+
+const budgets: Budgets = { a: 90, b: 40 };
+const workerStates = { q: 'queued', r: 'reading', w: 'writing', d: 'done' } as const;
+const workerMessages = {
+  q: 'studyRxjs.combine-latest.model.example.inputs.worker.values.q',
+  r: 'studyRxjs.combine-latest.model.example.inputs.worker.values.r',
+  w: 'studyRxjs.combine-latest.model.example.inputs.worker.values.w',
+  d: 'studyRxjs.combine-latest.model.example.inputs.worker.values.d',
+};
+const budgetPayload = (budget: number) => `${budget}% left`;
+const budgetMessage = (budget: number): StudyMessage => ({
+  key: 'studyRxjs.combine-latest.model.budget',
+  params: { budget },
+});
+
+/** A dashboard row carries a stable protocol value and a description of those same facts. */
+const row = (state: keyof typeof workerStates, budget: number) => ({
+  value: `${workerStates[state]}, ${budgetPayload(budget)}`,
+  message: {
+    key: 'studyRxjs.combine-latest.model.row',
+    params: { budget },
+    messages: { state: workerMessages[state] },
+  },
+});
+
+const rowsOf = (reports: Budgets) => ({
+  1: row('r', reports.a),
+  2: row('w', reports.a),
+  3: row('w', reports.b),
+  4: row('d', reports.b),
+});
+
+const rows = rowsOf(budgets);
+
+const notesOf = (reports: Budgets): Readonly<Record<number, StudyMessage>> => ({
+  0: 'studyRxjs.combine-latest.model.example.notes.0',
+  1: 'studyRxjs.combine-latest.model.example.notes.1',
+  2: 'studyRxjs.combine-latest.model.example.notes.2',
+  4: { key: 'studyRxjs.combine-latest.model.example.notes.4', params: { budget: reports.a } },
+  6: { key: 'studyRxjs.combine-latest.model.example.notes.6', params: { budget: reports.a } },
+  8: { key: 'studyRxjs.combine-latest.model.example.notes.8', params: { budget: reports.b } },
+  10: { key: 'studyRxjs.combine-latest.model.example.notes.10', params: { budget: reports.b } },
+  12: { key: 'studyRxjs.combine-latest.model.example.notes.12', params: { budget: reports.b } },
+  15: 'studyRxjs.combine-latest.model.example.notes.15',
+});
 
 /**
  * A task's row on a dashboard: it shows the worker's latest state beside the budget it has left,
@@ -11,26 +62,40 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     worker$: {
-      label: 'worker$',
+      label: 'studyRxjs.combine-latest.model.example.inputs.worker.label',
       marbles: '-qr---w-----d--|',
-      values: { q: 'queued', r: 'reading', w: 'writing', d: 'done' },
+      values: workerStates,
+
+      valueMessages: workerMessages,
     },
     budget$: {
-      label: 'budget$',
+      label: 'studyRxjs.combine-latest.model.example.inputs.budget.label',
       marbles: '----a---b-|',
-      values: { a: '90% left', b: '40% left' },
+      values: { a: budgetPayload(budgets.a), b: budgetPayload(budgets.b) },
+
+      valueMessages: {
+        a: budgetMessage(budgets.a),
+        b: budgetMessage(budgets.b),
+      },
     },
   },
-  operator: 'combineLatest([worker$, budget$])',
+  operator: 'studyRxjs.combine-latest.model.example.operator',
   outputs: {
     row$: {
-      label: 'row$',
+      label: 'studyRxjs.combine-latest.model.example.outputs.row.label',
       marbles: '----1-2-3---4--|',
       values: {
-        1: 'reading, 90% left',
-        2: 'writing, 90% left',
-        3: 'writing, 40% left',
-        4: 'done, 40% left',
+        1: rows[1].value,
+        2: rows[2].value,
+        3: rows[3].value,
+        4: rows[4].value,
+      },
+
+      valueMessages: {
+        1: rows[1].message,
+        2: rows[2].message,
+        3: rows[3].message,
+        4: rows[4].message,
       },
     },
   },
@@ -42,23 +107,63 @@ export const example: MarbleExample = {
     return { row$ };
   },
   moments: [
-    { label: 'Still waiting', frame: 2 },
-    { label: 'First row', frame: 4 },
-    { label: 'Budget falls', frame: 8 },
-    { label: 'Budget completes', frame: 10 },
-    { label: 'Done', frame: 15 },
+    {
+      label: 'studyRxjs.combine-latest.model.example.moments.0.label',
+      frame: 2,
+    },
+    {
+      label: 'studyRxjs.combine-latest.model.example.moments.1.label',
+      frame: 4,
+    },
+    {
+      label: 'studyRxjs.combine-latest.model.example.moments.2.label',
+      frame: 8,
+    },
+    {
+      label: 'studyRxjs.combine-latest.model.example.moments.3.label',
+      frame: 10,
+    },
+    {
+      label: 'studyRxjs.combine-latest.model.example.moments.4.label',
+      frame: 15,
+    },
   ],
-  notes: {
-    0: 'Nothing has reported yet. combineLatest has subscribed to both inputs and keeps an empty slot for each.',
-    1: 'The worker reports queued. Its slot is filled, but the budget has not reported, so no row can be built.',
-    2: 'The worker moves on to reading, which replaces queued in its slot. The budget is still silent, so there is still no row, and nothing says why.',
-    4: 'The budget reports 90% left. Every slot is now filled, so the first row appears. It pairs the budget with reading; queued never reaches a row.',
-    6: "The worker moves on to writing. The row pairs it with the budget's latest value, still 90% left.",
-    8: "The budget falls to 40% left, and the row is rebuilt with the worker's unchanged state, writing.",
-    10: 'The budget completes. combineLatest keeps its last value, 40% left, and the row stays open: the worker is still running.',
-    12: 'The worker is done. The row pairs done with the 40% left that the completed budget left in its slot.',
-    15: 'The worker completes. Every input has now completed, so the row completes.',
+  notes: notesOf(budgets),
+
+  parameterMessages: {
+    workerStates: 'studyRxjs.combine-latest.record.parameters.workerStates',
+    budgets: 'studyRxjs.combine-latest.record.parameters.budgets',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);
+
+/** Change reported percentages without changing combineLatest's pairing or event schedule. */
+export function withBudgets(changes: Partial<Budgets>): MarbleExample {
+  const next = { ...budgets, ...changes };
+  const result = rowsOf(next);
+  return {
+    ...example,
+    inputs: {
+      ...example.inputs,
+      budget$: {
+        ...example.inputs['budget$'],
+        values: { a: budgetPayload(next.a), b: budgetPayload(next.b) },
+        valueMessages: { a: budgetMessage(next.a), b: budgetMessage(next.b) },
+      },
+    },
+    outputs: {
+      row$: {
+        ...example.outputs['row$'],
+        values: { 1: result[1].value, 2: result[2].value, 3: result[3].value, 4: result[4].value },
+        valueMessages: {
+          1: result[1].message,
+          2: result[2].message,
+          3: result[3].message,
+          4: result[4].message,
+        },
+      },
+    },
+    notes: notesOf(next),
+  };
+}

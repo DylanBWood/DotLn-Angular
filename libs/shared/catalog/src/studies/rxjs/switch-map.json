@@ -1,21 +1,24 @@
 {
-  "schema": "concept-study-v0",
+  "schema": "concept-study-v1",
   "id": "rxc:152",
   "work": "rxjs",
   "slug": "switch-map",
   "authored": {
-    "by": "Claude Code, the batch's executor",
+    "by": "studyRxjs.switch-map.record.authored.by",
     "on": "2026-10-31",
-    "reviewedBy": ["Claude dotln-worker, factual critic", "Claude dotln-worker, reading critic"],
+    "reviewedBy": [
+      "studyRxjs.switch-map.record.authored.reviewedBy.item0",
+      "studyRxjs.switch-map.record.authored.reviewedBy.item1"
+    ],
     "state": "checked"
   },
   "intuition": {
-    "text": "A new request cancels the one still in flight. switchMap opens an inner stream for each value it receives and, the moment the next value arrives, stops listening to the inner stream it had and listens to the new one instead. Only the newest inner stream's values come out.",
-    "situation": "A search box that asks for results on each keystroke. What is shown must belong to the latest query, so an answer to an older query that arrives late must never overwrite it."
+    "text": "studyRxjs.switch-map.record.intuition.text",
+    "situation": "studyRxjs.switch-map.record.intuition.situation"
   },
   "example": {
-    "name": "A search box with three queries",
-    "description": "The box emits three queries, {queries}, at frames 1, 5 and 7, and completes at frame 14. Each query opens a request whose first page arrives {firstPage} frames later and whose second page {secondPage} frames later, after which the request completes. The second query is cut off before any of its pages arrive.",
+    "name": "studyRxjs.switch-map.record.example.name",
+    "description": "studyRxjs.switch-map.record.example.description",
     "parameters": {
       "queries": "ant, bee and cat",
       "firstPage": 3,
@@ -25,26 +28,26 @@
   "mechanism": {
     "steps": [
       {
-        "title": "Cut off the request in flight",
-        "text": "When the box emits a query while a request is still running, stop listening to that request first. Whatever it returns later falls on the floor; that is the switch, and it is why no stale page can appear."
+        "title": "studyRxjs.switch-map.record.mechanism.steps.step0.title",
+        "text": "studyRxjs.switch-map.record.mechanism.steps.step0.text"
       },
       {
-        "title": "Open a request for the new query",
-        "text": "Then start the request for the query that just arrived and keep it as the one in flight."
+        "title": "studyRxjs.switch-map.record.mechanism.steps.step1.title",
+        "text": "studyRxjs.switch-map.record.mechanism.steps.step1.text"
       },
       {
-        "title": "Pass on what the request in flight delivers",
-        "text": "Each page the request in flight returns goes straight to the output."
+        "title": "studyRxjs.switch-map.record.mechanism.steps.step2.title",
+        "text": "studyRxjs.switch-map.record.mechanism.steps.step2.text"
       },
       {
-        "title": "Finish only when both are done",
-        "text": "The output completes once the box has completed and the request in flight has delivered everything it will; a box that completes while a request is running leaves the output open until that request completes."
+        "title": "studyRxjs.switch-map.record.mechanism.steps.step3.title",
+        "text": "studyRxjs.switch-map.record.mechanism.steps.step3.text"
       }
     ]
   },
   "pseudocode": {
-    "ordinary": "on each query from the box:\n  if a request is still running:\n    stop listening to it\n    (anything it returns later is ignored)\n\n  request = start fetching the pages for query\n\non each page from the current request:\n  show page\n\nwhen the box has completed and the current request has completed:\n  complete the output",
-    "rxjs": "shown$ = query$.pipe(\n  switchMap((query) => results(query)),\n);",
+    "ordinary": "studyRxjs.switch-map.record.pseudocode.ordinary",
+    "rxjs": "studyRxjs.switch-map.record.pseudocode.rxjs",
     "executable": {
       "kind": "rxjs",
       "module": "libs/features/tools/src/lib/studies/rxjs/switch-map.ts"
@@ -53,63 +56,63 @@
   "visual": {
     "family": "marbles",
     "model": "libs/features/tools/src/lib/studies/rxjs/switch-map.ts",
-    "textEquivalent": "Frame {frame}: {now}. Shown so far: {delivered}."
+    "textEquivalent": "studyRxjs.switch-map.record.visual.textEquivalent"
   },
   "implementations": [
     {
-      "project": "DotLn-Angular, the soldier scene's clock",
+      "project": "studyRxjs.switch-map.record.implementations.item0.project",
       "url": "https://github.com/DylanBWood/DotLn-Angular/blob/4c21c586634ac8a5ab5dba9852cd7da81c6d6ee9/libs/features/scene/src/lib/clock/scene-clock.ts",
-      "relevance": "Where this app uses it: libs/features/scene/src/lib/clock/scene-clock.ts turns the scene's Play and Pause into a stream of frames.",
-      "explanation": "A BehaviorSubject holds whether the scene is running. switchMap opens the clock driver's frame stream while it is true and switches to EMPTY when it turns false, so pressing Pause unsubscribes the frames at once and nothing ticks after it; pressing Play opens a fresh subscription. The same switch that cancels a stale search here cancels a stale clock."
+      "relevance": "studyRxjs.switch-map.record.implementations.item0.relevance",
+      "explanation": "studyRxjs.switch-map.record.implementations.item0.explanation"
     },
     {
-      "project": "Angular's router",
+      "project": "studyRxjs.switch-map.record.implementations.item1.project",
       "url": "https://github.com/angular/angular/blob/4742af1435957d4a325c338255e0dbed8c4b0298/packages/router/src/navigation_transition.ts",
-      "relevance": "Angular's router runs each navigation as a pipeline of steps, in navigation_transition.ts of the angular/angular repository.",
-      "explanation": "The stream of navigation requests passes through switchMap, so a navigation that starts while another is still resolving its guards and data takes over and the earlier one is unsubscribed: the router never finishes two navigations at once, and a stale one is dropped rather than applied late. The file is pinned to the commit read on 2026-10-31."
+      "relevance": "studyRxjs.switch-map.record.implementations.item1.relevance",
+      "explanation": "studyRxjs.switch-map.record.implementations.item1.explanation"
     }
   ],
   "references": [
     {
-      "title": "RxJS API reference · switchMap",
+      "title": "studyRxjs.switch-map.record.references.item0.title",
       "url": "https://rxjs.dev/api/index/function/switchMap",
       "accessed": "2026-10-31",
-      "supports": "switchMap projects each source value to an inner observable and passes on only the latest inner's values, stopping the earlier inner's the moment a new source value arrives."
+      "supports": "studyRxjs.switch-map.record.references.item0.supports"
     },
     {
-      "title": "switchMap.ts in RxJS 7.8.2",
+      "title": "studyRxjs.switch-map.record.references.item1.title",
       "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/src/internal/operators/switchMap.ts",
       "accessed": "2026-10-31",
-      "supports": "At the installed version the operator unsubscribes its inner subscriber before subscribing to the new projection, and completes the output only once the source has completed and no inner subscriber remains."
+      "supports": "studyRxjs.switch-map.record.references.item1.supports"
     },
     {
-      "title": "RxJS guide · Testing RxJS code with marble diagrams",
+      "title": "studyRxjs.switch-map.record.references.item2.title",
       "url": "https://rxjs.dev/guide/testing/marble-testing",
       "accessed": "2026-10-31",
-      "supports": "The marble syntax this drawing and its spec share: a dash is one frame, a letter an emission, a bar completion, and a caret and an exclamation mark the start and end of a subscription."
+      "supports": "studyRxjs.switch-map.record.references.item2.supports"
     }
   ],
   "limits": [
-    "A cut-off request is a lost request. switchMap fits a read whose stale answer is worthless, such as this search. For a save it is the wrong choice: the request may have reached the server while its answer is dropped, so the app forgets a write that happened. Use concatMap to run saves one after another, or exhaustMap to ignore a second click while the first is in flight.",
-    "Cutting off a request only stops listening. Work the inner stream had already started is not undone: Angular's HttpClient aborts a request on unsubscribe, but a promise-based call runs to its end unheard, and an effect that already ran has run.",
-    "A source that emits faster than its requests can answer never shows a result: every request is cut off before its first page, as the middle query is in this example at frame 7. A debounce before switchMap, or exhaustMap, lets some requests finish."
+    "studyRxjs.switch-map.record.limits.item0",
+    "studyRxjs.switch-map.record.limits.item1",
+    "studyRxjs.switch-map.record.limits.item2"
   ],
   "nearby": [
     {
       "id": "rxc:149",
-      "why": "exhaustMap is the choice when the first request should win and later values be ignored until it finishes, such as a submit button."
+      "why": "studyRxjs.switch-map.record.nearby.item0.why"
     },
     {
       "id": "rxc:147",
-      "why": "concatMap is the choice when every request must run, one after another in order, such as saves."
+      "why": "studyRxjs.switch-map.record.nearby.item1.why"
     },
     {
       "id": "rxc:150",
-      "why": "mergeMap is the choice when all requests may run at once and the order of their answers does not matter."
+      "why": "studyRxjs.switch-map.record.nearby.item2.why"
     },
     {
       "id": "rxc:198",
-      "why": "switchAll is the same switch over a stream of streams, when the projection has already been done."
+      "why": "studyRxjs.switch-map.record.nearby.item3.why"
     }
   ]
 }

@@ -13,22 +13,22 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     closed$: {
-      label: 'closed$',
+      label: 'studyRxjs.take-until.model.example.inputs.closed.label',
       hot: true,
       marbles: '^------x',
       subscriptions: '^------!',
     },
     tick$: {
-      label: 'tick$',
+      label: 'studyRxjs.take-until.model.example.inputs.tick.label',
       hot: true,
       marbles: '^-1-2-3-4-5-6',
       subscriptions: '^------!',
     },
   },
-  operator: 'takeUntil(closed$)',
+  operator: 'studyRxjs.take-until.model.example.operator',
   outputs: {
     shown$: {
-      label: 'shown$',
+      label: 'studyRxjs.take-until.model.example.outputs.shown.label',
       marbles: '--1-2-3|',
     },
   },
@@ -37,17 +37,16 @@ export const example: MarbleExample = {
     return { shown$ };
   },
   moments: [
-    { label: 'Page opens', frame: 0 },
-    { label: 'First tick', frame: 2 },
-    { label: 'Page closes', frame: 7 },
+    { label: 'studyRxjs.take-until.model.example.moments.0.label', frame: 0 },
+    { label: 'studyRxjs.take-until.model.example.moments.1.label', frame: 2 },
+    { label: 'studyRxjs.take-until.model.example.moments.2.label', frame: 7 },
   ],
   notes: {
-    0: 'The page opens. takeUntil subscribes to closed$ first and then to the clock.',
-    2: 'The clock ticks and the page shows the tick.',
-    7: 'The page closes and closed$ emits. takeUntil completes the output and, in the same frame, unsubscribes from the clock and from closed$.',
+    0: 'studyRxjs.take-until.model.example.notes.0',
+    2: 'studyRxjs.take-until.model.example.notes.2',
+    7: 'studyRxjs.take-until.model.example.notes.7',
   },
-  caption:
-    'Time runs in frames. A circle is an emission, with its letter, and a bar is completion. The small ring that ends the tick$ lane is where this page let go of the clock, not where the clock stopped: the clock ticks on for its other listeners, which this drawing does not show. The ring on closed$ is where takeUntil stopped listening to the signal it had just heard. Step the frames to follow each tick.',
+  caption: 'studyRxjs.take-until.model.example.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

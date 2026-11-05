@@ -74,11 +74,15 @@
           <summary>{{ 'tools.study.howToRead' | t }}</summary>
           <figcaption translate="no">
             <p class="legend">
-              @for (entry of visual.legend; track entry.tone) {
+              @for (entry of visual.legend; track $index) {
                 <span [attr.data-tone]="entry.tone">{{ entry.label }}</span>
               }
             </p>
-            <p>{{ visual.caption }}</p>
+            @if (visual.family === 'motion' && visual.view === 'timeline') {
+              <p>{{ 'tools.study.chartGuide' | t }}</p>
+            } @else {
+              <p>{{ visual.caption }}</p>
+            }
           </figcaption>
         </details>
       </ng-template>
@@ -223,7 +227,7 @@
   </section>
   @if (vm.next; as next) {
     <p class="next">
-      <a translate="no" [attr.href]="hrefFor()(next.id)" (click)="follow($event, next.id)">
+      <a [attr.href]="hrefFor()(next.id)" (click)="follow($event, next.id)" translate="no">
         {{ 'tools.study.nextStudy' | t: { title: next.title } }}
       </a>
     </p>

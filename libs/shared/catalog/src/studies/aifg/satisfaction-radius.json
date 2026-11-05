@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:102",
+  "work": "aifg",
+  "slug": "satisfaction-radius",
+  "authored": {
+    "by": "studyAifg.satisfaction-radius.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.satisfaction-radius.record.authored.reviewedBy.item0",
+      "studyAifg.satisfaction-radius.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.satisfaction-radius.record.intuition.text",
+    "situation": "studyAifg.satisfaction-radius.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.satisfaction-radius.record.example.name",
+    "description": "studyAifg.satisfaction-radius.record.example.description",
+    "parameters": {
+      "start": 0,
+      "target": 10.5,
+      "speed": 2,
+      "satisfactionRadius": 0.5,
+      "timeStep": 0.5,
+      "steps": 28,
+      "comparisonRadius": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step0.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step1.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.satisfaction-radius.record.mechanism.steps.step2.title",
+        "text": "studyAifg.satisfaction-radius.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.satisfaction-radius.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/satisfaction-radius.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/satisfaction-radius.model.ts",
+    "textEquivalent": "studyAifg.satisfaction-radius.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.satisfaction-radius.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicArrive.cs",
+      "relevance": "studyAifg.satisfaction-radius.record.implementations.item0.relevance",
+      "explanation": "studyAifg.satisfaction-radius.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyAifg.satisfaction-radius.record.implementations.item1.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
+      "relevance": "studyAifg.satisfaction-radius.record.implementations.item1.relevance",
+      "explanation": "studyAifg.satisfaction-radius.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.satisfaction-radius.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.satisfaction-radius.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.satisfaction-radius.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/highnet/AI-Steering-Behaviors-for-Games/39b5b3ffa261ba9576379cf64ca84e7d90463068/src/KinematicArrive.cs",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.satisfaction-radius.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.satisfaction-radius.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Arrive.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.satisfaction-radius.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.satisfaction-radius.record.limits.item0",
+    "studyAifg.satisfaction-radius.record.limits.item1",
+    "studyAifg.satisfaction-radius.record.limits.item2",
+    "studyAifg.satisfaction-radius.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:101",
+      "why": "studyAifg.satisfaction-radius.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "studyAifg.satisfaction-radius.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:113",
+      "why": "studyAifg.satisfaction-radius.record.nearby.item2.why"
+    }
+  ]
+}

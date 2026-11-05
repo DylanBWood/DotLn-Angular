@@ -89,7 +89,8 @@
   pseudocode.
 - A visual has a text equivalent and never autoplays. It moves on command, offers no Play under
   reduced motion, and keeps a short sentence on screen for each moment.
-- An executable example has a spec, and a model is a pure function of the record's parameters. Call
+- An executable example has a spec, and a model composes a pure simulation with presentation using an explicit
+  `StudyTranslate` argument. Simulation inputs and stream payloads never depend on language. Call
   the scene engine's function where it has the behaviour; do not reimplement it.
 - An RxJS study's code is executable with a marble spec: the module exports the example's marble
   strings and its pipeline, the spec runs them under the TestScheduler through
@@ -111,8 +112,18 @@
   breaks belongs in the limits.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A
   batch's critic findings are disposed in its decisions.
-- A change to the record's shape after it ships is a new schema version, never an edit of
-  `concept-study-v0`.
+- Current records use `concept-study-v1`: every authored on-screen text field is a message key.
+  Put its English text in the work’s lazy catalog under `apps/dotln/public/i18n/studyAifg/`,
+  `studyRxjs/` or `studyEip/`; shared drawing narration belongs in `studyCommon/`.
+  Preserve IDs, URLs, module paths and machine parameters. A change after shipping is a new
+  schema version; keep the published `concept-study-v0` immutable.
+- A model’s labels, notes, worked arithmetic and comparisons use parameterized messages.
+  Separate mechanisms from presentation, reuse useful formatting and frame helpers, and keep
+  exported model composition small. The 80-line function guard is a ceiling, not a design target.
+  Critics review the house rules and the actual code, including reused shapes.
+- `MessageCatalog` loads only the work’s messages and shared narration. A failed code or message
+  load remains retryable. The translator is bound to its loaded language; a superseded response
+  must not replace the current reading.
 - Link to a reading with `buildRoute` and `ChildPaths.Reading`; the address owns the open reading.
   Composites take `hrefFor` and never the router.
 - Defer closed explanations until first expansion. Native disclosures hide

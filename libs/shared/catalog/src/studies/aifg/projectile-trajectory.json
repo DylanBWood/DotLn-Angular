@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:162",
+  "work": "aifg",
+  "slug": "projectile-trajectory",
+  "authored": {
+    "by": "studyAifg.projectile-trajectory.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.projectile-trajectory.record.authored.reviewedBy.item0",
+      "studyAifg.projectile-trajectory.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.projectile-trajectory.record.intuition.text",
+    "situation": "studyAifg.projectile-trajectory.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.projectile-trajectory.record.example.name",
+    "description": "studyAifg.projectile-trajectory.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "launchHeight": 10,
+      "horizontalSpeed": 12,
+      "verticalSpeed": 10,
+      "gravity": 10,
+      "landingHeight": 0,
+      "unreachableHeight": 18,
+      "timeStep": 0.1,
+      "steps": 36
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step0.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step1.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step2.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.projectile-trajectory.record.mechanism.steps.step3.title",
+        "text": "studyAifg.projectile-trajectory.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.projectile-trajectory.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/projectile-trajectory.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/projectile-trajectory.model.ts",
+    "textEquivalent": "studyAifg.projectile-trajectory.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.projectile-trajectory.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/forrestthewoods/lib_fts/350529579db315c3d0c579f70d871ef13400d418/projects/unity/ballistic_trajectory/Assets/Scripts/BallisticMotion.cs",
+      "relevance": "studyAifg.projectile-trajectory.record.implementations.item0.relevance",
+      "explanation": "studyAifg.projectile-trajectory.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.projectile-trajectory.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.projectile-trajectory.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.projectile-trajectory.record.references.item1.title",
+      "url": "https://openstax.org/books/university-physics-volume-1/pages/4-3-projectile-motion",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.projectile-trajectory.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.projectile-trajectory.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/forrestthewoods/lib_fts/350529579db315c3d0c579f70d871ef13400d418/projects/unity/ballistic_trajectory/Assets/Scripts/BallisticMotion.cs",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.projectile-trajectory.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.projectile-trajectory.record.limits.item0",
+    "studyAifg.projectile-trajectory.record.limits.item1",
+    "studyAifg.projectile-trajectory.record.limits.item2",
+    "studyAifg.projectile-trajectory.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:163",
+      "why": "studyAifg.projectile-trajectory.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:165",
+      "why": "studyAifg.projectile-trajectory.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:161",
+      "why": "studyAifg.projectile-trajectory.record.nearby.item2.why"
+    }
+  ]
+}

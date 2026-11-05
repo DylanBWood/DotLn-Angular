@@ -1,7 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './take-until';
@@ -29,9 +29,9 @@ it('attaches the record to the takeUntil row and reads its code from this module
   );
   expect(record.visual.family).toBe('marbles');
   expect(record.visual.model).toBe(record.pseudocode.executable.module);
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'closed$',
     'tick$',
     'shown$',
@@ -40,7 +40,7 @@ it('attaches the record to the takeUntil row and reads its code from this module
 
 it('states the timing the marbles run: how often the clock ticks and when the page closes', async () => {
   const { parameters } = (await loadStudy('rxc:192')).example;
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const nexts = (label: string) =>
     marbles.lines
       .find((line) => line.label === label)
@@ -121,14 +121,22 @@ it('fails the output when closed$ fails, as the limits say', () => {
 });
 
 it('ends both lanes at the close and steps every frame up to it', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   // Every frame up to the close is a step, and the quiet ones say so.
   expect(marbles.frames.map(({ frame }) => frame)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
   expect(marbles.lastFrame).toBe(7);
   expect(marbles.frames[1].values['now']).toBe('nothing new happens');
   const line = (label: string) => marbles.lines.find((candidate) => candidate.label === label);
-  expect(line('tick$')).toMatchObject({ subscribedAt: 0, unsubscribedAt: 7, cancelled: true });
-  expect(line('closed$')).toMatchObject({ subscribedAt: 0, unsubscribedAt: 7, cancelled: true });
+  expect(line('tick$')).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 7,
+    cancelled: true,
+  });
+  expect(line('closed$')).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 7,
+    cancelled: true,
+  });
   expect(line('closed$')?.events).toMatchObject([{ frame: 7, key: 'x', delivered: true }]);
   // The clock is hot and its marbles run past the close; this page receives only the ticks before it.
   const received = line('tick$')
@@ -138,7 +146,7 @@ it('ends both lanes at the close and steps every frame up to it', () => {
 });
 
 it('tells of the close and names each moment in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[7];
   expect(telling.frame).toBe(7);
   expect(telling.values['now']).toBe(

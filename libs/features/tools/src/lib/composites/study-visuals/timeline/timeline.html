@@ -1,6 +1,6 @@
 <p class="chart-title" translate="no">{{ model().title }}</p>
 @let view = drawing();
-<svg viewBox="-40 0 640 320" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+<svg viewBox="-40 0 640 320" role="img" [attr.aria-label]="textEquivalent()" translate="no">
   <path class="grid" [attr.d]="view.gridPath" />
   @if (view.referencePath; as reference) {
     <path class="reference" [attr.d]="reference" />
@@ -23,10 +23,14 @@
   <text x="50" y="20" translate="no">{{ model().yLabel }}</text>
   <g translate="no">
     @for (tick of view.yTicks; track tick.label) {
-      <text x="40" [attr.y]="tick.y" text-anchor="end">{{ tick.label }}</text>
+      <text x="40" [attr.y]="tick.y" text-anchor="end">
+        {{ 'tools.study.number' | t: { value: tick.label } }}
+      </text>
     }
     @for (tick of view.xTicks; track tick.label) {
-      <text [attr.x]="tick.x" y="277" text-anchor="middle">{{ tick.label }}</text>
+      <text [attr.x]="tick.x" y="277" text-anchor="middle">
+        {{ 'tools.study.number' | t: { value: tick.label } }}
+      </text>
     }
   </g>
   <text x="310" y="310" text-anchor="middle" translate="no">{{ model().xLabel }}</text>

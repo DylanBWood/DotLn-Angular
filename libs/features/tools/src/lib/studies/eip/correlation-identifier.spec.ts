@@ -1,6 +1,6 @@
 import { map, zip } from 'rxjs';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowModel } from '../study-model';
@@ -11,7 +11,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/correlation-identifi
 /** The record's own run of the example, with the parameters it ships, as the flow it draws. */
 async function recordRun() {
   const record = await loadFlowStudy('eip:87');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The model does not draw a flow.');
   return { record, run };
 }
@@ -38,7 +38,10 @@ it('runs the three commands against the marbles both drawings show', () => {
 it('attaches the record to the Correlation Identifier row and runs it from this module', async () => {
   const { record, run } = await recordRun();
   expect(record.visual.model).toBe(modulePath);
-  expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: modulePath });
+  expect(record.pseudocode.executable).toEqual({
+    kind: 'rxjs',
+    module: modulePath,
+  });
   expect(run.family).toBe('flow');
   expect(run.diagram?.marbles.lines.map(({ label }) => label)).toEqual([
     'command$',
@@ -147,12 +150,21 @@ it('would give every command another command’s result if results were paired b
   // The same commands and results, paired in turn instead of by id.
   const byArrival: MarbleExample = {
     ...example,
-    operator: 'zip(command$, result$)',
+    operator: 'studyEip.correlation-identifier.model.byArrival.operator',
     outputs: {
       paired$: {
-        label: 'paired$',
+        label: 'studyEip.correlation-identifier.model.byArrival.label',
         marbles: '----x-y-z',
-        values: { x: 'cmd_1 got cmd_3', y: 'cmd_2 got cmd_1', z: 'cmd_3 got cmd_2' },
+        values: {
+          x: 'cmd_1 got cmd_3',
+          y: 'cmd_2 got cmd_1',
+          z: 'cmd_3 got cmd_2',
+        },
+        valueMessages: {
+          x: 'studyEip.correlation-identifier.model.byArrival.x',
+          y: 'studyEip.correlation-identifier.model.byArrival.y',
+          z: 'studyEip.correlation-identifier.model.byArrival.z',
+        },
       },
     },
     run: ({ inputs: { command$, result$ } }) => ({
@@ -206,6 +218,8 @@ it('completes once every wait has taken its result: the same matches, then the e
       command$: { ...example.inputs['command$'], marbles: '-ab(c|)' },
       result$: { ...example.inputs['result$'], marbles: '----C-A-B-(D|)' },
     },
-    outputs: { resumed$: { ...example.outputs['resumed$'], marbles: '-----C-A-(B|)' } },
+    outputs: {
+      resumed$: { ...example.outputs['resumed$'], marbles: '-----C-A-(B|)' },
+    },
   });
 });

@@ -1,6 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { studyTranslate } from '../../../../testing/src';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import type { ArriveParameters } from './arrive.model';
 import {
@@ -22,6 +23,7 @@ const example: ArriveParameters = {
   steps: 240,
   lateRadius: 8,
 };
+
 const parameters: StudyParameters = { ...example };
 
 it('attaches the record to the Arrive row with the parameters these numbers come from', async () => {
@@ -109,7 +111,7 @@ it('shows overshoot from late braking with the same start and motion limits', ()
 });
 
 it('labels the late-braking chart on the same scales as its plotted runs', () => {
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   if (!comparison) throw new Error('Arrive compares a late-braking run.');
   const view = timelineDrawing(comparison.timeline, null);
   expect(view.yTicks).toEqual([
@@ -133,7 +135,7 @@ it('labels the late-braking chart on the same scales as its plotted runs', () =>
 });
 
 it('tells the reader the moment the prose and the worked step describe', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   expect(run.motion.frames).toHaveLength(241);
   expect(run.initialStep).toBe(75);
   const slowing = run.motion.frames[run.initialStep];
@@ -153,40 +155,44 @@ it('tells the reader the moment the prose and the worked step describe', () => {
 });
 
 it('keeps every run of its inputs inside the drawing and the chart', () => {
-  const run = model({ ...parameters, slowRadius: 4, maxAcceleration: 4 });
+  const run = model({ ...parameters, slowRadius: 4, maxAcceleration: 4 }, studyTranslate);
   const { maxX } = run.motion.bounds;
   expect(Math.max(...run.motion.frames.map(({ bodies }) => bodies[0].x))).toBeLessThan(maxX);
   const chart = run.comparison?.timeline;
   const highest = Math.max(...(chart?.series.flatMap(({ values }) => values) ?? []));
   expect(highest).toBeLessThan(chart?.yRange?.[1] ?? 0);
-  const wide = model({ ...parameters, slowRadius: 60 }).motion.bounds;
+  const wide = model({ ...parameters, slowRadius: 60 }, studyTranslate).motion.bounds;
   expect(wide.maxY).toBeGreaterThanOrEqual(60);
   expect(wide.maxX).toBeGreaterThanOrEqual(160);
 });
 
 it('keeps a run that comes back past the target on the velocity chart', () => {
-  const chart = model({ ...parameters, slowRadius: 4, maxAcceleration: 4 }).timeline;
+  const chart = model(
+    { ...parameters, slowRadius: 4, maxAcceleration: 4 },
+    studyTranslate,
+  ).timeline;
   const lowest = Math.min(...(chart?.series.flatMap(({ values }) => values) ?? []));
   expect(lowest).toBeLessThan(0);
   expect(chart?.yRange?.[0]).toBeLessThanOrEqual(lowest);
   expect(chart?.yTicks).toContain(chart?.yRange?.[0]);
-  expect(model(parameters).timeline?.yRange).toEqual([0, 16]);
+  expect(model(parameters, studyTranslate).timeline?.yRange).toEqual([0, 16]);
 });
 
 it('says so when an input makes the two compared runs the same', () => {
-  const findings = model({ ...parameters, slowRadius: 8 }).comparison?.findings ?? [];
+  const findings =
+    model({ ...parameters, slowRadius: 8 }, studyTranslate).comparison?.findings ?? [];
   expect(findings).toHaveLength(1);
   expect(findings[0]).toContain('so they are the same run');
   expect(findings[0]).toContain('overshooting the target by 3.93 units');
 });
 
 it('states the values a reader changed where the example describes them', () => {
-  const run = model({ ...parameters, slowRadius: 20, maxAcceleration: 9 });
+  const run = model({ ...parameters, slowRadius: 20, maxAcceleration: 9 }, studyTranslate);
   expect(run.motion.frames[0].values).toMatchObject({ slowRadius: '20', maxAcceleration: '9' });
 });
 
 it('stays true past the target, where a late-braking input takes the character', () => {
-  const run = model({ ...parameters, slowRadius: 8 });
+  const run = model({ ...parameters, slowRadius: 8 }, studyTranslate);
   expect(run.comparison?.timeline.reference).toBe(100);
   const frames = run.motion.frames;
   const returning = frames.findIndex(

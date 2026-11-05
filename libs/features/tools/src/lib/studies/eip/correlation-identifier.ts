@@ -20,6 +20,8 @@ const commands = {
   c: { commandId: 'cmd_3' },
 } as const;
 
+const commandCount = Object.keys(commands).length;
+
 /** The three results: each capital is the result that names its lower-case command's id. */
 const results = {
   A: { commandId: 'cmd_1', status: 'completed' },
@@ -39,13 +41,42 @@ const channel = { ...results, D: results.B } as const;
  */
 export const example: MarbleExample = {
   inputs: {
-    command$: { label: 'command$', marbles: '-abc', values: commands },
+    command$: {
+      label: 'studyEip.correlation-identifier.model.example.inputs.command.label',
+      marbles: '-abc',
+      values: commands,
+      valueMessages: {
+        a: 'studyEip.correlation-identifier.model.example.inputs.command.values.a',
+        b: 'studyEip.correlation-identifier.model.example.inputs.command.values.b',
+        c: 'studyEip.correlation-identifier.model.example.inputs.command.values.c',
+      },
+    },
     // The shared channel delivers results whether or not a wait is open, so it is hot.
-    result$: { label: 'result$', hot: true, marbles: '----C-A-B-D', values: channel },
+    result$: {
+      label: 'studyEip.correlation-identifier.model.example.inputs.result.label',
+      hot: true,
+      marbles: '----C-A-B-D',
+      values: channel,
+      valueMessages: {
+        A: 'studyEip.correlation-identifier.model.example.inputs.result.values.A',
+        B: 'studyEip.correlation-identifier.model.example.inputs.result.values.B',
+        C: 'studyEip.correlation-identifier.model.example.inputs.result.values.C',
+        D: 'studyEip.correlation-identifier.model.example.inputs.result.values.D',
+      },
+    },
   },
-  operator: 'mergeMap((command) => result$.pipe(first(same commandId))), then delay(1)',
+  operator: 'studyEip.correlation-identifier.model.example.operator',
   outputs: {
-    resumed$: { label: 'resumed$', marbles: '-----C-A-B', values: results },
+    resumed$: {
+      label: 'studyEip.correlation-identifier.model.example.outputs.resumed.label',
+      marbles: '-----C-A-B',
+      values: results,
+      valueMessages: {
+        A: 'studyEip.correlation-identifier.model.example.outputs.resumed.values.A',
+        B: 'studyEip.correlation-identifier.model.example.outputs.resumed.values.B',
+        C: 'studyEip.correlation-identifier.model.example.outputs.resumed.values.C',
+      },
+    },
   },
   run: ({ inputs: { command$, result$ } }) => {
     // commandId(command) is the request id; commandId(result), copied from it, is the correlation id.
@@ -61,27 +92,49 @@ export const example: MarbleExample = {
     return { resumed$ };
   },
   moments: [
-    { label: 'Three pending', frame: 3 },
-    { label: 'Out of order', frame: 4 },
-    { label: 'Taken by id', frame: 5 },
-    { label: 'All matched', frame: 9 },
-    { label: 'Duplicate', frame: 10 },
+    {
+      label: 'studyEip.correlation-identifier.model.example.moments.0.label',
+      frame: 3,
+    },
+    {
+      label: 'studyEip.correlation-identifier.model.example.moments.1.label',
+      frame: 4,
+    },
+    {
+      label: 'studyEip.correlation-identifier.model.example.moments.2.label',
+      frame: 5,
+    },
+    {
+      label: 'studyEip.correlation-identifier.model.example.moments.3.label',
+      frame: 9,
+    },
+    {
+      label: 'studyEip.correlation-identifier.model.example.moments.4.label',
+      frame: 10,
+    },
   ],
   notes: {
-    0: 'The Kernel has three commands to send, cmd_1, cmd_2 and cmd_3, each carrying its own id. No wait is open yet.',
-    1: 'The Kernel sends a, command cmd_1, to Worker 1, and opens Await 1 to wait for a result naming cmd_1.',
-    2: 'The Kernel sends b, command cmd_2, to Worker 2, and opens Await 2 to wait for cmd_2.',
-    3: 'The Kernel sends c, command cmd_3, to Worker 3, and opens Await 3 to wait for cmd_3. Three requests are out, and all their results will come back on one shared channel.',
-    4: 'Worker 3 finishes first and puts its result C on the Results channel. C carries the id cmd_3, copied from command c, so of the three open waits only Await 3 will take it.',
-    5: 'Await 3 takes C off the Results channel: cmd_3 failed. Await 1 and Await 2 are still waiting.',
-    6: 'Worker 1 puts its result A, which names cmd_1, on the Results channel. Only Await 1 waits for that id.',
-    7: 'Await 1 takes A: cmd_1 completed. Pairing by arrival would have given cmd_1 the failure that came first; the id gives it its own result.',
-    8: 'Worker 2 puts its result B, which names cmd_2, on the Results channel.',
-    9: 'Await 2, the last wait still open, takes B: cmd_2 is blocked.',
-    10: 'Worker 2 sends D, a second copy of B carrying the same id cmd_2, as a retried attempt might. Await 2 closed when it took B and no wait is open, so D is dropped.',
+    0: {
+      key: 'studyEip.correlation-identifier.model.example.notes.0',
+      params: { commands: commandCount },
+    },
+    1: 'studyEip.correlation-identifier.model.example.notes.1',
+    2: 'studyEip.correlation-identifier.model.example.notes.2',
+    3: 'studyEip.correlation-identifier.model.example.notes.3',
+    4: 'studyEip.correlation-identifier.model.example.notes.4',
+    5: 'studyEip.correlation-identifier.model.example.notes.5',
+    6: 'studyEip.correlation-identifier.model.example.notes.6',
+    7: 'studyEip.correlation-identifier.model.example.notes.7',
+    8: 'studyEip.correlation-identifier.model.example.notes.8',
+    9: 'studyEip.correlation-identifier.model.example.notes.9',
+    10: 'studyEip.correlation-identifier.model.example.notes.10',
   },
-  caption:
-    'Time runs in frames, one event to a frame. command$ is what the Kernel sends: a, b and c are the commands cmd_1, cmd_2 and cmd_3. result$ is the shared Results channel: A, B and C are the results that name cmd_1, cmd_2 and cmd_3, and D is a second copy of B. It delivers whether or not anything listens, so D is drawn on it although nothing takes it. resumed$ is each result handed to the wait it matched, one frame after it arrived.',
+  caption: 'studyEip.correlation-identifier.model.example.caption',
+
+  parameterMessages: {
+    commands: 'studyEip.correlation-identifier.record.parameters.commands',
+    replyOrder: 'studyEip.correlation-identifier.record.parameters.replyOrder',
+  },
 };
 
 /**
@@ -90,14 +143,58 @@ export const example: MarbleExample = {
  */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'kernel', label: 'Kernel', stage: 0, row: 1 },
-    { id: 'worker1', label: 'Worker 1', stage: 1, row: 0 },
-    { id: 'worker2', label: 'Worker 2', stage: 1, row: 1 },
-    { id: 'worker3', label: 'Worker 3', stage: 1, row: 2 },
-    { id: 'results', label: 'Results', stage: 2, row: 1, kind: 'channel' },
-    { id: 'await1', label: 'Await 1', stage: 3, row: 0, tone: 'subject' },
-    { id: 'await2', label: 'Await 2', stage: 3, row: 1, tone: 'subject' },
-    { id: 'await3', label: 'Await 3', stage: 3, row: 2, tone: 'subject' },
+    {
+      id: 'kernel',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.0.label',
+      stage: 0,
+      row: 1,
+    },
+    {
+      id: 'worker1',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.1.label',
+      stage: 1,
+      row: 0,
+    },
+    {
+      id: 'worker2',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.2.label',
+      stage: 1,
+      row: 1,
+    },
+    {
+      id: 'worker3',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.3.label',
+      stage: 1,
+      row: 2,
+    },
+    {
+      id: 'results',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.4.label',
+      stage: 2,
+      row: 1,
+      kind: 'channel',
+    },
+    {
+      id: 'await1',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.5.label',
+      stage: 3,
+      row: 0,
+      tone: 'subject',
+    },
+    {
+      id: 'await2',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.6.label',
+      stage: 3,
+      row: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'await3',
+      label: 'studyEip.correlation-identifier.model.flow.nodes.7.label',
+      stage: 3,
+      row: 2,
+      tone: 'subject',
+    },
   ],
   links: [
     { id: 'send-1', from: 'kernel', to: 'worker1' },
@@ -118,25 +215,55 @@ export const flow: MarbleFlow = {
   },
   states: {
     0: {
-      kernel: '3 to send',
-      worker1: 'idle',
-      worker2: 'idle',
-      worker3: 'idle',
-      results: 'shared by all',
-      await1: 'not open',
-      await2: 'not open',
-      await3: 'not open',
+      kernel: {
+        key: 'studyEip.correlation-identifier.model.flow.states.0.kernel',
+        params: { pending: commandCount - 0 },
+      },
+      worker1: 'studyEip.correlation-identifier.model.flow.states.0.worker1',
+      worker2: 'studyEip.correlation-identifier.model.flow.states.0.worker2',
+      worker3: 'studyEip.correlation-identifier.model.flow.states.0.worker3',
+      results: 'studyEip.correlation-identifier.model.flow.states.0.results',
+      await1: 'studyEip.correlation-identifier.model.flow.states.0.await1',
+      await2: 'studyEip.correlation-identifier.model.flow.states.0.await2',
+      await3: 'studyEip.correlation-identifier.model.flow.states.0.await3',
     },
-    1: { kernel: '2 to send', worker1: 'running cmd_1', await1: 'waits for cmd_1' },
-    2: { kernel: '1 to send', worker2: 'running cmd_2', await2: 'waits for cmd_2' },
-    3: { kernel: 'all sent', worker3: 'running cmd_3', await3: 'waits for cmd_3' },
-    4: { worker3: 'done' },
-    5: { await3: 'took C: failed' },
-    6: { worker1: 'done' },
-    7: { await1: 'took A: completed' },
-    8: { worker2: 'done' },
-    9: { await2: 'took B: blocked' },
-    10: { worker2: 'repeats B as D', results: 'dropped D' },
+    1: {
+      kernel: {
+        key: 'studyEip.correlation-identifier.model.flow.states.1.kernel',
+        params: { pending: commandCount - 1 },
+      },
+      worker1: 'studyEip.correlation-identifier.model.flow.states.1.worker1',
+      await1: 'studyEip.correlation-identifier.model.flow.states.1.await1',
+    },
+    2: {
+      kernel: {
+        key: 'studyEip.correlation-identifier.model.flow.states.2.kernel',
+        params: { pending: commandCount - 2 },
+      },
+      worker2: 'studyEip.correlation-identifier.model.flow.states.2.worker2',
+      await2: 'studyEip.correlation-identifier.model.flow.states.2.await2',
+    },
+    3: {
+      kernel: 'studyEip.correlation-identifier.model.flow.states.3.kernel',
+      worker3: 'studyEip.correlation-identifier.model.flow.states.3.worker3',
+      await3: 'studyEip.correlation-identifier.model.flow.states.3.await3',
+    },
+    4: {
+      worker3: 'studyEip.correlation-identifier.model.flow.states.4.worker3',
+    },
+    5: { await3: 'studyEip.correlation-identifier.model.flow.states.5.await3' },
+    6: {
+      worker1: 'studyEip.correlation-identifier.model.flow.states.6.worker1',
+    },
+    7: { await1: 'studyEip.correlation-identifier.model.flow.states.7.await1' },
+    8: {
+      worker2: 'studyEip.correlation-identifier.model.flow.states.8.worker2',
+    },
+    9: { await2: 'studyEip.correlation-identifier.model.flow.states.9.await2' },
+    10: {
+      worker2: 'studyEip.correlation-identifier.model.flow.states.10.worker2',
+      results: 'studyEip.correlation-identifier.model.flow.states.10.results',
+    },
   },
   // A worker holds its command while it runs; the channel holds a result until its wait takes it.
   held: {
@@ -150,8 +277,8 @@ export const flow: MarbleFlow = {
     8: { worker2: [], results: ['B'] },
     9: { results: [], await2: ['B'] },
   },
-  caption:
-    "Each token is one message. a, b and c are the Kernel's commands cmd_1, cmd_2 and cmd_3; A, B and C are the workers' results, and each capital names its lower-case command's id: A names cmd_1, B cmd_2 and C cmd_3, and D is a second copy of B. The Kernel is the part of DotLn that sends the commands. Worker 1, 2 and 3 each run one command. Results is the one channel every worker answers on, so results arrive in the order the work finishes. Await 1, 2 and 3 are the Kernel's waits, one for each command sent, and each takes only the result naming its command's id. The words in a box say what that box is doing. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.",
+  caption: 'studyEip.correlation-identifier.model.flow.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

@@ -1,0 +1,128 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:169",
+  "work": "aifg",
+  "slug": "jump-points",
+  "authored": {
+    "by": "studyAifg.jump-points.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.jump-points.record.authored.reviewedBy.item0",
+      "studyAifg.jump-points.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.jump-points.record.intuition.text",
+    "situation": "studyAifg.jump-points.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.jump-points.record.example.name",
+    "description": "studyAifg.jump-points.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "lateStartX": 6,
+      "markerX": 7.5,
+      "initialVelocity": 0,
+      "requiredVelocity": 4,
+      "maxSpeed": 6,
+      "maxAcceleration": 4,
+      "responseTime": 0.25,
+      "positionTolerance": 0.1,
+      "velocityTolerance": 0.1,
+      "verticalVelocity": 5,
+      "gravity": 5,
+      "timeStep": 0.25,
+      "steps": 20,
+      "padHalfWidth": 0.5,
+      "arrowSeconds": 0.5,
+      "radius": 0.25
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.jump-points.record.mechanism.steps.step0.title",
+        "text": "studyAifg.jump-points.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.jump-points.record.mechanism.steps.step1.title",
+        "text": "studyAifg.jump-points.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.jump-points.record.mechanism.steps.step2.title",
+        "text": "studyAifg.jump-points.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.jump-points.record.mechanism.steps.step3.title",
+        "text": "studyAifg.jump-points.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.jump-points.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/jump-points.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/jump-points.model.ts",
+    "textEquivalent": "studyAifg.jump-points.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.jump-points.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Jump.java",
+      "relevance": "studyAifg.jump-points.record.implementations.item0.relevance",
+      "explanation": "studyAifg.jump-points.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.jump-points.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.jump-points.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.jump-points.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/Jump.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.jump-points.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.jump-points.record.references.item2.title",
+      "url": "https://openstax.org/books/university-physics-volume-1/pages/4-3-projectile-motion",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.jump-points.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.jump-points.record.limits.item0",
+    "studyAifg.jump-points.record.limits.item1",
+    "studyAifg.jump-points.record.limits.item2",
+    "studyAifg.jump-points.record.limits.item3",
+    "studyAifg.jump-points.record.limits.item4"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:171",
+      "why": "studyAifg.jump-points.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "studyAifg.jump-points.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:170",
+      "why": "studyAifg.jump-points.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:112",
+      "why": "studyAifg.jump-points.record.nearby.item3.why"
+    }
+  ]
+}

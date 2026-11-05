@@ -4,16 +4,22 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import ts from 'typescript';
 import { isMain, workspaceRoot } from '../source-files.mjs';
 import { dataDirectory, readCheckpoints } from './check-catalog.mjs';
+import { englishMessages, studyContent } from './study-messages.mjs';
 
 export const studiesDirectory = resolve(workspaceRoot, 'libs/shared/catalog/src/studies');
 
-const schema = JSON.parse(
-  readFileSync(
-    resolve(workspaceRoot, 'libs/shared/catalog/src/schema/concept-study-v0.schema.json'),
-    'utf8',
-  ),
+const validators = new Map(
+  ['concept-study-v0', 'concept-study-v1'].map((version) => {
+    const schema = JSON.parse(
+      readFileSync(
+        resolve(workspaceRoot, `libs/shared/catalog/src/schema/${version}.schema.json`),
+        'utf8',
+      ),
+    );
+    return [version, new Ajv2020({ allErrors: true, allowUnionTypes: true }).compile(schema)];
+  }),
 );
-const validate = new Ajv2020({ allErrors: true, allowUnionTypes: true }).compile(schema);
+const validatorFor = (study) => validators.get(study?.schema) ?? validators.get('concept-study-v1');
 
 /** How many reviewers a checked record names: at least the two critics of its batch. */
 const requiredReviewers = 2;
@@ -52,11 +58,19 @@ export function chunkContents(text) {
 }
 
 /** Everything wrong with one record, as messages that name a part of it and no value of it. */
-export function studyProblems(study, tools, root = workspaceRoot) {
+export function studyProblems(study, tools, root = workspaceRoot, message = englishMessages(root)) {
+  const validate = validatorFor(study);
   if (!validate(study)) {
     const { instancePath, keyword, params } = validate.errors[0];
     const missing = params?.missingProperty ? ` ${params.missingProperty}` : '';
     return [`at ${instancePath || '/'}: schema ${keyword}${missing}`];
+  }
+  if (study.schema === 'concept-study-v1') {
+    try {
+      study = studyContent(study, message);
+    } catch (error) {
+      return [error.message];
+    }
   }
   const problems = [];
   const tool = tools.get(study.id);
@@ -222,14 +236,23 @@ const catalogTools = () =>
     readCheckpoints(dataDirectory).flatMap(({ tools }) => tools.map((tool) => [tool.id, tool])),
   );
 
-export function checkStudies({ write = false, directory = studiesDirectory } = {}) {
+export function checkStudies({ write = false, directory = studiesDirectory, legacy = false } = {}) {
+  const message = englishMessages(workspaceRoot);
   const tools = catalogTools();
   const records = readStudies(directory);
   const problems = records.flatMap(({ path, study }) =>
-    studyProblems(study, tools).map((problem) => `${relative(workspaceRoot, path)}: ${problem}`),
+    studyProblems(study, tools, workspaceRoot, message).map(
+      (problem) => `${relative(workspaceRoot, path)}: ${problem}`,
+    ),
   );
   // A record the schema refuses has no shape to count, so nothing below may read it.
-  if (records.some(({ study }) => !validate(study))) return { records, problems };
+  if (records.some(({ study }) => !validatorFor(study)(study))) return { records, problems };
+  if (!legacy)
+    for (const { path, study } of records)
+      if (study.schema !== 'concept-study-v1')
+        problems.push(
+          `${relative(workspaceRoot, path)}: shipped studies require message keys in concept-study-v1`,
+        );
   problems.push(...collectionProblems(records, directory));
   const summary = `${JSON.stringify(createSummary(records), null, 2)}\n`;
   const path = resolve(directory, 'studies-summary.json');

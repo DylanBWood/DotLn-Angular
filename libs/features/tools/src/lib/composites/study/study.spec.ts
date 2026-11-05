@@ -112,6 +112,41 @@ it('switches the drawing’s view and shows the chart for the same moment', () =
   expect(element.querySelector('tools-study-motion')).toBeNull();
 });
 
+it('keys chart lines by their series and restores the movement guide when switching back', () => {
+  const visual = studyViewFixture.visual;
+  if (!visual || visual.family !== 'motion') throw new Error('A motion fixture is required.');
+  const { fixture, element } = render({
+    ...studyViewFixture,
+    expanded: ['legend'],
+    visual: {
+      ...visual,
+      view: 'timeline',
+      legend: [
+        { tone: 'actual', label: 'Actual' },
+        { tone: 'desired', label: 'Desired' },
+      ],
+    },
+  });
+  const labels = () =>
+    [...element.querySelectorAll('figcaption .legend span')].map((entry) => [
+      entry.textContent?.trim(),
+      entry.getAttribute('data-tone'),
+    ]);
+  expect(labels()).toEqual([
+    ['Actual', 'actual'],
+    ['Desired', 'desired'],
+  ]);
+  expect(element.querySelector('figcaption')?.textContent).not.toContain(visual.caption);
+  expect(element.querySelector('figcaption')?.textContent).toContain('selected time');
+  fixture.componentRef.setInput('study', { ...studyViewFixture, expanded: ['legend'] });
+  fixture.detectChanges();
+  expect(labels()).toEqual([
+    ['Solid green · actual', 'actual'],
+    ['Dashed amber · desired', 'desired'],
+  ]);
+  expect(element.querySelector('figcaption')?.textContent).toContain(visual.caption);
+});
+
 it('hands on to the next study when there is one, and passes it up', () => {
   const { fixture, element } = render({
     ...studyViewFixture,

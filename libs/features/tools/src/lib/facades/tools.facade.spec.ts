@@ -118,7 +118,7 @@ it('says a concept has no study, loads one on opening, and retries a failure', a
   let fail = true;
   const study = vi.fn(async () => {
     if (fail) throw new Error('Unavailable');
-    return studyFixture;
+    return kit.catalog.loader.study('sample:1');
   });
   TestBed.configureTestingModule({
     providers: [

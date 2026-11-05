@@ -1,4 +1,5 @@
 import {
+  fixtureTranslate,
   flowStudyModel,
   marbleFlow,
   marbleFlowExample,
@@ -15,7 +16,13 @@ const example: FlowExample = {
   links: [{ id: 'send', from: 'planner', to: 'queue', label: 'orders' }],
   messages: { a: { key: 'a', content: 'order 31' } },
   start: { note: 'Nothing yet.' },
-  steps: [{ moves: [{ message: 'a', link: 'send' }], held: { queue: ['a'] }, note: 'Sent.' }],
+  steps: [
+    {
+      moves: [{ message: 'a', link: 'send' }],
+      held: { queue: ['a'] },
+      note: 'Sent.',
+    },
+  ],
   moments: [{ label: 'Sent', step: 1 }],
 };
 
@@ -48,7 +55,7 @@ it('steps a hand-written flow from its start, naming what moves and what each st
 });
 
 it('names a link that is a channel of its own and offers the parameters to the prose', () => {
-  const run = flowModel(example, { orders: 1 });
+  const run = flowModel(example, { orders: 1 }, fixtureTranslate);
   expect(run.flow.frames[1].values).toMatchObject({
     step: '1',
     moves: 'a (order 31) moves from Planner to Work queue on orders',
@@ -62,17 +69,22 @@ it('names a link that is a channel of its own and offers the parameters to the p
 });
 
 it('clears a state an empty string names', () => {
-  const run = flowModel({
-    ...example,
-    start: { states: { queue: 'empty' }, note: 'Start.' },
-    steps: [{ states: { queue: '' }, note: 'Cleared.' }],
-  });
+  const run = flowModel(
+    {
+      ...example,
+      start: { states: { queue: 'empty' }, note: 'Start.' },
+      steps: [{ states: { queue: '' }, note: 'Cleared.' }],
+    },
+    {},
+    fixtureTranslate,
+  );
   expect(run.flow.frames[1].states).toEqual({});
   expect(run.flow.frames[1].note).toBe('Cleared.');
 });
 
 it('refuses a flow that names a part it does not have', () => {
-  const broken = (change: Partial<FlowExample>) => () => flowModel({ ...example, ...change });
+  const broken = (change: Partial<FlowExample>) => () =>
+    flowModel({ ...example, ...change }, {}, fixtureTranslate);
   expect(broken({ links: [{ id: 'send', from: 'planner', to: 'nowhere' }] })).toThrow(
     'Link send names no node nowhere.',
   );
@@ -92,7 +104,7 @@ it('refuses a flow that names a part it does not have', () => {
 
 it('refuses a flow over marbles that names a line, link, node, message or step the run lacks', () => {
   const broken = (change: Partial<MarbleFlow>) => () =>
-    flowFromMarbles(marbleFlowExample, { ...marbleFlow, ...change });
+    flowFromMarbles(marbleFlowExample, { ...marbleFlow, ...change }, {}, fixtureTranslate);
   expect(broken({ routes: { gone$: 'publish' } })).toThrow('The example has no line gone$.');
   expect(broken({ routes: { published$: 'gone' } })).toThrow('The flow has no link gone.');
   expect(broken({ held: { 1: { ghost: ['a'] } } })).toThrow('The flow has no node ghost.');
@@ -102,7 +114,7 @@ it('refuses a flow over marbles that names a line, link, node, message or step t
 
 it('makes each frame of a marble example a step, and each delivered emission a hop', () => {
   // The example runs as its strings say; the study fixture names this spec as its evidence.
-  expectMarbleExample(marbleFlowExample);
+  expectMarbleExample(marbleFlowExample, fixtureTranslate);
   const { flow, diagram, moments } = marbleFlowStudyModel;
   expect(diagram).not.toBeNull();
   expect(flow.frames).toHaveLength(diagram?.marbles.frames.length ?? 0);

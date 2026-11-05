@@ -5,7 +5,63 @@ import type { MarbleExample } from '../rxjs/marbles';
 import type { StudyModelFunction } from '../study-model';
 
 /** What the planner publishes, by the letter the marble strings use. */
-const orders = { a: 'order 31', b: 'order 32', c: 'order 33', d: 'order 34' } as const;
+const orders = {
+  a: 'order 31',
+  b: 'order 32',
+  c: 'order 33',
+  d: 'order 34',
+} as const;
+
+const outputs: MarbleExample['outputs'] = {
+  session1$: {
+    label: 'studyEip.publish-subscribe-channel.model.example.outputs.session1.label',
+    marbles: '--a-b-c-d',
+    values: orders,
+    valueMessages: {
+      a: 'studyEip.publish-subscribe-channel.model.example.outputs.session1.values.a',
+      b: 'studyEip.publish-subscribe-channel.model.example.outputs.session1.values.b',
+      c: 'studyEip.publish-subscribe-channel.model.example.outputs.session1.values.c',
+      d: 'studyEip.publish-subscribe-channel.model.example.outputs.session1.values.d',
+    },
+  },
+  session2$: {
+    label: 'studyEip.publish-subscribe-channel.model.example.outputs.session2.label',
+    marbles: '--a-b-c-d',
+    values: orders,
+    valueMessages: {
+      a: 'studyEip.publish-subscribe-channel.model.example.outputs.session2.values.a',
+      b: 'studyEip.publish-subscribe-channel.model.example.outputs.session2.values.b',
+      c: 'studyEip.publish-subscribe-channel.model.example.outputs.session2.values.c',
+      d: 'studyEip.publish-subscribe-channel.model.example.outputs.session2.values.d',
+    },
+  },
+  session3$: {
+    label: 'studyEip.publish-subscribe-channel.model.example.outputs.session3.label',
+    marbles: '--a-b-c-d',
+    values: orders,
+    valueMessages: {
+      a: 'studyEip.publish-subscribe-channel.model.example.outputs.session3.values.a',
+      b: 'studyEip.publish-subscribe-channel.model.example.outputs.session3.values.b',
+      c: 'studyEip.publish-subscribe-channel.model.example.outputs.session3.values.c',
+      d: 'studyEip.publish-subscribe-channel.model.example.outputs.session3.values.d',
+    },
+  },
+};
+
+/** Count the declared protocol values; the marble assertion checks each delivery against the run. */
+export const copyTotals = (
+  sent: Readonly<Record<string, unknown>>,
+  delivered: MarbleExample['outputs'],
+) => ({
+  orders: Object.keys(sent).length,
+  subscribers: Object.keys(delivered).length,
+  copies: Object.values(delivered).reduce(
+    (sum, stream) => sum + Object.keys(stream.values ?? {}).length,
+    0,
+  ),
+});
+
+const totals = copyTotals(orders, outputs);
 
 /**
  * The planner publishes four orders on a topic to which three sessions subscribe from the start.
@@ -17,21 +73,24 @@ const orders = { a: 'order 31', b: 'order 32', c: 'order 33', d: 'order 34' } as
 export const example: MarbleExample = {
   inputs: {
     orders$: {
-      label: 'orders$',
+      label: 'studyEip.publish-subscribe-channel.model.example.inputs.orders.label',
       // Hot: the planner publishes at its own pace, whether or not anyone is listening.
       hot: true,
       marbles: '-a-b-c-d',
       values: orders,
       // However many sessions listen, the planner's stream is subscribed to once.
       subscriptions: '^',
+
+      valueMessages: {
+        a: 'studyEip.publish-subscribe-channel.model.example.inputs.orders.values.a',
+        b: 'studyEip.publish-subscribe-channel.model.example.inputs.orders.values.b',
+        c: 'studyEip.publish-subscribe-channel.model.example.inputs.orders.values.c',
+        d: 'studyEip.publish-subscribe-channel.model.example.inputs.orders.values.d',
+      },
     },
   },
-  operator: 'orders$.pipe(delay(1), share())',
-  outputs: {
-    session1$: { label: 'session1$', marbles: '--a-b-c-d', values: orders },
-    session2$: { label: 'session2$', marbles: '--a-b-c-d', values: orders },
-    session3$: { label: 'session3$', marbles: '--a-b-c-d', values: orders },
-  },
+  operator: 'studyEip.publish-subscribe-channel.model.example.operator',
+  outputs,
   run: ({ inputs: { orders$ } }) => {
     const copies$ = orders$.pipe(
       // delay(1): the topic hands an order on one step after the planner publishes it.
@@ -43,23 +102,44 @@ export const example: MarbleExample = {
     return { session1$: copies$, session2$: copies$, session3$: copies$ };
   },
   moments: [
-    { label: 'Order 31 published', frame: 1 },
-    { label: 'A copy to every session', frame: 2 },
-    { label: 'Order 34 to all three', frame: 8 },
+    {
+      label: 'studyEip.publish-subscribe-channel.model.example.moments.0.label',
+      frame: 1,
+    },
+    {
+      label: 'studyEip.publish-subscribe-channel.model.example.moments.1.label',
+      frame: 2,
+    },
+    {
+      label: 'studyEip.publish-subscribe-channel.model.example.moments.2.label',
+      frame: 8,
+    },
   ],
   notes: {
-    0: 'Sessions 1, 2 and 3 have subscribed to the Order topic. The planner has published nothing yet.',
-    1: 'The planner publishes order 31 to the Order topic, once. It does not know who is subscribed.',
-    2: 'The Order topic gives a copy of order 31 to Session 1, Session 2 and Session 3, and keeps no copy itself.',
-    3: 'The planner publishes order 32 to the Order topic.',
-    4: 'The Order topic gives a copy of order 32 to each of the three sessions. Each session now has its own copies of orders 31 and 32.',
-    5: 'The planner publishes order 33 to the Order topic.',
-    6: 'The Order topic gives a copy of order 33 to each of the three sessions.',
-    7: 'The planner publishes order 34 to the Order topic, exactly as it published order 31.',
-    8: 'The Order topic gives a copy of order 34 to each of the three sessions. Every session has received every order: four orders, twelve copies.',
+    0: 'studyEip.publish-subscribe-channel.model.example.notes.0',
+    1: 'studyEip.publish-subscribe-channel.model.example.notes.1',
+    2: 'studyEip.publish-subscribe-channel.model.example.notes.2',
+    3: 'studyEip.publish-subscribe-channel.model.example.notes.3',
+    4: {
+      key: 'studyEip.publish-subscribe-channel.model.example.notes.4',
+      params: { subscribers: totals.subscribers },
+    },
+    5: 'studyEip.publish-subscribe-channel.model.example.notes.5',
+    6: {
+      key: 'studyEip.publish-subscribe-channel.model.example.notes.6',
+      params: { subscribers: totals.subscribers },
+    },
+    7: 'studyEip.publish-subscribe-channel.model.example.notes.7',
+    8: {
+      key: 'studyEip.publish-subscribe-channel.model.example.notes.8',
+      params: { subscribers: totals.subscribers, orders: totals.orders, copies: totals.copies },
+    },
   },
-  caption:
-    'Time runs in frames. orders$ is what the planner publishes: a, b, c and d are orders 31, 32, 33 and 34. Each lane below the band is one session, subscribed from frame 0, and every session receives every order one frame after the planner publishes it.',
+  caption: 'studyEip.publish-subscribe-channel.model.example.caption',
+
+  parameterMessages: {
+    orders: 'studyEip.publish-subscribe-channel.record.parameters.orders',
+  },
 };
 
 /**
@@ -68,11 +148,38 @@ export const example: MarbleExample = {
  */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'planner', label: 'Planner', stage: 0, row: 1 },
-    { id: 'topic', label: 'Order topic', stage: 1, row: 1, kind: 'channel', tone: 'subject' },
-    { id: 'session1', label: 'Session 1', stage: 2, row: 0 },
-    { id: 'session2', label: 'Session 2', stage: 2, row: 1 },
-    { id: 'session3', label: 'Session 3', stage: 2, row: 2 },
+    {
+      id: 'planner',
+      label: 'studyEip.publish-subscribe-channel.model.flow.nodes.0.label',
+      stage: 0,
+      row: 1,
+    },
+    {
+      id: 'topic',
+      label: 'studyEip.publish-subscribe-channel.model.flow.nodes.1.label',
+      stage: 1,
+      row: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'session1',
+      label: 'studyEip.publish-subscribe-channel.model.flow.nodes.2.label',
+      stage: 2,
+      row: 0,
+    },
+    {
+      id: 'session2',
+      label: 'studyEip.publish-subscribe-channel.model.flow.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'session3',
+      label: 'studyEip.publish-subscribe-channel.model.flow.nodes.4.label',
+      stage: 2,
+      row: 2,
+    },
   ],
   links: [
     { id: 'publish', from: 'planner', to: 'topic' },
@@ -89,11 +196,14 @@ export const flow: MarbleFlow = {
   // Each box says what that box does; the tokens inside it say which orders it has.
   states: {
     0: {
-      planner: 'knows no subscriber',
-      topic: 'copies each order to all three',
-      session1: 'subscribed',
-      session2: 'subscribed',
-      session3: 'subscribed',
+      planner: 'studyEip.publish-subscribe-channel.model.flow.states.0.planner',
+      topic: {
+        key: 'studyEip.publish-subscribe-channel.model.flow.states.0.topic',
+        params: { subscribers: totals.subscribers },
+      },
+      session1: 'studyEip.publish-subscribe-channel.model.flow.states.0.session1',
+      session2: 'studyEip.publish-subscribe-channel.model.flow.states.0.session2',
+      session3: 'studyEip.publish-subscribe-channel.model.flow.states.0.session3',
     },
   },
   // The topic has an order only from its arriving until its copies go out; a session keeps every
@@ -102,7 +212,12 @@ export const flow: MarbleFlow = {
     1: { topic: ['a'] },
     2: { topic: [], session1: ['a'], session2: ['a'], session3: ['a'] },
     3: { topic: ['b'] },
-    4: { topic: [], session1: ['a', 'b'], session2: ['a', 'b'], session3: ['a', 'b'] },
+    4: {
+      topic: [],
+      session1: ['a', 'b'],
+      session2: ['a', 'b'],
+      session3: ['a', 'b'],
+    },
     5: { topic: ['c'] },
     6: {
       topic: [],
@@ -118,8 +233,11 @@ export const flow: MarbleFlow = {
       session3: ['a', 'b', 'c', 'd'],
     },
   },
-  caption:
-    'Each token is one order: a is order 31, b 32, c 33 and d 34. The Planner is the role that files orders; the Order topic, drawn as a pipe, is the publish-subscribe channel; Sessions 1, 2 and 3 are three agent sessions subscribed to it. A token inside the topic is an order it is about to copy, and the tokens inside a session are the copies that session has received. The words in a box say what that box does. A token is green while it moves, and a box a token leaves or reaches is outlined in green. The Planner publishes an order on one step, and on the next the topic hands out its copies, one to every session.',
+  caption: {
+    key: 'studyEip.publish-subscribe-channel.model.flow.caption',
+    params: { subscribers: totals.subscribers },
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);

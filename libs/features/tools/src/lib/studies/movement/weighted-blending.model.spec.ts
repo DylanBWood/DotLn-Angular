@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { distance, length, type Vec2, zero } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -33,7 +33,9 @@ const example: WeightedBlendingParameters = {
   steps: 60,
   accelerationScale: 0.5,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const expectVector = (actual: Vec2, expected: Vec2) => {
   expect(actual.x).toBeCloseTo(expected.x, 10);
   expect(actual.y).toBeCloseTo(expected.y, 10);
@@ -186,8 +188,8 @@ it('does not erase velocity just because a moving courier is at the bay', () => 
 
 it('supplies all prose values, scales the vector addition and bounds every visible element', () => {
   const before = structuredClone(parameters);
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(parameters).toEqual(before);
   expect(run.motion.frames).toHaveLength(61);
   expect(run.initialStep).toBe(14);
@@ -249,7 +251,7 @@ it('supplies all prose values, scales the vector addition and bounds every visib
 });
 
 it('charts the actual capped magnitudes and the stalled comparison on the motion samples', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   if (!run.timeline || !run.comparison) throw new Error('Blending needs both charts.');
   const states = blendingFrames(example);
   const calculations = states.map((state) => calculateBlendingStep(state, example));
@@ -274,7 +276,7 @@ it('charts the actual capped magnitudes and the stalled comparison on the motion
 });
 
 it('describes the first push upwards and keeps vector arithmetic in the worked step', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const first = run.motion.frames[0];
   expect(first.note).toBe(
     'Separation pushes Nia above the parked robot while seek draws her towards the bay.',
@@ -293,8 +295,8 @@ it('describes the first push upwards and keeps vector arithmetic in the worked s
 });
 
 it('makes low weight overlap visible and an aligned robot expose cancellation', () => {
-  const low = model({ ...parameters, separationWeight: 0 });
-  const strong = model({ ...parameters, separationWeight: 4.5 });
+  const low = model({ ...parameters, separationWeight: 0 }, studyTranslate);
+  const strong = model({ ...parameters, separationWeight: 4.5 }, studyTranslate);
   expect(low.motion.frames[low.initialStep].note).toContain('footprint overlaps');
   expect(low.motion.frames[0].values['clearanceSummary']).toBe('the footprints overlap');
   expect(strong.motion.frames[0].values['clearanceSummary']).toBe(
@@ -303,8 +305,8 @@ it('makes low weight overlap visible and an aligned robot expose cancellation', 
   expect(low.motion.frames[0].vectors?.[1].dx).toBeCloseTo(0);
   expect(strong.motion.frames[0].vectors?.[1].dx).toBeCloseTo(-2.7);
   expect(low.timeline?.series[0].values).not.toEqual(strong.timeline?.series[0].values);
-  const aligned = model({ ...parameters, robotY: 0 });
-  const offset = model({ ...parameters, robotY: 3 });
+  const aligned = model({ ...parameters, robotY: 0 }, studyTranslate);
+  const offset = model({ ...parameters, robotY: 3 }, studyTranslate);
   expect(aligned.motion.frames.every((frame) => frame.note?.includes('stays at rest'))).toBe(true);
   expect(
     aligned.motion.frames.every((frame) => frame.bodies[0].x === 0 && frame.bodies[0].y === 0),
@@ -318,11 +320,11 @@ it('makes low weight overlap visible and an aligned robot expose cancellation', 
 });
 
 it('keeps notes, rounded readings, names and all geometry sound at each slider endpoint', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs.map(({ name }) => name)).toEqual(['separationWeight', 'robotY']);
   for (const input of inputs)
     for (const value of [input.min, input.max]) {
-      const run = model({ ...parameters, [input.name]: value });
+      const run = model({ ...parameters, [input.name]: value }, studyTranslate);
       const { minX, maxX, minY, maxY } = run.motion.bounds;
       expect(run.initialStep).toBeGreaterThanOrEqual(0);
       expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -373,8 +375,8 @@ it('keeps notes, rounded readings, names and all geometry sound at each slider e
             ? [
                 {
                   label: point.label,
-                  left: point.x - point.label.length * 7.2,
-                  right: point.x + point.label.length * 7.2,
+                  left: point.labelX - point.label.length * 7.2,
+                  right: point.labelX + point.label.length * 7.2,
                   top: point.labelY - 24,
                   bottom: point.labelY + 5,
                 },

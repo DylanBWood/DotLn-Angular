@@ -1,7 +1,8 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel, StudyModelFunction } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import { example, flow, model } from './competing-consumers';
@@ -9,7 +10,7 @@ import * as topic from './publish-subscribe-channel';
 
 /** A study's run, which a flow study's model always draws as a flow. */
 function flowOf(study: StudyModelFunction, values: StudyParameters): FlowStudyModel {
-  const run = study(values);
+  const run = study(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The study is not drawn as a flow.');
   return run;
 }
@@ -40,7 +41,10 @@ it('runs the queue example against the marbles both drawings show', () => {
 it('attaches the record to the Competing Consumers row and reads this module', async () => {
   const record = await loadFlowStudy('eip:211');
   expect(record.visual.model).toBe(modulePath);
-  expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: modulePath });
+  expect(record.pseudocode.executable).toEqual({
+    kind: 'rxjs',
+    module: modulePath,
+  });
   expect(record.example.parameters).toEqual(parameters);
   const run = flowOf(model, record.example.parameters);
   expect(run.family).toBe('flow');
@@ -66,9 +70,12 @@ it('attaches the record to the Competing Consumers row and reads this module', a
 });
 
 it('sends the same orders at the same frames to the same three sessions as the topic study', () => {
-  expect(example.inputs['orders$']).toEqual(topic.example.inputs['orders$']);
+  expect(example.inputs['orders$'].values).toEqual(topic.example.inputs['orders$'].values);
+  expect(example.inputs['orders$'].marbles).toEqual(topic.example.inputs['orders$'].marbles);
   const receivers = (nodes: typeof flow.nodes) =>
-    nodes.filter(({ stage }) => stage === 2).map(({ id, label }) => ({ id, label }));
+    nodes
+      .filter(({ stage }) => stage === 2)
+      .map(({ id, label }) => ({ id, label: studyMessage(studyTranslate, label) }));
   expect(receivers(flow.nodes)).toEqual(receivers(topic.flow.nodes));
   expect(Object.keys(example.outputs)).toEqual(Object.keys(topic.example.outputs));
   expect(receivers(flow.nodes)).toHaveLength(parameters.consumers);
@@ -182,7 +189,11 @@ it('completes once the planner stops and the queue is empty: the same takers, th
   expectMarbleExample({
     ...example,
     inputs: {
-      orders$: { ...example.inputs['orders$'], marbles: '-a-b-c-(d|)', subscriptions: '^------!' },
+      orders$: {
+        ...example.inputs['orders$'],
+        marbles: '-a-b-c-(d|)',
+        subscriptions: '^------!',
+      },
     },
     outputs: {
       session1$: { ...example.outputs['session1$'], marbles: '--a------|' },

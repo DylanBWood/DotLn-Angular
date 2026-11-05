@@ -31,7 +31,7 @@
     {{ 'tools.study.next' | t }}
   </button>
   @for (moment of moments(); track moment.step) {
-    <button type="button" translate="no" (click)="stepped.emit(moment.step)">
+    <button type="button" (click)="stepped.emit(moment.step)" translate="no">
       {{ moment.label }}
     </button>
   }

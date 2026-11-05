@@ -1,10 +1,11 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
+import { studyMessage } from '../study-message';
 import { example, model } from './transactional-client';
 
 const path = 'libs/features/tools/src/lib/studies/eip/transactional-client.ts';
 const record = await loadFlowStudy('eip:170');
-const drawn = model(record.example.parameters);
+const drawn = model(record.example.parameters, studyTranslate);
 if (drawn.family !== 'flow') throw new Error('The model does not draw a flow.');
 const run = drawn;
 const { frames } = run.flow;
@@ -27,7 +28,9 @@ it('attaches the record to the Transactional Client row and draws it from this m
   expect(record.pseudocode.rxjs).toBeNull();
   expect(run.diagram).toBeNull();
   expect(steps).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-  expect(example.messages['c']?.content).toBe(`command ${record.example.parameters['command']}`);
+  expect(studyMessage(studyTranslate, example.messages['c']?.content)).toBe(
+    `command ${record.example.parameters['command']}`,
+  );
 });
 
 it('keeps the command in the outbox while a transaction holds it and removes it only at commit', () => {
@@ -50,7 +53,10 @@ it('shows nothing on Receipts or Event log until commit, then both at the same s
   expect(movesAt(8)).toEqual(['r receipt', 'e append']);
   expect(heldBy(8, 'receipts')).toEqual(['r']);
   expect(heldBy(8, 'log')).toEqual(['e']);
-  expect(frames[8].states).toMatchObject({ receipts: 'receipt for 7', log: 'result for 7' });
+  expect(frames[8].states).toMatchObject({
+    receipts: 'receipt for 7',
+    log: 'result for 7',
+  });
   expect(frames[8].values['moves']).toBe(
     'r (receipt for 7) moves from Worker to Receipts; e (result for 7) moves from Worker to Event log',
   );
@@ -79,7 +85,7 @@ it('repeats the outside write, which no rollback reaches', () => {
   expect(heldBy(6, 'outside')).toEqual(['1', '2']);
   expect(heldBy(8, 'outside')).toEqual(['1', '2']);
   expect(stepsOn('write')).toHaveLength(Number(record.example.parameters['attempts']));
-  expect(frames[6].states['outside']).toBe('written twice for command 7');
+  expect(frames[6].states['outside']).toBe('written 2 times for command 7');
 });
 
 it('names its moments, opens at the start and fills every placeholder its prose uses', () => {
@@ -87,7 +93,7 @@ it('names its moments, opens at the start and fills every placeholder its prose 
     { label: 'Taken, not removed', step: 1 },
     { label: 'Staged, unseen', step: 3 },
     { label: 'Rolled back', step: 4 },
-    { label: 'Written twice', step: 6 },
+    { label: 'Written 2 times', step: 6 },
     { label: 'Commit', step: 8 },
   ]);
   expect(run.initialStep).toBe(0);

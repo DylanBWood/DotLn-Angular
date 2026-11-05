@@ -3,6 +3,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { length } from '@dotln-angular/scene-engine';
 import { loadStudy } from '@dotln-angular/tools/testing';
 
+import { studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import type { StudyPoint } from '../study-model';
@@ -38,7 +39,9 @@ const example: EquilibriumParameters = {
   timeStep: 0.1,
   steps: 80,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const rest = { position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 } };
 
 it('uses the assigned record and the same inputs as the worked calculations', async () => {
@@ -106,7 +109,7 @@ it('rejects a fallback at or below epsilon, leaving the comparison at rest throu
         activeGroup === 'None' && state.position.y === 0 && length(state.velocity) === 0,
     ),
   ).toBe(true);
-  const view = model(parameters);
+  const view = model(parameters, studyTranslate);
   expect(view.comparison?.timeline.series[1].values).toEqual(weak.map(() => 0));
   expect(view.comparison?.intro).toContain('0.08 units/s²: the comparison fallback does not clear');
 });
@@ -142,8 +145,8 @@ it('cannot distinguish satisfied goals from cancellation or make zero accelerati
 });
 
 it('supplies every prose value and draws the same deterministic vectors and chart values', () => {
-  const run = model(Object.freeze(parameters));
-  expect(run).toEqual(model(parameters));
+  const run = model(Object.freeze(parameters), studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(parameters).toEqual(record.example.parameters);
   expect(run.initialStep).toBe(0);
   expect(run.motion.frames[0].values['primaryRequest']).toBe('(0.00, 0.00)');
@@ -188,20 +191,20 @@ it('supplies every prose value and draws the same deterministic vectors and char
 });
 
 it('shows an absent nudge and changes handover time when the offered inputs change', () => {
-  const normal = model(parameters);
+  const normal = model(parameters, studyTranslate);
   expect(normal.inputs?.map(({ name }) => name)).toEqual(['fallbackWeight', 'epsilon']);
-  const silent = model({ ...parameters, fallbackWeight: 0 });
+  const silent = model({ ...parameters, fallbackWeight: 0 }, studyTranslate);
   expect(silent.motion.frames.every(({ bodies }) => bodies[0].y === example.beaconY)).toBe(true);
   expect(silent.motion.frames[0].values['primaryHandover']).toContain('never reclaims');
   expect(silent.motion.frames[0].values['returnReading']).toContain('does not move back');
   expect(silent.motion.frames.every(({ note }) => note?.endsWith('leaving Nori at rest.'))).toBe(
     true,
   );
-  const higherThreshold = model({ ...parameters, epsilon: 1 });
+  const higherThreshold = model({ ...parameters, epsilon: 1 }, studyTranslate);
   expect(Number(higherThreshold.motion.frames[0].values['firstPrimaryTime'])).toBeGreaterThan(
     Number(normal.motion.frames[0].values['firstPrimaryTime']),
   );
-  const lowerThreshold = model({ ...parameters, epsilon: 0.05 });
+  const lowerThreshold = model({ ...parameters, epsilon: 0.05 }, studyTranslate);
   expect(lowerThreshold.comparison?.timeline.series[1].values.some((value) => value > 0)).toBe(
     true,
   );
@@ -211,7 +214,7 @@ it('shows an absent nudge and changes handover time when the offered inputs chan
 });
 
 it('keeps every slider setting and corner finite, labelled, in bounds and true to its prose', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs).toHaveLength(2);
   const variants: StudyParameters[] = [];
   for (const input of inputs)
@@ -229,7 +232,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
     });
   const names = [...JSON.stringify(record).matchAll(/\{([A-Za-z]\w*)\}/g)].map((match) => match[1]);
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const bounds = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -272,7 +275,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
         for (const right of labels.slice(leftIndex + 1))
           expect(
             Math.abs(left.labelY - right.labelY) >= 18 ||
-              Math.abs(left.x - right.x) >=
+              Math.abs(left.labelX - right.labelX) >=
                 ((left.label?.length ?? 0) + (right.label?.length ?? 0)) * 4 + 8,
           ).toBe(true);
     }

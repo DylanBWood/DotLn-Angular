@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:163",
+  "work": "aifg",
+  "slug": "the-firing-solution",
+  "authored": {
+    "by": "studyAifg.the-firing-solution.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.the-firing-solution.record.authored.reviewedBy.item0",
+      "studyAifg.the-firing-solution.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.the-firing-solution.record.intuition.text",
+    "situation": "studyAifg.the-firing-solution.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.the-firing-solution.record.example.name",
+    "description": "studyAifg.the-firing-solution.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "launchHeight": 0,
+      "targetX": 32,
+      "targetHeight": 0,
+      "launchSpeed": 20,
+      "gravity": 10,
+      "unreachableTargetX": 48,
+      "timeStep": 0.05,
+      "steps": 80
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step0.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step1.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step2.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step3.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyAifg.the-firing-solution.record.mechanism.steps.step4.title",
+        "text": "studyAifg.the-firing-solution.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.the-firing-solution.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/the-firing-solution.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/the-firing-solution.model.ts",
+    "textEquivalent": "studyAifg.the-firing-solution.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.the-firing-solution.record.implementations.item0.project",
+      "url": "https://github.com/forrestthewoods/lib_fts/blob/350529579db315c3d0c579f70d871ef13400d418/code/fts_ballistic_trajectory.cs",
+      "relevance": "studyAifg.the-firing-solution.record.implementations.item0.relevance",
+      "explanation": "studyAifg.the-firing-solution.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.the-firing-solution.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.the-firing-solution.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.the-firing-solution.record.references.item1.title",
+      "url": "https://www.forrestthewoods.com/blog/solving_ballistic_trajectories/",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.the-firing-solution.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.the-firing-solution.record.references.item2.title",
+      "url": "https://github.com/forrestthewoods/lib_fts/blob/350529579db315c3d0c579f70d871ef13400d418/code/fts_ballistic_trajectory.cs",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.the-firing-solution.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.the-firing-solution.record.limits.item0",
+    "studyAifg.the-firing-solution.record.limits.item1",
+    "studyAifg.the-firing-solution.record.limits.item2",
+    "studyAifg.the-firing-solution.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:162",
+      "why": "studyAifg.the-firing-solution.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:164",
+      "why": "studyAifg.the-firing-solution.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:166",
+      "why": "studyAifg.the-firing-solution.record.nearby.item2.why"
+    }
+  ]
+}

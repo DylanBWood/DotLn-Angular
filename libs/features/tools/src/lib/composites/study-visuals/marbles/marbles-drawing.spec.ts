@@ -1,5 +1,5 @@
 import { marbleModel } from '../../../studies/rxjs/marbles';
-import { marblesFixture } from '../fixtures';
+import { fixtureTranslate, marblesFixture } from '../fixtures';
 import { marblesDrawing } from './marbles-drawing';
 
 it('spaces the frames across the width and stacks the lines around the operator', () => {
@@ -68,13 +68,17 @@ it('keeps a stale step inside the diagram, one step a frame', () => {
 });
 
 it('spreads emissions grouped on one frame and puts the bar after them', () => {
-  const grouped = marbleModel({
-    inputs: { source$: { label: 'source$', marbles: '-(ab)-(c|)' } },
-    operator: 'map((value) => value)',
-    outputs: { out$: { label: 'out$', marbles: '-(ab)-(c|)' } },
-    run: ({ inputs }) => ({ out$: inputs['source$'] }),
-    moments: [],
-  });
+  const grouped = marbleModel(
+    {
+      inputs: { source$: { label: 'source$', marbles: '-(ab)-(c|)' } },
+      operator: 'map((value) => value)',
+      outputs: { out$: { label: 'out$', marbles: '-(ab)-(c|)' } },
+      run: ({ inputs }) => ({ out$: inputs['source$'] }),
+      moments: [],
+    },
+    {},
+    fixtureTranslate,
+  );
   const drawing = marblesDrawing(grouped.marbles, 0);
   const [a, b, c] = drawing.marbles;
   expect(b.x - a.x).toBeCloseTo(a.r * 1.7, 5);
@@ -84,16 +88,20 @@ it('spreads emissions grouped on one frame and puts the bar after them', () => {
 });
 
 it('starts an output where its spec subscribes, and leaves out what it missed', () => {
-  const late = marbleModel({
-    inputs: { source$: { label: 'source$', marbles: '-a-b-c|', hot: true } },
-    operator: 'share()',
-    outputs: {
-      early$: { label: 'early$', marbles: '-a-b-c|' },
-      late$: { label: 'late$', marbles: '---b-c|', subscriptions: '--^' },
+  const late = marbleModel(
+    {
+      inputs: { source$: { label: 'source$', marbles: '-a-b-c|', hot: true } },
+      operator: 'share()',
+      outputs: {
+        early$: { label: 'early$', marbles: '-a-b-c|' },
+        late$: { label: 'late$', marbles: '---b-c|', subscriptions: '--^' },
+      },
+      run: ({ inputs }) => ({ early$: inputs['source$'], late$: inputs['source$'] }),
+      moments: [],
     },
-    run: ({ inputs }) => ({ early$: inputs['source$'], late$: inputs['source$'] }),
-    moments: [],
-  });
+    {},
+    fixtureTranslate,
+  );
   const drawing = marblesDrawing(late.marbles, late.marbles.lastFrame);
   const lateAxis = drawing.axes[2];
   expect(lateAxis.x1).toBe(drawing.ticks[2].x);

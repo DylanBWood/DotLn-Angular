@@ -3,6 +3,8 @@ import { concatMap } from 'rxjs';
 import type { StudyModelFunction } from '../study-model';
 import { type MarbleExample, marbleModel } from './marbles';
 
+const photos = { a: 'cat', b: 'dog', c: 'owl' };
+
 /**
  * Three photos uploaded to a shared album that places each photo when its upload finishes. To keep
  * the album in the order the photos were added, each upload runs only after the one before it has
@@ -13,37 +15,61 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     photo$: {
-      label: 'photo$',
+      label: 'studyRxjs.concat-map.model.example.inputs.photo.label',
       marbles: '-a-b-c--|',
-      values: { a: 'cat', b: 'dog', c: 'owl' },
+      values: photos,
+
+      valueMessages: {
+        a: 'studyRxjs.concat-map.model.example.inputs.photo.values.a',
+        b: 'studyRxjs.concat-map.model.example.inputs.photo.values.b',
+        c: 'studyRxjs.concat-map.model.example.inputs.photo.values.c',
+      },
     },
   },
   inner: {
     cat: {
-      label: 'upload(cat)',
+      label: 'studyRxjs.concat-map.model.example.inner.cat.label',
       marbles: '-----1|',
       values: { 1: 'cat stored' },
       subscriptions: '-^-----!',
+
+      valueMessages: {
+        '1': 'studyRxjs.concat-map.model.example.inner.cat.values.1',
+      },
     },
     dog: {
-      label: 'upload(dog)',
+      label: 'studyRxjs.concat-map.model.example.inner.dog.label',
       marbles: '-2|',
       values: { 2: 'dog stored' },
       subscriptions: '-------^-!',
+
+      valueMessages: {
+        '2': 'studyRxjs.concat-map.model.example.inner.dog.values.2',
+      },
     },
     owl: {
-      label: 'upload(owl)',
+      label: 'studyRxjs.concat-map.model.example.inner.owl.label',
       marbles: '--3|',
       values: { 3: 'owl stored' },
       subscriptions: '---------^--!',
+
+      valueMessages: {
+        '3': 'studyRxjs.concat-map.model.example.inner.owl.values.3',
+      },
     },
   },
-  operator: 'concatMap((photo) => upload(photo))',
+  operator: 'studyRxjs.concat-map.model.example.operator',
   outputs: {
     stored$: {
-      label: 'stored$',
+      label: 'studyRxjs.concat-map.model.example.outputs.stored.label',
       marbles: '------1-2--3|',
       values: { 1: 'cat stored', 2: 'dog stored', 3: 'owl stored' },
+
+      valueMessages: {
+        '1': 'studyRxjs.concat-map.model.example.outputs.stored.values.1',
+        '2': 'studyRxjs.concat-map.model.example.outputs.stored.values.2',
+        '3': 'studyRxjs.concat-map.model.example.outputs.stored.values.3',
+      },
     },
   },
   run: ({ inputs: { photo$ }, inner }) => {
@@ -53,24 +79,31 @@ export const example: MarbleExample = {
     return { stored$ };
   },
   moments: [
-    { label: 'cat starts', frame: 1 },
-    { label: 'dog and owl queue', frame: 5 },
-    { label: 'cat done, dog starts', frame: 7 },
-    { label: 'No more photos', frame: 8 },
-    { label: 'Done', frame: 12 },
+    { label: 'studyRxjs.concat-map.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.concat-map.model.example.moments.1.label', frame: 5 },
+    { label: 'studyRxjs.concat-map.model.example.moments.2.label', frame: 7 },
+    { label: 'studyRxjs.concat-map.model.example.moments.3.label', frame: 8 },
+    { label: 'studyRxjs.concat-map.model.example.moments.4.label', frame: 12 },
   ],
   notes: {
-    0: 'No photo has been added yet.',
-    1: 'The user adds cat, a large photo. Nothing is uploading, so its upload starts at once.',
-    3: 'dog arrives while cat is still uploading. It is not sent: it waits at the back of the queue, and its upload has not even been prepared.',
-    5: 'owl arrives and queues behind dog. Two photos now wait, in the order they were added.',
-    6: "The server answers cat's upload and the answer goes out. The upload has not completed yet, so dog goes on waiting.",
-    7: "cat's upload completes, and only now is dog's upload prepared and sent.",
-    8: 'dog is small and the server answers straight away. The user has finished adding photos, but the output stays open: owl is still waiting.',
-    9: "dog's upload completes and owl's starts.",
-    11: "The server answers owl's upload. The photos have been stored in the order they were added.",
-    12: "owl's upload completes. No more photos are coming and none is waiting, so the output completes.",
+    0: 'studyRxjs.concat-map.model.example.notes.0',
+    1: 'studyRxjs.concat-map.model.example.notes.1',
+    3: 'studyRxjs.concat-map.model.example.notes.3',
+    5: {
+      key: 'studyRxjs.concat-map.model.example.notes.5',
+      params: { waiting: Object.values(photos).slice(1).length },
+    },
+    6: 'studyRxjs.concat-map.model.example.notes.6',
+    7: 'studyRxjs.concat-map.model.example.notes.7',
+    8: 'studyRxjs.concat-map.model.example.notes.8',
+    9: 'studyRxjs.concat-map.model.example.notes.9',
+    11: 'studyRxjs.concat-map.model.example.notes.11',
+    12: 'studyRxjs.concat-map.model.example.notes.12',
+  },
+
+  parameterMessages: {
+    photos: 'studyRxjs.concat-map.record.parameters.photos',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

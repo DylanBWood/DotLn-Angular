@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:108",
+  "work": "aifg",
+  "slug": "variable-matching",
+  "authored": {
+    "by": "studyAifg.variable-matching.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.variable-matching.record.authored.reviewedBy.item0",
+      "studyAifg.variable-matching.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.variable-matching.record.intuition.text",
+    "situation": "studyAifg.variable-matching.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.variable-matching.record.example.name",
+    "description": "studyAifg.variable-matching.record.example.description",
+    "parameters": {
+      "skiffStart": 0,
+      "initialVelocity": 0,
+      "pilotStart": 8,
+      "pilotVelocity": 4,
+      "correctionDirection": 1,
+      "responseTime": 1,
+      "maxAcceleration": 3,
+      "maxSpeed": 8,
+      "timeStep": 0.5,
+      "steps": 24,
+      "matchingTolerance": 0.05,
+      "bodyRadius": 0.5,
+      "arrowSeconds": 1,
+      "arrowLane": 3,
+      "padding": 4
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step0.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step1.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step2.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.variable-matching.record.mechanism.steps.step3.title",
+        "text": "studyAifg.variable-matching.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.variable-matching.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/variable-matching.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/variable-matching.model.ts",
+    "textEquivalent": "studyAifg.variable-matching.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.variable-matching.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "relevance": "studyAifg.variable-matching.record.implementations.item0.relevance",
+      "explanation": "studyAifg.variable-matching.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.variable-matching.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.variable-matching.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.variable-matching.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/MatchVelocity.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.variable-matching.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.variable-matching.record.limits.item0",
+    "studyAifg.variable-matching.record.limits.item1",
+    "studyAifg.variable-matching.record.limits.item2",
+    "studyAifg.variable-matching.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:110",
+      "why": "studyAifg.variable-matching.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:111",
+      "why": "studyAifg.variable-matching.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:116",
+      "why": "studyAifg.variable-matching.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:118",
+      "why": "studyAifg.variable-matching.record.nearby.item3.why"
+    }
+  ]
+}

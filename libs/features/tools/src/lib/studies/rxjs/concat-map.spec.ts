@@ -2,7 +2,7 @@ import { mergeMap } from 'rxjs';
 import type { RunHelpers } from 'rxjs/testing';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { example, model } from './concat-map';
 import { expectMarbleExample } from './marble-testing';
 import { type MarbleExample, marbleModel } from './marbles';
@@ -17,21 +17,27 @@ function streamsOf({ cold }: RunHelpers, replaced: Readonly<Record<string, strin
   const uploads = Object.entries(example.inner ?? {}).map(
     ([id, upload]) => [id, cold(replaced[id] ?? upload.marbles, upload.values)] as const,
   );
-  return { photo$: cold(photo$.marbles, photo$.values), uploads: Object.fromEntries(uploads) };
+  return {
+    photo$: cold(photo$.marbles, photo$.values),
+    uploads: Object.fromEntries(uploads),
+  };
 }
 
 /** What an example feeds its operator: the inputs, and each inner stream without its timing. */
 const inputsOf = ({ inputs, inner }: MarbleExample) => ({
-  inputs,
-  inner: Object.entries(inner ?? {}).map(([id, { label, marbles, values }]) => ({
+  inputs: Object.entries(inputs).map(([id, { marbles, values }]) => ({
     id,
-    label,
+    marbles,
+    values,
+  })),
+  inner: Object.entries(inner ?? {}).map(([id, { marbles, values }]) => ({
+    id,
     marbles,
     values,
   })),
 });
 
-const linesOf = () => marbleModel(example).marbles.lines;
+const linesOf = () => marbleModel(example, {}, studyTranslate).marbles.lines;
 const uploadLines = () => linesOf().filter(({ role }) => role === 'inner');
 
 /** How many uploads are open at a frame: subscribed, and not yet completed or cut off. */
@@ -57,7 +63,7 @@ it('attaches the record to the concatMap row and reads its code from this module
     'libs/features/tools/src/lib/studies/rxjs/concat-map.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  expect(model(record.example.parameters).family).toBe('marbles');
+  expect(model(record.example.parameters, studyTranslate).family).toBe('marbles');
   expect(linesOf().map(({ label }) => label)).toEqual([
     'photo$',
     'upload(cat)',
@@ -112,7 +118,7 @@ it('stores every photo, one upload at a time, in the order the photos were added
     [7, 9, false],
     [9, 12, false],
   ]);
-  const { lastFrame, frames } = marbleModel(example).marbles;
+  const { lastFrame, frames } = marbleModel(example, {}, studyTranslate).marbles;
   expect(Math.max(...Array.from({ length: lastFrame + 1 }, (_, frame) => openAt(frame)))).toBe(1);
   expect(frames[frames.length - 1].values['delivered']).toBe(
     '1 (cat stored), 2 (dog stored), 3 (owl stored)',
@@ -140,7 +146,11 @@ it('prepares the upload of a queued photo only when its turn comes', () => {
         return streams[id];
       },
     });
-    const { stored$ } = example.run({ inputs: { photo$ }, inner: watched, scheduler });
+    const { stored$ } = example.run({
+      inputs: { photo$ },
+      inner: watched,
+      scheduler,
+    });
     const { marbles, values } = example.outputs['stored$'];
     helpers.expectObservable(stored$).toBe(marbles, values);
   });
@@ -154,7 +164,7 @@ it('keeps the output open after the user is done until the last upload completes
 });
 
 it('tells of the hand-over from cat to dog and names each moment', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[7];
   expect(telling.frame).toBe(7);
   expect(telling.values['now']).toBe('upload(cat) completes; upload(dog) is opened');
@@ -171,7 +181,11 @@ it('stalls every later photo behind an upload that answers but never completes',
   const scheduler = newScheduler();
   scheduler.run((helpers) => {
     const { photo$, uploads } = streamsOf(helpers, { cat: '-----1-' });
-    const { stored$ } = example.run({ inputs: { photo$ }, inner: uploads, scheduler });
+    const { stored$ } = example.run({
+      inputs: { photo$ },
+      inner: uploads,
+      scheduler,
+    });
     helpers.expectObservable(stored$).toBe('------1', { 1: 'cat stored' });
     helpers.expectSubscriptions(uploads['cat'].subscriptions).toBe('-^');
     helpers.expectSubscriptions(uploads['dog'].subscriptions).toBe([]);
@@ -183,7 +197,11 @@ it('drops the queued photos and stops listening for new ones when an upload fail
   const scheduler = newScheduler();
   scheduler.run((helpers) => {
     const { photo$, uploads } = streamsOf(helpers, { cat: '---#' });
-    const { stored$ } = example.run({ inputs: { photo$ }, inner: uploads, scheduler });
+    const { stored$ } = example.run({
+      inputs: { photo$ },
+      inner: uploads,
+      scheduler,
+    });
     helpers.expectObservable(stored$).toBe('----#');
     // dog was waiting when cat's upload failed and owl had not been added: neither is uploaded.
     helpers.expectSubscriptions(photo$.subscriptions).toBe('^---!');

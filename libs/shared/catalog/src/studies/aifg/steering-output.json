@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:94",
+  "work": "aifg",
+  "slug": "steering-output",
+  "authored": {
+    "by": "studyAifg.steering-output.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.steering-output.record.authored.reviewedBy.item0",
+      "studyAifg.steering-output.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.steering-output.record.intuition.text",
+    "situation": "studyAifg.steering-output.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.steering-output.record.example.name",
+    "description": "studyAifg.steering-output.record.example.description",
+    "parameters": {
+      "initialX": 0,
+      "initialY": 0,
+      "initialVelocityX": 2,
+      "initialVelocityY": 0,
+      "initialHeading": 0,
+      "initialRotation": 0,
+      "linearAccelerationX": 0,
+      "linearAccelerationY": 2,
+      "angularAcceleration": 0.5,
+      "pulseSeconds": 1,
+      "comparisonLinearAccelerationY": 0,
+      "timeStep": 0.25,
+      "steps": 16
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.steering-output.record.mechanism.steps.step0.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.steering-output.record.mechanism.steps.step1.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.steering-output.record.mechanism.steps.step2.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.steering-output.record.mechanism.steps.step3.title",
+        "text": "studyAifg.steering-output.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.steering-output.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/steering-output.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/steering-output.model.ts",
+    "textEquivalent": "studyAifg.steering-output.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.steering-output.record.implementations.item0.project",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringAcceleration.java",
+      "relevance": "studyAifg.steering-output.record.implementations.item0.relevance",
+      "explanation": "studyAifg.steering-output.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.steering-output.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-output.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.steering-output.record.references.item1.title",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/SteeringAcceleration.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.steering-output.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.steering-output.record.limits.item0",
+    "studyAifg.steering-output.record.limits.item1",
+    "studyAifg.steering-output.record.limits.item2",
+    "studyAifg.steering-output.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:93",
+      "why": "studyAifg.steering-output.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:95",
+      "why": "studyAifg.steering-output.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:116",
+      "why": "studyAifg.steering-output.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:96",
+      "why": "studyAifg.steering-output.record.nearby.item3.why"
+    }
+  ]
+}

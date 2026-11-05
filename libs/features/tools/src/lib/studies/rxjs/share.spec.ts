@@ -1,7 +1,7 @@
 import { connect, defer, map, merge, of, ReplaySubject, retry, share, timer } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './share';
@@ -20,9 +20,9 @@ it('attaches the record to the share row and reads its code from this module', a
     'libs/features/tools/src/lib/studies/rxjs/share.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'quote$',
     'tile$',
     'chart$',
@@ -30,7 +30,7 @@ it('attaches the record to the share row and reads its code from this module', a
 });
 
 it('gives the chart nothing when it opens and only the quotes fetched after that', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[7];
   expect(telling.frame).toBe(7);
   expect(telling.values['now']).toBe('chart$ subscribes');
@@ -47,9 +47,13 @@ it('gives the chart nothing when it opens and only the quotes fetched after that
 });
 
 it('runs one poll for both readers and stops it when the last one leaves', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const poll = marbles.lines.find(({ label }) => label === 'quote$');
-  expect(poll).toMatchObject({ subscribedAt: 0, unsubscribedAt: 15, cancelled: true });
+  expect(poll).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 15,
+    cancelled: true,
+  });
   const neverFetched = poll?.events
     .filter(({ kind, delivered }) => kind === 'next' && !delivered)
     .map(({ key }) => key);

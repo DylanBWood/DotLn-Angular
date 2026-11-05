@@ -1,7 +1,7 @@
 import { createCatalogLoader } from '@dotln-angular/catalog';
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -25,7 +25,9 @@ const example: AlignParameters = {
   steps: 160,
   lateSlowRadius: 2,
 };
+
 const parameters: StudyParameters = Object.freeze({ ...example });
+
 const record = await loadStudy('aifg-a:116');
 
 it('uses the assigned catalogue row, draft authorship and these exact parameters', async () => {
@@ -127,7 +129,7 @@ it('settles the normal camera without overshoot and shows overshoot and reversal
         ).toBeLessThanOrEqual(example.maxAngularAcceleration + 1e-9);
     }
   }
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.findings[0]).toContain('18.40° at 1.60 s');
   expect(comparison?.timeline.series[0].values).toEqual(
     normal.map(({ heading }) => wrapDegrees(-170 - heading)),
@@ -138,7 +140,7 @@ it('settles the normal camera without overshoot and shows overshoot and reversal
 });
 
 it('draws a rotating heading on a stationary pedestal and keeps every ray within bounds', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const { minX, maxX, minY, maxY } = run.motion.bounds;
   for (const frame of run.motion.frames) {
     expect(frame.bodies).toHaveLength(1);
@@ -169,7 +171,7 @@ it('draws a rotating heading on a stationary pedestal and keeps every ray within
 });
 
 it('opens on the boundary crossing and labels real braking, tolerance and rest moments', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const frames = alignFrames(example);
   expect(run.initialStep).toBe(17);
   expect(run.moments).toHaveLength(5);
@@ -190,7 +192,7 @@ it('opens on the boundary crossing and labels real braking, tolerance and rest m
 });
 
 it('supplies every prose placeholder on every frame and plots the same angular velocities', () => {
-  const run = model(parameters);
+  const run = model(parameters, studyTranslate);
   const texts = [
     record.visual.textEquivalent,
     record.example.description,
@@ -232,19 +234,19 @@ it('supplies every prose placeholder on every frame and plots the same angular v
 });
 
 it('is repeatable and derives the pedestal placement and bounds from the parameters', () => {
-  expect(model(parameters)).toEqual(model(parameters));
-  const moved = model({ ...parameters, cameraX: 100, cameraY: -50 });
+  expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
+  const moved = model({ ...parameters, cameraX: 100, cameraY: -50 }, studyTranslate);
   expect(
     moved.motion.frames.every(({ bodies }) => bodies[0].x === 100 && bodies[0].y === -50),
   ).toBe(true);
   expect(moved.motion.bounds).toEqual({ minX: 52, maxX: 148, minY: -98, maxY: -2 });
-  expect(moved.timeline).toEqual(model(parameters).timeline);
+  expect(moved.timeline).toEqual(model(parameters, studyTranslate).timeline);
 });
 
 it('makes late braking and motor acceleration visible through the live inputs', () => {
-  const late = model({ ...parameters, slowRadius: 2 });
-  const early = model({ ...parameters, slowRadius: 90 });
-  expect(model(parameters).inputs?.map(({ name }) => name)).toEqual([
+  const late = model({ ...parameters, slowRadius: 2 }, studyTranslate);
+  const early = model({ ...parameters, slowRadius: 90 }, studyTranslate);
+  expect(model(parameters, studyTranslate).inputs?.map(({ name }) => name)).toEqual([
     'slowRadius',
     'maxAngularAcceleration',
   ]);
@@ -259,8 +261,8 @@ it('makes late braking and motor acceleration visible through the live inputs', 
   expect(late.comparison?.timeline.series[0].values).toEqual(
     late.comparison?.timeline.series[1].values,
   );
-  const weak = model({ ...parameters, maxAngularAcceleration: 30 });
-  const strong = model({ ...parameters, maxAngularAcceleration: 120 });
+  const weak = model({ ...parameters, maxAngularAcceleration: 30 }, studyTranslate);
+  const strong = model({ ...parameters, maxAngularAcceleration: 120 }, studyTranslate);
   expect(weak.motion.frames[0].values['nextAngularSpeed']).toBe('1.50');
   expect(strong.motion.frames[0].values['nextAngularSpeed']).toBe('4.00');
   expect(weak.motion.frames[1].bodies[0].heading).toBeLessThan(
@@ -270,7 +272,7 @@ it('makes late braking and motor acceleration visible through the live inputs', 
 });
 
 it('keeps notes, labels, moments, prose and geometry sound across the live ranges', () => {
-  const base = model(parameters);
+  const base = model(parameters, studyTranslate);
   const variants = [parameters];
   for (const input of base.inputs ?? [])
     for (const value of [input.min, (input.min + input.max) / 2, input.max])
@@ -285,7 +287,7 @@ it('keeps notes, labels, moments, prose and geometry sound across the live range
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);

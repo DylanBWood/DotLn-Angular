@@ -11,37 +11,64 @@ import { type MarbleExample, marbleModel } from './marbles';
 export const example: MarbleExample = {
   inputs: {
     query$: {
-      label: 'query$',
+      label: 'studyRxjs.switch-map.model.example.inputs.query.label',
       marbles: '-a---b-c------|',
       values: { a: 'ant', b: 'bee', c: 'cat' },
+
+      valueMessages: {
+        a: 'studyRxjs.switch-map.model.example.inputs.query.values.a',
+        b: 'studyRxjs.switch-map.model.example.inputs.query.values.b',
+        c: 'studyRxjs.switch-map.model.example.inputs.query.values.c',
+      },
     },
   },
   inner: {
     ant: {
-      label: 'results(ant)',
+      label: 'studyRxjs.switch-map.model.example.inner.ant.label',
       marbles: '---1--2|',
       values: { 1: 'ant, page 1', 2: 'ant, page 2' },
       subscriptions: '-^---!',
+
+      valueMessages: {
+        '1': 'studyRxjs.switch-map.model.example.inner.ant.values.1',
+        '2': 'studyRxjs.switch-map.model.example.inner.ant.values.2',
+      },
     },
     bee: {
-      label: 'results(bee)',
+      label: 'studyRxjs.switch-map.model.example.inner.bee.label',
       marbles: '---3--4|',
       values: { 3: 'bee, page 1', 4: 'bee, page 2' },
       subscriptions: '-----^-!',
+
+      valueMessages: {
+        '3': 'studyRxjs.switch-map.model.example.inner.bee.values.3',
+        '4': 'studyRxjs.switch-map.model.example.inner.bee.values.4',
+      },
     },
     cat: {
-      label: 'results(cat)',
+      label: 'studyRxjs.switch-map.model.example.inner.cat.label',
       marbles: '---5--6|',
       values: { 5: 'cat, page 1', 6: 'cat, page 2' },
       subscriptions: '-------^------!',
+
+      valueMessages: {
+        '5': 'studyRxjs.switch-map.model.example.inner.cat.values.5',
+        '6': 'studyRxjs.switch-map.model.example.inner.cat.values.6',
+      },
     },
   },
-  operator: 'switchMap((query) => results(query))',
+  operator: 'studyRxjs.switch-map.model.example.operator',
   outputs: {
     shown$: {
-      label: 'shown$',
+      label: 'studyRxjs.switch-map.model.example.outputs.shown.label',
       marbles: '----1-----5--6|',
       values: { 1: 'ant, page 1', 5: 'cat, page 1', 6: 'cat, page 2' },
+
+      valueMessages: {
+        '1': 'studyRxjs.switch-map.model.example.outputs.shown.values.1',
+        '5': 'studyRxjs.switch-map.model.example.outputs.shown.values.5',
+        '6': 'studyRxjs.switch-map.model.example.outputs.shown.values.6',
+      },
     },
   },
   run: ({ inputs: { query$ }, inner }) => {
@@ -51,21 +78,25 @@ export const example: MarbleExample = {
     return { shown$ };
   },
   moments: [
-    { label: 'ant', frame: 1 },
-    { label: 'bee cancels ant', frame: 5 },
-    { label: 'cat cancels bee', frame: 7 },
-    { label: 'Done', frame: 14 },
+    { label: 'studyRxjs.switch-map.model.example.moments.0.label', frame: 1 },
+    { label: 'studyRxjs.switch-map.model.example.moments.1.label', frame: 5 },
+    { label: 'studyRxjs.switch-map.model.example.moments.2.label', frame: 7 },
+    { label: 'studyRxjs.switch-map.model.example.moments.3.label', frame: 14 },
   ],
   notes: {
-    0: 'Nothing has been typed yet.',
-    1: 'The first query, ant, arrives and its request starts. Nothing is in flight to cancel.',
-    4: "ant's first page arrives and is shown: it belongs to the latest query.",
-    5: "A new query, bee, arrives while ant's request is still running. switchMap stops listening to ant and starts bee's request; ant's second page will never be shown.",
-    7: "cat arrives before bee has answered at all. bee's request is cut off and cat's starts: the middle query produces nothing, and nothing it would have returned is drawn.",
-    10: "cat's first page arrives and is shown.",
-    13: "cat's second page arrives and is shown.",
-    14: "The box has completed and cat's request has completed, so the output completes.",
+    0: 'studyRxjs.switch-map.model.example.notes.0',
+    1: 'studyRxjs.switch-map.model.example.notes.1',
+    4: 'studyRxjs.switch-map.model.example.notes.4',
+    5: 'studyRxjs.switch-map.model.example.notes.5',
+    7: 'studyRxjs.switch-map.model.example.notes.7',
+    10: 'studyRxjs.switch-map.model.example.notes.10',
+    13: 'studyRxjs.switch-map.model.example.notes.13',
+    14: 'studyRxjs.switch-map.model.example.notes.14',
+  },
+
+  parameterMessages: {
+    queries: 'studyRxjs.switch-map.record.parameters.queries',
   },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

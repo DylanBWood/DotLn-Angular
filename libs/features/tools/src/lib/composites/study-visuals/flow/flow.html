@@ -1,5 +1,5 @@
 <ng-template #picture let-view>
-  <svg [attr.viewBox]="view.viewBox" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+  <svg [attr.viewBox]="view.viewBox" role="img" [attr.aria-label]="textEquivalent()" translate="no">
     @for (link of view.links; track link.id) {
       <g class="link" [class.active]="link.active">
         @if (link.points; as points) {
@@ -75,7 +75,7 @@
           <circle [attr.cx]="token.x" [attr.cy]="token.y" [attr.r]="token.r" />
         }
         <text text-anchor="middle" [attr.x]="token.x" [attr.y]="token.y + token.r * 0.38">
-          {{ token.key }}
+          {{ 'tools.study.symbol' | t: { symbol: token.key } }}
         </text>
       </g>
     }

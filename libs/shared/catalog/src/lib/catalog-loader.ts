@@ -67,7 +67,7 @@ const recordsOf = (work: WorkSlug, module: { readonly default: unknown }) => {
   const records = module.default as readonly ConceptStudy[];
   if (
     !Array.isArray(records) ||
-    records.some((study) => study?.schema !== 'concept-study-v0' || study.work !== work)
+    records.some((study) => study?.schema !== 'concept-study-v1' || study.work !== work)
   )
     throw new Error('Study chunk has an unsupported shape.');
   return records;

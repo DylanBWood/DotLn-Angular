@@ -1,13 +1,15 @@
 import { ReplaySubject, Subject } from 'rxjs';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './replay-subject';
 
 const line = (label: string) => {
-  const found = marbleModel(example).marbles.lines.find((each) => each.label === label);
+  const found = marbleModel(example, {}, studyTranslate).marbles.lines.find(
+    (each) => each.label === label,
+  );
   if (!found) throw new Error(`No line ${label}.`);
   return found;
 };
@@ -25,8 +27,8 @@ it('attaches the record to the ReplaySubject row and reads its code from this mo
     'libs/features/tools/src/lib/studies/rxjs/replay-subject.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  expect(model(record.example.parameters).family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(model(record.example.parameters, studyTranslate).family).toBe('marbles');
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'report$',
     'dashboard$',
     'verifier$',
@@ -61,12 +63,19 @@ it('hands the verifier the newest two at once and never the first report', () =>
 });
 
 it('subscribes to the source once, whoever listens', () => {
-  expect(line('report$')).toMatchObject({ subscribedAt: 0, unsubscribedAt: 15, cancelled: false });
-  expect(line('verifier$')).toMatchObject({ subscribedAt: 6, cancelled: false });
+  expect(line('report$')).toMatchObject({
+    subscribedAt: 0,
+    unsubscribedAt: 15,
+    cancelled: false,
+  });
+  expect(line('verifier$')).toMatchObject({
+    subscribedAt: 6,
+    cancelled: false,
+  });
 });
 
 it('tells of the join and names the replay in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   const telling = run.marbles.frames[6];
   expect(telling.frame).toBe(6);
   expect(telling.values['now']).toBe(
@@ -99,7 +108,10 @@ it('goes on replaying after an error, then repeats the error', () => {
   log.error(crash);
   const heard: string[] = [];
   let failed: unknown;
-  log.subscribe({ next: (report) => heard.push(report), error: (error) => (failed = error) });
+  log.subscribe({
+    next: (report) => heard.push(report),
+    error: (error) => (failed = error),
+  });
   expect(heard).toEqual(['types ok', 'tests ok']);
   expect(failed).toBe(crash);
 });

@@ -1,7 +1,7 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
-import { crashStep, example, model } from './guaranteed-delivery';
+import { crashStep, model } from './guaranteed-delivery';
 
 const path = 'libs/features/tools/src/lib/studies/eip/guaranteed-delivery.ts';
 
@@ -12,7 +12,7 @@ const heldBy = (frame: FlowFrame, node: string) => (frame.held[node] ?? []).map(
 
 /** The example run from the record's own parameters, which this module always draws as a flow. */
 async function run(): Promise<FlowStudyModel> {
-  const drawn = model((await loadFlowStudy('eip:71')).example.parameters);
+  const drawn = model((await loadFlowStudy('eip:71')).example.parameters, studyTranslate);
   if (drawn.family !== 'flow') throw new Error('The study is drawn as a flow.');
   return drawn;
 }
@@ -98,15 +98,14 @@ it('delivers the command twice, once before the crash and once after it', async 
   expect(frames.flatMap(hopsOf).filter((hop) => hop.startsWith('receipt'))).toEqual(['receipt r']);
 });
 
-it('fits the drawing: a note for every step and short states', () => {
-  expect(example.steps.every(({ note }) => note.length > 0)).toBe(true);
-  const states = [example.start, ...example.steps].flatMap(({ states: changes }) =>
-    Object.values(changes ?? {}),
-  );
+it('fits the drawing: a note for every step and short states', async () => {
+  const { flow } = await run();
+  expect(flow.frames.every(({ note }) => typeof note === 'string' && note.length > 0)).toBe(true);
+  const states = flow.frames.flatMap(({ states }) => Object.values(states));
   expect(states.every((text) => text.length <= 40)).toBe(true);
-  expect(
-    example.nodes.every(({ label }) => label.split(' ').every((word) => word.length <= 10)),
-  ).toBe(true);
+  expect(flow.nodes.every(({ label }) => label.split(' ').every((word) => word.length <= 10))).toBe(
+    true,
+  );
 });
 
 it('supplies every value the record’s prose reads, at every step', async () => {

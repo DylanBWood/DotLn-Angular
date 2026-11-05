@@ -1,11 +1,11 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowStudyModel } from '../study-model';
-import { example, flow, model } from './aggregator';
+import { example, flow, model, withFindings } from './aggregator';
 
 const path = 'libs/features/tools/src/lib/studies/eip/aggregator.ts';
 
@@ -14,7 +14,7 @@ const parameters = { reviewers: 3, first: 'order 31', second: 'order 32' };
 
 /** The model's run, which this module always draws as a flow. */
 function drawn(values: StudyParameters = parameters): FlowStudyModel {
-  const run = model(values);
+  const run = model(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The aggregator is drawn as a flow.');
   return run;
 }
@@ -35,7 +35,7 @@ const sentOn = (run: FlowStudyModel) =>
 
 /** A run of a changed example through the same flow, with no states or holdings drawn. */
 const rerun = (changed: MarbleExample) =>
-  flowFromMarbles(changed, { ...flow, states: {}, held: {} }, parameters);
+  flowFromMarbles(changed, { ...flow, states: {}, held: {} }, parameters, studyTranslate);
 
 /** The set a report's letter belongs to: lower case is order 31's set, 1, upper case order 32's, 2. */
 const setOf = (key: string) => (key === key.toLowerCase() ? '1' : '2');
@@ -163,6 +163,14 @@ it('sends a set on too early when one reviewer reports twice, because it counts 
         ...example.inputs['criteria$'],
         marbles: '-a--A-x',
         values: { ...example.inputs['criteria$'].values, x: again },
+        valueMessages: {
+          ...example.inputs['criteria$'].valueMessages,
+          x: {
+            key: 'studyEip.aggregator.model.report',
+            params: { order: again.order, findings: again.findings },
+            messages: { reviewer: 'studyEip.aggregator.model.flow.nodes.0.label' },
+          },
+        },
       },
     },
     outputs: {
@@ -172,6 +180,13 @@ it('sends a set on too early when one reviewer reports twice, because it counts 
         values: {
           1: 'order 31: 2 findings from 3 reviewers',
           2: 'order 32: 2 findings from 3 reviewers',
+        },
+        valueMessages: {
+          ...example.outputs['ready$'].valueMessages,
+          1: {
+            key: 'studyEip.aggregator.model.setSummary',
+            params: { order: 31, findings: 2, reviewers: 3 },
+          },
         },
       },
     },
@@ -202,5 +217,40 @@ it('completes once the reviewers stop: the same two sets at the same frames, the
       consistency$: { ...example.inputs['consistency$'], marbles: '---c-(C|)' },
     },
     outputs: { ready$: { ...example.outputs['ready$'], marbles: '------2-(1|)' } },
+  });
+});
+
+it('retains the summary template while changed findings alter the raw and displayed totals', () => {
+  const changed = withFindings({ a: 8, B: 10 });
+  expect(changed.run).toBe(example.run);
+  expect(changed.outputs['ready$'].marbles).toBe('------2-1');
+  expect(changed.outputs['ready$'].values).toEqual({
+    1: 'order 31: 9 findings from 3 reviewers',
+    2: 'order 32: 11 findings from 3 reviewers',
+  });
+  expect(changed.outputs['ready$'].valueMessages?.['1']).toMatchObject({
+    key: 'studyEip.aggregator.model.setSummary',
+    params: { order: 31, findings: 9, reviewers: 3 },
+  });
+  expect(example.outputs['ready$'].valueMessages?.['1']).toMatchObject({
+    key: 'studyEip.aggregator.model.setSummary',
+    params: { order: 31, findings: 3, reviewers: 3 },
+  });
+  expectMarbleExample(changed);
+  const translate = vi.fn(studyTranslate);
+  const run = flowFromMarbles(changed, flow, parameters, translate);
+  expect(sentOn(run)).toEqual([
+    '6: order 32: 11 findings from 3 reviewers',
+    '8: order 31: 9 findings from 3 reviewers',
+  ]);
+  expect(translate).toHaveBeenCalledWith('studyEip.aggregator.model.setSummary', {
+    order: 32,
+    findings: 11,
+    reviewers: 3,
+  });
+  expect(translate).toHaveBeenCalledWith('studyEip.aggregator.model.report', {
+    order: 31,
+    findings: 8,
+    reviewer: 'Criteria',
   });
 });

@@ -1,4 +1,4 @@
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from './marble-testing';
 import { marbleModel } from './marbles';
 import { example, model } from './switch-map';
@@ -13,9 +13,9 @@ it('attaches the record to the switchMap row and reads its code from this module
     'libs/features/tools/src/lib/studies/rxjs/switch-map.ts',
   );
   expect(record.visual.family).toBe('marbles');
-  const run = model(record.example.parameters);
+  const run = model(record.example.parameters, studyTranslate);
   expect(run.family).toBe('marbles');
-  expect(marbleModel(example).marbles.lines.map(({ label }) => label)).toEqual([
+  expect(marbleModel(example, {}, studyTranslate).marbles.lines.map(({ label }) => label)).toEqual([
     'query$',
     'results(ant)',
     'results(bee)',
@@ -25,7 +25,7 @@ it('attaches the record to the switchMap row and reads its code from this module
 });
 
 it('drops the middle query entirely and the first query’s second page', () => {
-  const { marbles } = marbleModel(example);
+  const { marbles } = marbleModel(example, {}, studyTranslate);
   const dropped = marbles.lines.flatMap(({ label, events }) =>
     events
       .filter(({ kind, delivered }) => kind === 'next' && !delivered)
@@ -33,9 +33,17 @@ it('drops the middle query entirely and the first query’s second page', () => 
   );
   expect(dropped).toEqual(['results(ant) 2', 'results(bee) 3', 'results(bee) 4']);
   const bee = marbles.lines.find(({ label }) => label === 'results(bee)');
-  expect(bee).toMatchObject({ subscribedAt: 5, unsubscribedAt: 7, cancelled: true });
+  expect(bee).toMatchObject({
+    subscribedAt: 5,
+    unsubscribedAt: 7,
+    cancelled: true,
+  });
   const cat = marbles.lines.find(({ label }) => label === 'results(cat)');
-  expect(cat).toMatchObject({ subscribedAt: 7, unsubscribedAt: 14, cancelled: false });
+  expect(cat).toMatchObject({
+    subscribedAt: 7,
+    unsubscribedAt: 14,
+    cancelled: false,
+  });
   expect(marbles.frames[marbles.frames.length - 1].values['delivered']).toBe(
     '1 (ant, page 1), 5 (cat, page 1), 6 (cat, page 2)',
   );
@@ -47,7 +55,7 @@ it('drops the middle query entirely and the first query’s second page', () => 
 });
 
 it('tells of the switch and names each emission in the frame’s sentence', () => {
-  const run = marbleModel(example);
+  const run = marbleModel(example, {}, studyTranslate);
   // The drawing opens on the last frame, the whole run.
   expect(run.initialStep).toBe(run.marbles.lastFrame);
   const telling = run.marbles.frames[5];

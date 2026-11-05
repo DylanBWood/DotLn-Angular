@@ -13,10 +13,30 @@ export const crashStep = 5;
  */
 export const example: FlowExample = {
   nodes: [
-    { id: 'host', label: 'Host', stage: 0 },
-    { id: 'outbox', label: 'Outbox', stage: 1, kind: 'channel', tone: 'subject' },
-    { id: 'inbox', label: 'Inbox', stage: 2, kind: 'channel', tone: 'subject' },
-    { id: 'worker', label: 'Worker', stage: 3 },
+    {
+      id: 'host',
+      label: 'studyEip.guaranteed-delivery.model.example.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'outbox',
+      label: 'studyEip.guaranteed-delivery.model.example.nodes.1.label',
+      stage: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'inbox',
+      label: 'studyEip.guaranteed-delivery.model.example.nodes.2.label',
+      stage: 2,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'worker',
+      label: 'studyEip.guaranteed-delivery.model.example.nodes.3.label',
+      stage: 3,
+    },
   ],
   links: [
     { id: 'send', from: 'host', to: 'outbox' },
@@ -26,75 +46,122 @@ export const example: FlowExample = {
     { id: 'receipt', from: 'worker', to: 'inbox' },
   ],
   messages: {
-    c: { key: 'c', content: 'command 7' },
-    s: { key: 's', content: 'saved 7' },
-    r: { key: 'r', content: 'receipt 7' },
+    c: {
+      key: 'c',
+      content: 'studyEip.guaranteed-delivery.model.example.messages.c.content',
+    },
+    s: {
+      key: 's',
+      content: 'studyEip.guaranteed-delivery.model.example.messages.s.content',
+    },
+    r: {
+      key: 'r',
+      content: 'studyEip.guaranteed-delivery.model.example.messages.r.content',
+    },
   },
   start: {
     states: {
-      host: 'about to send command 7',
-      outbox: 'empty',
-      inbox: 'empty',
-      worker: 'idle',
+      host: 'studyEip.guaranteed-delivery.model.example.start.states.host',
+      outbox: 'studyEip.guaranteed-delivery.model.example.start.states.outbox',
+      inbox: 'studyEip.guaranteed-delivery.model.example.start.states.inbox',
+      worker: 'studyEip.guaranteed-delivery.model.example.start.states.worker',
     },
-    note: 'The host has decided to send command 7 to the worker. The command exists only in the host’s memory, and nothing is on any disk yet.',
+    note: 'studyEip.guaranteed-delivery.model.example.start.note',
   },
   steps: [
     {
       moves: [{ message: 'c', link: 'send' }],
-      states: { host: 'send returned', outbox: 'holds c on disk' },
+      states: {
+        host: 'studyEip.guaranteed-delivery.model.example.steps.0.states.host',
+        outbox: 'studyEip.guaranteed-delivery.model.example.steps.0.states.outbox',
+      },
       held: { outbox: ['c'] },
-      note: 'The host writes command 7 to its outbox and syncs the disk, and only then does its send return. From here on a copy is always on some disk.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.0.note',
     },
     {
       moves: [{ message: 'c', link: 'forward' }],
-      states: { outbox: 'keeps c until inbox confirms', inbox: 'holds c on disk' },
+      states: {
+        outbox: 'studyEip.guaranteed-delivery.model.example.steps.1.states.outbox',
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.1.states.inbox',
+      },
       held: { inbox: ['c'] },
-      note: 'The outbox forwards a copy to the worker’s inbox, which writes it to its own disk. The outbox keeps its copy: it has no word yet that the inbox saved it.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.1.note',
     },
     {
       moves: [{ message: 's', link: 'saved' }],
-      states: { host: 'send done; outbox let go', outbox: 'empty: the inbox confirmed' },
+      states: {
+        host: 'studyEip.guaranteed-delivery.model.example.steps.2.states.host',
+        outbox: 'studyEip.guaranteed-delivery.model.example.steps.2.states.outbox',
+      },
       held: { outbox: [] },
-      note: 'The inbox confirms that command 7 is on its disk, and only then does the outbox delete its copy. The inbox now holds the only copy.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.2.note',
     },
     {
       moves: [{ message: 'c', link: 'deliver' }],
-      states: { inbox: 'keeps c until the receipt', worker: 'working on command 7' },
+      states: {
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.3.states.inbox',
+        worker: 'studyEip.guaranteed-delivery.model.example.steps.3.states.worker',
+      },
       held: { worker: ['c'] },
-      note: 'The inbox hands command 7 to the worker, which starts on it. The inbox keeps its copy until the worker sends a receipt.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.3.note',
     },
     {
-      states: { inbox: 'machine down; c safe on disk', worker: 'crashed: memory lost' },
+      states: {
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.4.states.inbox',
+        worker: 'studyEip.guaranteed-delivery.model.example.steps.4.states.worker',
+      },
       held: { worker: [] },
-      note: 'The worker’s machine crashes before the worker has sent a receipt. The command the worker held in memory is gone; the inbox’s copy is on disk and untouched.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.4.note',
     },
     {
-      states: { inbox: 'back up, still holds c', worker: 'restarted, idle' },
-      note: 'The machine restarts. The inbox reads its disk and finds command 7 still there, never acknowledged.',
+      states: {
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.5.states.inbox',
+        worker: 'studyEip.guaranteed-delivery.model.example.steps.5.states.worker',
+      },
+      note: 'studyEip.guaranteed-delivery.model.example.steps.5.note',
     },
     {
       moves: [{ message: 'c', link: 'deliver' }],
-      states: { inbox: 'sent c again; still keeps it', worker: 'on command 7 a second time' },
+      states: {
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.6.states.inbox',
+        worker: 'studyEip.guaranteed-delivery.model.example.steps.6.states.worker',
+      },
       held: { worker: ['c'] },
-      note: 'The inbox delivers command 7 again. Whatever the worker did before the crash, it now sees the same command a second time, and its id is how it can tell.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.6.note',
     },
     {
       moves: [{ message: 'r', link: 'receipt' }],
-      states: { inbox: 'empty: the receipt arrived', worker: 'done; receipt sent' },
+      states: {
+        inbox: 'studyEip.guaranteed-delivery.model.example.steps.7.states.inbox',
+        worker: 'studyEip.guaranteed-delivery.model.example.steps.7.states.worker',
+      },
       held: { inbox: [], worker: [] },
-      note: 'The worker finishes and sends a receipt. Only now does the inbox delete its copy: command 7 has been delivered, and no disk needs to keep it.',
+      note: 'studyEip.guaranteed-delivery.model.example.steps.7.note',
     },
   ],
   moments: [
-    { label: 'Saved', step: 1 },
-    { label: 'Handed on', step: 3 },
-    { label: 'Crash', step: crashStep },
-    { label: 'Delivered again', step: 7 },
-    { label: 'Receipt', step: 8 },
+    {
+      label: 'studyEip.guaranteed-delivery.model.example.moments.0.label',
+      step: 1,
+    },
+    {
+      label: 'studyEip.guaranteed-delivery.model.example.moments.1.label',
+      step: 3,
+    },
+    {
+      label: 'studyEip.guaranteed-delivery.model.example.moments.2.label',
+      step: crashStep,
+    },
+    {
+      label: 'studyEip.guaranteed-delivery.model.example.moments.3.label',
+      step: 7,
+    },
+    {
+      label: 'studyEip.guaranteed-delivery.model.example.moments.4.label',
+      step: 8,
+    },
   ],
-  caption:
-    'Each token is one message: c is command 7 itself, s is the Inbox’s word to the Outbox that it has saved c, and r is the Worker’s receipt for c. The Host decides to send the command, and the Outbox is the store on the Host’s disk. The Inbox is the store on the Worker’s machine, and the Worker carries the command out. The two stores are drawn as pipes because they are channels on disk, so a token they hold survives a crash; a token the Worker holds is only in its memory. The words in a box say what that box is doing or holding. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green.',
+  caption: 'studyEip.guaranteed-delivery.model.example.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => flowModel(example, parameters, t);

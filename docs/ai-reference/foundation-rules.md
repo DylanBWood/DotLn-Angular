@@ -25,6 +25,8 @@
   independent of whether a collection operation benefits from a pipeline.
 - Use `| t` for template text and `translateSignal` from the house i18n entry
   point in class code. Add keys to `apps/dotln/public/i18n/en.json`.
+- Load large feature message catalogs through `MessageCatalog` on demand. Pass its
+  bound translator into pure presentation code; keep machine inputs independent of language.
 - Export `provide<Name>TestKit()` for each `@Injectable` class and token through its
   library's `testing` entry point. Spread a kit's providers in TestBed setups.
   Import same-library helpers relatively and consumer helpers through aliases.

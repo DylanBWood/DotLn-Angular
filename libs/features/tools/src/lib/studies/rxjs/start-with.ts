@@ -15,25 +15,43 @@ const statuses = { w: 'waiting', r: 'running', p: 'passed' } as const;
 export const example: MarbleExample = {
   inputs: {
     status$: {
-      label: 'status$',
+      label: 'studyRxjs.start-with.model.example.inputs.status.label',
       // The worker reports whether or not a panel is watching.
       hot: true,
       marbles: '^---r----p-|',
       values: statuses,
+
+      valueMessages: {
+        w: 'studyRxjs.start-with.model.example.inputs.status.values.w',
+        r: 'studyRxjs.start-with.model.example.inputs.status.values.r',
+        p: 'studyRxjs.start-with.model.example.inputs.status.values.p',
+      },
     },
   },
-  operator: "startWith('waiting')",
+  operator: 'studyRxjs.start-with.model.example.operator',
   outputs: {
     panel$: {
-      label: 'panel$',
+      label: 'studyRxjs.start-with.model.example.outputs.panel.label',
       marbles: 'w---r----p-|',
       values: statuses,
+
+      valueMessages: {
+        w: 'studyRxjs.start-with.model.example.outputs.panel.values.w',
+        r: 'studyRxjs.start-with.model.example.outputs.panel.values.r',
+        p: 'studyRxjs.start-with.model.example.outputs.panel.values.p',
+      },
     },
     latePanel$: {
-      label: 'latePanel$',
+      label: 'studyRxjs.start-with.model.example.outputs.latePanel.label',
       marbles: '------w--p-|',
       values: statuses,
       subscriptions: '------^',
+
+      valueMessages: {
+        w: 'studyRxjs.start-with.model.example.outputs.latePanel.values.w',
+        r: 'studyRxjs.start-with.model.example.outputs.latePanel.values.r',
+        p: 'studyRxjs.start-with.model.example.outputs.latePanel.values.p',
+      },
     },
   },
   run: ({ inputs: { status$ } }) => {
@@ -42,20 +60,24 @@ export const example: MarbleExample = {
     return { panel$: shown$, latePanel$: shown$ };
   },
   moments: [
-    { label: 'Seed', frame: 0 },
-    { label: 'First report', frame: 4 },
-    { label: 'Second panel opens', frame: 6 },
-    { label: 'Done', frame: 11 },
+    { label: 'studyRxjs.start-with.model.example.moments.0.label', frame: 0 },
+    { label: 'studyRxjs.start-with.model.example.moments.1.label', frame: 4 },
+    { label: 'studyRxjs.start-with.model.example.moments.2.label', frame: 6 },
+    { label: 'studyRxjs.start-with.model.example.moments.3.label', frame: 11 },
   ],
   notes: {
-    0: 'The first panel subscribes. startWith sends it waiting at once and only then subscribes to the worker’s status, so the panel has a state to show before the worker has said anything.',
-    4: 'The worker’s first report, running, arrives; the first panel now shows running in place of waiting.',
-    6: 'A second panel opens. startWith sends it waiting too, though the worker has been running since frame 4: the seed is the same for every subscriber, and this panel learns the real status only at the next report.',
-    9: 'passed arrives, and both panels show it.',
-    11: 'The worker’s status completes, and so do both panels’ streams.',
+    0: 'studyRxjs.start-with.model.example.notes.0',
+    4: 'studyRxjs.start-with.model.example.notes.4',
+    6: 'studyRxjs.start-with.model.example.notes.6',
+    9: 'studyRxjs.start-with.model.example.notes.9',
+    11: 'studyRxjs.start-with.model.example.notes.11',
   },
-  caption:
-    'Time runs in frames. A circle is an emission, with its letter; a bar is completion. A panel’s lane starts at the frame it subscribes. Step the frames to follow the seed.',
+  caption: 'studyRxjs.start-with.model.example.caption',
+
+  parameterMessages: {
+    seed: 'studyRxjs.start-with.record.parameters.seed',
+    reports: 'studyRxjs.start-with.record.parameters.reports',
+  },
 };
 
-export const model: StudyModelFunction = (parameters) => marbleModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => marbleModel(example, parameters, t);

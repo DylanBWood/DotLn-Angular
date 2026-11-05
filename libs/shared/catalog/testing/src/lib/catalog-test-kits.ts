@@ -73,7 +73,7 @@ export const catalogFixture: readonly Tool[] = [
 
 /** A complete study of the first fixture tool, for specs that need one to read. */
 export const studyFixture: ConceptStudy = {
-  schema: 'concept-study-v0',
+  schema: 'concept-study-v1',
   id: 'sample:1',
   work: 'aifg',
   slug: 'flock',

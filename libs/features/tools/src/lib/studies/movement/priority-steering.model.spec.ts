@@ -3,6 +3,7 @@ import type { StudyParameters } from '@dotln-angular/models';
 import { length } from '@dotln-angular/scene-engine';
 import { loadStudy } from '@dotln-angular/tools/testing';
 
+import { studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import type { StudyPoint } from '../study-model';
@@ -35,7 +36,9 @@ const example: PriorityParameters = {
   steps: 120,
   clearancePriority: 1,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const state = (position: number, velocity: number) => ({
   position: { x: position, y: 0 },
   velocity: { x: velocity, y: 0 },
@@ -142,15 +145,15 @@ it('makes touching visible when only priority order changes and does not promise
   expect(
     prioritySteps({ ...example, timeStep: 1 }).some(({ gap }) => gap <= example.radius * 2),
   ).toBe(true);
-  const comparison = model(parameters).comparison;
+  const comparison = model(parameters, studyTranslate).comparison;
   expect(comparison?.timeline.series[0].values).toEqual(normal.map(({ gap }) => gap));
   expect(comparison?.timeline.series[1].values).toEqual(failed.map(({ gap }) => gap));
   expect(comparison?.findings[0]).toContain('7 sampled touching moments');
 });
 
 it('keeps the prose, drawing, timeline and worked arithmetic on the same deterministic frames', () => {
-  const run = model(Object.freeze(parameters));
-  expect(run).toEqual(model(parameters));
+  const run = model(Object.freeze(parameters), studyTranslate);
+  expect(run).toEqual(model(parameters, studyTranslate));
   expect(parameters).toEqual(record.example.parameters);
   expect(run.initialStep).toBe(15);
   expect(run.motion.frames[0].worked?.lines.join(' ')).toContain(
@@ -200,13 +203,13 @@ it('keeps the prose, drawing, timeline and worked arithmetic on the same determi
 });
 
 it('changes the order, buffer and threshold through the offered live inputs', () => {
-  const normal = model(parameters);
+  const normal = model(parameters, studyTranslate);
   expect(normal.inputs?.map(({ name }) => name)).toEqual([
     'clearancePriority',
     'separationThreshold',
     'epsilon',
   ]);
-  const reversed = model({ ...parameters, clearancePriority: 2 });
+  const reversed = model({ ...parameters, clearancePriority: 2 }, studyTranslate);
   expect(
     reversed.motion.frames.some(({ values }) => Number(values['gap']) <= example.radius * 2),
   ).toBe(true);
@@ -216,12 +219,12 @@ it('changes the order, buffer and threshold through the offered live inputs', ()
   expect(reversed.comparison?.timeline.series[1].values).toEqual(
     normal.comparison?.timeline.series[0].values,
   );
-  const small = model({ ...parameters, separationThreshold: 1.25 });
-  const large = model({ ...parameters, separationThreshold: 5 });
+  const small = model({ ...parameters, separationThreshold: 1.25 }, studyTranslate);
+  const large = model({ ...parameters, separationThreshold: 5 }, studyTranslate);
   expect(Number(small.motion.frames[0].values['minimumGap'])).toBeLessThan(example.radius * 2);
   expect(Number(large.motion.frames[0].values['minimumGap'])).toBeGreaterThan(example.radius * 2);
   expect(small.motion.frames.some(({ note }) => note?.startsWith('Mica touches'))).toBe(true);
-  const silent = model({ ...parameters, epsilon: 4 });
+  const silent = model({ ...parameters, epsilon: 4 }, studyTranslate);
   expect(silent.motion.frames.every(({ bodies }) => bodies[0].x === example.initialPosition)).toBe(
     true,
   );
@@ -235,7 +238,7 @@ it('changes the order, buffer and threshold through the offered live inputs', ()
 });
 
 it('keeps every slider setting and corner finite, labelled, in bounds and true to its prose', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   expect(inputs).toHaveLength(3);
   const variants: StudyParameters[] = [];
   for (const input of inputs)
@@ -253,7 +256,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
     });
   const names = [...JSON.stringify(record).matchAll(/\{([A-Za-z]\w*)\}/g)].map((match) => match[1]);
   for (const variant of variants) {
-    const run = model(variant);
+    const run = model(variant, studyTranslate);
     const bounds = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -300,7 +303,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
         for (const right of labels.slice(leftIndex + 1))
           expect(
             Math.abs(left.labelY - right.labelY) >= 18 ||
-              Math.abs(left.x - right.x) >=
+              Math.abs(left.labelX - right.labelX) >=
                 ((left.label?.length ?? 0) + (right.label?.length ?? 0)) * 4 + 8,
           ).toBe(true);
     }

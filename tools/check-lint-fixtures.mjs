@@ -188,6 +188,35 @@ try {
       foundation.stdout,
     );
   }
+  const studyPath = 'libs/features/tools/src/lib/studies';
+  write('tsconfig.json', {
+    extends: './tsconfig.base.json',
+    include: [`${studyPath}/*.ts`],
+  });
+  for (const [name, lines] of [
+    ['compact', 5],
+    ['oversized', 81],
+  ]) {
+    write(
+      `${studyPath}/${name}.ts`,
+      `export function example(value: number) {\n${'  value += 1;\n'.repeat(lines)}  return value;\n}\n`,
+    );
+  }
+  const studyLint = run('eslint', 'eslint', [
+    '--format=json',
+    `${studyPath}/compact.ts`,
+    `${studyPath}/oversized.ts`,
+  ]);
+  assert.equal(studyLint.status, 1, studyLint.stdout + studyLint.stderr);
+  const studyResults = JSON.parse(studyLint.stdout);
+  assert.deepEqual(studyResults.find((row) => row.filePath.endsWith('/compact.ts'))?.messages, []);
+  assert.deepEqual(
+    studyResults
+      .find((row) => row.filePath.endsWith('/oversized.ts'))
+      ?.messages.map(({ ruleId }) => ruleId),
+    ['max-lines-per-function'],
+  );
+  console.log('PASS oversized study functions refused; compact study functions allowed.');
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }

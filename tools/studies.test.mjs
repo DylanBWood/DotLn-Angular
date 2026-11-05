@@ -352,11 +352,11 @@ const filed = (records = [checked()]) => {
 test('a stale summary fails until --write-summary rewrites it', () => {
   const directory = filed();
   try {
-    assert.deepEqual(checkStudies({ directory }).problems, [
+    assert.deepEqual(checkStudies({ legacy: true, directory }).problems, [
       'studies-summary.json is stale; run this check with --write-summary',
     ]);
-    assert.deepEqual(checkStudies({ directory, write: true }).problems, []);
-    assert.deepEqual(checkStudies({ directory }).problems, []);
+    assert.deepEqual(checkStudies({ legacy: true, directory, write: true }).problems, []);
+    assert.deepEqual(checkStudies({ legacy: true, directory }).problems, []);
     const summary = JSON.parse(readFileSync(join(directory, 'studies-summary.json'), 'utf8'));
     assert.deepEqual(summary, {
       schema: 'studies-summary-v0',
@@ -375,7 +375,7 @@ test('a repeated slug or id, a misplaced file and a chunk that misses a record a
       join(directory, 'aifg', 'renamed.json'),
       JSON.stringify({ ...checked(), id: 'aifg-a:112', slug: 'renamed' }),
     );
-    const { problems } = checkStudies({ directory, write: true });
+    const { problems } = checkStudies({ legacy: true, directory, write: true });
     assert.ok(problems.some((problem) => /file name differs from its slug/.test(problem)));
     assert.ok(problems.some((problem) => /slug repeats/.test(problem)));
     assert.ok(problems.some((problem) => /two records study one concept/.test(problem)));
@@ -392,7 +392,7 @@ test('a record imported but not exported by its chunk fails, because it could ne
       join(directory, 'aifg.ts'),
       "import s0 from './aifg/seek.json';\nexport default [];\n",
     );
-    const { problems } = checkStudies({ directory, write: true });
+    const { problems } = checkStudies({ legacy: true, directory, write: true });
     assert.ok(problems.some((problem) => /chunk's export differs/.test(problem)));
   } finally {
     rmSync(directory, { recursive: true });
@@ -417,7 +417,7 @@ test('a commented-out export or import stands for nothing in a chunk', () => {
       join(directory, 'aifg.ts'),
       "import s0 from './aifg/seek.json';\n// export default [s0];\nexport default [];\n",
     );
-    const { problems } = checkStudies({ directory, write: true });
+    const { problems } = checkStudies({ legacy: true, directory, write: true });
     assert.ok(problems.some((problem) => /chunk's export differs/.test(problem)));
   } finally {
     rmSync(directory, { recursive: true });
@@ -432,7 +432,7 @@ test('a type-only import brings no record into a chunk, and a record loads from 
       "import type s0 from './aifg/seek.json';\nexport default [s0];\n",
     );
     assert.ok(
-      checkStudies({ directory, write: true }).problems.some((problem) =>
+      checkStudies({ legacy: true, directory, write: true }).problems.some((problem) =>
         /chunk's export differs/.test(problem),
       ),
     );
@@ -441,7 +441,7 @@ test('a type-only import brings no record into a chunk, and a record loads from 
       "import s0 from './other/seek.json';\nexport default [s0];\n",
     );
     assert.ok(
-      checkStudies({ directory, write: true }).problems.some((problem) =>
+      checkStudies({ legacy: true, directory, write: true }).problems.some((problem) =>
         /chunk's list differs/.test(problem),
       ),
     );
@@ -454,11 +454,11 @@ test('a record that is malformed or does not parse is reported, and nothing is w
   const directory = filed();
   try {
     writeFileSync(join(directory, 'aifg', 'seek.json'), '{ not json');
-    const { problems } = checkStudies({ directory, write: true });
+    const { problems } = checkStudies({ legacy: true, directory, write: true });
     assert.match(problems.join(), /schema type/);
     assert.equal(existsSync(join(directory, 'studies-summary.json')), false);
     writeFileSync(join(directory, 'aifg', 'seek.json'), JSON.stringify({ schema: 'other' }));
-    assert.match(checkStudies({ directory, write: true }).problems.join(), /schema/);
+    assert.match(checkStudies({ legacy: true, directory, write: true }).problems.join(), /schema/);
   } finally {
     rmSync(directory, { recursive: true });
   }
@@ -499,35 +499,85 @@ test('the link check lists each cited address once, with the studies that cite i
   );
 });
 
-test('the movement batch is exactly the concepts its order names', () => {
+const firstMovementBatch = [
+  'aifg-a:110',
+  'aifg-a:112',
+  'aifg-a:116',
+  'aifg-a:118',
+  'aifg-a:120',
+  'aifg-a:123',
+  'aifg-a:125',
+  'aifg-a:131',
+  'aifg-a:144',
+  'aifg-a:145',
+  'aifg-a:149',
+  'aifg-a:151',
+  'aifg-a:153',
+  'aifg-a:174',
+  'aifg-a:175',
+  'aifg-a:177',
+  'aifg-a:181',
+  'aifg-a:186',
+  'aifg-b:354',
+  'aifg-b:373',
+];
+const secondMovementBatch = [
+  'aifg-a:105',
+  'aifg-a:162',
+  'aifg-a:108',
+  'aifg-a:169',
+  'aifg-a:192',
+  'aifg-a:196',
+  'aifg-a:111',
+  'aifg-a:134',
+  'aifg-a:137',
+  'aifg-a:139',
+  'aifg-a:143',
+  'aifg-a:157',
+  'aifg-a:163',
+  'aifg-a:166',
+  'aifg-a:173',
+  'aifg-a:90',
+  'aifg-a:94',
+  'aifg-a:101',
+  'aifg-a:102',
+  'aifg-a:103',
+];
+
+test('the first movement batch keeps every concept its order names', () => {
+  const ids = readStudies()
+    .filter(({ study }) => study.work === 'aifg')
+    .map(({ study }) => study.id);
   assert.deepEqual(
-    readStudies()
-      .filter(({ study }) => study.work === 'aifg')
-      .map(({ study }) => study.id)
-      .sort(),
-    [
-      'aifg-a:110',
-      'aifg-a:112',
-      'aifg-a:116',
-      'aifg-a:118',
-      'aifg-a:120',
-      'aifg-a:123',
-      'aifg-a:125',
-      'aifg-a:131',
-      'aifg-a:144',
-      'aifg-a:145',
-      'aifg-a:149',
-      'aifg-a:151',
-      'aifg-a:153',
-      'aifg-a:174',
-      'aifg-a:175',
-      'aifg-a:177',
-      'aifg-a:181',
-      'aifg-a:186',
-      'aifg-b:354',
-      'aifg-b:373',
-    ],
+    ids.filter((id) => firstMovementBatch.includes(id)).sort(),
+    [...firstMovementBatch].sort(),
   );
+});
+
+test('the second movement batch adds exactly its twenty concepts beside the first batch', () => {
+  const records = readStudies().filter(({ study }) => study.work === 'aifg');
+  assert.deepEqual(
+    records.map(({ study }) => study.id).sort(),
+    [...firstMovementBatch, ...secondMovementBatch].sort(),
+  );
+  const illustrative = new Set([
+    'aifg-a:105',
+    'aifg-a:192',
+    'aifg-a:196',
+    'aifg-a:157',
+    'aifg-a:173',
+    'aifg-a:90',
+    'aifg-a:94',
+  ]);
+  for (const { study } of records.filter(({ study }) => secondMovementBatch.includes(study.id))) {
+    assert.equal(study.authored.state, 'checked', study.slug);
+    assert.ok(new Set(study.authored.reviewedBy).size >= 2, study.slug);
+    assert.equal(study.visual.family, 'motion', study.slug);
+    if (!illustrative.has(study.id)) {
+      assert.equal(study.pseudocode.executable?.kind, 'typescript', study.slug);
+      assert.equal(study.pseudocode.executable.module, study.visual.model, study.slug);
+    }
+  }
 });
 
 test('the RxJS batch is exactly the concepts its order names', () => {

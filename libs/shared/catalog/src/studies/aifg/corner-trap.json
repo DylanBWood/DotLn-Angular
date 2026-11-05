@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:139",
+  "work": "aifg",
+  "slug": "corner-trap",
+  "authored": {
+    "by": "studyAifg.corner-trap.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.corner-trap.record.authored.reviewedBy.item0",
+      "studyAifg.corner-trap.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.corner-trap.record.intuition.text",
+    "situation": "studyAifg.corner-trap.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.corner-trap.record.example.name",
+    "description": "studyAifg.corner-trap.record.example.description",
+    "parameters": {
+      "startX": 8,
+      "targetX": 32,
+      "cornerX": 12,
+      "wallDepth": 16,
+      "wallRise": 12,
+      "rayForward": 4,
+      "raySide": 1,
+      "rayLength": 12,
+      "wallAcceleration": 5,
+      "maxAcceleration": 6,
+      "maxSpeed": 4,
+      "timeStep": 0.25,
+      "steps": 8,
+      "stallEpsilon": 0.001,
+      "winnerRay": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.corner-trap.record.mechanism.steps.step0.title",
+        "text": "studyAifg.corner-trap.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.corner-trap.record.mechanism.steps.step1.title",
+        "text": "studyAifg.corner-trap.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.corner-trap.record.mechanism.steps.step2.title",
+        "text": "studyAifg.corner-trap.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.corner-trap.record.mechanism.steps.step3.title",
+        "text": "studyAifg.corner-trap.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.corner-trap.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/corner-trap.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/corner-trap.model.ts",
+    "textEquivalent": "studyAifg.corner-trap.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.corner-trap.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "relevance": "studyAifg.corner-trap.record.implementations.item0.relevance",
+      "explanation": "studyAifg.corner-trap.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.corner-trap.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.corner-trap.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.corner-trap.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/RaycastObstacleAvoidance.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.corner-trap.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.corner-trap.record.limits.item0",
+    "studyAifg.corner-trap.record.limits.item1",
+    "studyAifg.corner-trap.record.limits.item2",
+    "studyAifg.corner-trap.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:138",
+      "why": "studyAifg.corner-trap.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:146",
+      "why": "studyAifg.corner-trap.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "studyAifg.corner-trap.record.nearby.item2.why"
+    }
+  ]
+}

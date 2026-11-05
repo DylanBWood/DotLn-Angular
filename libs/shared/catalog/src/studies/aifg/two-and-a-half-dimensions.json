@@ -1,0 +1,131 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:90",
+  "work": "aifg",
+  "slug": "two-and-a-half-dimensions",
+  "authored": {
+    "by": "studyAifg.two-and-a-half-dimensions.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.two-and-a-half-dimensions.record.authored.reviewedBy.item0",
+      "studyAifg.two-and-a-half-dimensions.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.two-and-a-half-dimensions.record.intuition.text",
+    "situation": "studyAifg.two-and-a-half-dimensions.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.two-and-a-half-dimensions.record.example.name",
+    "description": "studyAifg.two-and-a-half-dimensions.record.example.description",
+    "parameters": {
+      "startX": 0,
+      "startZ": 0,
+      "targetX": 12,
+      "targetZ": 9,
+      "maxSpeed": 4,
+      "maxAcceleration": 4,
+      "rampStart": 4,
+      "rampRun": 4,
+      "ledgeRun": 0,
+      "rise": 3,
+      "timeStep": 0.25,
+      "steps": 24,
+      "bodyHeight": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step0.title",
+        "text": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step1.title",
+        "text": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step2.title",
+        "text": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step3.title",
+        "text": "studyAifg.two-and-a-half-dimensions.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.two-and-a-half-dimensions.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/two-and-a-half-dimensions.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/two-and-a-half-dimensions.model.ts",
+    "textEquivalent": "studyAifg.two-and-a-half-dimensions.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.two-and-a-half-dimensions.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/godotengine/godot-demo-projects/52e30044658448149b04e8f69b475eebbfbd8f6e/3d/platformer/player/player.gd",
+      "relevance": "studyAifg.two-and-a-half-dimensions.record.implementations.item0.relevance",
+      "explanation": "studyAifg.two-and-a-half-dimensions.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyAifg.two-and-a-half-dimensions.record.implementations.item1.project",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourPathCorridor.cpp",
+      "relevance": "studyAifg.two-and-a-half-dimensions.record.implementations.item1.relevance",
+      "explanation": "studyAifg.two-and-a-half-dimensions.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.two-and-a-half-dimensions.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.two-and-a-half-dimensions.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.two-and-a-half-dimensions.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/godotengine/godot-demo-projects/52e30044658448149b04e8f69b475eebbfbd8f6e/3d/platformer/player/player.gd",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.two-and-a-half-dimensions.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.two-and-a-half-dimensions.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourCrowd.cpp",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.two-and-a-half-dimensions.record.references.item2.supports"
+    },
+    {
+      "title": "studyAifg.two-and-a-half-dimensions.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/recastnavigation/recastnavigation/v1.6.0/DetourCrowd/Source/DetourPathCorridor.cpp",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.two-and-a-half-dimensions.record.references.item3.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.two-and-a-half-dimensions.record.limits.item0",
+    "studyAifg.two-and-a-half-dimensions.record.limits.item1",
+    "studyAifg.two-and-a-half-dimensions.record.limits.item2",
+    "studyAifg.two-and-a-half-dimensions.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:89",
+      "why": "studyAifg.two-and-a-half-dimensions.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:196",
+      "why": "studyAifg.two-and-a-half-dimensions.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:168",
+      "why": "studyAifg.two-and-a-half-dimensions.record.nearby.item2.why"
+    }
+  ]
+}

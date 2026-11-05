@@ -23,9 +23,11 @@ export interface StudyReaderState {
 export const clampStep = (model: StudyModel, step: number | null) =>
   Math.max(0, Math.min(ticksOf(model).length - 1, Math.round(step ?? model.initialStep)));
 
-const nextStudy = (id: Tool['id'], studied: readonly Tool[]) => {
+const nextStudy = (id: Tool['id'], studied: readonly Tool[], titleOf: (tool: Tool) => string) => {
   const next = studied[studied.findIndex((tool) => tool.id === id) + 1];
-  return next && studied.some((tool) => tool.id === id) ? { id: next.id, title: next.title } : null;
+  return next && studied.some((tool) => tool.id === id)
+    ? { id: next.id, title: titleOf(next) }
+    : null;
 };
 
 /** The drawing at the selected moment, in the shape of the family the model is for. */
@@ -49,14 +51,17 @@ function drawingOf(
       value: reader.inputs[input.name] ?? Number(record.example.parameters[input.name]),
     })),
   };
-  if (model.family === 'motion')
+  if (model.family === 'motion') {
+    const timeline = reader.view === 'timeline' ? model.timeline : null;
     return {
       ...shared,
+      ...(timeline ? { legend: timeline.series.map(({ tone, label }) => ({ tone, label })) } : {}),
       family: 'motion',
-      view: model.timeline && reader.view === 'timeline' ? 'timeline' : 'motion',
+      view: timeline ? 'timeline' : 'motion',
       motion: model.motion,
       timeline: model.timeline,
     };
+  }
   if (model.family === 'flow') {
     // The marble diagram, when the reader switches to it, says how to read its own lanes.
     const diagram = reader.view === 'marbles' ? model.diagram : null;
@@ -78,6 +83,7 @@ export function mapStudy(
   reader: StudyReaderState,
   tools: readonly Tool[],
   studiedInOrder: readonly Tool[] = [],
+  titleOf: (tool: Tool) => string = (tool) => tool.title,
 ): StudyView {
   const step = model ? clampStep(model, reader.step) : 0;
   const tick = model ? ticksOf(model)[step] : undefined;
@@ -99,6 +105,10 @@ export function mapStudy(
     expanded: reader.expanded,
     worked: tick?.worked ?? null,
     pseudocode: record.pseudocode.ordinary,
+    executableModel:
+      executable?.kind === 'typescript'
+        ? { module: executable.module, spec: executable.module.replace(/\.ts$/, '.spec.ts') }
+        : null,
     steps: record.mechanism.steps.map(({ title, text }, index) => ({
       title,
       text: fillValues(text, values),
@@ -117,8 +127,8 @@ export function mapStudy(
     references: record.references,
     nearby: record.nearby.flatMap(({ id, why }) => {
       const tool = tools.find((candidate) => candidate.id === id);
-      return tool ? [{ id, title: tool.title, why }] : [];
+      return tool ? [{ id, title: titleOf(tool), why }] : [];
     }),
-    next: nextStudy(record.id, studiedInOrder),
+    next: nextStudy(record.id, studiedInOrder, titleOf),
   };
 }

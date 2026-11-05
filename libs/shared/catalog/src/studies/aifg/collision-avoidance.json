@@ -1,0 +1,138 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:134",
+  "work": "aifg",
+  "slug": "collision-avoidance",
+  "authored": {
+    "by": "studyAifg.collision-avoidance.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.collision-avoidance.record.authored.reviewedBy.item0",
+      "studyAifg.collision-avoidance.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.collision-avoidance.record.intuition.text",
+    "situation": "studyAifg.collision-avoidance.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.collision-avoidance.record.example.name",
+    "description": "studyAifg.collision-avoidance.record.example.description",
+    "parameters": {
+      "courierStartX": 0,
+      "courierStartY": 0,
+      "courierVelocityX": 4,
+      "courierVelocityY": 0,
+      "porterStartX": 10,
+      "porterStartY": 1,
+      "porterVelocityX": -4,
+      "porterVelocityY": 0,
+      "courierRadius": 1,
+      "porterRadius": 1,
+      "maxSpeed": 5,
+      "maxAcceleration": 6,
+      "predictionHorizon": 1.5,
+      "comparisonPorterY": 0,
+      "timeStep": 0.1,
+      "steps": 40,
+      "velocitySeconds": 1,
+      "accelerationSecondsSquared": 0.5
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.collision-avoidance.record.mechanism.steps.step0.title",
+        "text": "studyAifg.collision-avoidance.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.collision-avoidance.record.mechanism.steps.step1.title",
+        "text": "studyAifg.collision-avoidance.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.collision-avoidance.record.mechanism.steps.step2.title",
+        "text": "studyAifg.collision-avoidance.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyAifg.collision-avoidance.record.mechanism.steps.step3.title",
+        "text": "studyAifg.collision-avoidance.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.collision-avoidance.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/collision-avoidance.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/collision-avoidance.model.ts",
+    "textEquivalent": "studyAifg.collision-avoidance.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.collision-avoidance.record.implementations.item0.project",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/CollisionAvoidance.java",
+      "relevance": "studyAifg.collision-avoidance.record.implementations.item0.relevance",
+      "explanation": "studyAifg.collision-avoidance.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyAifg.collision-avoidance.record.implementations.item1.project",
+      "url": "https://github.com/meshula/OpenSteer/blob/710432341807f5597b62fa168f194f9ef2640c8e/include/OpenSteer/SteerLibrary.h",
+      "relevance": "studyAifg.collision-avoidance.record.implementations.item1.relevance",
+      "explanation": "studyAifg.collision-avoidance.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.collision-avoidance.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.collision-avoidance.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.collision-avoidance.record.references.item1.title",
+      "url": "https://github.com/libgdx/gdx-ai/blob/1.8.2/gdx-ai/src/com/badlogic/gdx/ai/steer/behaviors/CollisionAvoidance.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.collision-avoidance.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.collision-avoidance.record.references.item2.title",
+      "url": "https://github.com/meshula/OpenSteer/blob/710432341807f5597b62fa168f194f9ef2640c8e/include/OpenSteer/SteerLibrary.h",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.collision-avoidance.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.collision-avoidance.record.limits.item0",
+    "studyAifg.collision-avoidance.record.limits.item1",
+    "studyAifg.collision-avoidance.record.limits.item2",
+    "studyAifg.collision-avoidance.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:131",
+      "why": "studyAifg.collision-avoidance.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:137",
+      "why": "studyAifg.collision-avoidance.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:111",
+      "why": "studyAifg.collision-avoidance.record.nearby.item2.why"
+    },
+    {
+      "id": "aifg-a:136",
+      "why": "studyAifg.collision-avoidance.record.nearby.item3.why"
+    },
+    {
+      "id": "aifg-a:135",
+      "why": "studyAifg.collision-avoidance.record.nearby.item4.why"
+    }
+  ]
+}

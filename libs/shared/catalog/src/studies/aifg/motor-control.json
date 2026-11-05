@@ -1,0 +1,109 @@
+{
+  "schema": "concept-study-v1",
+  "id": "aifg-a:192",
+  "work": "aifg",
+  "slug": "motor-control",
+  "authored": {
+    "by": "studyAifg.motor-control.record.authored.by",
+    "on": "2026-11-04",
+    "reviewedBy": [
+      "studyAifg.motor-control.record.authored.reviewedBy.item0",
+      "studyAifg.motor-control.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyAifg.motor-control.record.intuition.text",
+    "situation": "studyAifg.motor-control.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyAifg.motor-control.record.example.name",
+    "description": "studyAifg.motor-control.record.example.description",
+    "parameters": {
+      "initialSpeed": 6,
+      "steeringLimit": 12,
+      "motorBrake": 4,
+      "weakBrake": 1,
+      "responseTime": 0.2,
+      "timeStep": 0.1,
+      "steps": 100,
+      "stopLine": 6
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyAifg.motor-control.record.mechanism.steps.step0.title",
+        "text": "studyAifg.motor-control.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyAifg.motor-control.record.mechanism.steps.step1.title",
+        "text": "studyAifg.motor-control.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyAifg.motor-control.record.mechanism.steps.step2.title",
+        "text": "studyAifg.motor-control.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyAifg.motor-control.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/movement/motor-control.model.ts"
+    }
+  },
+  "visual": {
+    "family": "motion",
+    "model": "libs/features/tools/src/lib/studies/movement/motor-control.model.ts",
+    "textEquivalent": "studyAifg.motor-control.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyAifg.motor-control.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/box2d/Box2dSteeringEntity.java",
+      "relevance": "studyAifg.motor-control.record.implementations.item0.relevance",
+      "explanation": "studyAifg.motor-control.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyAifg.motor-control.record.references.item0.title",
+      "url": "https://doi.org/10.1201/9781351053303",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.motor-control.record.references.item0.supports"
+    },
+    {
+      "title": "studyAifg.motor-control.record.references.item1.title",
+      "url": "https://www.red3d.com/cwr/steer/gdc99/",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.motor-control.record.references.item1.supports"
+    },
+    {
+      "title": "studyAifg.motor-control.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/libgdx/gdx-ai/1.8.2/tests/src/com/badlogic/gdx/ai/tests/steer/box2d/Box2dSteeringEntity.java",
+      "accessed": "2026-11-04",
+      "supports": "studyAifg.motor-control.record.references.item2.supports"
+    }
+  ],
+  "limits": [
+    "studyAifg.motor-control.record.limits.item0",
+    "studyAifg.motor-control.record.limits.item1",
+    "studyAifg.motor-control.record.limits.item2"
+  ],
+  "nearby": [
+    {
+      "id": "aifg-a:157",
+      "why": "studyAifg.motor-control.record.nearby.item0.why"
+    },
+    {
+      "id": "aifg-a:193",
+      "why": "studyAifg.motor-control.record.nearby.item1.why"
+    },
+    {
+      "id": "aifg-a:194",
+      "why": "studyAifg.motor-control.record.nearby.item2.why"
+    }
+  ]
+}

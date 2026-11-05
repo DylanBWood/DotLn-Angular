@@ -1,7 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { centroid, distance, patternSlots, subtract } from '@dotln-angular/scene-engine';
 
-import { loadStudy } from '../../../../testing/src';
+import { loadStudy, studyTranslate } from '../../../../testing/src';
 import { motionDrawing } from '../../composites/study-visuals/motion/motion-drawing';
 import { timelineDrawing } from '../../composites/study-visuals/timeline/timeline-drawing';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
@@ -26,7 +26,9 @@ const example: ScalableFormationParameters = {
   timeStep: 0.1,
   steps: 50,
 };
+
 const parameters: StudyParameters = { ...example };
+
 const record = await loadStudy('aifg-a:175');
 
 it('uses exactly the draft record parameters and pairs steps with ordinary code blocks', () => {
@@ -169,8 +171,8 @@ it('translates the proposal with the lane and anchor while spacing changes the g
 });
 
 it('supplies accessible values, the worked arithmetic and bounds for all proposals, including failure', () => {
-  const run = model(parameters);
-  expect(model(parameters)).toEqual(run);
+  const run = model(parameters, studyTranslate);
+  expect(model(parameters, studyTranslate)).toEqual(run);
   expect(run.initialStep).toBe(20);
   expect(run.moments).toHaveLength(4);
   const prose = [
@@ -180,7 +182,10 @@ it('supplies accessible values, the worked arithmetic and bounds for all proposa
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   const required = prose.flatMap(placeholdersIn);
-  for (const current of [run, model({ ...parameters, targetCount: example.comparisonCount })]) {
+  for (const current of [
+    run,
+    model({ ...parameters, targetCount: example.comparisonCount }, studyTranslate),
+  ]) {
     for (const [step, frame] of current.motion.frames.entries()) {
       for (const name of required) expect(frame.values[name], name).toBeDefined();
       for (const text of prose) expect(placeholdersIn(fillValues(text, frame.values))).toEqual([]);
@@ -225,12 +230,12 @@ it('supplies accessible values, the worked arithmetic and bounds for all proposa
 });
 
 it('shows membership, spacing and lane width changing the proposed fit', () => {
-  const inputs = model(parameters).inputs;
+  const inputs = model(parameters, studyTranslate).inputs;
   if (!inputs) throw new Error('The muster needs live controls.');
   expect(inputs.map(({ name }) => name)).toEqual(['targetCount', 'spacing', 'laneWidth']);
   const members = inputs[0];
-  const small = model({ ...parameters, [members.name]: members.min });
-  const large = model({ ...parameters, [members.name]: members.max });
+  const small = model({ ...parameters, [members.name]: members.min }, studyTranslate);
+  const large = model({ ...parameters, [members.name]: members.max }, studyTranslate);
   expect(small.motion.frames[small.initialStep].bodies).toHaveLength(4);
   expect(large.motion.frames[large.initialStep].bodies).toHaveLength(7);
   expect(large.motion.frames[large.initialStep].note).toContain('crosses the lane edges');
@@ -238,8 +243,8 @@ it('shows membership, spacing and lane width changing the proposed fit', () => {
   expect(large.comparison?.findings[1]).toContain('chosen muster');
   expect(large.comparison?.timeline.marks?.[0].tone).toBe('actual');
   const spacing = inputs[1];
-  const close = model({ ...parameters, [spacing.name]: spacing.min });
-  const wide = model({ ...parameters, [spacing.name]: spacing.max });
+  const close = model({ ...parameters, [spacing.name]: spacing.min }, studyTranslate);
+  const wide = model({ ...parameters, [spacing.name]: spacing.max }, studyTranslate);
   expect(close.motion.frames[close.initialStep].values['width']).toBe('7.00');
   expect(wide.motion.frames[wide.initialStep].values['width']).toBe('13.00');
   expect(close.motion.frames[close.initialStep].values['fitStatus']).toBe('fits the lane');
@@ -248,8 +253,8 @@ it('shows membership, spacing and lane width changing the proposed fit', () => {
     '12.00 + 2 × 0.50 = 13.00',
   );
   const lane = inputs[2];
-  const tight = model({ ...parameters, [lane.name]: lane.min });
-  const broad = model({ ...parameters, [lane.name]: lane.max });
+  const tight = model({ ...parameters, [lane.name]: lane.min }, studyTranslate);
+  const broad = model({ ...parameters, [lane.name]: lane.max }, studyTranslate);
   expect(tight.motion.frames[tight.initialStep].bodies).toEqual(
     broad.motion.frames[broad.initialStep].bodies,
   );
@@ -266,7 +271,7 @@ it('shows membership, spacing and lane width changing the proposed fit', () => {
 });
 
 it('keeps notes, labels, prose and the complete footprint sound at every control corner', () => {
-  const inputs = model(parameters).inputs ?? [];
+  const inputs = model(parameters, studyTranslate).inputs ?? [];
   const corners = inputs.reduce<readonly StudyParameters[]>(
     (runs, input) =>
       runs.flatMap((current) =>
@@ -281,7 +286,7 @@ it('keeps notes, labels, prose and the complete footprint sound at every control
     ...record.mechanism.steps.map(({ text }) => text),
   ];
   for (const current of corners) {
-    const run = model(current);
+    const run = model(current, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
     expect(run.initialStep).toBeLessThan(run.motion.frames.length);
@@ -331,7 +336,9 @@ it('keeps notes, labels, prose and the complete footprint sound at every control
       ]);
       for (const [index, first] of labels.entries())
         for (const second of labels.slice(index + 1))
-          expect(Math.hypot(first.x - second.x, first.labelY - second.labelY)).toBeGreaterThan(30);
+          expect(
+            Math.hypot(first.labelX - second.labelX, first.labelY - second.labelY),
+          ).toBeGreaterThan(30);
     }
     for (const chart of [run.timeline, run.comparison?.timeline]) {
       if (!chart) throw new Error('Both muster charts are required.');

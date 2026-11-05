@@ -1,15 +1,16 @@
-import { loadFlowStudy } from '../../../../testing/src';
+import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { ticksOf } from '../study-model';
 import { codeBlocks, fillValues, placeholdersIn } from '../study-text';
-import { example, model } from './event-message';
+import { example, model, sweepState } from './event-message';
 
 const path = 'libs/features/tools/src/lib/studies/eip/event-message.ts';
 // The record's own parameters: the order and the sweep's threshold in minutes.
 const parameters = { order: 41, staleAfter: 20 };
 
 const flowOf = (values: Readonly<Record<string, number | string>>): FlowStudyModel => {
-  const run = model(values);
+  const run = model(values, studyTranslate);
   if (run.family !== 'flow') throw new Error('The event study draws a flow.');
   return run;
 };
@@ -45,7 +46,7 @@ it('attaches the record to the Event Message row and draws it from this module',
     ...record.mechanism.steps.flatMap(({ text }) => placeholdersIn(text)),
     ...record.limits.flatMap(placeholdersIn),
   ];
-  const ticks = ticksOf(model(record.example.parameters));
+  const ticks = ticksOf(model(record.example.parameters, studyTranslate));
   for (const tick of ticks) for (const name of names) expect(tick.values[name], name).toBeDefined();
 });
 
@@ -91,7 +92,7 @@ it('gives each watcher the same entry and lets each draw its own conclusion', ()
 });
 
 it('reads the beacon fresh at first and stale later, by its age against the threshold', () => {
-  const announced = minutesIn(example.messages['v'].content);
+  const announced = minutesIn(studyMessage(studyTranslate, example.messages['v'].content));
   for (const step of [4, 8]) {
     expect(hopsAt(step)).toEqual(['v on read']);
     // Reading the beacon leaves its announcement in place.
@@ -123,10 +124,12 @@ it('leaves the old announcement standing when the beacon write fails', () => {
   // At the stale read the store's latest entry is final review while the beacon still says
   // verified: only the age gives the beacon away.
   expect(heldAt(8, 'store').at(-1)).toBe('r');
-  expect(example.messages['r'].content).toContain('final review');
-  expect(example.messages['v'].content).toContain('verified');
+  expect(studyMessage(studyTranslate, example.messages['r'].content)).toContain('final review');
+  expect(studyMessage(studyTranslate, example.messages['v'].content)).toContain('verified');
   // With an hour's threshold the same 10:30 read would pass the outdated phase as fresh.
-  const age = minutesIn(stateAt(8, 'sweep')) - minutesIn(example.messages['v'].content);
+  const age =
+    minutesIn(stateAt(8, 'sweep')) -
+    minutesIn(studyMessage(studyTranslate, example.messages['v'].content));
   expect(labelFor(age, 60)).toBe('fresh');
   expect(labelFor(age, parameters.staleAfter)).toBe('stale');
 });
@@ -153,7 +156,7 @@ it('opens at the start and says so in the text equivalent', async () => {
 
 it('explains every box and token in its caption, in the drawing the family makes', () => {
   const caption = run.caption;
-  for (const { label } of example.nodes) expect(caption).toContain(label);
+  for (const { label } of run.flow.nodes) expect(caption).toContain(label);
   for (const { key } of Object.values(example.messages)) expect(caption).toContain(`${key} is`);
   // The family draws the pattern's part with a bold name and puts the words inside each box.
   expect(caption).toContain('bold name');
@@ -179,4 +182,19 @@ it('stays legible at narrow width: few stages, short names and short states', ()
     expect(note).toBeTruthy();
     for (const state of Object.values(states)) expect(state.length).toBeLessThanOrEqual(40);
   }
+});
+
+it('keeps one observation template while changed clock data changes its computed age and judgment', () => {
+  const fresh = sweepState(10 * 60 + 7, 10 * 60, 20);
+  const stale = sweepState(10 * 60 + 7, 10 * 60, 5);
+  expect(fresh).toMatchObject({
+    key: 'studyEip.event-message.model.sweepState',
+    params: { time: '10:07', age: 7 },
+  });
+  expect(stale).toMatchObject({
+    key: 'studyEip.event-message.model.sweepState',
+    params: { time: '10:07', age: 7 },
+  });
+  expect(studyMessage(studyTranslate, fresh)).toBe('10:07: fresh, 7 min old');
+  expect(studyMessage(studyTranslate, stale)).toBe('10:07: stale, 7 min old');
 });

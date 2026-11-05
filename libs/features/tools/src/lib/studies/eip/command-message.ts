@@ -1,6 +1,9 @@
 import { type FlowExample, flowModel } from '../flow';
 import type { StudyModelFunction } from '../study-model';
 
+const firstResult = ['b'];
+const bothResults = [...firstResult, 'a'];
+
 /**
  * A kernel asks for order 41 to be verified by sending one command, which names the procedure
  * and its argument and carries the id 7, onto a dispatch channel that two sessions listen on.
@@ -11,11 +14,34 @@ import type { StudyModelFunction } from '../study-model';
  */
 export const example: FlowExample = {
   nodes: [
-    { id: 'kernel', label: 'Kernel', stage: 0 },
-    { id: 'dispatch', label: 'Dispatch', stage: 1, kind: 'channel', tone: 'subject' },
-    { id: 'sessionA', label: 'Session A', stage: 2 },
-    { id: 'sessionB', label: 'Session B', stage: 2, row: 1 },
-    { id: 'store', label: 'Event store', stage: 3 },
+    {
+      id: 'kernel',
+      label: 'studyEip.command-message.model.example.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'dispatch',
+      label: 'studyEip.command-message.model.example.nodes.1.label',
+      stage: 1,
+      kind: 'channel',
+      tone: 'subject',
+    },
+    {
+      id: 'sessionA',
+      label: 'studyEip.command-message.model.example.nodes.2.label',
+      stage: 2,
+    },
+    {
+      id: 'sessionB',
+      label: 'studyEip.command-message.model.example.nodes.3.label',
+      stage: 2,
+      row: 1,
+    },
+    {
+      id: 'store',
+      label: 'studyEip.command-message.model.example.nodes.4.label',
+      stage: 3,
+    },
   ],
   links: [
     { id: 'send', from: 'kernel', to: 'dispatch' },
@@ -27,79 +53,132 @@ export const example: FlowExample = {
   // The command is drawn as its id, so its copy looks exactly like it; each result is drawn as the
   // letter of the session that sends it.
   messages: {
-    '7': { key: '7', content: 'verify order 41, id 7' },
-    b: { key: 'b', content: 'result for 7 from B' },
-    a: { key: 'a', content: 'result for 7 from A' },
+    '7': {
+      key: '7',
+      content: 'studyEip.command-message.model.example.messages.7.content',
+    },
+    b: {
+      key: 'b',
+      content: 'studyEip.command-message.model.example.messages.b.content',
+    },
+    a: {
+      key: 'a',
+      content: 'studyEip.command-message.model.example.messages.a.content',
+    },
   },
   start: {
     states: {
-      kernel: 'wants order 41 verified',
-      dispatch: 'empty',
-      sessionA: 'busy on order 39',
-      sessionB: 'busy on order 40',
-      store: 'no result for 7',
+      kernel: 'studyEip.command-message.model.example.start.states.kernel',
+      dispatch: 'studyEip.command-message.model.example.start.states.dispatch',
+      sessionA: 'studyEip.command-message.model.example.start.states.sessionA',
+      sessionB: 'studyEip.command-message.model.example.start.states.sessionB',
+      store: 'studyEip.command-message.model.example.start.states.store',
     },
-    note: 'Nothing has moved yet, and neither session is free to take new work.',
+    note: 'studyEip.command-message.model.example.start.note',
   },
   steps: [
     {
       moves: [{ message: '7', link: 'send' }],
-      states: { kernel: 'sent 7; not waiting', dispatch: 'holds 7 for one taker' },
+      states: {
+        kernel: 'studyEip.command-message.model.example.steps.0.states.kernel',
+        dispatch: 'studyEip.command-message.model.example.steps.0.states.dispatch',
+      },
       held: { dispatch: ['7'] },
-      note: 'The kernel sends command 7, verify order 41, to the dispatch channel, and goes on with other work instead of waiting for an answer.',
+      note: 'studyEip.command-message.model.example.steps.0.note',
     },
     {
-      states: { sessionA: 'free, listening', sessionB: 'free, listening' },
-      note: 'Both sessions finish their earlier orders and start listening. Command 7 has waited in the channel for them; a direct call at step 1 would have found nobody free to answer.',
+      states: {
+        sessionA: 'studyEip.command-message.model.example.steps.1.states.sessionA',
+        sessionB: 'studyEip.command-message.model.example.steps.1.states.sessionB',
+      },
+      note: 'studyEip.command-message.model.example.steps.1.note',
     },
     {
       moves: [{ message: '7', link: 'to-b' }],
       states: {
-        dispatch: 'empty',
-        sessionA: 'free; given nothing',
-        sessionB: 'verifying order 41',
+        dispatch: 'studyEip.command-message.model.example.steps.2.states.dispatch',
+        sessionA: 'studyEip.command-message.model.example.steps.2.states.sessionA',
+        sessionB: 'studyEip.command-message.model.example.steps.2.states.sessionB',
       },
       held: { dispatch: [], sessionB: ['7'] },
-      note: 'The dispatch channel gives command 7 to Session B and to nobody else. Session A, just as free, gets nothing: a command is meant to be carried out once.',
+      note: 'studyEip.command-message.model.example.steps.2.note',
     },
     {
-      states: { kernel: 'wait for 7 ran out', sessionB: 'still verifying, slowly' },
-      note: 'Session B is slow. The kernel’s wait for an answer to 7 runs out, and from where it stands a slow session and a lost command look the same.',
+      states: {
+        kernel: 'studyEip.command-message.model.example.steps.3.states.kernel',
+        sessionB: 'studyEip.command-message.model.example.steps.3.states.sessionB',
+      },
+      note: 'studyEip.command-message.model.example.steps.3.note',
     },
     {
       moves: [{ message: '7', link: 'send' }],
-      states: { kernel: 'sent 7 again', dispatch: 'holds a copy of 7' },
+      states: {
+        kernel: 'studyEip.command-message.model.example.steps.4.states.kernel',
+        dispatch: 'studyEip.command-message.model.example.steps.4.states.dispatch',
+      },
       held: { dispatch: ['7'] },
-      note: 'So the kernel sends command 7 to the dispatch channel again. The copy is the same message as before, and the channel cannot tell it from new work.',
+      note: 'studyEip.command-message.model.example.steps.4.note',
     },
     {
       moves: [{ message: '7', link: 'to-a' }],
-      states: { dispatch: 'empty', sessionA: 'verifying order 41' },
+      states: {
+        dispatch: 'studyEip.command-message.model.example.steps.5.states.dispatch',
+        sessionA: 'studyEip.command-message.model.example.steps.5.states.sessionA',
+      },
       held: { dispatch: [], sessionA: ['7'] },
-      note: 'The dispatch channel gives the copy to Session A. Order 41 is now being verified in both sessions for a single request.',
+      note: 'studyEip.command-message.model.example.steps.5.note',
     },
     {
       moves: [{ message: 'b', link: 'b-result' }],
-      states: { sessionB: 'done with 7', store: 'one result for 7' },
-      held: { sessionB: [], store: ['b'] },
-      note: 'Session B sends its result, b, to the event store. It names command 7, so it can be matched to the request that asked for it.',
+      states: {
+        sessionB: 'studyEip.command-message.model.example.steps.6.states.sessionB',
+        store: {
+          key: 'studyEip.command-message.model.example.steps.6.states.store',
+          params: { results: firstResult.length },
+        },
+      },
+      held: { sessionB: [], store: firstResult },
+      note: 'studyEip.command-message.model.example.steps.6.note',
     },
     {
       moves: [{ message: 'a', link: 'a-result' }],
-      states: { sessionA: 'done with 7', store: 'two results for 7' },
-      held: { sessionA: [], store: ['b', 'a'] },
-      note: 'Session A sends its result, a, to the event store, also naming 7. The id shows that both answer one request, so a reader can keep one, but nothing undoes the second verification.',
+      states: {
+        sessionA: 'studyEip.command-message.model.example.steps.7.states.sessionA',
+        store: {
+          key: 'studyEip.command-message.model.example.steps.7.states.store',
+          params: { results: bothResults.length },
+        },
+      },
+      held: { sessionA: [], store: bothResults },
+      note: 'studyEip.command-message.model.example.steps.7.note',
     },
   ],
   moments: [
-    { label: 'Sent', step: 1 },
-    { label: 'One taker', step: 3 },
-    { label: 'Sent again', step: 5 },
-    { label: 'Run twice', step: 6 },
-    { label: 'Two results', step: 8 },
+    {
+      label: 'studyEip.command-message.model.example.moments.0.label',
+      step: 1,
+    },
+    {
+      label: 'studyEip.command-message.model.example.moments.1.label',
+      step: 3,
+    },
+    {
+      label: 'studyEip.command-message.model.example.moments.2.label',
+      step: 5,
+    },
+    {
+      label: 'studyEip.command-message.model.example.moments.3.label',
+      step: 6,
+    },
+    {
+      label: {
+        key: 'studyEip.command-message.model.example.moments.4.label',
+        params: { results: bothResults.length },
+      },
+      step: 8,
+    },
   ],
-  caption:
-    'Each box is one part of the example. The Kernel, the part of DotLn that decides what happens next, sends commands. Dispatch, the pipe with the bold name, is the channel the pattern relies on: a command waits there until one session takes it. Session A and Session B are the two sessions that can carry a command out, and the Event store keeps their results. A token is a message: 7 is command 7, verify order 41, and b and a are the results that Session B and Session A send back. A token is green while it moves and outlined inside the box that holds it; a box a message leaves or reaches is outlined in green, and the words inside each box say what it is doing. Step forward to move the messages on.',
+  caption: 'studyEip.command-message.model.example.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowModel(example, parameters);
+export const model: StudyModelFunction = (parameters, t) => flowModel(example, parameters, t);

@@ -1,5 +1,11 @@
 @let view = drawing();
-<svg [attr.viewBox]="view.viewBox" role="img" translate="no" [attr.aria-label]="textEquivalent()">
+<svg
+  [attr.data-step]="step()"
+  [attr.viewBox]="view.viewBox"
+  role="img"
+  translate="no"
+  [attr.aria-label]="textEquivalent()"
+>
   @for (zone of view.zones; track $index) {
     <circle
       class="zone"
@@ -60,22 +66,6 @@
       />
     }
   }
-  <g translate="no">
-    @for (body of view.bodies; track body.id) {
-      @if (body.label; as label) {
-        <text class="label" text-anchor="middle" [attr.x]="body.x" [attr.y]="body.labelY">
-          {{ label }}
-        </text>
-      }
-    }
-    @for (mark of view.marks; track $index) {
-      @if (mark.label; as label) {
-        <text class="label" text-anchor="middle" [attr.x]="mark.x" [attr.y]="mark.labelY">
-          {{ label }}
-        </text>
-      }
-    }
-  </g>
   @for (vector of view.vectors; track $index) {
     <line
       class="vector"
@@ -89,6 +79,50 @@
       <polygon class="vector-end" [attr.points]="head" [attr.data-tone]="vector.tone" />
     }
   }
+  <g>
+    @for (body of view.bodies; track body.id) {
+      @if (body.label) {
+        @if (body.labelX !== body.x || body.labelY !== body.y - 16) {
+          <line
+            class="label-guide"
+            [attr.x1]="body.x"
+            [attr.y1]="body.y"
+            [attr.x2]="body.labelX"
+            [attr.y2]="body.labelY + 4"
+          />
+        }
+      }
+    }
+    @for (mark of view.marks; track $index) {
+      @if (mark.label) {
+        @if (mark.labelX !== mark.x || mark.labelY !== mark.y - 16) {
+          <line
+            class="label-guide"
+            [attr.x1]="mark.x"
+            [attr.y1]="mark.y"
+            [attr.x2]="mark.labelX"
+            [attr.y2]="mark.labelY + 4"
+          />
+        }
+      }
+    }
+  </g>
+  <g translate="no">
+    @for (body of view.bodies; track body.id) {
+      @if (body.label; as label) {
+        <text class="label" text-anchor="middle" [attr.x]="body.labelX" [attr.y]="body.labelY">
+          {{ label }}
+        </text>
+      }
+    }
+    @for (mark of view.marks; track $index) {
+      @if (mark.label; as label) {
+        <text class="label" text-anchor="middle" [attr.x]="mark.labelX" [attr.y]="mark.labelY">
+          {{ label }}
+        </text>
+      }
+    }
+  </g>
 </svg>
 <tools-study-scrubber
   [step]="step()"

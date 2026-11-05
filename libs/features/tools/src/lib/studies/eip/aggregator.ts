@@ -2,6 +2,7 @@ import { delay, groupBy, map, merge, mergeMap, type Observable, take, toArray } 
 
 import { flowFromMarbles, type MarbleFlow } from '../flow';
 import type { MarbleExample } from '../rxjs/marbles';
+import type { StudyMessage } from '../study-message';
 import type { StudyModelFunction } from '../study-model';
 
 /** One reviewer's report on one order: the order it is about, who sent it and what it found. */
@@ -31,13 +32,38 @@ const reports = {
   C: filed(32, 'Consistency', 1),
 } as const;
 
-/** The aggregation: an order's complete set as one message, its reports' findings added up. */
+/** The numeric result shared by the executable payload and its translated description. */
+const summaryOf = (set: readonly Report[]) => ({
+  order: set[0].order,
+  findings: set.reduce((sum, { findings }) => sum + findings, 0),
+  reviewers: set.length,
+});
+
+/** The aggregation stays a locale-independent string, as the channel's contract specifies. */
 const gather = (set: readonly Report[]) => {
-  // A set is started by its first report, so it is never empty.
-  const [{ order }] = set;
-  const found = set.reduce((sum, { findings }) => sum + findings, 0);
-  return `order ${order}: ${found} findings from ${set.length} reviewers`;
+  const { order, findings, reviewers } = summaryOf(set);
+  return `order ${order}: ${findings} findings from ${reviewers} reviewers`;
 };
+
+const setMessage = (set: readonly Report[]): StudyMessage => ({
+  key: 'studyEip.aggregator.model.setSummary',
+  params: summaryOf(set),
+});
+
+const reviewerMessages: Readonly<Record<string, string>> = {
+  Criteria: 'studyEip.aggregator.model.flow.nodes.0.label',
+  Design: 'studyEip.aggregator.model.flow.nodes.1.label',
+  Consistency: 'studyEip.aggregator.model.flow.nodes.2.label',
+};
+
+const reportMessage = ({ order, from, findings }: Report): StudyMessage => ({
+  key: 'studyEip.aggregator.model.report',
+  params: { order, findings },
+  messages: { reviewer: reviewerMessages[from] },
+});
+
+const firstSet = [reports.a, reports.b, reports.c];
+const secondSet = [reports.A, reports.B, reports.C];
 
 /**
  * Three reviewers each send one report on each of two orders, all over one shared channel, so the
@@ -50,32 +76,52 @@ export const example: MarbleExample = {
   inputs: {
     // A reviewer sends its report whether or not anything is listening, so each source is hot.
     criteria$: {
-      label: 'criteria$',
+      label: 'studyEip.aggregator.model.example.inputs.criteria.label',
       hot: true,
       marbles: '-a--A',
       values: { a: reports.a, A: reports.A },
+
+      valueMessages: {
+        a: reportMessage(reports.a),
+        A: reportMessage(reports.A),
+      },
     },
     design$: {
-      label: 'design$',
+      label: 'studyEip.aggregator.model.example.inputs.design.label',
       hot: true,
       marbles: '--B----b',
       values: { B: reports.B, b: reports.b },
+
+      valueMessages: {
+        B: reportMessage(reports.B),
+        b: reportMessage(reports.b),
+      },
     },
     consistency$: {
-      label: 'consistency$',
+      label: 'studyEip.aggregator.model.example.inputs.consistency.label',
       hot: true,
       marbles: '---c-C',
       values: { c: reports.c, C: reports.C },
+
+      valueMessages: {
+        c: reportMessage(reports.c),
+        C: reportMessage(reports.C),
+      },
     },
   },
-  operator: 'groupBy(order), take(3) and toArray() per order, then delay(1)',
+  operator: 'studyEip.aggregator.model.example.operator',
   outputs: {
     ready$: {
-      label: 'ready$',
+      label: 'studyEip.aggregator.model.example.outputs.ready.label',
       marbles: '------2-1',
       values: {
-        1: 'order 31: 3 findings from 3 reviewers',
-        2: 'order 32: 2 findings from 3 reviewers',
+        1: gather(firstSet),
+        2: gather(secondSet),
+      },
+
+      valueMessages: {
+        1: setMessage(firstSet),
+        2: setMessage(secondSet),
       },
     },
   },
@@ -104,35 +150,64 @@ export const example: MarbleExample = {
     return { ready$ };
   },
   moments: [
-    { label: 'First report', frame: 1 },
-    { label: 'A second set', frame: 2 },
-    { label: 'Order 32 complete', frame: 5 },
-    { label: 'Set 2 sent on', frame: 6 },
-    { label: 'Set 1 sent on', frame: 8 },
+    { label: 'studyEip.aggregator.model.example.moments.0.label', frame: 1 },
+    { label: 'studyEip.aggregator.model.example.moments.1.label', frame: 2 },
+    { label: 'studyEip.aggregator.model.example.moments.2.label', frame: 5 },
+    { label: 'studyEip.aggregator.model.example.moments.3.label', frame: 6 },
+    { label: 'studyEip.aggregator.model.example.moments.4.label', frame: 8 },
   ],
   notes: {
-    0: 'The Criteria, Design and Consistency reviewers are each reviewing orders 31 and 32. No report has been sent, and the Aggregator holds nothing.',
-    1: 'Criteria sends a, its report on order 31, to the Aggregator. The Aggregator reads the order the report names and starts a set for order 31.',
-    2: "Design sends B, its report on order 32, down the same channel. B names order 32, so the Aggregator starts a second set for it instead of adding it to order 31's.",
-    3: "Consistency sends c, its report on order 31. The Aggregator puts it with a, in order 31's set.",
-    4: 'Criteria sends A, its report on order 32. The Aggregator puts it with B. Each set now waits for one more reviewer.',
-    5: "Consistency sends C, its report on order 32. Order 32's set now holds a report from all three reviewers, so it is complete.",
-    6: "The Aggregator sends order 32's complete set on to the Next phase as one message, 2, with its findings added up, and forgets the set. Order 31's set still waits for Design.",
-    7: "Design sends b, its report on order 31. Order 31's set is now complete.",
-    8: "The Aggregator sends order 31's set on to the Next phase as 1. Order 32 went first, although the first report to arrive was on order 31, and the Aggregator now holds nothing.",
+    0: 'studyEip.aggregator.model.example.notes.0',
+    1: 'studyEip.aggregator.model.example.notes.1',
+    2: 'studyEip.aggregator.model.example.notes.2',
+    3: 'studyEip.aggregator.model.example.notes.3',
+    4: 'studyEip.aggregator.model.example.notes.4',
+    5: 'studyEip.aggregator.model.example.notes.5',
+    6: 'studyEip.aggregator.model.example.notes.6',
+    7: 'studyEip.aggregator.model.example.notes.7',
+    8: 'studyEip.aggregator.model.example.notes.8',
   },
-  caption:
-    "Time runs in frames, one event to a frame. criteria$, design$ and consistency$ are what each reviewer sends: a, b and c are their reports on order 31, A, B and C their reports on order 32. ready$ is what the aggregator sends on: 2 is order 32's complete set and 1 is order 31's, each one frame after the report that completed it.",
+  caption: 'studyEip.aggregator.model.example.caption',
+
+  parameterMessages: {
+    first: 'studyEip.aggregator.record.parameters.first',
+    second: 'studyEip.aggregator.record.parameters.second',
+  },
 };
 
 /** The three reviewers, each line straight into the aggregator, and the next phase after it. */
 export const flow: MarbleFlow = {
   nodes: [
-    { id: 'criteria', label: 'Criteria', stage: 0 },
-    { id: 'design', label: 'Design', stage: 0, row: 1 },
-    { id: 'consistency', label: 'Consistency', stage: 0, row: 2 },
-    { id: 'aggregator', label: 'Aggregator', stage: 1, row: 1, tone: 'subject' },
-    { id: 'next', label: 'Next phase', stage: 2, row: 1 },
+    {
+      id: 'criteria',
+      label: 'studyEip.aggregator.model.flow.nodes.0.label',
+      stage: 0,
+    },
+    {
+      id: 'design',
+      label: 'studyEip.aggregator.model.flow.nodes.1.label',
+      stage: 0,
+      row: 1,
+    },
+    {
+      id: 'consistency',
+      label: 'studyEip.aggregator.model.flow.nodes.2.label',
+      stage: 0,
+      row: 2,
+    },
+    {
+      id: 'aggregator',
+      label: 'studyEip.aggregator.model.flow.nodes.3.label',
+      stage: 1,
+      row: 1,
+      tone: 'subject',
+    },
+    {
+      id: 'next',
+      label: 'studyEip.aggregator.model.flow.nodes.4.label',
+      stage: 2,
+      row: 1,
+    },
   ],
   links: [
     { id: 'from-criteria', from: 'criteria', to: 'aggregator' },
@@ -148,20 +223,44 @@ export const flow: MarbleFlow = {
   },
   states: {
     0: {
-      criteria: 'reviewing 31, 32',
-      design: 'reviewing 31, 32',
-      consistency: 'reviewing 31, 32',
-      aggregator: 'no sets yet',
-      next: 'no set yet',
+      criteria: 'studyEip.aggregator.model.flow.states.0.criteria',
+      design: 'studyEip.aggregator.model.flow.states.0.design',
+      consistency: 'studyEip.aggregator.model.flow.states.0.consistency',
+      aggregator: 'studyEip.aggregator.model.flow.states.0.aggregator',
+      next: 'studyEip.aggregator.model.flow.states.0.next',
     },
-    1: { criteria: 'sent 31; 32 to go', aggregator: '31:a' },
-    2: { design: 'sent 32; 31 to go', aggregator: '31:a · 32:B' },
-    3: { consistency: 'sent 31; 32 to go', aggregator: '31:a,c · 32:B' },
-    4: { criteria: 'sent 31 and 32', aggregator: '31:a,c · 32:A,B' },
-    5: { consistency: 'sent 31 and 32', aggregator: '31:a,c · 32:A,B,C' },
-    6: { aggregator: '31:a,c', next: 'has set 2 (order 32)' },
-    7: { design: 'sent 31 and 32', aggregator: '31:a,b,c' },
-    8: { aggregator: 'no sets', next: 'has sets 2 and 1' },
+    1: {
+      criteria: 'studyEip.aggregator.model.flow.states.1.criteria',
+      aggregator: 'studyEip.aggregator.model.flow.states.1.aggregator',
+    },
+    2: {
+      design: 'studyEip.aggregator.model.flow.states.2.design',
+      aggregator: 'studyEip.aggregator.model.flow.states.2.aggregator',
+    },
+    3: {
+      consistency: 'studyEip.aggregator.model.flow.states.3.consistency',
+      aggregator: 'studyEip.aggregator.model.flow.states.3.aggregator',
+    },
+    4: {
+      criteria: 'studyEip.aggregator.model.flow.states.4.criteria',
+      aggregator: 'studyEip.aggregator.model.flow.states.4.aggregator',
+    },
+    5: {
+      consistency: 'studyEip.aggregator.model.flow.states.5.consistency',
+      aggregator: 'studyEip.aggregator.model.flow.states.5.aggregator',
+    },
+    6: {
+      aggregator: 'studyEip.aggregator.model.flow.states.6.aggregator',
+      next: 'studyEip.aggregator.model.flow.states.6.next',
+    },
+    7: {
+      design: 'studyEip.aggregator.model.flow.states.7.design',
+      aggregator: 'studyEip.aggregator.model.flow.states.7.aggregator',
+    },
+    8: {
+      aggregator: 'studyEip.aggregator.model.flow.states.8.aggregator',
+      next: 'studyEip.aggregator.model.flow.states.8.next',
+    },
   },
   held: {
     1: { aggregator: ['a'] },
@@ -173,8 +272,49 @@ export const flow: MarbleFlow = {
     7: { aggregator: ['a', 'b', 'c'] },
     8: { aggregator: [], next: ['2', '1'] },
   },
-  caption:
-    "Each token is one reviewer's report on one order: a, b and c are the Criteria, Design and Consistency reviewers' reports on order 31, and A, B and C the same reviewers' reports on order 32. Tokens 1 and 2 are the complete sets for orders 31 and 32. The orders themselves never move; only reports about them do. Criteria, Design and Consistency are the three reviewers, and their three lines into the Aggregator are one shared channel, so reports on both orders arrive mixed. The Aggregator keeps a set of reports for each order, and the Next phase is where an order's set goes once all three reviewers have reported on it. The words in a box say what that box is doing or holding; in the Aggregator, 31:a,c means order 31's set holds a and c. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green; where several tokens do not fit apart, one capsule names them all.",
+  caption: 'studyEip.aggregator.model.flow.caption',
 };
 
-export const model: StudyModelFunction = (parameters) => flowFromMarbles(example, flow, parameters);
+export const model: StudyModelFunction = (parameters, t) =>
+  flowFromMarbles(example, flow, parameters, t);
+
+/** Change findings while retaining the reviewers, channel, timing and aggregation rule. */
+export function withFindings(
+  changes: Partial<Record<keyof typeof reports, number>>,
+): MarbleExample {
+  const next = Object.fromEntries(
+    Object.entries(reports).map(([key, report]) => [
+      key,
+      { ...report, findings: changes[key as keyof typeof reports] ?? report.findings },
+    ]),
+  ) as typeof reports;
+  const first = [next.a, next.b, next.c];
+  const second = [next.A, next.B, next.C];
+  return {
+    ...example,
+    inputs: {
+      criteria$: {
+        ...example.inputs['criteria$'],
+        values: { a: next.a, A: next.A },
+        valueMessages: { a: reportMessage(next.a), A: reportMessage(next.A) },
+      },
+      design$: {
+        ...example.inputs['design$'],
+        values: { B: next.B, b: next.b },
+        valueMessages: { B: reportMessage(next.B), b: reportMessage(next.b) },
+      },
+      consistency$: {
+        ...example.inputs['consistency$'],
+        values: { c: next.c, C: next.C },
+        valueMessages: { c: reportMessage(next.c), C: reportMessage(next.C) },
+      },
+    },
+    outputs: {
+      ready$: {
+        ...example.outputs['ready$'],
+        values: { 1: gather(first), 2: gather(second) },
+        valueMessages: { 1: setMessage(first), 2: setMessage(second) },
+      },
+    },
+  };
+}
