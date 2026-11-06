@@ -205,8 +205,7 @@ A record field is not an exemption from translation. The house menu stays in the
 script.
 
 The surface's look is refined through repeated rendered pairs. A preference informs the next
-comparison; the operator alone ends that process, and ended it for this surface on
-2026-10-28. The preferences put contents beside the reading and explanations behind
+comparison; the operator alone ends that process. Contents sit beside the reading and explanations behind
 disclosures, and several explanations can stay open for cross-reference. Decided
 alternatives are removed during execution; screenshots, decisions and an implementation
 record preserve the history, and no comparison switches remain in the application.
@@ -216,8 +215,16 @@ Content, usability and usefulness are addressed before UI polish.
 
 A study explains one concept from several sides, on one example, in its author's own words. It sits
 in the reading below the definition, marked as authored, and the definition keeps its provenance
-beside it. The operator's direction for what a study is lives in the launchpad's
-`docs/product/concept-study.md`.
+beside it. Choose complementary explanations for the idea: intuition and a concrete
+situation, an inspectable visual with a text equivalent, ordinary pseudocode, an
+RxJS reading where streams clarify the mechanism, attributed public implementations
+and references, and limits and nearby concepts. Connect those views through the
+same example where practical, so a reader can recognize a drawing element in the
+algorithm and see what changes with an input. Distinguish illustrative readings
+from executable, tested ones, and authored examples from mined definitions. Omit
+representations the idea does not need; never fill missing material with invented
+references or empty sections. Choose the visual medium for what it explains, keep
+it legible at narrow widths and give motion deliberate controls.
 
 ### The record
 
@@ -330,8 +337,8 @@ with a thin guide back to the unchanged point. It reserves space for the larger 
 font; all guides render before all names, and names render above vectors with a surface-coloured
 outline. The corpus check retains every
 supplied name on every default frame, and browser regressions measure real glyphs at narrow and
-operator-sized viewports. The placement decision and corpus comparison are in the launchpad's
-WO-028-D026. `timeline` draws series over time with the moment marked, or a still chart when it has
+operator-sized viewports. The [placement decision and corpus comparison](../../dotln/evidence/WO-028/decisions.md#wo-028-d026)
+record the evidence behind this behavior. `timeline` draws series over time with the moment marked, or a still chart when it has
 no step. `marbles` draws a marble diagram: the input streams and the streams the operator opens
 above the operator's band, the outputs below it, time in frames left to right with every frame
 numbered, the stepped frame as a dotted line down every lane with its emissions ringed, a stream
@@ -354,8 +361,10 @@ share one capsule naming them all, and a line that skips a stage runs round the 
 gutter. A node keeps room for the longest state it ever has, so the drawing keeps one shape from
 step to step, and a name too wide for its box is scaled to fit. A message moving at the selected
 step glides in from its sender; under a reduced-motion preference it is simply there. The slider
-names the step out of the last. The look was chosen in eight rendered rounds that the operator ended
-on 2026-11-01 (the launchpad's `docs/evidence/WO-022/design/`). A flow whose example runs offers a switch between Flow and Marbles, the marble
+names the step out of the last. The design records are in the launchpad repository
+`dylanwoodconsulting/DotLn-Enterprise-Starter`, under
+[`docs/evidence/WO-022/design/`](https://github.com/dylanwoodconsulting/DotLn-Enterprise-Starter/tree/a33191ae54f68ea9d0051f2dc9f54ccd1a1069fa/docs/evidence/WO-022/design).
+A flow whose example runs offers a switch between Flow and Marbles, the marble
 diagram of the same run at the same step, which then shows its own legend and caption. `scrubber`
 and `inputs` are the controls they share. The other names in `visualFamilies`, `states` and
 `relations`, land with the batch that first needs each.

@@ -35,6 +35,15 @@ generators in a second worktree: `npx nx daemon --stop`. Use `npx nx reset` to
 clear a confused cache. `.nx/cache` is local to each worktree. Local development
 permits the daemon; CI and the external gate set `NX_DAEMON=false`.
 
+`nx.json` sets `cli.cache.enabled` to `false`: Angular resolves a relative CLI
+cache path through a linked worktree's common Git directory to the base checkout,
+so worktrees would share that cache. Nx caching stays local in `.nx/cache`.
+Disabling the additional Angular cache also disables dev-server dependency
+prebundling and produces a warning on each serve. An absolute cache path would
+restore prebundling but make tracked configuration machine-specific. Reopen this
+choice when Angular supports a portable worktree-local cache setting or when
+dev-server rebuild time becomes a concern.
+
 ## 3. Libraries and import paths
 
 Shared libraries belong under `libs/shared/` and import as
@@ -56,7 +65,8 @@ its constraint ready and no project yet. The shell library is tagged `scope:dotl
 
 An importable library's `index.ts` contains only
 `export * from './public_api';`; `public_api.ts` lists exports explicitly.
-A feature exposes only its routes. Inside a feature, import relatively instead
+A feature library exports only its routes from `index.ts`: either directly or
+through a `public_api.ts` that names only those routes. Inside a feature, import relatively instead
 of importing its own alias. Do not create circular dependencies through barrels.
 
 ## 5. Testing
@@ -221,8 +231,9 @@ it. Replace the generator's text when the library gets its first code.
 ## 20. Commits and pull requests
 
 Write conventional commits in the present imperative. Open pull requests with a
-bare conventional title; the title workflow prepends the type's gitmoji from
-`.github/gitmoji-map.json`. The operator reviews the code and automated review
+supported gitmoji prefix and a subject, without a conventional type. The title
+workflow leaves that title as written; it also accepts a conventional title and
+prepends its type's gitmoji from `.github/gitmoji-map.json`. The operator reviews the code and automated review
 comments before final review, and merges with a merge commit whose message is
 the pull-request title. Repository settings are operator-owned. The launchpad
 route opens a draft after verification; final publication reuses that branch and
@@ -232,8 +243,12 @@ pull request and marks it ready.
 
 Fix an encountered defect in the same change or board it visibly with a skipped
 failing test and `// BOARDED: <follow-up>`, or a visible "not implemented" surface.
-Record the follow-up and its reopening condition in the change. CI prints the
-board count. Do not conceal failed checks with a suppression or passing stub.
+Record the follow-up and its reopening condition in the change. Put the marker
+at the defect's site, in a tool or workflow as in a library, using the file's comment
+syntax: `//` or `/*` in scripts and Sass, `<!--` in HTML, and `#` in YAML. The
+comment token must be the first nonblank text on the line, followed by `BOARDED:`;
+each line counts once. CI counts these markers in tracked files outside `docs/`
+and `node_modules`; strings, inline occurrences and JSON do not count. Do not conceal failed checks with a suppression or passing stub.
 
 ## 22. Sub-apps
 
@@ -264,5 +279,6 @@ and [catalog rules](../../ai-reference/catalog-rules.md).
 
 Every tool script states its purpose and its status, in a gate, a helper or a module,
 in [the scripts reference](scripts.md). `npm run check:scripts` refuses an npm script or
-a file directly under `tools/scripts` that the reference does not name. A tool stays because it is useful, and a check runs in the gate only when it
+a file directly under `tools/scripts` without a table row, and refuses rows naming
+nonexistent scripts or direct modules. A tool stays because it is useful, and a check runs in the gate only when it
 protects something worth checking on every change.

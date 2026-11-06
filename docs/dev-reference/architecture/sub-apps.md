@@ -24,7 +24,8 @@ actor board. It has no store or facade because it has no data to orchestrate.
 ## How a feature library is laid out
 
 `libs/features/board` shows the whole shape without a simulation. Its `src/index.ts` exports only
-`boardRoutes`, from `src/lib/board.routes.ts`, and the directories under
+`boardRoutes`, from `src/lib/board.routes.ts`. A feature may also re-export a
+`public_api.ts` that names only its routes, as Tools does. The directories under
 `libs/features/board/src/lib/` name what each file is allowed to know
 ([the taxonomy](component-taxonomy.md)):
 
