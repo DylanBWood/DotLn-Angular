@@ -17,8 +17,10 @@
 - Tag each project with one `scope:*` and one `type:*`; obey root ESLint constraints.
 - Add library aliases under `@dotln-angular/`. Avoid self-alias imports.
 - Run `npm run lint`, `npm test`, `npm run build`, `npm run format:check`,
-  `npm run test:tooling`, `npm run typecheck:e2e` and `npm run e2e`. Run
+  `npm run typecheck:e2e` and `npm run e2e`. Run
   `npm run lint:fixtures` only when changing lint policy.
+- `npm run lint` includes `npm run test:tooling` through the workspace-tools target.
+  CI runs the affected projects' targets and the workspace checks once.
 - Install Chromium first with `npx playwright install --with-deps chromium`.
 - Fix failures. Never disable a lint or type check to make a gate green.
 - Record defects that cannot be fixed and make their boards visible.
@@ -26,9 +28,11 @@
 - Update both reference roots when conventions or commands change.
 - State every npm script and tool script's purpose and status in
   `docs/dev-reference/workspace/scripts.md`; `npm run check:scripts` refuses an npm
-  script or a file directly under `tools/scripts` that the document does not name.
+  script or a file directly under `tools/scripts` without a table row, and a row
+  naming a script or direct module that does not exist.
 - Leave `docs/dotln/` record movement to the launchpad's final-review route.
-- Write conventional commit subjects. Leave GitHub title decoration to the workflow.
+- Write conventional commit subjects. Use a supported gitmoji and subject for
+  pull-request titles; the workflow preserves it and decorates conventional titles.
 - Keep branch publication, merges and repository settings within explicit authority.
 
 See [the component taxonomy and rules](component-rules.md) for the UI, shell and board.

@@ -5,6 +5,20 @@ import { decorateTitle, updateTitle } from './pr-title.mjs';
 
 const map = JSON.parse(readFileSync(new URL('../.github/gitmoji-map.json', import.meta.url)));
 
+test('a supported shortcode or emoji and an untyped subject stays as written', () => {
+  for (const { shortcode, emoji } of Object.values(map)) {
+    for (const prefix of [shortcode, emoji]) {
+      const title = `${prefix} Make the gate tools say what is so`;
+      assert.equal(decorateTitle(title), title);
+    }
+  }
+});
+
+test('a bare subject without a gitmoji or conventional type is refused', () => {
+  assert.throws(() => decorateTitle('Make the gate tools say what is so'));
+  assert.throws(() => decorateTitle(':memo:   '));
+});
+
 test('every supported conventional type gains its gitmoji exactly once', () => {
   for (const [type, { shortcode, emoji }] of Object.entries(map)) {
     const subject = `${type}(workspace)!: update the workspace`;
@@ -73,6 +87,18 @@ test('a rerun leaves an already decorated current title unchanged', () => {
     return { status: 0, stdout: JSON.stringify({ title: ':bug: fix: newer title' }) };
   });
   assert.equal(changed, false);
+  assert.equal(calls, 1);
+});
+
+test('the workflow leaves a current gitmoji-and-subject title unchanged', () => {
+  let calls = 0;
+  assert.equal(
+    updateTitle(event, () => {
+      calls++;
+      return { status: 0, stdout: JSON.stringify({ title: ':memo: Make the documents accurate' }) };
+    }),
+    false,
+  );
   assert.equal(calls, 1);
 });
 

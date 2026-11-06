@@ -42,33 +42,33 @@ environment and proxy, which `npx nx serve dotln --configuration=local` uses.
 
 ## Where things live
 
-| Path                               | Purpose                                                                                  |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- |
-| `apps/dotln/src/main.ts`           | Standalone bootstrap                                                                     |
-| `apps/dotln/src/app/app.config.ts` | Provider composition: core, HTTP, storage, state, i18n and UI                            |
-| `apps/dotln/src/app/app.ts`        | The shell: the sub-app menu's links and the router outlet, projected into the app layout |
-| `apps/dotln/src/app/app.routes.ts` | Root redirect, lazy sub-app routes and the not-found fallback                            |
-| `apps/dotln/src/environments`      | Development, mocked and production environments; local ones are generated                |
-| `apps/dotln/public/i18n`           | Translation catalogs (`en.json`)                                                         |
-| `apps/dotln-e2e`                   | Chromium behavior, accessibility, responsive and visual tests                            |
-| `libs/dotln/shell`                 | App layout, sub-app menu, shell notices and the not-found page                           |
-| `libs/features`                    | The sub-apps and their data-access libraries                                             |
-| `libs/shared/core`                 | Environment, tokens, routes, providers; `testing` entry point                            |
-| `libs/shared/utils`                | `R` and `RA` with house declarations and upstream-derived specs                          |
-| `libs/shared/i18n`                 | Transloco loading, missing keys, `TPipe`; `testing` entry point                          |
-| `libs/shared/ui`                   | House components, the plain and field skins, and the lazy `@dotln-angular/ui/menu` entry |
-| `libs/shared/models`               | Shared types and the versioned contracts: the board, `tool-v1` and `concept-study-v1`    |
-| `libs/shared/events`               | Every event group, by source tier                                                        |
-| `libs/shared/state`                | App stores: feature flags, errors and navigation                                         |
-| `libs/shared/data-access`          | Commands, persistence, interceptors and the mock-worker start                            |
-| `libs/shared/catalog`              | The catalog's data, studies, schemas, loader and reading store                           |
-| `libs/shared/scene-engine`         | The pure scene engine                                                                    |
-| `eslint.config.mjs`                | Shared lint rules, token-name rule and dependency constraints                            |
-| `tools/scripts`                    | Environment primer, structural checks, translation extraction and the catalog pipeline   |
-| `tools/lint-fixtures`              | Deliberate violations each check and lint rule must reject                               |
-| `.github/workflows`                | CI and pull-request title automation                                                     |
-| `docs/ai-reference`                | Concise operating instructions for coding sessions                                       |
-| `docs/dotln`                       | Order and review records, populated by the launchpad at final review                     |
+| Path                               | Purpose                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/dotln/src/main.ts`           | Standalone bootstrap                                                                                                                                                                                                                                                                                                                                        |
+| `apps/dotln/src/app/app.config.ts` | Provider composition: core, HTTP, storage, state, i18n and UI                                                                                                                                                                                                                                                                                               |
+| `apps/dotln/src/app/app.ts`        | The shell: the sub-app menu's links and the router outlet, projected into the app layout                                                                                                                                                                                                                                                                    |
+| `apps/dotln/src/app/app.routes.ts` | Root redirect, lazy sub-app routes and the not-found fallback                                                                                                                                                                                                                                                                                               |
+| `apps/dotln/src/environments`      | Development, mocked and production environments; local ones are generated                                                                                                                                                                                                                                                                                   |
+| `apps/dotln/public/i18n`           | Translation catalogs (`en.json`)                                                                                                                                                                                                                                                                                                                            |
+| `apps/dotln-e2e`                   | Chromium behavior, accessibility, responsive and visual tests                                                                                                                                                                                                                                                                                               |
+| `libs/dotln/shell`                 | App layout, sub-app menu, shell notices and the not-found page                                                                                                                                                                                                                                                                                              |
+| `libs/features`                    | The sub-apps and their data-access libraries                                                                                                                                                                                                                                                                                                                |
+| `libs/shared/core`                 | Environment, tokens, routes, providers; `testing` entry point                                                                                                                                                                                                                                                                                               |
+| `libs/shared/utils`                | `R` and `RA` with house declarations and upstream-derived specs                                                                                                                                                                                                                                                                                             |
+| `libs/shared/i18n`                 | Transloco loading, missing keys, `TPipe`; `testing` entry point                                                                                                                                                                                                                                                                                             |
+| `libs/shared/ui`                   | House components, the plain and field skins, and the lazy `@dotln-angular/ui/menu` entry                                                                                                                                                                                                                                                                    |
+| `libs/shared/models`               | Shared types and the versioned contracts: the board, `tool-v1` and `concept-study-v1`                                                                                                                                                                                                                                                                       |
+| `libs/shared/events`               | Every event group, by source tier                                                                                                                                                                                                                                                                                                                           |
+| `libs/shared/state`                | App stores: feature flags, errors and navigation                                                                                                                                                                                                                                                                                                            |
+| `libs/shared/data-access`          | Commands, persistence, interceptors and the mock-worker start                                                                                                                                                                                                                                                                                               |
+| `libs/shared/catalog`              | The catalog's data, studies, schemas, loader and reading store                                                                                                                                                                                                                                                                                              |
+| `libs/shared/scene-engine`         | The pure scene engine                                                                                                                                                                                                                                                                                                                                       |
+| `eslint.config.mjs`                | Shared lint rules, token-name rule and dependency constraints                                                                                                                                                                                                                                                                                               |
+| `tools/scripts`                    | Environment primer, structural checks, translation extraction and the catalog pipeline                                                                                                                                                                                                                                                                      |
+| `tools/lint-fixtures`              | Deliberate violations each check and lint rule must reject                                                                                                                                                                                                                                                                                                  |
+| `.github/workflows`                | CI and pull-request title automation                                                                                                                                                                                                                                                                                                                        |
+| `docs/ai-reference`                | Concise operating instructions for coding sessions                                                                                                                                                                                                                                                                                                          |
+| `docs/dotln`                       | Order and review records filed verbatim at final review; their relative links resolve from the original `docs/` paths in the launchpad repository `dylanwoodconsulting/DotLn-Enterprise-Starter`, at the `FinalReviewCompleted` event's `checkpointSha` in `docs/control/orders/WO-NNN.jsonl`. That checkpoint is local and may not be published on GitHub. |
 
 ## Checks
 
@@ -78,18 +78,13 @@ npm test
 npm run build
 npm run e2e
 npm run format:check
-npm run test:tooling
 npm run typecheck:e2e
-npm run check:templates
-npm run check:tokens
-npm run check:kits
-npm run i18n:check
-npm run typecheck:foundations
 ```
 
-`npm run lint` already runs the workspace checks in this list;
+`npm run lint` includes `npm run test:tooling` and the other workspace checks;
 [the scripts reference](workspace/scripts.md) says what each protects. The registered
-gate uses the same Nx commands with `NX_DAEMON=false`. Unit tests
+gate uses the same Nx commands with `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false`.
+CI runs the affected projects' targets and the workspace checks once. Unit tests
 run once, through Angular's Vitest integration in the app and Nx's Vitest executor in
 the libraries. Playwright starts the application itself. Keep all commands read-only with respect to versioned source; build,
 coverage, cache and browser reports belong in ignored directories.

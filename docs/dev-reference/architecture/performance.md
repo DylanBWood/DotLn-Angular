@@ -47,6 +47,16 @@ frames after the visible result. Neither metric proves total task completion
 outside the scripted journeys. Missing supported entries remain visible in the
 report. Timings are currently diagnostic, while journey assertions block.
 
+## The root scene
+
+The root opens `/scene`, but `perf:sample` covers the catalog journeys above; it
+does not measure scene cold load or steady-state frame work. The scene has a
+structural bound of at most one signal write per frame, with painting outside
+change detection ([scene rules](../../ai-reference/scene-rules.md)). That bound
+limits change-detection work, not frame time. Add scene startup and steady-state
+sampling when an observed scene performance concern needs measurement; retain
+the catalog journeys and use equivalent builds and profiles for the comparison.
+
 ## Calibrating and revising budgets
 
 The inherited Angular limits (initial 500 kB warning / 1 MB error, component

@@ -30,9 +30,10 @@ npm test
 npm run build
 npm run e2e
 npm run format:check
-npm run test:tooling
 npm run typecheck:e2e
 ```
+
+`npm run lint` includes `npm run test:tooling` through the workspace-tools target.
 
 Read on:
 
@@ -50,5 +51,7 @@ Read on:
 Applications live in `apps/`; feature and shared libraries live in `libs/`. The
 workspace uses Sass, ESLint flat configuration, Prettier, tagged
 dependency boundaries and a cache local to each worktree. Pull requests run the
-checks above, the bundle check and the visual suite in GitHub Actions, and a separate
-workflow adds the conventional type's gitmoji to their titles.
+affected projects' lint, test, build and e2e targets in GitHub Actions, alongside
+the workspace checks, e2e type check, formatting, board count, bundle check and
+visual suite. The title workflow preserves a supported gitmoji and subject as
+written and adds the type's gitmoji to a conventional title.

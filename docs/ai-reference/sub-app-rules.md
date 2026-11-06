@@ -22,9 +22,14 @@
 - Record generator commands and results, and replace the generated READMEs of the
   library and its `testing` entry point. Keep strict compiler checks, stories, DOM
   tests, keyboard checks, axe and 360/768/1440 viewport checks current.
-- Run `npx nx format:check`, `npx nx run-many -t lint test build`,
-  `npm run lint:components`, `npm run lint:hygiene`, `npm run check:fixtures`,
-  `npm run i18n:check` and `npx nx e2e dotln-e2e`.
+- Run the registered gate's plain tier in order: `npm ci`,
+  `npx nx run-many -t lint`, `npm run typecheck:e2e`, `npx nx run-many -t test`
+  and `npx nx format:check`. Lint includes the workspace checks; run them only once.
+  Set `NX_DAEMON=false` and `NX_ISOLATE_PLUGINS=false` for these gate commands.
+- For a change that adds a route or a page, also run the review tier:
+  `npx nx run-many -t build`, `npx nx run-many -t e2e` and
+  `npx nx e2e-visual dotln-e2e`. Install Chromium first with
+  `npx playwright install --with-deps chromium`; inspect the visual results.
 - Run `npm run check:bundle` when changing production code or import boundaries.
   Attribute initial growth against the base and follow the performance-budget
   process before handoff; a warning requires engineering judgment, not automatic

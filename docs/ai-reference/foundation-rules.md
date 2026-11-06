@@ -30,8 +30,10 @@
 - Export `provide<Name>TestKit()` for each `@Injectable` class and token through its
   library's `testing` entry point. Spread a kit's providers in TestBed setups.
   Import same-library helpers relatively and consumer helpers through aliases.
-- Keep `index.ts` to `export * from './public_api';`. Name public exports in
-  `public_api.ts`; keep testing helpers out of the production API.
+- Keep an importable library's `index.ts` to `export * from './public_api';`.
+  Name public exports in `public_api.ts`; keep testing helpers out of the production
+  API. A feature library exports only its routes from `index.ts`; it may name the
+  routes directly or re-export a `public_api.ts` that names only those routes.
 - Use ECMAScript `#private` and `readonly` members. Keep signals and the existing
   underscore opt-out for intentionally unused variables.
 - Run `npm run check:templates`, `npm run check:tokens`, `npm run check:kits`,
