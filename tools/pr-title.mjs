@@ -12,8 +12,11 @@ export function decorateTitle(title) {
   const subject = prefix ? title.slice(prefix.length + 1) : title;
   const match = /^(?<type>[a-z]+)(?:\([^()]+\))?!?: \S.*$/u.exec(subject);
   const type = match?.groups.type;
+  if (prefix && /\S/u.test(subject) && !match) return title;
   if (!type || !Object.hasOwn(gitmoji, type)) {
-    throw new Error('Use a conventional title: type(scope)?: subject, with a supported type.');
+    throw new Error(
+      'Use a supported gitmoji and subject, or type(scope)?: subject with a supported type.',
+    );
   }
   const { shortcode, emoji } = gitmoji[type];
   // A prefix for the title's own type stays as written; any other prefix is
@@ -50,6 +53,7 @@ export function updateTitle(event, run = spawnSync) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
+    // BOARDED: Fork pull-request titles still need a base-context edit route.
     throw new Error(
       'Title update failed. Check Actions workflow permissions for pull-requests: write.',
     );
