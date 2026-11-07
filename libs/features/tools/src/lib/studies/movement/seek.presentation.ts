@@ -1,70 +1,86 @@
 import { distance, dot, length, scale, subtract } from '@dotln-angular/scene-engine';
 
 import { drawingWidth } from '../drawing';
+import { createNumberFormat } from '../number-format';
 import type {
   MotionFrame,
-  MotionLink,
-  MotionMark,
   MotionStudyModel,
+  StudyComparison,
+  StudyMoment,
   StudyWorkedStep,
+  TimelineModel,
 } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { fixed, motionPoints, pair } from './presentation';
+import { type MotionLabelRow, motionPoints, withLabelRow } from './presentation';
 import {
   beaconOf,
-  calculateSeekStep,
   type SeekParameters,
+  type SeekSample,
   seekSamples,
   type SeekState,
-  type SeekStep,
   sweptAngles,
 } from './seek.simulation';
 
-function workedStep(
-  t: StudyTranslate,
-  state: SeekState,
-  step: number,
-  example: SeekParameters,
-  calculation: SeekStep,
-): StudyWorkedStep {
+interface SeekFrameDescription {
+  readonly example: SeekParameters;
+  readonly sample: SeekSample;
+  readonly step: number;
+  readonly angle: number;
+  readonly states: readonly SeekState[];
+}
+interface SeekMoments {
+  readonly initialStep: number;
+  readonly circuit: number;
+  readonly returning: number;
+}
+
+const { number: fixed, vector: pair } = createNumberFormat({ normalizeNegativeZero: true });
+
+function workedStep(t: StudyTranslate, frame: SeekFrameDescription): StudyWorkedStep {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const { offset, acceleration, trialVelocity, next } = calculation;
   const seconds = step * example.timeStep;
   return {
-    title: t('studyAifg.seek.model.workedWorkedStepSeconds', {
+    title: t('studyAifg.seek.model.worked.workedStepSeconds', {
       seconds: fixed(seconds),
-      seconds2: fixed(seconds + example.timeStep),
+      nextSeconds: fixed(seconds + example.timeStep),
     }),
     lines: [
-      t('studyAifg.seek.model.workedBeaconMinusMica', {
-        value1: pair(beaconOf(example)),
+      t('studyAifg.seek.model.worked.beaconMinusMica', {
+        beaconPosition: pair(beaconOf(example)),
         statePosition: pair(state.position),
         offset: pair(offset),
       }),
-      t('studyAifg.seek.model.workedDistance', {
+      t('studyAifg.seek.model.worked.distance', {
         offsetX: fixed(offset.x),
         offsetY: fixed(offset.y),
         calculationDistance: fixed(calculation.distance),
       }),
       calculation.distance === 0
-        ? t('studyAifg.seek.model.workedOffsetZeroEngineSeek')
-        : t('studyAifg.seek.model.workedEngineSeek', {
+        ? t('studyAifg.seek.model.worked.offsetZeroEngineSeek')
+        : t('studyAifg.seek.model.worked.engineSeek', {
             offset: pair(offset),
             calculationDistance: fixed(calculation.distance),
             exampleMaxAcceleration: fixed(example.maxAcceleration),
             acceleration: pair(acceleration),
           }),
-      t('studyAifg.seek.model.workedTrialVelocity', {
+      t('studyAifg.seek.model.worked.trialVelocity', {
         stateVelocity: pair(state.velocity),
         acceleration: pair(acceleration),
         exampleTimeStep: fixed(example.timeStep),
         trialVelocity: pair(trialVelocity),
       }),
-      t('studyAifg.seek.model.workedTrialSpeedCapClipLength', {
+      t('studyAifg.seek.model.worked.trialSpeedCapClipLength', {
         trialVelocity: fixed(length(trialVelocity)),
         exampleMaxSpeed: fixed(example.maxSpeed),
         nextVelocity: pair(next.velocity),
       }),
-      t('studyAifg.seek.model.workedNewPosition', {
+      t('studyAifg.seek.model.worked.newPosition', {
         statePosition: pair(state.position),
         nextVelocity: pair(next.velocity),
         exampleTimeStep: fixed(example.timeStep),
@@ -73,54 +89,58 @@ function workedStep(
     ],
     note:
       dot(state.velocity, offset) < 0
-        ? t('studyAifg.seek.model.workedMicaMovingAwayBeacon')
-        : t('studyAifg.seek.model.workedPullChangesVelocityDoes'),
+        ? t('studyAifg.seek.model.worked.micaMovingAwayBeacon')
+        : t('studyAifg.seek.model.worked.pullChangesVelocityDoes'),
   };
 }
 
-function motionRelation(t: StudyTranslate, state: SeekState, calculation: SeekStep): string {
+function motionRelation(t: StudyTranslate, frame: SeekFrameDescription): string {
+  const {
+    sample: { state, calculation },
+  } = frame;
+
   if (calculation.distance === 0)
     return length(state.velocity) === 0
-      ? t('studyAifg.seek.model.micaRestsBeaconNo')
-      : t('studyAifg.seek.model.micaCoastsThroughBeacon');
+      ? t('studyAifg.seek.model.labels.micaRestsBeaconNo')
+      : t('studyAifg.seek.model.labels.micaCoastsThroughBeacon');
   const closing = dot(state.velocity, calculation.offset);
-  if (closing < 0) return t('studyAifg.seek.model.micaMovingAwayMotor');
-  if (closing > 0) return t('studyAifg.seek.model.micaMovingCloserMotor');
-  return t('studyAifg.seek.model.micaMovingAcrossInward');
+  if (closing < 0) return t('studyAifg.seek.model.labels.micaMovingAwayMotor');
+  if (closing > 0) return t('studyAifg.seek.model.labels.micaMovingCloserMotor');
+  return t('studyAifg.seek.model.labels.micaMovingAcrossInward');
 }
 
-function phaseNote(
-  t: StudyTranslate,
-  state: SeekState,
-  step: number,
-  angle: number,
-  calculation: SeekStep,
-  example: SeekParameters,
-): string {
+function phaseNote(t: StudyTranslate, frame: SeekFrameDescription): string {
+  const {
+    example,
+    step,
+    angle,
+    sample: { state, calculation },
+  } = frame;
+
   if (calculation.distance === 0)
     return length(state.velocity) === 0
-      ? t('studyAifg.seek.model.phaseMicaRestsBeaconBecause')
-      : t('studyAifg.seek.model.phaseMicaBeaconMovingZero');
+      ? t('studyAifg.seek.model.phase.micaRestsBeaconBecause')
+      : t('studyAifg.seek.model.phase.micaBeaconMovingZero');
   if (step === 0)
     return example.velocityY === 0
-      ? t('studyAifg.seek.model.phaseMicaHeadsStraightBeacon')
-      : t('studyAifg.seek.model.phaseMicaStartsSidewaysMotion');
+      ? t('studyAifg.seek.model.phase.micaHeadsStraightBeacon')
+      : t('studyAifg.seek.model.phase.micaStartsSidewaysMotion');
   if (dot(state.velocity, calculation.offset) < 0)
-    return t('studyAifg.seek.model.phaseMicaMovingAwayInward');
+    return t('studyAifg.seek.model.phase.micaMovingAwayInward');
   if (example.velocityY !== 0 && Math.abs(angle) >= 2 * Math.PI)
-    return t('studyAifg.seek.model.phaseMicaCirclingBackAgain');
-  return t('studyAifg.seek.model.phaseMicaClosingBeaconMotor');
+    return t('studyAifg.seek.model.phase.micaCirclingBackAgain');
+  return t('studyAifg.seek.model.phase.micaClosingBeaconMotor');
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: SeekState,
-  step: number,
-  angle: number,
-  states: readonly SeekState[],
-  example: SeekParameters,
-  calculation: ReturnType<typeof calculateSeekStep>,
-): MotionFrame {
+function frameOf(t: StudyTranslate, frame: SeekFrameDescription): MotionFrame {
+  const {
+    example,
+    step,
+    angle,
+    states,
+    sample: { state, calculation },
+  } = frame;
+
   const acceleration = scale(calculation.acceleration, example.accelerationSecondsSquared);
   const velocity = scale(state.velocity, example.velocitySeconds);
   return {
@@ -130,7 +150,7 @@ function frameOf(
         id: 'mica',
         ...state.position,
         tone: 'subject',
-        label: t('studyAifg.seek.model.mica'),
+        label: t('studyAifg.seek.model.labels.mica'),
       },
     ],
     marks: [
@@ -138,7 +158,7 @@ function frameOf(
         ...beaconOf(example),
         shape: 'cross',
         tone: 'target',
-        label: t('studyAifg.seek.model.beacon'),
+        label: t('studyAifg.seek.model.labels.beacon'),
       },
     ],
     vectors: [
@@ -162,85 +182,38 @@ function frameOf(
       offsetX: fixed(calculation.offset.x),
       offsetY: fixed(calculation.offset.y),
       distance: fixed(calculation.distance),
-      motionRelation: motionRelation(t, state, calculation),
+      motionRelation: motionRelation(t, frame),
       startSidewaysSpeed: fixed(Math.abs(example.velocityY)),
       maxAcceleration: fixed(example.maxAcceleration),
       accelerationMagnitude: fixed(length(calculation.acceleration)),
       pathKind:
         example.velocityY === 0
-          ? t('studyAifg.seek.model.valueStraightPasses')
-          : t('studyAifg.seek.model.valueCurvedReturnAroundBeacon'),
+          ? t('studyAifg.seek.model.values.straightPasses')
+          : t('studyAifg.seek.model.values.curvedReturnAroundBeacon'),
       speed: fixed(length(state.velocity)),
       trialSpeed: fixed(length(calculation.trialVelocity)),
       turns: fixed(Math.abs(angle) / (2 * Math.PI)),
     },
-    note: phaseNote(t, state, step, angle, calculation, example),
-    worked: workedStep(t, state, step, example, calculation),
+    note: phaseNote(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
 /** Put close names in a separated row, with connectors routed below the motion. */
-function labelFrame(
-  t: StudyTranslate,
-  frame: MotionFrame,
-  left: number,
-  span: number,
-  rowY: number,
-): MotionFrame {
-  const mica = frame.bodies[0];
-  const beacon = frame.marks?.[0];
-  if (!beacon) return frame;
-  const unit = span / drawingWidth;
-  const named = [
-    { label: t('studyAifg.seek.model.mica'), point: mica },
-    { label: t('studyAifg.seek.model.beacon'), point: beacon },
-  ];
-  const closeNames =
-    Math.abs(mica.x - beacon.x) < 96 * unit && Math.abs(mica.y - beacon.y) < 32 * unit;
-  const crossesArrow = named.some(({ label, point }) =>
-    (frame.vectors ?? []).some((vector) => {
-      const left = point.x - label.length * 8 * unit;
-      const right = point.x + label.length * 8 * unit;
-      const top = point.y - 40 * unit;
-      const bottom = point.y - 12 * unit;
-      return (
-        Math.max(vector.x, vector.x + vector.dx) + 8 * unit >= left &&
-        Math.min(vector.x, vector.x + vector.dx) - 8 * unit <= right &&
-        Math.max(vector.y, vector.y + vector.dy) + 8 * unit >= top &&
-        Math.min(vector.y, vector.y + vector.dy) - 8 * unit <= bottom
-      );
-    }),
+function labelFrame(t: StudyTranslate, frame: MotionFrame, layout: MotionLabelRow): MotionFrame {
+  const mark = frame.marks?.[0];
+  if (!mark) return frame;
+  return withLabelRow(
+    frame,
+    [
+      { label: t('studyAifg.seek.model.labels.mica'), point: frame.bodies[0] },
+      { label: t('studyAifg.seek.model.labels.beacon'), point: mark },
+    ],
+    layout,
   );
-  if (!closeNames && !crossesArrow) return frame;
-  const callouts = named.map<MotionMark>(({ label }, index) => ({
-    x: left + (span * (index + 1)) / (named.length + 1),
-    y: rowY,
-    shape: 'dot',
-    tone: 'muted',
-    label,
-  }));
-  const connectors = named.flatMap<MotionLink>(({ point }, index) => {
-    const callout = callouts[index];
-    const above = { x: callout.x + 64 * unit, y: rowY - 48 * unit };
-    const beside = { x: above.x, y: rowY };
-    return [
-      { from: point, to: above, tone: 'muted' },
-      { from: above, to: beside, tone: 'muted' },
-      { from: beside, to: callout, tone: 'muted' },
-    ];
-  });
-  return {
-    ...frame,
-    bodies: [{ ...mica, label: undefined }],
-    marks: [{ ...beacon, label: undefined }, ...callouts],
-    links: [...(frame.links ?? []), ...connectors],
-  };
 }
 
-function comparison(
-  t: StudyTranslate,
-  example: SeekParameters,
-): NonNullable<MotionStudyModel['comparison']> {
+function comparison(t: StudyTranslate, example: SeekParameters): StudyComparison {
   const changed = { ...example, velocityY: example.comparisonVelocityY };
   const normalSamples = seekSamples(example);
   const normal = normalSamples.map(({ state }) => state);
@@ -253,31 +226,31 @@ function comparison(
   const straightDistances = distances(straight);
   const firstPass = straight.findIndex(({ position }) => position.x > example.targetX);
   return {
-    title: t('studyAifg.seek.model.comparisonDoesStraightStartStop'),
+    title: t('studyAifg.seek.model.comparison.doesStraightStartStop'),
     intro:
       example.velocityY === changed.velocityY
-        ? t('studyAifg.seek.model.comparisonSelectedStartAlreadyStraight')
-        : t('studyAifg.seek.model.comparisonChangeStartingSidewaysVelocity', {
+        ? t('studyAifg.seek.model.comparison.selectedStartAlreadyStraight')
+        : t('studyAifg.seek.model.comparison.changeStartingSidewaysVelocity', {
             exampleVelocityY: fixed(example.velocityY),
             changedVelocityY: fixed(changed.velocityY),
           }),
     timeline: {
-      title: t('studyAifg.seek.model.comparisonDistanceBeacon'),
-      xLabel: t('studyAifg.seek.model.comparisonTimeSeconds'),
-      yLabel: t('studyAifg.seek.model.comparisonDistance'),
+      title: t('studyAifg.seek.model.comparison.distanceBeacon'),
+      xLabel: t('studyAifg.seek.model.comparison.timeSeconds'),
+      yLabel: t('studyAifg.seek.model.comparison.distance'),
       seconds: normal.map((_state, step) => step * example.timeStep),
       reference: 0,
       yRange: [0, Math.max(...normalDistances, ...straightDistances)],
       series: [
         {
           id: 'sideways',
-          label: t('studyAifg.seek.model.comparisonSelectedStart'),
+          label: t('studyAifg.seek.model.comparison.selectedStart'),
           tone: 'actual',
           values: normalDistances,
         },
         {
           id: 'straight',
-          label: t('studyAifg.seek.model.comparisonStraightStart'),
+          label: t('studyAifg.seek.model.comparison.straightStart'),
           tone: 'desired',
           values: straightDistances,
         },
@@ -285,68 +258,64 @@ function comparison(
     },
     findings: [
       example.velocityY === 0
-        ? t('studyAifg.seek.model.comparisonNoSidewaysMotionMica')
-        : t('studyAifg.seek.model.comparisonSidewaysStartBendsReturn', {
+        ? t('studyAifg.seek.model.comparison.noSidewaysMotionMica')
+        : t('studyAifg.seek.model.comparison.sidewaysStartBendsReturn', {
             exampleVelocityY: fixed(example.velocityY),
             changedVelocityY: fixed(changed.velocityY),
           }),
       firstPass < 0
-        ? t('studyAifg.seek.model.comparisonChangedRunDoesNot')
-        : t('studyAifg.seek.model.comparisonFirstPassStraightRun', {
+        ? t('studyAifg.seek.model.comparison.changedRunDoesNot')
+        : t('studyAifg.seek.model.comparison.firstPassStraightRun', {
             firstPass: fixed(firstPass * example.timeStep),
             positionX: fixed(straight[firstPass].position.x - example.targetX),
             velocityX: fixed(straight[firstPass].velocity.x),
           }),
     ],
-    note: t('studyAifg.seek.model.comparisonLinesShowDistanceTouching'),
+    note: t('studyAifg.seek.model.comparison.linesShowDistanceTouching'),
   };
 }
 
 function runMoments(
   t: StudyTranslate,
   example: SeekParameters,
-  initialStep: number,
-  circuit: number,
-  returning: number,
-): MotionStudyModel['moments'] {
+  selection: SeekMoments,
+): readonly StudyMoment[] {
+  const { initialStep, circuit, returning } = selection;
+
   return [
     {
       label:
         example.velocityY === 0
-          ? t('studyAifg.seek.model.comparisonStraightStart')
-          : t('studyAifg.seek.model.sidewaysStart'),
+          ? t('studyAifg.seek.model.comparison.straightStart')
+          : t('studyAifg.seek.model.labels.sidewaysStart'),
       step: 0,
     },
-    { label: t('studyAifg.seek.model.pastBeacon'), step: initialStep },
+    { label: t('studyAifg.seek.model.moments.pastBeacon'), step: initialStep },
     {
       label:
         circuit >= 0
-          ? t('studyAifg.seek.model.completeCircuit')
+          ? t('studyAifg.seek.model.moments.completeCircuit')
           : returning >= 0
-            ? t('studyAifg.seek.model.turningBack')
-            : t('studyAifg.seek.model.laterMotion'),
+            ? t('studyAifg.seek.model.moments.turningBack')
+            : t('studyAifg.seek.model.moments.laterMotion'),
       step: circuit >= 0 ? circuit : returning >= 0 ? returning : example.steps,
     },
-    { label: t('studyAifg.seek.model.moving'), step: example.steps },
+    { label: t('studyAifg.seek.model.moments.moving'), step: example.steps },
   ];
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  frames: MotionFrame[],
-  gaps: number[],
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, frames: MotionFrame[], gaps: number[]): TimelineModel {
   return {
-    title: t('studyAifg.seek.model.comparisonDistanceBeacon'),
-    xLabel: t('studyAifg.seek.model.comparisonTimeSeconds'),
-    yLabel: t('studyAifg.seek.model.comparisonDistance'),
+    title: t('studyAifg.seek.model.comparison.distanceBeacon'),
+    xLabel: t('studyAifg.seek.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.seek.model.comparison.distance'),
     seconds: frames.map(({ seconds }) => seconds),
     yRange: [0, Math.max(...gaps)],
     reference: 0,
     series: [
       {
         id: 'distance',
-        label: t('studyAifg.seek.model.greenMicaBeacon'),
+        label: t('studyAifg.seek.model.timeline.greenMicaBeacon'),
         tone: 'actual',
         values: gaps,
       },
@@ -356,14 +325,14 @@ function runTimeline(
 
 export const present = (
   example: SeekParameters,
-  statesSamples: ReturnType<typeof seekSamples>,
+  statesSamples: readonly SeekSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
   const states = statesSamples.map(({ state }) => state);
   const beacon = beaconOf(example);
   const angles = sweptAngles(states, beacon);
-  const rawFrames = states.map((state, step) =>
-    frameOf(t, state, step, angles[step], states, example, statesSamples[step].calculation),
+  const rawFrames = statesSamples.map((sample, step) =>
+    frameOf(t, { example, sample, step, angle: angles[step], states }),
   );
   const rawPoints = motionPoints(rawFrames);
   const padding = Math.max(
@@ -376,7 +345,9 @@ export const present = (
     2 * padding;
   const left = Math.min(...rawPoints.map(({ x }) => x)) - padding;
   const rowY = Math.max(...rawPoints.map(({ y }) => y)) + (64 * spanX) / drawingWidth;
-  const frames = rawFrames.map((frame) => labelFrame(t, frame, left, spanX, rowY));
+  const frames = rawFrames.map((frame) =>
+    labelFrame(t, frame, { left, span: spanX, y: rowY, minimumGap: 96 }),
+  );
   const points = motionPoints(frames);
   const overshoot = states.findIndex(
     (state) =>
@@ -402,13 +373,13 @@ export const present = (
     },
     timeline: runTimeline(t, frames, gaps),
     initialStep,
-    moments: runMoments(t, example, initialStep, circuit, returning),
+    moments: runMoments(t, example, { initialStep, circuit, returning }),
     legend: [
-      { tone: 'actual', label: t('studyAifg.seek.model.velocity') },
-      { tone: 'desired', label: t('studyAifg.seek.model.inwardAcceleration') },
-      { tone: 'muted', label: t('studyAifg.seek.model.pathFar') },
+      { tone: 'actual', label: t('studyAifg.seek.model.labels.velocity') },
+      { tone: 'desired', label: t('studyAifg.seek.model.labels.inwardAcceleration') },
+      { tone: 'muted', label: t('studyAifg.seek.model.labels.pathFar') },
     ],
-    caption: t('studyAifg.seek.model.caption', {
+    caption: t('studyAifg.seek.model.overview.caption', {
       exampleVelocitySeconds: fixed(example.velocitySeconds),
       exampleAccelerationSecondsSquared: fixed(example.accelerationSecondsSquared),
     }),
@@ -416,8 +387,8 @@ export const present = (
     inputs: [
       {
         name: 'velocityY',
-        label: t('studyAifg.seek.model.sidewaysStart'),
-        unit: t('studyAifg.seek.model.inputsUnitUnitsS'),
+        label: t('studyAifg.seek.model.labels.sidewaysStart'),
+        unit: t('studyAifg.seek.model.inputs.unitUnitsS'),
         min: 0,
         max: 4,
         step: 0.5,

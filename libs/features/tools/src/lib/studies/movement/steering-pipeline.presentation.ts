@@ -9,16 +9,27 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import { drawingWidth } from '../drawing';
-import type { MotionBounds, MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionBounds,
+  MotionFrame,
+  MotionMark,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyMoment,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { decimal as fixed, vectorText as point } from './presentation';
 import {
   exclusionRadius,
   goalOf,
   palletOf,
   type PipelineAttempt,
-  pipelineFrames,
   type PipelineParameters,
+  type PipelineSample,
   pipelineSamples,
   type PipelineState,
   type PipelineStep,
@@ -27,124 +38,61 @@ import {
   segmentDetails,
 } from './steering-pipeline.simulation';
 
-const arrived = (state: PipelineState, example: PipelineParameters) =>
-  distance(state.position, goalOf(example)) <= example.targetRadius &&
-  length(state.velocity) <= example.cornerSpeed;
+const { number: fixed, vector: point } = createNumberFormat();
 
-function workedAttempt(
-  t: StudyTranslate,
-  state: PipelineState,
-  attempt: PipelineAttempt,
-  index: number,
+function describeRun(
   example: PipelineParameters,
-): readonly string[] {
-  const points = [state.position, ...attempt.route];
-  const tightest = attempt.route
-    .map((to, part) => segmentDetails(points[part], to, example))
-    .reduce((best, candidate) => (candidate.clearance < best.clearance ? candidate : best));
-  const projection =
-    tightest.squaredLength === 0
-      ? t('studyAifg.steering-pipeline.model.workedSegmentNoLengthUse')
-      : t('studyAifg.steering-pipeline.model.workedProjectionTClamp', {
-          tightestProjection: fixed(tightest.projection),
-          tightestSquaredLength: fixed(tightest.squaredLength),
-          tightestFraction: fixed(tightest.fraction),
-        });
-  return [
-    t('studyAifg.steering-pipeline.model.workedCheckDecomposerSelectsMinimum', {
-      index: index + 1,
-      attemptWaypoint: point(attempt.waypoint),
-      attemptRouteClearance: fixed(attempt.routeClearance),
-      attemptSweptClearance: fixed(attempt.sweptClearance),
-      value5: attempt.accepted
-        ? t('studyAifg.steering-pipeline.model.workedAcceptChecks')
-        : t('studyAifg.steering-pipeline.model.workedRejectSuggestUpperBypass'),
-    }),
-    t('studyAifg.steering-pipeline.model.workedTightestRouteSegmentClosest', {
-      tightestFrom: point(tightest.from),
-      tightestTo: point(tightest.to),
-      projection,
-      tightestClosest: point(tightest.closest),
-      value5: fixed(distance(tightest.closest, palletOf(example))),
-      value6: fixed(exclusionRadius(example)),
-      tightestClearance: fixed(tightest.clearance),
-    }),
-  ];
-}
+  statesSamples: readonly PipelineSample[],
+): PipelineDescription {
+  const states = statesSamples.map(({ state }) => state);
+  const calculations = statesSamples.map(({ calculation }) => calculation);
+  const otherChecks = comparisonChecks(example);
+  const otherExample = { ...example, maxChecks: otherChecks };
+  const otherSamples = pipelineSamples(otherExample);
+  const other = otherSamples.map(({ state }) => state);
+  const otherCalculations = otherSamples.map(({ calculation }) => calculation);
+  const seconds = states.map((_state, step) => step * example.timeStep);
+  const goalDistances = states.map((state) => distance(state.position, goalOf(example)));
+  const otherDistances = other.map((state) => distance(state.position, goalOf(example)));
+  const find = (predicate: PipelinePredicate) => {
+    const index = states.findIndex((state, step) => predicate(state, calculations[step]));
+    return index < 0 ? example.steps : index;
+  };
+  const deliveredAt = find((state) => arrived(state, example));
+  const refused = calculations.slice(0, -1).filter((calculation) => !calculation.accepted).length;
+  const otherRefused = otherCalculations
+    .slice(0, -1)
+    .filter((calculation) => !calculation.accepted).length;
+  const blocked = refused === example.steps;
 
-function workedLines(
-  t: StudyTranslate,
-  result: PipelineStep,
-  state: PipelineState,
-  example: PipelineParameters,
-  desiredSpeed: number,
-  gap: number,
-  stop: number,
-  desired: Vec2,
-  requested: Vec2,
-): readonly string[] {
-  return [
-    t('studyAifg.steering-pipeline.model.workedTargeterKeepsDeliveryCourier', {
-      resultGoal: point(result.goal),
-      statePosition: point(state.position),
-    }),
-    t('studyAifg.steering-pipeline.model.workedExcludeCentrePositionsWithin', {
-      examplePalletRadius: fixed(example.palletRadius),
-      exampleCourierRadius: fixed(example.courierRadius),
-      exampleSafetyMargin: fixed(example.safetyMargin),
-      value4: fixed(exclusionRadius(example)),
-    }),
-    ...result.attempts.flatMap((attempt, index) =>
-      workedAttempt(t, state, attempt, index, example),
+  const selection = {
+    deliveredAt,
+    entry: find((_state, calculation) => calculation.attempts.at(-1)?.route.length === 2),
+    pallet: find((state) => state.position.x >= example.palletX),
+    delivery: find(
+      (state, calculation) =>
+        calculation.attempts.at(-1)?.route.length === 1 && state.position.x > example.palletX,
     ),
-    ...(result.accepted
-      ? [
-          t('studyAifg.steering-pipeline.model.workedArriveRequestsSpeedWaypoint', {
-            desiredSpeed: fixed(desiredSpeed),
-            gap: fixed(gap),
-            stop: fixed(stop),
-            exampleMaxSpeed: fixed(example.maxSpeed),
-            exampleSlowRadius: fixed(example.slowRadius),
-          }),
-          t('studyAifg.steering-pipeline.model.workedDesiredVelocityBeforeMagnitude', {
-            desired: point(desired),
-            stateVelocity: point(state.velocity),
-            exampleResponseTime: fixed(example.responseTime),
-            requested: point(requested),
-            exampleMaxAcceleration: fixed(example.maxAcceleration),
-          }),
-        ]
-      : [
-          t('studyAifg.steering-pipeline.model.workedBudgetExhaustedAfterChecks', {
-            attemptsLength: result.attempts.length,
-            zero: point(zero),
-            exampleResponseTime: fixed(example.responseTime),
-            exampleMaxAcceleration: fixed(example.maxAcceleration),
-          }),
-        ]),
-    t('studyAifg.steering-pipeline.model.workedUseAccelerationVNextClip', {
-      resultAcceleration: point(result.acceleration),
-      stateVelocity: point(state.velocity),
-      exampleTimeStep: fixed(example.timeStep),
-      exampleMaxSpeed: fixed(example.maxSpeed),
-      nextVelocity: point(result.next.velocity),
-    }),
-    t('studyAifg.steering-pipeline.model.workedPNext', {
-      statePosition: point(state.position),
-      nextVelocity: point(result.next.velocity),
-      exampleTimeStep: fixed(example.timeStep),
-      nextPosition: point(result.next.position),
-    }),
-  ];
+  };
+  return {
+    example,
+    states,
+    calculations,
+    otherChecks,
+    other,
+    seconds,
+    goalDistances,
+    otherDistances,
+    refused,
+    otherRefused,
+    blocked,
+    selection,
+  };
 }
 
-function workedStep(
-  t: StudyTranslate,
-  state: PipelineState,
-  result: PipelineStep,
-  step: number,
-  example: PipelineParameters,
-): StudyWorkedStep {
+function describeRequest(sample: PipelineSample, example: PipelineParameters): WaypointRequest {
+  const { state, calculation: result } = sample;
+
   const last = result.attempts.at(-1);
   const waypoint = last?.waypoint ?? state.route[0];
   const gap = distance(state.position, waypoint);
@@ -157,117 +105,300 @@ function workedStep(
         : (example.maxSpeed * (gap - stop)) / (example.slowRadius - stop);
   const desired = scale(normalize(subtract(waypoint, state.position)), desiredSpeed);
   const requested = scale(subtract(desired, state.velocity), 1 / example.responseTime);
-  return {
-    title: t('studyAifg.steering-pipeline.model.workedPipelineUpdate', {
-      step: fixed(step * example.timeStep),
-      step2: fixed((step + 1) * example.timeStep),
+
+  return { gap, stop, desiredSpeed, desired, requested };
+}
+
+interface PipelineReading {
+  readonly note: string;
+  readonly relationship: string;
+}
+interface WaypointRequest {
+  readonly gap: number;
+  readonly stop: number;
+  readonly desiredSpeed: number;
+  readonly desired: Vec2;
+  readonly requested: Vec2;
+}
+interface PipelineFrame {
+  readonly sample: PipelineSample;
+  readonly step: number;
+  readonly example: PipelineParameters;
+  readonly request: WaypointRequest;
+  readonly route: readonly Vec2[];
+  readonly points: readonly Vec2[];
+  readonly values: StudyValues;
+  readonly waypoint: Vec2;
+  readonly waypointName: string;
+  readonly reading: PipelineReading;
+  readonly proposalReading: string;
+  readonly localDistance: number;
+  readonly bypass: readonly Vec2[];
+  readonly clearance: number;
+  readonly routeGap: number;
+  readonly sweptGap: number;
+  readonly status: string;
+}
+interface PipelineSelection {
+  readonly entry: number;
+  readonly pallet: number;
+  readonly delivery: number;
+  readonly deliveredAt: number;
+}
+interface PipelineDescription {
+  readonly example: PipelineParameters;
+  readonly states: readonly PipelineState[];
+  readonly calculations: readonly PipelineStep[];
+  readonly other: readonly PipelineState[];
+  readonly otherChecks: number;
+  readonly seconds: readonly number[];
+  readonly goalDistances: readonly number[];
+  readonly otherDistances: readonly number[];
+  readonly refused: number;
+  readonly otherRefused: number;
+  readonly blocked: boolean;
+  readonly selection: PipelineSelection;
+}
+interface PipelinePredicate {
+  (state: PipelineState, calculation: PipelineStep): boolean;
+}
+
+const arrived = (state: PipelineState, example: PipelineParameters) =>
+  distance(state.position, goalOf(example)) <= example.targetRadius &&
+  length(state.velocity) <= example.cornerSpeed;
+
+function workedAttempt(
+  t: StudyTranslate,
+  description: PipelineFrame,
+  attempt: PipelineAttempt,
+  index: number,
+): readonly string[] {
+  const {
+    sample: { state },
+    example,
+  } = description;
+
+  const points = [state.position, ...attempt.route];
+  const tightest = attempt.route
+    .map((to, part) => segmentDetails(points[part], to, example))
+    .reduce((best, candidate) => (candidate.clearance < best.clearance ? candidate : best));
+  const projection =
+    tightest.squaredLength === 0
+      ? t('studyAifg.steering-pipeline.model.worked.segmentNoLengthUse')
+      : t('studyAifg.steering-pipeline.model.worked.projectionTClamp', {
+          tightestProjection: fixed(tightest.projection),
+          tightestSquaredLength: fixed(tightest.squaredLength),
+          tightestFraction: fixed(tightest.fraction),
+        });
+  return [
+    t('studyAifg.steering-pipeline.model.worked.checkDecomposerSelectsMinimum', {
+      index: index + 1,
+      attemptWaypoint: point(attempt.waypoint),
+      attemptRouteClearance: fixed(attempt.routeClearance),
+      attemptSweptClearance: fixed(attempt.sweptClearance),
+      checkOutcome: attempt.accepted
+        ? t('studyAifg.steering-pipeline.model.worked.acceptChecks')
+        : t('studyAifg.steering-pipeline.model.worked.rejectSuggestUpperBypass'),
     }),
-    lines: workedLines(t, result, state, example, desiredSpeed, gap, stop, desired, requested),
+    t('studyAifg.steering-pipeline.model.worked.tightestRouteSegmentClosest', {
+      tightestFrom: point(tightest.from),
+      tightestTo: point(tightest.to),
+      projection,
+      tightestClosest: point(tightest.closest),
+      palletDistance: fixed(distance(tightest.closest, palletOf(example))),
+      exclusionRadius: fixed(exclusionRadius(example)),
+      tightestClearance: fixed(tightest.clearance),
+    }),
+  ];
+}
+
+function workedLines(t: StudyTranslate, description: PipelineFrame): readonly string[] {
+  const {
+    sample: { state, calculation: result },
+    example,
+    request: { gap, stop, desiredSpeed, desired, requested },
+  } = description;
+
+  return [
+    t('studyAifg.steering-pipeline.model.worked.targeterKeepsDeliveryCourier', {
+      resultGoal: point(result.goal),
+      statePosition: point(state.position),
+    }),
+    t('studyAifg.steering-pipeline.model.worked.excludeCentrePositionsWithin', {
+      examplePalletRadius: fixed(example.palletRadius),
+      exampleCourierRadius: fixed(example.courierRadius),
+      exampleSafetyMargin: fixed(example.safetyMargin),
+      exclusionRadius: fixed(exclusionRadius(example)),
+    }),
+    ...result.attempts.flatMap((attempt, index) => workedAttempt(t, description, attempt, index)),
+    ...(result.accepted
+      ? [
+          t('studyAifg.steering-pipeline.model.worked.arriveRequestsSpeedWaypoint', {
+            desiredSpeed: fixed(desiredSpeed),
+            gap: fixed(gap),
+            stop: fixed(stop),
+            exampleMaxSpeed: fixed(example.maxSpeed),
+            exampleSlowRadius: fixed(example.slowRadius),
+          }),
+          t('studyAifg.steering-pipeline.model.worked.desiredVelocityBeforeMagnitude', {
+            desired: point(desired),
+            stateVelocity: point(state.velocity),
+            exampleResponseTime: fixed(example.responseTime),
+            requested: point(requested),
+            exampleMaxAcceleration: fixed(example.maxAcceleration),
+          }),
+        ]
+      : [
+          t('studyAifg.steering-pipeline.model.worked.budgetExhaustedAfterChecks', {
+            attemptsLength: result.attempts.length,
+            zero: point(zero),
+            exampleResponseTime: fixed(example.responseTime),
+            exampleMaxAcceleration: fixed(example.maxAcceleration),
+          }),
+        ]),
+    t('studyAifg.steering-pipeline.model.worked.useAccelerationVNextClip', {
+      resultAcceleration: point(result.acceleration),
+      stateVelocity: point(state.velocity),
+      exampleTimeStep: fixed(example.timeStep),
+      exampleMaxSpeed: fixed(example.maxSpeed),
+      nextVelocity: point(result.next.velocity),
+    }),
+    t('studyAifg.steering-pipeline.model.worked.pNext', {
+      statePosition: point(state.position),
+      nextVelocity: point(result.next.velocity),
+      exampleTimeStep: fixed(example.timeStep),
+      nextPosition: point(result.next.position),
+    }),
+  ];
+}
+
+function workedStep(t: StudyTranslate, description: PipelineFrame): StudyWorkedStep {
+  const {
+    sample: { calculation: result },
+    example,
+    step,
+  } = description;
+  return {
+    title: t('studyAifg.steering-pipeline.model.worked.pipelineUpdate', {
+      seconds: fixed(step * example.timeStep),
+      nextSeconds: fixed((step + 1) * example.timeStep),
+    }),
+    lines: workedLines(t, description),
     note: result.accepted
-      ? t('studyAifg.steering-pipeline.model.workedActuatorPreviewUsesSame')
-      : t('studyAifg.steering-pipeline.model.workedNoRejectedRouteExecuted'),
+      ? t('studyAifg.steering-pipeline.model.worked.actuatorPreviewUsesSame')
+      : t('studyAifg.steering-pipeline.model.worked.noRejectedRouteExecuted'),
   };
+}
+
+const pipelineReadings = {
+  braking: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierBrakesBecauseNo',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingBrakesBeforePalletBecause',
+  },
+  waiting: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierWaitsBecauseBypass',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingWaitsBeforePalletBypass',
+  },
+  arrived: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierReachedDeliveryNearly',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingDeliveryWithinStoppingTolerance',
+  },
+  detourStarted: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingDirectRouteBlockedCourier',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingStartsCheckedDetourAbove',
+  },
+  entryCleared: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierReleasesEntryCorner',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingTurnsOntoUpperBypass',
+  },
+  exitCleared: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierReleasesExitCorner',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingTurnsTowardsDeliveryPallet',
+  },
+  approachingEntry: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierSlowsEntryCorner',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingSlowsAboveBeforePallet',
+  },
+  headingToEntry: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierHeadsEntryCorner',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingHeadsAbovePalletTowards',
+  },
+  approachingExit: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierSlowsExitCorner',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingSlowsAboveBeyondPallet',
+  },
+  followingBypass: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierFollowsBypassAbove',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingFollowsUpperBypassPallet',
+  },
+  pastPallet: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierKeepsExitWaypoint',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingPassedAbovePalletContinues',
+  },
+  brakingAtDelivery: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingCourierBrakesNearDelivery',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingBrakesTowardsDeliveryPallet',
+  },
+  headingToDelivery: {
+    note: 'studyAifg.steering-pipeline.model.phase.readingPalletBehindCourierDelivery',
+    relationship: 'studyAifg.steering-pipeline.model.phase.readingHeadsStraightDeliveryPallet',
+  },
+};
+
+type PipelinePhase = keyof typeof pipelineReadings;
+
+function pipelinePhase(
+  sample: PipelineSample,
+  route: readonly Vec2[],
+  example: PipelineParameters,
+): PipelinePhase {
+  const { state, calculation: result } = sample;
+
+  if (!result.accepted) return length(state.velocity) > example.cornerSpeed ? 'braking' : 'waiting';
+  if (arrived(state, example)) return 'arrived';
+  if (result.attempts.some((attempt) => !attempt.accepted)) return 'detourStarted';
+  if (state.route.length > route.length) return route.length === 2 ? 'entryCleared' : 'exitCleared';
+  const slowing = distance(state.position, route[0]) < example.slowRadius;
+  if (route.length === 3) return slowing ? 'approachingEntry' : 'headingToEntry';
+  if (route.length === 2) {
+    if (slowing) return 'approachingExit';
+    return state.position.x < example.palletX ? 'followingBypass' : 'pastPallet';
+  }
+  return slowing ? 'brakingAtDelivery' : 'headingToDelivery';
 }
 
 function readingOf(
   t: StudyTranslate,
-  state: PipelineState,
-  result: PipelineStep,
+  sample: PipelineSample,
   route: readonly Vec2[],
   example: PipelineParameters,
-): {
-  readonly note: string;
-  readonly relationship: string;
-} {
-  if (!result.accepted)
-    return length(state.velocity) > example.cornerSpeed
-      ? {
-          note: t('studyAifg.steering-pipeline.model.readingCourierBrakesBecauseNo'),
-          relationship: t('studyAifg.steering-pipeline.model.readingBrakesBeforePalletBecause'),
-        }
-      : {
-          note: t('studyAifg.steering-pipeline.model.readingCourierWaitsBecauseBypass'),
-          relationship: t('studyAifg.steering-pipeline.model.readingWaitsBeforePalletBypass'),
-        };
-  if (arrived(state, example))
-    return {
-      note: t('studyAifg.steering-pipeline.model.readingCourierReachedDeliveryNearly'),
-      relationship: t('studyAifg.steering-pipeline.model.readingDeliveryWithinStoppingTolerance'),
-    };
-  if (result.attempts.some((attempt) => !attempt.accepted))
-    return {
-      note: t('studyAifg.steering-pipeline.model.readingDirectRouteBlockedCourier'),
-      relationship: t('studyAifg.steering-pipeline.model.readingStartsCheckedDetourAbove'),
-    };
-  if (state.route.length > route.length)
-    return route.length === 2
-      ? {
-          note: t('studyAifg.steering-pipeline.model.readingCourierReleasesEntryCorner'),
-          relationship: t('studyAifg.steering-pipeline.model.readingTurnsOntoUpperBypass'),
-        }
-      : {
-          note: t('studyAifg.steering-pipeline.model.readingCourierReleasesExitCorner'),
-          relationship: t('studyAifg.steering-pipeline.model.readingTurnsTowardsDeliveryPallet'),
-        };
-  const slowing = distance(state.position, route[0]) < example.slowRadius;
-  if (route.length === 3)
-    return slowing
-      ? {
-          note: t('studyAifg.steering-pipeline.model.readingCourierSlowsEntryCorner'),
-          relationship: t('studyAifg.steering-pipeline.model.readingSlowsAboveBeforePallet'),
-        }
-      : {
-          note: t('studyAifg.steering-pipeline.model.readingCourierHeadsEntryCorner'),
-          relationship: t('studyAifg.steering-pipeline.model.readingHeadsAbovePalletTowards'),
-        };
-  if (route.length === 2) {
-    if (slowing)
-      return {
-        note: t('studyAifg.steering-pipeline.model.readingCourierSlowsExitCorner'),
-        relationship: t('studyAifg.steering-pipeline.model.readingSlowsAboveBeyondPallet'),
-      };
-    return state.position.x < example.palletX
-      ? {
-          note: t('studyAifg.steering-pipeline.model.readingCourierFollowsBypassAbove'),
-          relationship: t('studyAifg.steering-pipeline.model.readingFollowsUpperBypassPallet'),
-        }
-      : {
-          note: t('studyAifg.steering-pipeline.model.readingCourierKeepsExitWaypoint'),
-          relationship: t('studyAifg.steering-pipeline.model.readingPassedAbovePalletContinues'),
-        };
-  }
-  return slowing
-    ? {
-        note: t('studyAifg.steering-pipeline.model.readingCourierBrakesNearDelivery'),
-        relationship: t('studyAifg.steering-pipeline.model.readingBrakesTowardsDeliveryPallet'),
-      }
-    : {
-        note: t('studyAifg.steering-pipeline.model.readingPalletBehindCourierDelivery'),
-        relationship: t('studyAifg.steering-pipeline.model.readingHeadsStraightDeliveryPallet'),
-      };
+): PipelineReading {
+  const messages = pipelineReadings[pipelinePhase(sample, route, example)];
+  return { note: t(messages.note), relationship: t(messages.relationship) };
 }
 
 const comparisonChecks = (example: PipelineParameters) =>
   example.maxChecks === example.failureChecks ? example.failureChecks + 1 : example.failureChecks;
 
-function frameMarks(
-  t: StudyTranslate,
-  result: PipelineStep,
-  example: PipelineParameters,
-  route: readonly Vec2[],
-): MotionFrame['marks'] {
+function frameMarks(t: StudyTranslate, description: PipelineFrame): readonly MotionMark[] {
+  const {
+    sample: { calculation: result },
+    example,
+    route,
+  } = description;
+
   return [
     {
       ...result.goal,
       shape: 'cross',
       tone: 'target',
-      label: t('studyAifg.steering-pipeline.model.deliveryLabel'),
+      label: t('studyAifg.steering-pipeline.model.labels.deliveryLabel'),
     },
     {
       ...palletOf(example),
       shape: 'dot',
       tone: 'other',
-      label: t('studyAifg.steering-pipeline.model.pallet'),
+      label: t('studyAifg.steering-pipeline.model.labels.pallet'),
     },
     ...route.slice(0, -1).map((place, index) => ({
       ...place,
@@ -275,61 +406,67 @@ function frameMarks(
       tone: index === 0 ? ('desired' as const) : ('muted' as const),
       label:
         route.length - index === 3
-          ? t('studyAifg.steering-pipeline.model.entry')
-          : t('studyAifg.steering-pipeline.model.exit'),
+          ? t('studyAifg.steering-pipeline.model.labels.entry')
+          : t('studyAifg.steering-pipeline.model.labels.exit'),
     })),
   ];
 }
 
 function describeFrame(
   t: StudyTranslate,
-  state: PipelineState,
-  result: PipelineStep,
+  sample: PipelineSample,
   example: PipelineParameters,
-) {
+  step: number,
+): PipelineFrame {
+  const { state, calculation: result } = sample;
+
   const last = result.attempts.at(-1);
   const route = last?.route ?? state.route;
   const waypoint = route[0];
   const waypointName =
     route.length === 3
-      ? t('studyAifg.steering-pipeline.model.entryCorner')
+      ? t('studyAifg.steering-pipeline.model.names.entryCorner')
       : route.length === 2
-        ? t('studyAifg.steering-pipeline.model.exitCorner')
-        : t('studyAifg.steering-pipeline.model.delivery');
+        ? t('studyAifg.steering-pipeline.model.names.exitCorner')
+        : t('studyAifg.steering-pipeline.model.names.delivery');
   const points = [state.position, ...route];
   const clearance = distance(state.position, palletOf(example)) - exclusionRadius(example);
   const routeGap = last?.routeClearance ?? routeClearance(state.position, route, example);
   const sweptGap = last?.sweptClearance ?? clearance;
   const localDistance = distance(state.position, waypoint);
   const bypass = repairRoute(result.goal, example);
-  const reading = readingOf(t, state, result, route, example);
+  const reading = readingOf(t, sample, route, example);
   const status = !result.accepted
-    ? t('studyAifg.steering-pipeline.model.budgetExhaustedBraking')
+    ? t('studyAifg.steering-pipeline.model.labels.budgetExhaustedBraking')
     : arrived(state, example)
-      ? t('studyAifg.steering-pipeline.model.deliveredWithinTolerance')
-      : t('studyAifg.steering-pipeline.model.routeAccepted');
+      ? t('studyAifg.steering-pipeline.model.labels.deliveredWithinTolerance')
+      : t('studyAifg.steering-pipeline.model.labels.routeAccepted');
   const proposalReading = result.accepted
     ? arrived(state, example)
-      ? t('studyAifg.steering-pipeline.model.courierMovingBelowStopping', {
+      ? t('studyAifg.steering-pipeline.model.labels.courierMovingBelowStopping', {
           stateVelocity: fixed(length(state.velocity)),
           exampleCornerSpeed: fixed(example.cornerSpeed),
         })
-      : t('studyAifg.steering-pipeline.model.nextStopAwayAlong', {
+      : t('studyAifg.steering-pipeline.model.labels.nextStopAwayAlong', {
           waypointName,
           localDistance: fixed(localDistance),
           routeGap: fixed(routeGap),
         })
     : routeGap < 0
-      ? t('studyAifg.steering-pipeline.model.directProposalOverlapsPallet', {
-          value1: fixed(-routeGap),
+      ? t('studyAifg.steering-pipeline.model.labels.directProposalOverlapsPallet', {
+          overlap: fixed(-routeGap),
         })
-      : t('studyAifg.steering-pipeline.model.routeClearNextMovement', {
-          value1: fixed(Math.max(0, -sweptGap)),
+      : t('studyAifg.steering-pipeline.model.labels.routeClearNextMovement', {
+          sweptOverlap: fixed(Math.max(0, -sweptGap)),
         });
   const values = Object.fromEntries(
     Object.entries(example).map(([name, value]) => [name, fixed(value)]),
   );
   return {
+    sample,
+    example,
+    step,
+    request: describeRequest(sample, example),
     route,
     points,
     values,
@@ -346,14 +483,13 @@ function describeFrame(
   };
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: PipelineState,
-  result: PipelineStep,
-  step: number,
-  example: PipelineParameters,
-): MotionFrame {
-  const description = describeFrame(t, state, result, example);
+function frameOf(t: StudyTranslate, description: PipelineFrame): MotionFrame {
+  const {
+    sample: { state, calculation: result },
+    example,
+    step,
+  } = description;
+
   return {
     seconds: step * example.timeStep,
     bodies: [
@@ -361,14 +497,14 @@ function frameOf(
         id: 'courier',
         ...state.position,
         tone: 'subject',
-        label: t('studyAifg.steering-pipeline.model.courier'),
+        label: t('studyAifg.steering-pipeline.model.labels.courier'),
       },
     ],
     zones: [
       { ...palletOf(example), radius: exclusionRadius(example) },
       { ...palletOf(example), radius: example.palletRadius },
     ],
-    marks: frameMarks(t, result, example, description.route),
+    marks: frameMarks(t, description),
     links: [
       { from: state.position, to: result.goal, tone: 'muted' },
       ...description.route.map((to, index) => ({
@@ -413,7 +549,7 @@ function frameOf(
       seconds: fixed(step * example.timeStep),
     },
     note: description.reading.note,
-    worked: workedStep(t, state, result, step, example),
+    worked: workedStep(t, description),
   };
 }
 
@@ -471,34 +607,35 @@ function spaceLabels(frames: readonly MotionFrame[], bounds: MotionBounds): read
   });
 }
 
-function compareRuns(
-  t: StudyTranslate,
-  example: PipelineParameters,
-  otherChecks: ReturnType<typeof comparisonChecks>,
-  seconds: number[],
-  goalDistances: number[],
-  otherDistances: number[],
-  refused: number,
-  states: ReturnType<typeof pipelineFrames>,
-  otherRefused: number,
-  other: ReturnType<typeof pipelineFrames>,
-): NonNullable<MotionStudyModel['comparison']> {
+function compareRuns(t: StudyTranslate, run: PipelineDescription): StudyComparison {
+  const {
+    example,
+    states,
+    other,
+    goalDistances,
+    otherDistances,
+    otherChecks,
+    otherRefused,
+    refused,
+    seconds,
+  } = run;
+
   return {
-    title: t('studyAifg.steering-pipeline.model.comparisonRepairNeedsCheckOwn'),
-    intro: t('studyAifg.steering-pipeline.model.comparisonChangeCheckBudgetRejected', {
+    title: t('studyAifg.steering-pipeline.model.comparison.repairNeedsCheckOwn'),
+    intro: t('studyAifg.steering-pipeline.model.comparison.changeCheckBudgetRejected', {
       exampleMaxChecks: example.maxChecks,
       otherChecks,
     }),
     timeline: {
-      title: t('studyAifg.steering-pipeline.model.comparisonDistanceDeliver'),
-      xLabel: t('studyAifg.steering-pipeline.model.timeSeconds'),
-      yLabel: t('studyAifg.steering-pipeline.model.comparisonDeliveryDistance'),
+      title: t('studyAifg.steering-pipeline.model.comparison.distanceDeliver'),
+      xLabel: t('studyAifg.steering-pipeline.model.labels.timeSeconds'),
+      yLabel: t('studyAifg.steering-pipeline.model.comparison.deliveryDistance'),
       seconds,
       reference: example.targetRadius,
       series: [
         {
           id: 'selected',
-          label: t('studyAifg.steering-pipeline.model.comparisonSelectedBudget', {
+          label: t('studyAifg.steering-pipeline.model.comparison.selectedBudget', {
             exampleMaxChecks: example.maxChecks,
           }),
           tone: 'actual',
@@ -506,7 +643,7 @@ function compareRuns(
         },
         {
           id: 'comparison',
-          label: t('studyAifg.steering-pipeline.model.comparisonComparisonBudget', {
+          label: t('studyAifg.steering-pipeline.model.comparison.comparisonBudget', {
             otherChecks,
           }),
           tone: 'desired',
@@ -515,95 +652,83 @@ function compareRuns(
       ],
     },
     findings: [
-      t('studyAifg.steering-pipeline.model.comparisonCheckRunRefusesUpdates', {
+      t('studyAifg.steering-pipeline.model.comparison.checkRunRefusesUpdates', {
         exampleMaxChecks: example.maxChecks,
         refused,
         goalDistances: fixed(goalDistances[example.steps]),
         stepsVelocity: fixed(length(states[example.steps].velocity)),
       }),
-      t('studyAifg.steering-pipeline.model.comparisonOtherRunResult', {
+      t('studyAifg.steering-pipeline.model.comparison.otherRunResult', {
         otherChecks,
         otherRefused,
         otherDistances: fixed(otherDistances[example.steps]),
         stepsVelocity: fixed(length(other[example.steps].velocity)),
       }),
-      t('studyAifg.steering-pipeline.model.comparisonCheckRunStaysRest', {
+      t('studyAifg.steering-pipeline.model.comparison.checkRunStaysRest', {
         exampleFailureChecks: example.failureChecks,
       }),
     ],
-    note: t('studyAifg.steering-pipeline.model.comparisonLowerBudgetRepeatsSame'),
+    note: t('studyAifg.steering-pipeline.model.comparison.lowerBudgetRepeatsSame'),
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  blocked: boolean,
-  example: PipelineParameters,
-  find: (predicate: (state: PipelineState, calculation: PipelineStep) => boolean) => number,
-  states: ReturnType<typeof pipelineFrames>,
-  deliveredAt: number,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, run: PipelineDescription): readonly StudyMoment[] {
+  const { example, states, blocked, selection } = run;
+  const { deliveredAt } = selection;
+
   return blocked
     ? [
-        { label: t('studyAifg.steering-pipeline.model.requestRefused'), step: 0 },
+        { label: t('studyAifg.steering-pipeline.model.moments.requestRefused'), step: 0 },
         {
-          label: t('studyAifg.steering-pipeline.model.waiting'),
+          label: t('studyAifg.steering-pipeline.model.moments.waiting'),
           step: Math.floor(example.steps / 2),
         },
         {
-          label: t('studyAifg.steering-pipeline.model.noDelivery'),
+          label: t('studyAifg.steering-pipeline.model.moments.noDelivery'),
           step: example.steps,
         },
       ]
     : [
-        { label: t('studyAifg.steering-pipeline.model.repairBeforeMoving'), step: 0 },
+        { label: t('studyAifg.steering-pipeline.model.moments.repairBeforeMoving'), step: 0 },
         {
-          label: t('studyAifg.steering-pipeline.model.leaveEntryCorner'),
-          step: find((_state, calculation) => calculation.attempts.at(-1)?.route.length === 2),
+          label: t('studyAifg.steering-pipeline.model.moments.leaveEntryCorner'),
+          step: selection.entry,
         },
         {
-          label: t('studyAifg.steering-pipeline.model.passPallet'),
-          step: find((state) => state.position.x >= example.palletX),
+          label: t('studyAifg.steering-pipeline.model.moments.passPallet'),
+          step: selection.pallet,
         },
         {
-          label: t('studyAifg.steering-pipeline.model.deliveryLeg'),
-          step: find(
-            (state, calculation) =>
-              calculation.attempts.at(-1)?.route.length === 1 && state.position.x > example.palletX,
-          ),
+          label: t('studyAifg.steering-pipeline.model.moments.deliveryLeg'),
+          step: selection.delivery,
         },
         {
           label: arrived(states[deliveredAt], example)
-            ? t('studyAifg.steering-pipeline.model.delivered')
-            : t('studyAifg.steering-pipeline.model.endRun'),
+            ? t('studyAifg.steering-pipeline.model.moments.delivered')
+            : t('studyAifg.steering-pipeline.model.moments.endRun'),
           step: deliveredAt,
         },
       ];
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  goalDistances: number[],
-  states: ReturnType<typeof pipelineFrames>,
-  calculations: PipelineStep[],
-  example: PipelineParameters,
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, run: PipelineDescription): TimelineModel {
+  const { example, states, calculations, goalDistances, seconds } = run;
+
   return {
-    title: t('studyAifg.steering-pipeline.model.deliveryGoalActiveWaypoint'),
-    xLabel: t('studyAifg.steering-pipeline.model.timeSeconds'),
-    yLabel: t('studyAifg.steering-pipeline.model.remainingDistance'),
+    title: t('studyAifg.steering-pipeline.model.timeline.deliveryGoalActiveWaypoint'),
+    xLabel: t('studyAifg.steering-pipeline.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.steering-pipeline.model.timeline.remainingDistance'),
     seconds,
     series: [
       {
         id: 'goal',
-        label: t('studyAifg.steering-pipeline.model.deliveryDistance'),
+        label: t('studyAifg.steering-pipeline.model.timeline.deliveryDistance'),
         tone: 'actual',
         values: goalDistances,
       },
       {
         id: 'waypoint',
-        label: t('studyAifg.steering-pipeline.model.nextWaypointDistance'),
+        label: t('studyAifg.steering-pipeline.model.timeline.nextWaypointDistance'),
         tone: 'desired',
         values: states.map((state, step) =>
           distance(state.position, calculations[step].attempts.at(-1)?.waypoint ?? state.route[0]),
@@ -614,20 +739,20 @@ function runTimeline(
   };
 }
 
-function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
+function runInputs(t: StudyTranslate): readonly StudyInput[] {
   return [
     {
       name: 'maxChecks',
-      label: t('studyAifg.steering-pipeline.model.constraintChecks'),
-      unit: t('studyAifg.steering-pipeline.model.checksUpdate'),
+      label: t('studyAifg.steering-pipeline.model.inputs.constraintChecks'),
+      unit: t('studyAifg.steering-pipeline.model.inputs.checksUpdate'),
       min: 1,
       max: 2,
       step: 1,
     },
     {
       name: 'detourPadding',
-      label: t('studyAifg.steering-pipeline.model.bypassPadding'),
-      unit: t('studyAifg.steering-pipeline.model.inputsUnitUnits'),
+      label: t('studyAifg.steering-pipeline.model.inputs.bypassPadding'),
+      unit: t('studyAifg.steering-pipeline.model.inputs.unitUnits'),
       min: 2,
       max: 12,
       step: 2,
@@ -637,67 +762,37 @@ function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
 
 export const present = (
   example: PipelineParameters,
-  statesSamples: ReturnType<typeof pipelineSamples>,
+  statesSamples: readonly PipelineSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const states = statesSamples.map(({ state }) => state);
-  const calculations = statesSamples.map(({ calculation }) => calculation);
-  const otherChecks = comparisonChecks(example);
-  const otherExample = { ...example, maxChecks: otherChecks };
-  const otherSamples = pipelineSamples(otherExample);
-  const other = otherSamples.map(({ state }) => state);
-  const otherCalculations = otherSamples.map(({ calculation }) => calculation);
-  const unlabelled = states.map((state, step) =>
-    frameOf(t, state, calculations[step], step, example),
+  const run = describeRun(example, statesSamples);
+  const unlabelled = statesSamples.map((_sample, step) =>
+    frameOf(t, describeFrame(t, statesSamples[step], example, step)),
   );
   const bounds = boundsOf(unlabelled, example);
   const frames = spaceLabels(unlabelled, bounds);
-  const seconds = frames.map((frame) => frame.seconds);
-  const goalDistances = states.map((state) => distance(state.position, goalOf(example)));
-  const otherDistances = other.map((state) => distance(state.position, goalOf(example)));
-  const find = (predicate: (state: PipelineState, calculation: PipelineStep) => boolean) => {
-    const index = states.findIndex((state, step) => predicate(state, calculations[step]));
-    return index < 0 ? example.steps : index;
-  };
-  const deliveredAt = find((state) => arrived(state, example));
-  const refused = calculations.slice(0, -1).filter((calculation) => !calculation.accepted).length;
-  const otherRefused = otherCalculations
-    .slice(0, -1)
-    .filter((calculation) => !calculation.accepted).length;
-  const blocked = refused === example.steps;
   return {
     family: 'motion',
     motion: { bounds, frames, trail: true },
-    timeline: runTimeline(t, seconds, goalDistances, states, calculations, example),
+    timeline: runTimeline(t, run),
     initialStep: 0,
-    moments: runMoments(t, blocked, example, find, states, deliveredAt),
+    moments: runMoments(t, run),
     legend: [
       {
         tone: 'desired',
-        label: t('studyAifg.steering-pipeline.model.checkedBypassNextCorner'),
+        label: t('studyAifg.steering-pipeline.model.labels.checkedBypassNextCorner'),
       },
       {
         tone: 'actual',
-        label: t('studyAifg.steering-pipeline.model.deliveryDistanceChart'),
+        label: t('studyAifg.steering-pipeline.model.labels.deliveryDistanceChart'),
       },
       {
         tone: 'muted',
-        label: t('studyAifg.steering-pipeline.model.directDeliveryRequestLater'),
+        label: t('studyAifg.steering-pipeline.model.labels.directDeliveryRequestLater'),
       },
     ],
-    caption: t('studyAifg.steering-pipeline.model.caption'),
-    comparison: compareRuns(
-      t,
-      example,
-      otherChecks,
-      seconds,
-      goalDistances,
-      otherDistances,
-      refused,
-      states,
-      otherRefused,
-      other,
-    ),
+    caption: t('studyAifg.steering-pipeline.model.overview.caption'),
+    comparison: compareRuns(t, run),
     inputs: runInputs(t),
   };
 };

@@ -55,6 +55,11 @@ export interface StudyWorkedStep {
   readonly note?: string;
 }
 
+/** Named substitutions supplied to the record's prose at one moment. */
+export interface StudyValues {
+  readonly [name: string]: string;
+}
+
 /**
  * What every family says about one moment of the example, whatever it draws there. The prose,
  * the worked step and playback read these; only the family reads the rest of its frame.
@@ -63,7 +68,7 @@ export interface StudyTick {
   /** Where the moment sits on the example's own clock; Play follows these gaps. */
   readonly seconds: number;
   /** The values `{name}` placeholders in the record's prose read at this moment. */
-  readonly values: Readonly<Record<string, string>>;
+  readonly values: StudyValues;
   /** One sentence on what is happening now, beside the text equivalent. */
   readonly note?: string;
   readonly worked?: StudyWorkedStep;

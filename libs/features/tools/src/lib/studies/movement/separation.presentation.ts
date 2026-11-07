@@ -1,16 +1,100 @@
 import { distance, dot, length, normalize, subtract } from '@dotln-angular/scene-engine';
 
 import { namedBoundsOf } from '../drawing';
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyMoment,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { rounded as shown } from './presentation';
 import {
-  calculateSeparationStep,
   type SeparationParameters,
   type SeparationSample,
   separationSamples,
   type ShelfPair,
 } from './separation.simulation';
+
+const { number: shown } = createNumberFormat({ trimTrailingZeroes: true });
+
+function describeRun(
+  example: SeparationParameters,
+  squareSamples: readonly SeparationSample[],
+): SeparationDescription {
+  const square = squareSamples.map(({ state }) => state);
+  const linearSamples = separationSamples(example, 1);
+  const linear = linearSamples.map(({ state }) => state);
+  const fastSamples = separationSamples(example, 2, example.fastInwardSpeed);
+  const fast = fastSamples.map(({ state }) => state);
+  const seconds = squareSamples.map((_sample, step) => step * example.timeStep);
+  const squareGaps = square.map(gapOf);
+  const linearGaps = linear.map(gapOf);
+  const fastGaps = fast.map(gapOf);
+  const closest = fastGaps.reduce((best, gap, step) => (gap < fastGaps[best] ? step : best), 0);
+  const contact = 2 * example.radius;
+  const overlap = squareGaps.findIndex((gap, step) => Math.min(gap, linearGaps[step]) < contact);
+  const comparisonEnd = Math.min(
+    seconds[example.steps],
+    Math.max(example.timeStep, example.initialGap / Math.abs(example.fastInwardSpeed)),
+  );
+  const comparisonCount = seconds.filter((second) => second <= comparisonEnd).length;
+  const comparisonPeak = Math.max(
+    contact,
+    ...squareGaps.slice(0, comparisonCount),
+    ...fastGaps.slice(0, comparisonCount),
+  );
+  const firstOverlap = fastGaps.findIndex((gap) => gap < contact);
+  const exit = (gaps: readonly number[]) => gaps.findIndex((gap) => gap >= example.threshold);
+  const linearExit = exit(linearGaps);
+  const squareExit = exit(squareGaps);
+
+  return {
+    example,
+    squareSamples,
+    linearSamples,
+    seconds,
+    squareGaps,
+    linearGaps,
+    fastGaps,
+    closest,
+    contact,
+    overlap,
+    comparisonEnd,
+    comparisonPeak,
+    firstOverlap,
+    linearExit,
+    squareExit,
+  };
+}
+
+interface SeparationDescription {
+  readonly example: SeparationParameters;
+  readonly squareSamples: readonly SeparationSample[];
+  readonly linearSamples: readonly SeparationSample[];
+  readonly seconds: readonly number[];
+  readonly squareGaps: readonly number[];
+  readonly linearGaps: readonly number[];
+  readonly fastGaps: readonly number[];
+  readonly closest: number;
+  readonly contact: number;
+  readonly overlap: number;
+  readonly comparisonEnd: number;
+  readonly comparisonPeak: number;
+  readonly firstOverlap: number;
+  readonly linearExit: number;
+  readonly squareExit: number;
+}
+interface SeparationFrame {
+  readonly example: SeparationParameters;
+  readonly squareSample: SeparationSample;
+  readonly linearSample: SeparationSample;
+  readonly step: number;
+}
 
 const gapOf = (pair: ShelfPair) => distance(pair[0].position, pair[1].position);
 
@@ -21,48 +105,48 @@ const gapRate = (pair: ShelfPair) =>
   );
 
 function motionOf(t: StudyTranslate, pair: ShelfPair, example: SeparationParameters): string {
-  if (gapOf(pair) < 2 * example.radius) return t('studyAifg.separation.model.overlapping');
+  if (gapOf(pair) < 2 * example.radius) return t('studyAifg.separation.model.phase.overlapping');
   const rate = gapRate(pair);
   return rate < 0
-    ? t('studyAifg.separation.model.closing')
+    ? t('studyAifg.separation.model.phase.closing')
     : rate > 0
-      ? t('studyAifg.separation.model.movingApart')
-      : t('studyAifg.separation.model.rest');
+      ? t('studyAifg.separation.model.phase.movingApart')
+      : t('studyAifg.separation.model.phase.rest');
 }
 
-function noteOf(
-  t: StudyTranslate,
-  square: ShelfPair,
-  linear: ShelfPair,
-  example: SeparationParameters,
-): string {
+function noteOf(t: StudyTranslate, frame: SeparationFrame): string {
+  const { example, squareSample, linearSample } = frame;
+  const { state: square } = squareSample;
+  const { state: linear } = linearSample;
+
   if (Math.min(gapOf(square), gapOf(linear)) < 2 * example.radius)
-    return t('studyAifg.separation.model.phaseCouriersFootprintsOverlapBecause');
+    return t('studyAifg.separation.model.phase.couriersFootprintsOverlapBecause');
   const closing = [square, linear].filter((pair) => gapRate(pair) < 0).length;
-  if (closing === 2) return t('studyAifg.separation.model.phasePairsClosingDespiteOutward');
-  if (closing === 1) return t('studyAifg.separation.model.phaseOnePairClosingDespite');
+  if (closing === 2) return t('studyAifg.separation.model.phase.pairsClosingDespiteOutward');
+  if (closing === 1) return t('studyAifg.separation.model.phase.onePairClosingDespite');
   const squareOutside = gapOf(square) >= example.threshold;
   const linearOutside = gapOf(linear) >= example.threshold;
   if (squareOutside && linearOutside)
-    return t('studyAifg.separation.model.phasePairsCoastApartBecause');
-  if (linearOutside) return t('studyAifg.separation.model.phaseLinearPairCoastsBeyond');
-  if (squareOutside) return t('studyAifg.separation.model.phaseInverseSquarePairCoasts');
+    return t('studyAifg.separation.model.phase.pairsCoastApartBecause');
+  if (linearOutside) return t('studyAifg.separation.model.phase.linearPairCoastsBeyond');
+  if (squareOutside) return t('studyAifg.separation.model.phase.inverseSquarePairCoasts');
   if (length(square[0].velocity) === 0 && length(linear[0].velocity) === 0)
-    return t('studyAifg.separation.model.phasePairsStartRestDifferent');
-  return t('studyAifg.separation.model.phasePairsMoveApartRepulsion');
+    return t('studyAifg.separation.model.phase.pairsStartRestDifferent');
+  return t('studyAifg.separation.model.phase.pairsMoveApartRepulsion');
 }
 
 function calculationLines(
   t: StudyTranslate,
-  pair: ShelfPair,
+  sample: SeparationSample,
   example: SeparationParameters,
   falloff: 1 | 2,
-  step: ReturnType<typeof calculateSeparationStep>,
 ): readonly string[] {
+  const { state: pair, calculation: step } = sample;
+
   const name =
     falloff === 2
-      ? t('studyAifg.separation.model.inverseSquare')
-      : t('studyAifg.separation.model.linear');
+      ? t('studyAifg.separation.model.labels.inverseSquare')
+      : t('studyAifg.separation.model.labels.linear');
   const a = length(step.accelerations[0]);
   const [A, R, d, c] = [
     shown(example.maxAcceleration),
@@ -72,14 +156,14 @@ function calculationLines(
   ];
   const strength =
     step.gap >= example.threshold
-      ? t('studyAifg.separation.model.gapThresholdAccelerationZero', { name, d, R })
+      ? t('studyAifg.separation.model.labels.gapThresholdAccelerationZero', { name, d, R })
       : falloff === 2
         ? step.gap < 0.005
-          ? t('studyAifg.separation.model.centresCloserDisplayedPrecision', {
+          ? t('studyAifg.separation.model.labels.centresCloserDisplayedPrecision', {
               name,
               A,
             })
-          : t('studyAifg.separation.model.minAwayOtherCourier', {
+          : t('studyAifg.separation.model.labels.minAwayOtherCourier', {
               name,
               A,
               c,
@@ -87,7 +171,7 @@ function calculationLines(
               R,
               a: shown(a),
             })
-        : t('studyAifg.separation.model.awayOtherCourier', {
+        : t('studyAifg.separation.model.labels.awayOtherCourier', {
             name,
             A,
             R,
@@ -98,32 +182,28 @@ function calculationLines(
   const after = step.next[0];
   return [
     strength,
-    t('studyAifg.separation.model.miraXVelocityAfter', {
+    t('studyAifg.separation.model.worked.miraXVelocityAfter', {
       velocityX: shown(before.velocity.x),
       accelerationsX: shown(step.accelerations[0].x),
       exampleTimeStep: shown(example.timeStep),
-      velocityX2: shown(after.velocity.x),
+      nextVelocityX: shown(after.velocity.x),
       exampleMaxSpeed: shown(example.maxSpeed),
     }),
-    t('studyAifg.separation.model.miraXPositionRowan', {
+    t('studyAifg.separation.model.worked.miraXPositionRowan', {
       positionX: shown(before.position.x),
       velocityX: shown(after.velocity.x),
       exampleTimeStep: shown(example.timeStep),
-      positionX2: shown(after.position.x),
-      value5: shown(gapOf(step.next)),
+      nextPositionX: shown(after.position.x),
+      nextGap: shown(gapOf(step.next)),
     }),
   ];
 }
 
-function frameValues(
-  t: StudyTranslate,
-  step: number,
-  example: SeparationParameters,
-  squareStep: ReturnType<typeof calculateSeparationStep>,
-  square: ShelfPair,
-  linearStep: ReturnType<typeof calculateSeparationStep>,
-  linear: ShelfPair,
-): Readonly<Record<string, string>> {
+function frameValues(t: StudyTranslate, frame: SeparationFrame): StudyValues {
+  const { example, step, squareSample, linearSample } = frame;
+  const { state: square, calculation: squareStep } = squareSample;
+  const { state: linear, calculation: linearStep } = linearSample;
+
   return {
     seconds: shown(step * example.timeStep),
     squareGap: shown(squareStep.gap),
@@ -145,45 +225,37 @@ function frameValues(
   };
 }
 
-function frameWorked(
-  t: StudyTranslate,
-  step: number,
-  example: SeparationParameters,
-  squareStep: ReturnType<typeof calculateSeparationStep>,
-  linearStep: ReturnType<typeof calculateSeparationStep>,
-  square: ShelfPair,
-  linear: ShelfPair,
-): StudyWorkedStep {
+function frameWorked(t: StudyTranslate, frame: SeparationFrame): StudyWorkedStep {
+  const { example, step, squareSample, linearSample } = frame;
+  const { calculation: squareStep } = squareSample;
+  const { calculation: linearStep } = linearSample;
+
   return {
-    title: t('studyAifg.separation.model.workedShelfCalculation', {
+    title: t('studyAifg.separation.model.worked.shelfCalculation', {
       step: shown(step * example.timeStep),
     }),
     lines: [
-      t('studyAifg.separation.model.workedBodyDiameterCentreGaps', {
+      t('studyAifg.separation.model.worked.bodyDiameterCentreGaps', {
         exampleRadius: shown(example.radius),
-        value2: shown(2 * example.radius),
+        diameter: shown(2 * example.radius),
         squareStepGap: shown(squareStep.gap),
         linearStepGap: shown(linearStep.gap),
       }),
-      ...calculationLines(t, square, example, 2, squareStep),
-      ...calculationLines(t, linear, example, 1, linearStep),
+      ...calculationLines(t, frame.squareSample, example, 2),
+      ...calculationLines(t, frame.linearSample, example, 1),
     ],
     note:
       step === example.steps
-        ? t('studyAifg.separation.model.workedFinalSamplePreviewsNext')
-        : t('studyAifg.separation.model.workedRunsUseSameSpeed'),
+        ? t('studyAifg.separation.model.worked.finalSamplePreviewsNext')
+        : t('studyAifg.separation.model.worked.runsUseSameSpeed'),
   };
 }
 
-function frameOf(
-  t: StudyTranslate,
-  squareSample: SeparationSample,
-  linearSample: SeparationSample,
-  step: number,
-  example: SeparationParameters,
-): MotionFrame {
+function frameOf(t: StudyTranslate, frame: SeparationFrame): MotionFrame {
+  const { example, step, squareSample, linearSample } = frame;
   const { state: square, calculation: squareStep } = squareSample;
   const { state: linear, calculation: linearStep } = linearSample;
+
   const lanes = [
     { pair: square, calculation: squareStep, y: -example.laneOffset, tone: 'actual' },
     { pair: linear, calculation: linearStep, y: example.laneOffset, tone: 'desired' },
@@ -197,7 +269,7 @@ function frameOf(
         x: body.position.x,
         y: body.position.y + y,
         tone,
-        ...(index === 0 ? { label: t('studyAifg.separation.model.mira') } : {}),
+        ...(index === 0 ? { label: t('studyAifg.separation.model.labels.mira') } : {}),
       })),
     ),
     marks: lanes.map(({ pair, y, tone }) => ({
@@ -205,7 +277,7 @@ function frameOf(
       y: pair[1].position.y + y + labelLift,
       shape: 'dot',
       tone,
-      label: t('studyAifg.separation.model.rowan'),
+      label: t('studyAifg.separation.model.labels.rowan'),
     })),
     vectors: lanes.flatMap(({ pair, calculation, y, tone }) =>
       pair.map((body, index) => ({
@@ -237,29 +309,30 @@ function frameOf(
         tone: 'muted',
       },
     ]),
-    values: frameValues(t, step, example, squareStep, square, linearStep, linear),
-    note: noteOf(t, square, linear, example),
-    worked: frameWorked(t, step, example, squareStep, linearStep, square, linear),
+    values: frameValues(t, frame),
+    note: noteOf(t, frame),
+    worked: frameWorked(t, frame),
   };
 }
 
-function compareRuns(
-  t: StudyTranslate,
-  example: SeparationParameters,
-  seconds: number[],
-  contact: number,
-  comparisonEnd: number,
-  comparisonPeak: number,
-  squareGaps: number[],
-  fastGaps: number[],
-  closest: number,
-  firstOverlap: number,
-  squareSamples: ReturnType<typeof separationSamples>,
-): NonNullable<MotionStudyModel['comparison']> {
+function compareRuns(t: StudyTranslate, run: SeparationDescription): StudyComparison {
+  const {
+    example,
+    squareSamples,
+    seconds,
+    squareGaps,
+    fastGaps,
+    closest,
+    contact,
+    comparisonEnd,
+    comparisonPeak,
+    firstOverlap,
+  } = run;
+
   const square = squareSamples.map(({ state }) => state);
   return {
-    title: t('studyAifg.separation.model.comparisonSpacingRuleCannotEnforce'),
-    intro: t('studyAifg.separation.model.comparisonCompareInitialInwardSpeeds', {
+    title: t('studyAifg.separation.model.comparison.spacingRuleCannotEnforce'),
+    intro: t('studyAifg.separation.model.comparison.compareInitialInwardSpeeds', {
       exampleInwardSpeed: shown(example.inwardSpeed),
       exampleFastInwardSpeed: shown(example.fastInwardSpeed),
       exampleInitialGap: shown(example.initialGap),
@@ -267,9 +340,9 @@ function compareRuns(
       exampleMaxAcceleration: shown(example.maxAcceleration),
     }),
     timeline: {
-      title: t('studyAifg.separation.model.comparisonDoesCentreGapFall'),
-      xLabel: t('studyAifg.separation.model.timeSeconds'),
-      yLabel: t('studyAifg.separation.model.centreDistance'),
+      title: t('studyAifg.separation.model.comparison.doesCentreGapFall'),
+      xLabel: t('studyAifg.separation.model.labels.timeSeconds'),
+      yLabel: t('studyAifg.separation.model.labels.centreDistance'),
       seconds,
       reference: contact,
       xRange: [0, comparisonEnd],
@@ -277,7 +350,7 @@ function compareRuns(
       series: [
         {
           id: 'reference',
-          label: t('studyAifg.separation.model.comparisonInwardSpeed', {
+          label: t('studyAifg.separation.model.comparison.inwardSpeed', {
             exampleInwardSpeed: shown(example.inwardSpeed),
           }),
           tone: 'actual',
@@ -285,7 +358,7 @@ function compareRuns(
         },
         {
           id: 'inward',
-          label: t('studyAifg.separation.model.comparisonComparisonSpeed', {
+          label: t('studyAifg.separation.model.comparison.comparisonSpeed', {
             exampleFastInwardSpeed: shown(example.fastInwardSpeed),
           }),
           tone: 'desired',
@@ -296,86 +369,78 @@ function compareRuns(
     },
     findings: [
       firstOverlap < 0
-        ? t('studyAifg.separation.model.comparisonNoSampledOverlapOccurs')
-        : t('studyAifg.separation.model.comparisonComparisonPairFirstOverlaps', {
-            seconds: shown(seconds[firstOverlap]),
-            fastGaps: shown(fastGaps[firstOverlap]),
+        ? t('studyAifg.separation.model.comparison.noSampledOverlapOccurs')
+        : t('studyAifg.separation.model.comparison.comparisonPairFirstOverlaps', {
+            firstOverlapSeconds: shown(seconds[firstOverlap]),
+            firstOverlapGap: shown(fastGaps[firstOverlap]),
             contact: shown(contact),
-            fastGaps2: shown(fastGaps[closest]),
-            seconds2: shown(seconds[closest]),
+            closestGap: shown(fastGaps[closest]),
+            closestSeconds: shown(seconds[closest]),
           }),
       example.inwardSpeed === example.fastInwardSpeed
-        ? t('studyAifg.separation.model.comparisonChosenSpeedsMatchLines')
-        : t('studyAifg.separation.model.comparisonRunsInitiallyRequestAway', {
-            value1: shown(length(squareSamples[0].calculation.accelerations[0])),
+        ? t('studyAifg.separation.model.comparison.chosenSpeedsMatchLines')
+        : t('studyAifg.separation.model.comparison.runsInitiallyRequestAway', {
+            initialAcceleration: shown(length(squareSamples[0].calculation.accelerations[0])),
           }),
-      t('studyAifg.separation.model.comparisonMainInverseSquareRun', {
+      t('studyAifg.separation.model.comparison.mainInverseSquareRun', {
         squareGaps: shown(squareGaps[example.steps]),
         stepsVelocity: shown(length(square[example.steps][0].velocity)),
       }),
     ],
-    note: t('studyAifg.separation.model.comparisonChartFocusesFirstBelow', {
+    note: t('studyAifg.separation.model.comparison.chartFocusesFirstBelow', {
       comparisonEnd: shown(comparisonEnd),
     }),
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  linearExit: number,
-  example: SeparationParameters,
-  squareExit: number,
-  overlap: number,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, run: SeparationDescription): readonly StudyMoment[] {
+  const { example, overlap, linearExit, squareExit } = run;
+
   return [
-    { label: t('studyAifg.separation.model.firstPushes'), step: 0 },
+    { label: t('studyAifg.separation.model.moments.firstPushes'), step: 0 },
     {
       label:
         linearExit < 0
-          ? t('studyAifg.separation.model.linearRunEnd')
-          : t('studyAifg.separation.model.linearRunLeavesNeighbourhood'),
+          ? t('studyAifg.separation.model.moments.linearRunEnd')
+          : t('studyAifg.separation.model.moments.linearRunLeavesNeighbourhood'),
       step: linearExit < 0 ? example.steps : linearExit,
     },
     {
       label:
         squareExit < 0
-          ? t('studyAifg.separation.model.inverseSquareRunEnd')
-          : t('studyAifg.separation.model.inverseSquareRunLeaves'),
+          ? t('studyAifg.separation.model.moments.inverseSquareRunEnd')
+          : t('studyAifg.separation.model.moments.inverseSquareRunLeaves'),
       step: squareExit < 0 ? example.steps : squareExit,
     },
     {
       label:
         overlap < 0
-          ? t('studyAifg.separation.model.endObservation')
-          : t('studyAifg.separation.model.footprintsOverlap'),
+          ? t('studyAifg.separation.model.moments.endObservation')
+          : t('studyAifg.separation.model.moments.footprintsOverlap'),
       step: overlap < 0 ? example.steps : overlap,
     },
   ];
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  example: SeparationParameters,
-  squareGaps: number[],
-  linearGaps: number[],
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, run: SeparationDescription): TimelineModel {
+  const { example, squareGaps, linearGaps, seconds } = run;
+
   return {
-    title: t('studyAifg.separation.model.spaceMadeShelf'),
-    xLabel: t('studyAifg.separation.model.timeSeconds'),
-    yLabel: t('studyAifg.separation.model.centreDistance'),
+    title: t('studyAifg.separation.model.timeline.spaceMadeShelf'),
+    xLabel: t('studyAifg.separation.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.separation.model.labels.centreDistance'),
     seconds,
     reference: example.threshold,
     series: [
       {
         id: 'square-gap',
-        label: t('studyAifg.separation.model.inverseSquareGap'),
+        label: t('studyAifg.separation.model.timeline.inverseSquareGap'),
         tone: 'actual',
         values: squareGaps,
       },
       {
         id: 'linear-gap',
-        label: t('studyAifg.separation.model.linearGap'),
+        label: t('studyAifg.separation.model.timeline.linearGap'),
         tone: 'desired',
         values: linearGaps,
       },
@@ -383,20 +448,20 @@ function runTimeline(
   };
 }
 
-function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
+function runInputs(t: StudyTranslate): readonly StudyInput[] {
   return [
     {
       name: 'inwardSpeed',
-      label: t('studyAifg.separation.model.initialInwardSpeed'),
-      unit: t('studyAifg.separation.model.each'),
+      label: t('studyAifg.separation.model.inputs.initialInwardSpeed'),
+      unit: t('studyAifg.separation.model.inputs.each'),
       min: 0,
       max: 4,
       step: 0.5,
     },
     {
       name: 'threshold',
-      label: t('studyAifg.separation.model.neighbourRange'),
-      unit: t('studyAifg.separation.model.inputsUnitUnits'),
+      label: t('studyAifg.separation.model.inputs.neighbourRange'),
+      unit: t('studyAifg.separation.model.inputs.unitUnits'),
       min: 2.5,
       max: 6,
       step: 0.5,
@@ -406,75 +471,39 @@ function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
 
 export const present = (
   example: SeparationParameters,
-  squareSamples: ReturnType<typeof separationSamples>,
+  squareSamples: readonly SeparationSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const square = squareSamples.map(({ state }) => state);
-  const linearSamples = separationSamples(example, 1);
-  const linear = linearSamples.map(({ state }) => state);
-  const fastSamples = separationSamples(example, 2, example.fastInwardSpeed);
-  const fast = fastSamples.map(({ state }) => state);
+  const run = describeRun(example, squareSamples);
+  const { overlap, linearSamples } = run;
   const frames = squareSamples.map((sample, step) =>
-    frameOf(t, sample, linearSamples[step], step, example),
+    frameOf(t, { example, squareSample: sample, linearSample: linearSamples[step], step }),
   );
-  const seconds = frames.map((frame) => frame.seconds);
-  const squareGaps = square.map(gapOf);
-  const linearGaps = linear.map(gapOf);
-  const fastGaps = fast.map(gapOf);
-  const closest = fastGaps.reduce((best, gap, step) => (gap < fastGaps[best] ? step : best), 0);
-  const contact = 2 * example.radius;
-  const overlap = squareGaps.findIndex((gap, step) => Math.min(gap, linearGaps[step]) < contact);
-  const comparisonEnd = Math.min(
-    seconds[example.steps],
-    Math.max(example.timeStep, example.initialGap / Math.abs(example.fastInwardSpeed)),
-  );
-  const comparisonCount = seconds.filter((second) => second <= comparisonEnd).length;
-  const comparisonPeak = Math.max(
-    contact,
-    ...squareGaps.slice(0, comparisonCount),
-    ...fastGaps.slice(0, comparisonCount),
-  );
-  const firstOverlap = fastGaps.findIndex((gap) => gap < contact);
-  const exit = (gaps: readonly number[]) => gaps.findIndex((gap) => gap >= example.threshold);
-  const linearExit = exit(linearGaps);
-  const squareExit = exit(squareGaps);
   return {
     family: 'motion',
     motion: { bounds: namedBoundsOf(frames, 2 * example.radius), frames, trail: true },
-    timeline: runTimeline(t, seconds, example, squareGaps, linearGaps),
+    timeline: runTimeline(t, run),
     initialStep: overlap < 0 ? 0 : overlap,
-    moments: runMoments(t, linearExit, example, squareExit, overlap),
+    moments: runMoments(t, run),
     legend: [
       {
         tone: 'actual',
-        label: t('studyAifg.separation.model.upperPairInverseSquare'),
+        label: t('studyAifg.separation.model.labels.upperPairInverseSquare'),
       },
-      { tone: 'desired', label: t('studyAifg.separation.model.lowerPairLinearFalloff') },
+      { tone: 'desired', label: t('studyAifg.separation.model.labels.lowerPairLinearFalloff') },
       {
         tone: 'zone',
-        label: t('studyAifg.separation.model.outerCirclesNeighbourhoodAround'),
+        label: t('studyAifg.separation.model.labels.outerCirclesNeighbourhoodAround'),
       },
       {
         tone: 'muted',
-        label: t('studyAifg.separation.model.innerCirclesBodyFootprints'),
+        label: t('studyAifg.separation.model.labels.innerCirclesBodyFootprints'),
       },
     ],
-    caption: t('studyAifg.separation.model.caption', {
+    caption: t('studyAifg.separation.model.overview.caption', {
       exampleAccelerationScale: shown(example.accelerationScale),
     }),
-    comparison: compareRuns(
-      t,
-      example,
-      seconds,
-      contact,
-      comparisonEnd,
-      comparisonPeak,
-      squareGaps,
-      fastGaps,
-      closest,
-      firstOverlap,
-      squareSamples,
-    ),
+    comparison: compareRuns(t, run),
     inputs: runInputs(t),
   };
 };

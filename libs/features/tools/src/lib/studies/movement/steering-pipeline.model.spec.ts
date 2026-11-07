@@ -374,6 +374,16 @@ it('moves the bypass and its clearance when padding changes while retaining the 
   }
 });
 
+it('keeps the corner mark but hides its name when the courier approaches it', () => {
+  const frames = model(parameters, studyTranslate).motion.frames;
+  const entry = (frame: (typeof frames)[number]) =>
+    frame.marks?.find(({ x, y }) => x === bypass[0].x && y === bypass[0].y);
+  expect(entry(frames[0])?.label).toBe('Entry');
+  expect(entry(frames[22])).toMatchObject({ x: 20, y: -20, shape: 'ring' });
+  expect(entry(frames[22])?.label).toBeUndefined();
+  expect(frames[22].bodies[0].label).toBe('Courier');
+});
+
 it('keeps notes, prose, arithmetic, labels and every drawing sound over the offered input ranges', () => {
   const offered = model(parameters, studyTranslate).inputs;
   if (!offered || offered.length !== 2) throw new Error('Offer the budget and bypass padding.');

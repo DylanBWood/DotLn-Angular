@@ -7,32 +7,139 @@ import {
   type Vec2,
 } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionMark,
+  MotionStudyModel,
+  StudyComparison,
+  StudyMoment,
+  StudyPoint,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
   anchorLag,
   arrivalSteps,
-  calculateGroupStep,
   type GroupExample,
+  type GroupSample,
   groupSamples,
   type GroupState,
-  groupStates,
   maxSlotError,
   memberIds,
   slotErrors,
 } from './group-movement.simulation';
-import { boundsOfPoints, decimal as fixed, vectorText as point } from './presentation';
+import { boundsOfPoints, type PresentationMember } from './presentation';
+
+function describeFrame(
+  t: StudyTranslate,
+  reading: GroupDescription,
+  sample: GroupSample,
+  step: number,
+): GroupFrame {
+  const { example } = reading;
+  const { state, calculation } = sample;
+
+  const slots = state.formation.assignment.map(({ slot }) => slotPosition(state.formation, slot));
+  const errors = slotErrors(state);
+  const error = Math.max(...errors);
+  const lead = state.members[0].position.x - state.members[1].position.x;
+  const memberRelation =
+    Math.abs(lead) < 0.005
+      ? t('studyAifg.group-movement.model.labels.medicNearlyLevelEscorts')
+      : lead > 0
+        ? t('studyAifg.group-movement.model.labels.medicTrailsEscorts', {
+            lead: fixed(lead),
+          })
+        : t('studyAifg.group-movement.model.labels.medicAheadEscorts', {
+            lead: fixed(-lead),
+          });
+  const gapOwner =
+    error - Math.min(...errors) < 0.005
+      ? t('studyAifg.group-movement.model.labels.allMembersEqualSlot')
+      : errors[1] >= error - 1e-10
+        ? t('studyAifg.group-movement.model.labels.medicLargestSlotGap')
+        : t('studyAifg.group-movement.model.labels.escortsLargestSlotGap');
+  const slowing =
+    length(calculation.next.formation.anchorVelocity) <
+    length(state.formation.anchorVelocity) - 1e-10;
+  // Leader lines lift the anchor and beacon names away from the medic's lane, even at arrival.
+  const anchorLabel = { x: state.formation.anchor.x, y: -2 * example.spacing };
+  const beaconLabel = { x: example.goalX, y: 2 * example.spacing };
+
+  return {
+    ...sample,
+    reading,
+    step,
+    slots,
+    error,
+    memberRelation,
+    gapOwner,
+    slowing,
+    anchorLabel,
+    beaconLabel,
+    medic: describeWorkedStep(sample, example),
+  };
+}
+
+interface ArrivalSummary {
+  readonly times: string;
+  readonly spread: string;
+}
+interface GroupDescription {
+  readonly example: GroupExample;
+  readonly states: readonly GroupState[];
+  readonly seconds: readonly number[];
+  readonly runValues: StudyValues;
+  readonly changed: GroupExample;
+  readonly errors: readonly number[];
+  readonly comparedErrors: readonly number[];
+  readonly peak: number;
+  readonly allArrived: boolean;
+  readonly lastArrival: number;
+  readonly comparedPeak: number;
+  readonly compared: readonly GroupState[];
+  readonly selectedArrival: ArrivalSummary;
+  readonly comparedArrival: ArrivalSummary;
+}
+interface MedicStep {
+  readonly target: Vec2;
+  readonly medic: PresentationMember;
+  readonly gap: number;
+  readonly stop: number;
+  readonly desiredSpeed: number;
+  readonly desiredX: number;
+  readonly requested: number;
+  readonly nextMedic: PresentationMember;
+  readonly nextMean: Vec2;
+}
+interface GroupFrame extends GroupSample {
+  readonly reading: GroupDescription;
+  readonly step: number;
+  readonly slots: readonly Vec2[];
+  readonly error: number;
+  readonly memberRelation: string;
+  readonly gapOwner: string;
+  readonly slowing: boolean;
+  readonly anchorLabel: StudyPoint;
+  readonly beaconLabel: StudyPoint;
+  readonly medic: MedicStep;
+}
+
+const { number: fixed, vector: point } = createNumberFormat();
 
 const arrivalSummary = (
   t: StudyTranslate,
   states: readonly GroupState[],
   example: GroupExample,
-) => {
+): ArrivalSummary => {
   const steps = arrivalSteps(states, example);
   const times = steps
     .map(
       (step, index) =>
-        `${memberName(t, index)} ${step === null ? t('studyAifg.group-movement.model.notYet') : t('studyAifg.group-movement.model.arrivalSummaryS', { step: fixed(step * example.timeStep) })}`,
+        `${memberName(t, index)} ${step === null ? t('studyAifg.group-movement.model.labels.notYet') : t('studyAifg.group-movement.model.labels.arrivalSummaryS', { step: fixed(step * example.timeStep) })}`,
     )
     .join('; ');
   const reached = steps.filter((step): step is number => step !== null);
@@ -40,18 +147,16 @@ const arrivalSummary = (
     times,
     spread:
       reached.length === memberIds.length
-        ? t('studyAifg.group-movement.model.arrivalSummarySpreadS', {
-            value1: fixed((Math.max(...reached) - Math.min(...reached)) * example.timeStep),
+        ? t('studyAifg.group-movement.model.values.arrivalSummarySpreadS', {
+            spread: fixed((Math.max(...reached) - Math.min(...reached)) * example.timeStep),
           })
-        : t('studyAifg.group-movement.model.unknownAnyMemberNot'),
+        : t('studyAifg.group-movement.model.values.unknownAnyMemberNot'),
   };
 };
 
-function describeWorkedStep(
-  state: GroupState,
-  example: GroupExample,
-  calculation: ReturnType<typeof calculateGroupStep>,
-) {
+function describeWorkedStep(sample: GroupSample, example: GroupExample): MedicStep {
+  const { state, calculation } = sample;
+
   const medic = state.members[1];
   const target = calculation.targets[1];
   const gap = distance(medic.position, target);
@@ -79,37 +184,36 @@ function describeWorkedStep(
   };
 }
 
-function memberLines(
-  t: StudyTranslate,
-  state: GroupState,
-  calculation: ReturnType<typeof calculateGroupStep>,
-): readonly string[] {
+function memberLines(t: StudyTranslate, frame: GroupFrame): readonly string[] {
+  const { state, calculation } = frame;
+
   return state.members.map((member, index) =>
-    t('studyAifg.group-movement.model.workedPositionVelocitySlot', {
+    t('studyAifg.group-movement.model.worked.positionVelocitySlot', {
       memberNames: memberName(t, index),
       memberPosition: point(member.position),
       memberVelocity: point(member.velocity),
-      value4: point(calculation.targets[index]),
+      target: point(calculation.targets[index]),
     }),
   );
 }
 
-function workedLines(
-  t: StudyTranslate,
-  state: GroupState,
-  calculation: ReturnType<typeof calculateGroupStep>,
-  description: ReturnType<typeof describeWorkedStep>,
-  example: GroupExample,
-  step: number,
-): readonly string[] {
+function workedLines(t: StudyTranslate, frame: GroupFrame): readonly string[] {
+  const {
+    reading: { example },
+    state,
+    calculation,
+    step,
+    medic: description,
+  } = frame;
+
   return [
-    ...memberLines(t, state, calculation),
-    t('studyAifg.group-movement.model.workedOldAnchorMedicOffset', {
+    ...memberLines(t, frame),
+    t('studyAifg.group-movement.model.worked.oldAnchorMedicOffset', {
       formationAnchor: point(state.formation.anchor),
-      value2: point(state.formation.slots[1]),
+      offset: point(state.formation.slots[1]),
       target: point(description.target),
     }),
-    t('studyAifg.group-movement.model.workedDistanceSlotStopDistance', {
+    t('studyAifg.group-movement.model.worked.distanceSlotStopDistance', {
       targetX: fixed(description.target.x),
       positionX: fixed(description.medic.position.x),
       gap: fixed(description.gap),
@@ -117,20 +221,20 @@ function workedLines(
       stop: fixed(description.stop),
     }),
     description.gap <= description.stop
-      ? t('studyAifg.group-movement.model.workedInsideStopDistanceDesired')
+      ? t('studyAifg.group-movement.model.worked.insideStopDistanceDesired')
       : description.gap >= example.slowRadius
-        ? t('studyAifg.group-movement.model.workedOutsideSlowingRadiusDesired', {
+        ? t('studyAifg.group-movement.model.worked.outsideSlowingRadiusDesired', {
             exampleSlowRadius: fixed(example.slowRadius),
             medicMaxSpeed: fixed(description.medic.maxSpeed),
           })
-        : t('studyAifg.group-movement.model.workedInsideSlowingRadius', {
+        : t('studyAifg.group-movement.model.worked.insideSlowingRadius', {
             medicMaxSpeed: fixed(description.medic.maxSpeed),
             gap: fixed(description.gap),
             stop: fixed(description.stop),
             exampleSlowRadius: fixed(example.slowRadius),
             desiredSpeed: fixed(description.desiredSpeed),
           }),
-    t('studyAifg.group-movement.model.workedRequestedXAccelerationEngine', {
+    t('studyAifg.group-movement.model.worked.requestedXAccelerationEngine', {
       desiredX: fixed(description.desiredX),
       velocityX: fixed(description.medic.velocity.x),
       exampleResponseTime: fixed(example.responseTime),
@@ -138,26 +242,26 @@ function workedLines(
       exampleMaxAcceleration: fixed(example.maxAcceleration),
       accelerationsX: fixed(calculation.accelerations[1].x),
     }),
-    t('studyAifg.group-movement.model.workedUpdateVelocityCappedX', {
+    t('studyAifg.group-movement.model.worked.updateVelocityCappedX', {
       medicMaxSpeed: fixed(description.medic.maxSpeed),
       velocityX: fixed(description.medic.velocity.x),
       accelerationsX: fixed(calculation.accelerations[1].x),
       exampleTimeStep: fixed(example.timeStep),
-      velocityX2: fixed(description.nextMedic.velocity.x),
+      nextVelocityX: fixed(description.nextMedic.velocity.x),
       positionX: fixed(description.medic.position.x),
-      positionX2: fixed(description.nextMedic.position.x),
+      nextPositionX: fixed(description.nextMedic.position.x),
     }),
-    t('studyAifg.group-movement.model.workedAfterEveryFollowerMoves', {
+    t('studyAifg.group-movement.model.worked.afterEveryFollowerMoves', {
       nextMean: point(description.nextMean),
       formationAnchor: point(calculation.next.formation.anchor),
       exampleLagLimit: fixed(example.lagLimit),
     }),
     ...(step === 0
       ? [
-          t('studyAifg.group-movement.model.workedInitialAnchorCruiseRequest', {
+          t('studyAifg.group-movement.model.worked.initialAnchorCruiseRequest', {
             exampleAnchorSpeed: fixed(example.anchorSpeed),
             exampleEnginePlanningSeconds: fixed(example.enginePlanningSeconds),
-            exampleAnchorSpeed2: fixed(example.anchorSpeed / example.enginePlanningSeconds),
+            planningSpeed: fixed(example.anchorSpeed / example.enginePlanningSeconds),
             anchorVelocityX: fixed(calculation.next.formation.anchorVelocity.x),
             exampleStartX: fixed(example.startX),
             exampleTimeStep: fixed(example.timeStep),
@@ -169,24 +273,22 @@ function workedLines(
   ];
 }
 
-function workedStep(
-  t: StudyTranslate,
-  state: GroupState,
-  step: number,
-  example: GroupExample,
-  calculation: ReturnType<typeof calculateGroupStep>,
-): StudyWorkedStep {
-  const description = describeWorkedStep(state, example, calculation);
+function workedStep(t: StudyTranslate, frame: GroupFrame): StudyWorkedStep {
+  const {
+    reading: { example },
+    step,
+  } = frame;
+
   return {
-    title: t('studyAifg.group-movement.model.workedMedicStep', {
-      step: fixed(step * example.timeStep),
-      step2: fixed((step + 1) * example.timeStep),
+    title: t('studyAifg.group-movement.model.worked.medicStep', {
+      seconds: fixed(step * example.timeStep),
+      nextSeconds: fixed((step + 1) * example.timeStep),
     }),
-    lines: workedLines(t, state, calculation, description, example, step),
+    lines: workedLines(t, frame),
     note:
       step === example.steps
-        ? t('studyAifg.group-movement.model.workedCalculationPreviewsOneMore')
-        : t('studyAifg.group-movement.model.workedRoundedValuesExplainCalculation'),
+        ? t('studyAifg.group-movement.model.worked.calculationPreviewsOneMore')
+        : t('studyAifg.group-movement.model.worked.roundedValuesExplainCalculation'),
   };
 }
 
@@ -196,35 +298,39 @@ const isArrived = (state: GroupState, index: number, example: GroupExample) =>
     add({ x: example.goalX, y: 0 }, state.formation.slots[index]),
   ) <= example.arrivalDistance && length(state.members[index].velocity) <= example.arrivalSpeed;
 
-function frameNote(
-  t: StudyTranslate,
-  state: GroupState,
-  step: number,
-  example: GroupExample,
-  slowing: boolean,
-) {
-  if (step === 0) return t('studyAifg.group-movement.model.phaseEveryoneStartsOwnSlot');
+function frameNote(t: StudyTranslate, frame: GroupFrame): string {
+  const {
+    reading: { example },
+    state,
+    step,
+    slowing,
+  } = frame;
+
+  if (step === 0) return t('studyAifg.group-movement.model.phase.everyoneStartsOwnSlot');
   if (state.members.every(({ velocity }) => length(velocity) === 0))
-    return t('studyAifg.group-movement.model.phaseAnchorMovedAheadSquad');
+    return t('studyAifg.group-movement.model.phase.anchorMovedAheadSquad');
   if (maxSlotError(state) > example.slotErrorBudget)
-    return t('studyAifg.group-movement.model.phaseMedicFallenTooFar');
+    return t('studyAifg.group-movement.model.phase.medicFallenTooFar');
   const arrived = state.members.map((_member, index) => isArrived(state, index, example));
-  if (arrived.every(Boolean)) return t('studyAifg.group-movement.model.phaseEveryoneNearFinalSlot');
-  if (arrived.some(Boolean)) return t('studyAifg.group-movement.model.phaseSomeMembersPassArrival');
-  if (slowing) return t('studyAifg.group-movement.model.phaseAnchorSlowsNearBeacon');
+  if (arrived.every(Boolean))
+    return t('studyAifg.group-movement.model.phase.everyoneNearFinalSlot');
+  if (arrived.some(Boolean))
+    return t('studyAifg.group-movement.model.phase.someMembersPassArrival');
+  if (slowing) return t('studyAifg.group-movement.model.phase.anchorSlowsNearBeacon');
   if (state.members[0].position.x - state.members[1].position.x > 0.005)
-    return t('studyAifg.group-movement.model.phaseMedicTrailsEscortsBecause');
-  return t('studyAifg.group-movement.model.phaseSquadStartsAcceleratingAfter');
+    return t('studyAifg.group-movement.model.phase.medicTrailsEscortsBecause');
+  return t('studyAifg.group-movement.model.phase.squadStartsAcceleratingAfter');
 }
 
-function frameValues(
-  runValues: Readonly<Record<string, string>>,
-  memberRelation: string,
-  gapOwner: string,
-  error: number,
-  state: GroupState,
-  example: GroupExample,
-): Readonly<Record<string, string>> {
+function frameValues(frame: GroupFrame): StudyValues {
+  const {
+    reading: { example, runValues },
+    state,
+    error,
+    memberRelation,
+    gapOwner,
+  } = frame;
+
   return {
     ...runValues,
     memberRelation,
@@ -249,20 +355,15 @@ function frameValues(
   };
 }
 
-function frameMarks(
-  t: StudyTranslate,
-  slots: Vec2[],
-  state: GroupState,
-  example: GroupExample,
-  anchorLabel: {
-    x: number;
-    y: number;
-  },
-  beaconLabel: {
-    x: number;
-    y: number;
-  },
-): MotionFrame['marks'] {
+function frameMarks(t: StudyTranslate, frame: GroupFrame): readonly MotionMark[] {
+  const {
+    reading: { example },
+    state,
+    slots,
+    anchorLabel,
+    beaconLabel,
+  } = frame;
+
   return [
     ...slots.map((slot) => ({ ...slot, shape: 'ring' as const, tone: 'target' as const })),
     { ...state.formation.anchor, shape: 'dot', tone: 'desired' },
@@ -271,64 +372,39 @@ function frameMarks(
       ...anchorLabel,
       shape: 'dot',
       tone: 'muted',
-      label: t('studyAifg.group-movement.model.anchor'),
+      label: t('studyAifg.group-movement.model.labels.anchor'),
     },
     {
       ...beaconLabel,
       shape: 'dot',
       tone: 'muted',
-      label: t('studyAifg.group-movement.model.beacon'),
+      label: t('studyAifg.group-movement.model.labels.beacon'),
     },
   ];
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: GroupState,
-  step: number,
-  example: GroupExample,
-  runValues: Readonly<Record<string, string>>,
-  calculation: ReturnType<typeof calculateGroupStep>,
-): MotionFrame {
-  const slots = state.formation.assignment.map(({ slot }) => slotPosition(state.formation, slot));
-  const errors = slotErrors(state);
-  const error = Math.max(...errors);
-  const lead = state.members[0].position.x - state.members[1].position.x;
-  const memberRelation =
-    Math.abs(lead) < 0.005
-      ? t('studyAifg.group-movement.model.medicNearlyLevelEscorts')
-      : lead > 0
-        ? t('studyAifg.group-movement.model.medicTrailsEscorts', {
-            lead: fixed(lead),
-          })
-        : t('studyAifg.group-movement.model.medicAheadEscorts', {
-            value1: fixed(-lead),
-          });
-  const gapOwner =
-    error - Math.min(...errors) < 0.005
-      ? t('studyAifg.group-movement.model.allMembersEqualSlot')
-      : errors[1] >= error - 1e-10
-        ? t('studyAifg.group-movement.model.medicLargestSlotGap')
-        : t('studyAifg.group-movement.model.escortsLargestSlotGap');
-  const slowing =
-    length(calculation.next.formation.anchorVelocity) <
-    length(state.formation.anchorVelocity) - 1e-10;
-  // Leader lines lift the anchor and beacon names away from the medic's lane, even at arrival.
-  const anchorLabel = { x: state.formation.anchor.x, y: -2 * example.spacing };
-  const beaconLabel = { x: example.goalX, y: 2 * example.spacing };
+function frameOf(t: StudyTranslate, frame: GroupFrame): MotionFrame {
+  const {
+    reading: { example },
+    state,
+    step,
+    slots,
+    anchorLabel,
+    beaconLabel,
+  } = frame;
   return {
     seconds: step * example.timeStep,
     bodies: state.members.map((member, index) => ({
       id: member.id,
       label: [
-        t('studyAifg.group-movement.model.north'),
-        t('studyAifg.group-movement.model.medic'),
-        t('studyAifg.group-movement.model.south'),
+        t('studyAifg.group-movement.model.labels.north'),
+        t('studyAifg.group-movement.model.labels.medic'),
+        t('studyAifg.group-movement.model.labels.south'),
       ][index],
       ...member.position,
       tone: member.id === 'medic' ? 'actual' : 'subject',
     })),
-    marks: frameMarks(t, slots, state, example, anchorLabel, beaconLabel),
+    marks: frameMarks(t, frame),
     links: [
       ...state.members.map((member, index) => ({
         from: member.position,
@@ -344,17 +420,17 @@ function frameOf(
       dy: velocity.y * example.velocityArrowSeconds,
       tone: 'actual',
     })),
-    values: frameValues(runValues, memberRelation, gapOwner, error, state, example),
-    note: frameNote(t, state, step, example, slowing),
-    worked: workedStep(t, state, step, example, calculation),
+    values: frameValues(frame),
+    note: frameNote(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
 function describeRun(
   t: StudyTranslate,
   example: GroupExample,
-  states: ReturnType<typeof groupStates>,
-) {
+  states: readonly GroupState[],
+): GroupDescription {
   const changed = { ...example, anchorSpeed: example.fastAnchorSpeed };
   const comparedSamples = groupSamples(changed);
   const compared = comparedSamples.map(({ state }) => state);
@@ -373,12 +449,15 @@ function describeRun(
     runPeak: fixed(errors[peak]),
     shapeOutcome:
       errors[peak] <= example.slotErrorBudget
-        ? t('studyAifg.group-movement.model.selectedPaceStaysWithin')
-        : t('studyAifg.group-movement.model.selectedPaceExceedsSlot'),
+        ? t('studyAifg.group-movement.model.values.selectedPaceStaysWithin')
+        : t('studyAifg.group-movement.model.values.selectedPaceExceedsSlot'),
     arrivalSpread: selectedArrival.spread,
     comparisonPace: fixed(changed.anchorSpeed),
   };
   return {
+    example,
+    states,
+    seconds: states.map((_state, step) => step * example.timeStep),
     runValues,
     changed,
     errors,
@@ -393,29 +472,26 @@ function describeRun(
   };
 }
 
-function comparisonTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  example: GroupExample,
-  reading: ReturnType<typeof describeRun>,
-): NonNullable<MotionStudyModel['timeline']> {
+function comparisonTimeline(t: StudyTranslate, reading: GroupDescription): TimelineModel {
+  const { example, seconds } = reading;
+
   return {
-    title: t('studyAifg.group-movement.model.largestMemberSlotGap'),
-    xLabel: t('studyAifg.group-movement.model.timeSeconds'),
-    yLabel: t('studyAifg.group-movement.model.distance'),
+    title: t('studyAifg.group-movement.model.labels.largestMemberSlotGap'),
+    xLabel: t('studyAifg.group-movement.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.group-movement.model.labels.distance'),
     seconds,
     reference: example.slotErrorBudget,
     yRange: [0, Math.max(example.slotErrorBudget, ...reading.errors, ...reading.comparedErrors)],
     series: [
       {
         id: 'selected',
-        label: t('studyAifg.group-movement.model.comparisonSelectedAnchorPace'),
+        label: t('studyAifg.group-movement.model.comparison.selectedAnchorPace'),
         tone: 'actual',
         values: reading.errors,
       },
       {
         id: 'compared',
-        label: t('studyAifg.group-movement.model.comparisonComparisonAnchorPace'),
+        label: t('studyAifg.group-movement.model.comparison.comparisonAnchorPace'),
         tone: 'desired',
         values: reading.comparedErrors,
       },
@@ -431,34 +507,32 @@ function comparisonTimeline(
   };
 }
 
-function compareRuns(
-  t: StudyTranslate,
-  samePace: boolean,
-  example: GroupExample,
-  reading: ReturnType<typeof describeRun>,
-  seconds: number[],
-): NonNullable<MotionStudyModel['comparison']> {
+function compareRuns(t: StudyTranslate, reading: GroupDescription): StudyComparison {
+  const samePace = reading.example.anchorSpeed === reading.changed.anchorSpeed;
+
+  const { example, seconds } = reading;
+
   return {
     title: samePace
-      ? t('studyAifg.group-movement.model.comparisonRunsNowUseSame')
-      : t('studyAifg.group-movement.model.comparisonFasterPlanCanStretch'),
-    intro: t('studyAifg.group-movement.model.comparisonSelectedAnchorPaceComparison', {
+      ? t('studyAifg.group-movement.model.comparison.runsNowUseSame')
+      : t('studyAifg.group-movement.model.comparison.fasterPlanCanStretch'),
+    intro: t('studyAifg.group-movement.model.comparison.selectedAnchorPaceComparison', {
       exampleAnchorSpeed: fixed(example.anchorSpeed),
       changedAnchorSpeed: fixed(reading.changed.anchorSpeed),
       exampleEnginePlanningSeconds: fixed(example.enginePlanningSeconds),
       exampleTimeStep: fixed(example.timeStep),
     }),
-    timeline: comparisonTimeline(t, seconds, example, reading),
+    timeline: comparisonTimeline(t, reading),
     findings: [
-      t('studyAifg.group-movement.model.comparisonSelectedPeakGapComparison', {
+      t('studyAifg.group-movement.model.comparison.selectedPeakGapComparison', {
         errors: fixed(reading.errors[reading.peak]),
         seconds: fixed(seconds[reading.peak]),
         comparedErrors: fixed(reading.comparedErrors[reading.comparedPeak]),
-        seconds2: fixed(seconds[reading.comparedPeak]),
+        comparedPeakSeconds: fixed(seconds[reading.comparedPeak]),
         exampleSlotErrorBudget: fixed(example.slotErrorBudget),
-        value6: fixed(Math.max(...reading.compared.map(anchorLag))),
+        comparedAnchorLag: fixed(Math.max(...reading.compared.map(anchorLag))),
       }),
-      t('studyAifg.group-movement.model.comparisonSelectedArrivalTimesSpread', {
+      t('studyAifg.group-movement.model.comparison.selectedArrivalTimesSpread', {
         selectedArrivalTimes: reading.selectedArrival.times,
         selectedArrivalSpread: reading.selectedArrival.spread,
         comparedArrivalTimes: reading.comparedArrival.times,
@@ -467,34 +541,30 @@ function compareRuns(
         exampleArrivalSpeed: fixed(example.arrivalSpeed),
       }),
     ],
-    note: t('studyAifg.group-movement.model.comparisonReferenceChosenMemberSlot'),
+    note: t('studyAifg.group-movement.model.comparison.referenceChosenMemberSlot'),
   };
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  example: GroupExample,
-  reading: ReturnType<typeof describeRun>,
-  states: ReturnType<typeof groupStates>,
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, reading: GroupDescription): TimelineModel {
+  const { example, states, seconds } = reading;
+
   return {
-    title: t('studyAifg.group-movement.model.boundMeanDifferentBound'),
-    xLabel: t('studyAifg.group-movement.model.timeSeconds'),
-    yLabel: t('studyAifg.group-movement.model.distance'),
+    title: t('studyAifg.group-movement.model.timeline.boundMeanDifferentBound'),
+    xLabel: t('studyAifg.group-movement.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.group-movement.model.labels.distance'),
     seconds,
     reference: example.slotErrorBudget,
     yRange: [0, Math.max(example.slotErrorBudget, ...reading.errors, ...reading.comparedErrors)],
     series: [
       {
         id: 'member-error',
-        label: t('studyAifg.group-movement.model.largestMemberSlotGap'),
+        label: t('studyAifg.group-movement.model.labels.largestMemberSlotGap'),
         tone: 'actual',
         values: reading.errors,
       },
       {
         id: 'anchor-lag',
-        label: t('studyAifg.group-movement.model.anchorMeanDistance'),
+        label: t('studyAifg.group-movement.model.timeline.anchorMeanDistance'),
         tone: 'desired',
         values: states.map(anchorLag),
       },
@@ -502,28 +572,25 @@ function runTimeline(
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  reading: ReturnType<typeof describeRun>,
-  states: ReturnType<typeof groupStates>,
-  example: GroupExample,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, reading: GroupDescription): readonly StudyMoment[] {
+  const { example, states } = reading;
+
   return [
-    { label: t('studyAifg.group-movement.model.oldSlots'), step: 0 },
-    { label: t('studyAifg.group-movement.model.anchorMovesFirst'), step: 1 },
-    { label: t('studyAifg.group-movement.model.largestSlotGap'), step: reading.peak },
+    { label: t('studyAifg.group-movement.model.moments.oldSlots'), step: 0 },
+    { label: t('studyAifg.group-movement.model.moments.anchorMovesFirst'), step: 1 },
+    { label: t('studyAifg.group-movement.model.moments.largestSlotGap'), step: reading.peak },
     {
       label: reading.allArrived
-        ? t('studyAifg.group-movement.model.allPassArrivalTest')
-        : t('studyAifg.group-movement.model.arrivalPending'),
+        ? t('studyAifg.group-movement.model.moments.allPassArrivalTest')
+        : t('studyAifg.group-movement.model.moments.arrivalPending'),
       step: reading.lastArrival,
     },
     {
       label: states[example.steps].members.every((_member, index) =>
         isArrived(states[example.steps], index, example),
       )
-        ? t('studyAifg.group-movement.model.nearSlow')
-        : t('studyAifg.group-movement.model.runEnds'),
+        ? t('studyAifg.group-movement.model.moments.nearSlow')
+        : t('studyAifg.group-movement.model.moments.runEnds'),
       step: example.steps,
     },
   ];
@@ -531,21 +598,19 @@ function runMoments(
 
 export const present = (
   example: GroupExample,
-  statesSamples: ReturnType<typeof groupSamples>,
+  statesSamples: readonly GroupSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
   const states = statesSamples.map(({ state }) => state);
   const reading = describeRun(t, example, states);
-  const frames = states.map((state, step) =>
-    frameOf(t, state, step, example, reading.runValues, statesSamples[step].calculation),
+  const frames = statesSamples.map((sample, step) =>
+    frameOf(t, describeFrame(t, reading, sample, step)),
   );
-  const seconds = frames.map(({ seconds }) => seconds);
   const positions = frames.flatMap((frame) => [
     ...frame.bodies,
     ...(frame.marks ?? []),
     ...(frame.vectors ?? []).map(({ x, y, dx, dy }) => ({ x: x + dx, y: y + dy })),
   ]);
-  const samePace = example.anchorSpeed === reading.changed.anchorSpeed;
   return {
     family: 'motion',
     motion: {
@@ -553,37 +618,37 @@ export const present = (
       frames,
       trail: true,
     },
-    timeline: runTimeline(t, seconds, example, reading, states),
+    timeline: runTimeline(t, reading),
     initialStep: reading.peak,
-    moments: runMoments(t, reading, states, example),
+    moments: runMoments(t, reading),
     legend: [
       {
         tone: 'subject',
-        label: t('studyAifg.group-movement.model.northSouthEscorts'),
+        label: t('studyAifg.group-movement.model.labels.northSouthEscorts'),
       },
       {
         tone: 'actual',
-        label: t('studyAifg.group-movement.model.medicArrowsActualVelocity'),
+        label: t('studyAifg.group-movement.model.labels.medicArrowsActualVelocity'),
       },
-      { tone: 'desired', label: t('studyAifg.group-movement.model.anchorMovingPlan') },
+      { tone: 'desired', label: t('studyAifg.group-movement.model.labels.anchorMovingPlan') },
       {
         tone: 'target',
-        label: t('studyAifg.group-movement.model.ringsAssignedSlotsBeacon'),
+        label: t('studyAifg.group-movement.model.labels.ringsAssignedSlotsBeacon'),
       },
       {
         tone: 'muted',
-        label: t('studyAifg.group-movement.model.shortLinksMemberSlot'),
+        label: t('studyAifg.group-movement.model.labels.shortLinksMemberSlot'),
       },
     ],
-    caption: t('studyAifg.group-movement.model.caption', {
+    caption: t('studyAifg.group-movement.model.overview.caption', {
       exampleVelocityArrowSeconds: fixed(example.velocityArrowSeconds),
     }),
-    comparison: compareRuns(t, samePace, example, reading, seconds),
+    comparison: compareRuns(t, reading),
     inputs: [
       {
         name: 'anchorSpeed',
-        label: t('studyAifg.group-movement.model.anchorPace'),
-        unit: t('studyAifg.group-movement.model.planningStep'),
+        label: t('studyAifg.group-movement.model.labels.anchorPace'),
+        unit: t('studyAifg.group-movement.model.labels.planningStep'),
         min: 0.4,
         max: 1.5,
         step: 0.1,
@@ -595,10 +660,10 @@ export const present = (
 function memberName(t: StudyTranslate, index: number): string {
   switch (index) {
     case 0:
-      return t('studyAifg.group-movement.model.northEscortName');
+      return t('studyAifg.group-movement.model.names.northEscortName');
     case 1:
-      return t('studyAifg.group-movement.model.medicName');
+      return t('studyAifg.group-movement.model.names.medicName');
     default:
-      return t('studyAifg.group-movement.model.southEscortName');
+      return t('studyAifg.group-movement.model.names.southEscortName');
   }
 }

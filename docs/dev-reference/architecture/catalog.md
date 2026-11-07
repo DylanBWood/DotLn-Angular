@@ -269,9 +269,22 @@ the mechanism, `.presentation.ts` files describe frames and explanations, and th
 entry module composes them. A run retains the step calculations and next states
 that its presentation needs, so frame labels, worked arithmetic and comparisons
 read the same results that advanced the simulation. Existing state-only helpers
-can project those samples for callers that need only a trajectory. Shared
-formatting and drawing helpers replace repeated plumbing. The translator is a presentation dependency; changing language never
-changes physics or executable stream values. The result contains the frames the drawing reads, a timeline, the
+can project those samples for callers that need only a trajectory.
+
+A presentation describes its example once, with named interfaces for the run and
+the frame values its prose needs. A function takes that description, a frame, a
+translator or a selection, rather than repeating a list of scalar arguments;
+four parameters is the reading rule, not a lint target. Keep each function whole
+around one job. `studies/number-format.ts` supplies the shared formatter, whose
+options preserve the study's authored precision and negative-zero convention.
+Messages are nested by study and part, such as
+`studyAifg.seek.model.worked`, and their placeholders name what they hold, such
+as `speed` or `clearance`. They never use numbered `valueN` placeholders. The
+first movement batch follows this shape; subsequent standards passes read the
+remaining batches and newly landed code under the same rule.
+
+The translator is a presentation dependency; changing language never changes
+physics or executable stream values. The result contains the frames the drawing reads, a timeline, the
 named moments, the legend and caption, and, where they help, each moment's note, the worked
 arithmetic of that moment, a comparison that makes a failure visible and the inputs a reader may
 change. `studies/study-models.ts` lists the modules by the path the record names, and each loads

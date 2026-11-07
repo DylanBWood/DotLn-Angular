@@ -1,8 +1,15 @@
 import type { SlotAssignment } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyPoint, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyPoint,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { decimal as fixed } from './presentation';
 import {
   acceptableCounts,
   allocate,
@@ -13,6 +20,64 @@ import {
   slotCost,
   type SlotExample,
 } from './slot-assignment.simulation';
+
+const { number: fixed } = createNumberFormat();
+
+interface AllocationDescription {
+  readonly example: SlotExample;
+  readonly assignment: readonly SlotAssignment[];
+  readonly selectedOptimum: readonly SlotAssignment[];
+  readonly changed: SlotExample;
+  readonly changedAssignment: readonly SlotAssignment[];
+  readonly changedOptimum: readonly SlotAssignment[];
+  readonly seconds: readonly number[];
+  readonly sameCost: boolean;
+  readonly selectedCosts: readonly number[];
+  readonly comparedCosts: readonly number[];
+}
+interface AllocationFrame {
+  readonly run: AllocationDescription;
+  readonly stage: number;
+  readonly committed: readonly SlotAssignment[];
+  readonly total: number;
+  readonly costTable: string;
+  readonly counts: string;
+  readonly order: string;
+  readonly choices: string;
+  readonly reservations: string;
+  readonly excess: number;
+  readonly decision: SlotAssignment | null;
+  readonly optimum: readonly SlotAssignment[];
+  readonly prior: number;
+}
+function describeRun(
+  example: SlotExample,
+  assignment: readonly SlotAssignment[],
+): AllocationDescription {
+  const changed: SlotExample = {
+    ...example,
+    costs: { ...example.costs, 'cost.reserve.flank': example.comparisonFlankCost },
+  };
+  const changedAssignment = allocate(changed);
+  const seconds = Array.from(
+    { length: assignment.length + 1 },
+    (_value, stage) => stage * example.decisionSeconds,
+  );
+  return {
+    example,
+    assignment,
+    changed,
+    changedAssignment,
+    seconds,
+    selectedOptimum: cheapestComplete(example),
+    changedOptimum: cheapestComplete(changed),
+    sameCost: slotCost(example.costs, 'reserve', 'flank') === example.comparisonFlankCost,
+    selectedCosts: seconds.map((_seconds, stage) => assignmentCost(assignment.slice(0, stage))),
+    comparedCosts: seconds.map((_seconds, stage) =>
+      assignmentCost(changedAssignment.slice(0, stage)),
+    ),
+  };
+}
 
 const unitPoint = (example: SlotExample, index: number): StudyPoint => ({
   x: example.unitX,
@@ -26,7 +91,7 @@ const slotPoint = (example: SlotExample, slot: number): StudyPoint => ({
 
 const describeAssignment = (t: StudyTranslate, assignment: readonly SlotAssignment[]) =>
   assignment.length === 0
-    ? t('studyAifg.slot-assignment.model.noLinksYet')
+    ? t('studyAifg.slot-assignment.model.values.noLinksYet')
     : assignment
         .map(
           ({ unitId, slotRole, cost }) =>
@@ -34,28 +99,29 @@ const describeAssignment = (t: StudyTranslate, assignment: readonly SlotAssignme
         )
         .join('; ');
 
-function allocationNote(
-  t: StudyTranslate,
-  assignment: readonly SlotAssignment[],
-  stage: number,
-  excess: number,
-) {
+function allocationNote(t: StudyTranslate, description: AllocationFrame): string {
+  const {
+    run: { assignment },
+    stage,
+    excess,
+  } = description;
+
   if (stage === 0)
-    return t('studyAifg.slot-assignment.model.fewestSuitablePostsGuard', {
+    return t('studyAifg.slot-assignment.model.phase.fewestSuitablePostsGuard', {
       assignmentUnitId: guardName(t, assignment[0].unitId),
     });
   const chosen = assignment[stage - 1];
   if (stage === assignment.length)
     return excess > 1e-10
-      ? t('studyAifg.slot-assignment.model.everyonePostEarlierReservations')
-      : t('studyAifg.slot-assignment.model.everyoneDistinctPostRoster');
+      ? t('studyAifg.slot-assignment.model.phase.everyonePostEarlierReservations')
+      : t('studyAifg.slot-assignment.model.phase.everyoneDistinctPostRoster');
   if (stage === assignment.length - 1)
-    return t('studyAifg.slot-assignment.model.reservesCheapestFreePost', {
+    return t('studyAifg.slot-assignment.model.phase.reservesCheapestFreePost', {
       chosenUnitId: guardName(t, chosen.unitId),
       chosenSlotRole: roleName(t, chosen.slotRole),
       assignmentStageUnitId: guardName(t, assignment[stage].unitId),
     });
-  return t('studyAifg.slot-assignment.model.reservationChangesRemainingChoices', {
+  return t('studyAifg.slot-assignment.model.phase.reservationChangesRemainingChoices', {
     chosenUnitId: guardName(t, chosen.unitId),
     chosenSlotRole: roleName(t, chosen.slotRole),
   });
@@ -63,11 +129,11 @@ function allocationNote(
 
 function describeFrame(
   t: StudyTranslate,
-  example: SlotExample,
-  assignment: readonly SlotAssignment[],
+  run: AllocationDescription,
   stage: number,
-  optimum: readonly SlotAssignment[],
-) {
+): AllocationFrame {
+  const { example, assignment, selectedOptimum: optimum } = run;
+
   const committed = assignment.slice(0, stage);
   const decision = stage === 0 ? null : assignment[stage - 1];
   const previously = new Set(assignment.slice(0, Math.max(0, stage - 1)).map(({ slot }) => slot));
@@ -80,7 +146,7 @@ function describeFrame(
             : [`${roleName(t, role)}: ${fixed(slotCost(example.costs, unit.unitClass, role))}`],
         )
         .join('; ')
-    : t('studyAifg.slot-assignment.model.allSlotsFree');
+    : t('studyAifg.slot-assignment.model.labels.allSlotsFree');
   const costTable = candidates
     .map(
       ({ id, unitClass }) =>
@@ -96,11 +162,11 @@ function describeFrame(
   const excess = Math.max(0, assignmentCost(assignment) - assignmentCost(optimum));
   const reservations =
     committed.length === 0
-      ? t('studyAifg.slot-assignment.model.noGuardLinkedPost')
-      : t('studyAifg.slot-assignment.model.linksReserve', {
-          value1: committed
+      ? t('studyAifg.slot-assignment.model.labels.noGuardLinkedPost')
+      : t('studyAifg.slot-assignment.model.labels.linksReserve', {
+          reservations: committed
             .map(({ unitId, slotRole }) =>
-              t('studyAifg.slot-assignment.model.frameOfForThe', {
+              t('studyAifg.slot-assignment.model.labels.frameOfForThe', {
                 unitId: guardName(t, unitId),
                 slotRole: roleName(t, slotRole),
               }),
@@ -108,6 +174,8 @@ function describeFrame(
             .join(', '),
         });
   return {
+    run,
+    stage,
     committed,
     total,
     costTable,
@@ -122,74 +190,71 @@ function describeFrame(
   };
 }
 
-function frameWorked(
-  t: StudyTranslate,
-  stage: number,
-  description: ReturnType<typeof describeFrame>,
-  example: SlotExample,
-  assignment: readonly SlotAssignment[],
-): StudyWorkedStep {
+function frameWorked(t: StudyTranslate, description: AllocationFrame): StudyWorkedStep {
+  const {
+    run: { example, assignment },
+    stage,
+  } = description;
+
   return {
     title:
       stage === 0
-        ? t('studyAifg.slot-assignment.model.workedBeaconGateCostTable')
-        : t('studyAifg.slot-assignment.model.workedDecision', {
+        ? t('studyAifg.slot-assignment.model.worked.beaconGateCostTable')
+        : t('studyAifg.slot-assignment.model.worked.decision', {
             stage,
             decisionUnitId: guardName(t, String(description.decision?.unitId)),
           }),
     lines: [
-      t('studyAifg.slot-assignment.model.workedColumnsFrontFlankRear'),
+      t('studyAifg.slot-assignment.model.worked.columnsFrontFlankRear'),
       ...candidates.map(
         ({ id, unitClass }) =>
           `${guardName(t, id)}: ${roles.map((role) => fixed(slotCost(example.costs, unitClass, role))).join(' | ')}`,
       ),
-      t('studyAifg.slot-assignment.model.workedCountCostsOriginalTable', {
+      t('studyAifg.slot-assignment.model.worked.countCostsOriginalTable', {
         exampleAcceptableBelow: fixed(example.acceptableBelow),
         counts: description.counts,
         order: description.order,
       }),
       ...(description.decision
         ? [
-            t('studyAifg.slot-assignment.model.workedFreeCostsChooseTies', {
+            t('studyAifg.slot-assignment.model.worked.freeCostsChooseTies', {
               decisionUnitId: guardName(t, description.decision.unitId),
               choices: description.choices,
               decisionSlotRole: roleName(t, description.decision.slotRole),
             }),
-            t('studyAifg.slot-assignment.model.workedRunningCost', {
+            t('studyAifg.slot-assignment.model.worked.runningCost', {
               prior: fixed(description.prior),
               decisionCost: fixed(description.decision.cost),
               total: fixed(description.total),
             }),
           ]
-        : [t('studyAifg.slot-assignment.model.workedNoSlotBeenReserved')]),
+        : [t('studyAifg.slot-assignment.model.worked.noSlotBeenReserved')]),
       ...(stage === assignment.length
         ? [
-            t('studyAifg.slot-assignment.model.workedGreedyTotal', {
-              value1: description.committed.map(({ cost }) => fixed(cost)).join(' + '),
+            t('studyAifg.slot-assignment.model.worked.greedyTotal', {
+              costs: description.committed.map(({ cost }) => fixed(cost)).join(' + '),
               total: fixed(description.total),
             }),
-            t('studyAifg.slot-assignment.model.workedCheckingEveryCompleteAssignment', {
-              value1: describeAssignment(t, description.optimum),
-              value2: fixed(assignmentCost(description.optimum)),
+            t('studyAifg.slot-assignment.model.worked.checkingEveryCompleteAssignment', {
+              optimalAssignment: describeAssignment(t, description.optimum),
+              optimalCost: fixed(assignmentCost(description.optimum)),
               excess: fixed(description.excess),
             }),
           ]
         : []),
     ],
-    note: t('studyAifg.slot-assignment.model.workedEachIntervalRevealsDecision', {
+    note: t('studyAifg.slot-assignment.model.worked.eachIntervalRevealsDecision', {
       exampleDecisionSeconds: fixed(example.decisionSeconds),
     }),
   };
 }
 
-function frameOf(
-  t: StudyTranslate,
-  example: SlotExample,
-  assignment: readonly SlotAssignment[],
-  stage: number,
-  optimum: readonly SlotAssignment[],
-): MotionFrame {
-  const description = describeFrame(t, example, assignment, stage, optimum);
+function frameOf(t: StudyTranslate, description: AllocationFrame): MotionFrame {
+  const {
+    run: { example },
+    stage,
+  } = description;
+
   return {
     seconds: stage * example.decisionSeconds,
     bodies: candidates.map(({ id }, index) => ({
@@ -222,53 +287,55 @@ function frameOf(
       flankCost: fixed(slotCost(example.costs, 'reserve', 'flank')),
       rosterOutcome:
         description.excess > 1e-10
-          ? t('studyAifg.slot-assignment.model.valueGreedyRosterCostsMore', {
+          ? t('studyAifg.slot-assignment.model.values.greedyRosterCostsMore', {
               excess: fixed(description.excess),
             })
-          : t('studyAifg.slot-assignment.model.valueGreedyRosterMatchesMinimum'),
+          : t('studyAifg.slot-assignment.model.values.greedyRosterMatchesMinimum'),
       decision: description.decision
-        ? t('studyAifg.slot-assignment.model.valueTakes', {
+        ? t('studyAifg.slot-assignment.model.values.takes', {
             decisionUnitId: guardName(t, description.decision.unitId),
             decisionSlotRole: roleName(t, description.decision.slotRole),
             decisionCost: fixed(description.decision.cost),
           })
-        : t('studyAifg.slot-assignment.model.valueNoChoiceBeenCommitted'),
+        : t('studyAifg.slot-assignment.model.values.noChoiceBeenCommitted'),
       assignments: describeAssignment(t, description.committed),
       optimum: fixed(assignmentCost(description.optimum)),
     },
-    note: allocationNote(t, assignment, stage, description.excess),
-    worked: frameWorked(t, stage, description, example, assignment),
+    note: allocationNote(t, description),
+    worked: frameWorked(t, description),
   };
 }
 
-function compareRuns(
-  t: StudyTranslate,
-  sameCost: boolean,
-  example: SlotExample,
-  changed: SlotExample,
-  changedAssignment: ReturnType<typeof allocate>,
-  seconds: number[],
-  assignment: ReturnType<typeof allocate>,
-  changedOptimum: ReturnType<typeof cheapestComplete>,
-  cumulative: (entries: readonly SlotAssignment[]) => number[],
-  selectedOptimum: ReturnType<typeof cheapestComplete>,
-): NonNullable<MotionStudyModel['comparison']> {
+function compareRuns(t: StudyTranslate, run: AllocationDescription): StudyComparison {
+  const {
+    sameCost,
+    example,
+    changed,
+    changedAssignment,
+    seconds,
+    assignment,
+    changedOptimum,
+    selectedOptimum,
+    selectedCosts,
+    comparedCosts,
+  } = run;
+
   return {
     title: sameCost
-      ? t('studyAifg.slot-assignment.model.comparisonRunsNowUseSame')
-      : t('studyAifg.slot-assignment.model.comparisonLocalChoiceCanLeave'),
-    intro: t('studyAifg.slot-assignment.model.comparisonSelectedAriFlankCost', {
-      value1: fixed(slotCost(example.costs, 'reserve', 'flank')),
+      ? t('studyAifg.slot-assignment.model.comparison.runsNowUseSame')
+      : t('studyAifg.slot-assignment.model.comparison.localChoiceCanLeave'),
+    intro: t('studyAifg.slot-assignment.model.comparison.selectedAriFlankCost', {
+      flankCost: fixed(slotCost(example.costs, 'reserve', 'flank')),
       exampleComparisonFlankCost: fixed(example.comparisonFlankCost),
-      value3: acceptableCounts(changed)
+      acceptableCounts: acceptableCounts(changed)
         .map(({ id, count }) => `${guardName(t, id)} ${count}`)
         .join(', '),
-      value4: changedAssignment.map(({ unitId }) => guardName(t, unitId)).join(' → '),
+      guardOrder: changedAssignment.map(({ unitId }) => guardName(t, unitId)).join(' → '),
     }),
     timeline: {
-      title: t('studyAifg.slot-assignment.model.comparisonAccumulatedCostTwoAllocations'),
-      xLabel: t('studyAifg.slot-assignment.model.presentationTimeSeconds'),
-      yLabel: t('studyAifg.slot-assignment.model.accumulatedRoleCost'),
+      title: t('studyAifg.slot-assignment.model.comparison.accumulatedCostTwoAllocations'),
+      xLabel: t('studyAifg.slot-assignment.model.labels.presentationTimeSeconds'),
+      yLabel: t('studyAifg.slot-assignment.model.labels.accumulatedRoleCost'),
       seconds,
       xTicks: seconds,
       yRange: [
@@ -283,51 +350,46 @@ function compareRuns(
       series: [
         {
           id: 'selected',
-          label: t('studyAifg.slot-assignment.model.selectedCostTable'),
+          label: t('studyAifg.slot-assignment.model.labels.selectedCostTable'),
           tone: 'actual',
-          values: cumulative(assignment),
+          values: selectedCosts,
         },
         {
           id: 'compared',
-          label: t('studyAifg.slot-assignment.model.comparisonComparisonFlankCost'),
+          label: t('studyAifg.slot-assignment.model.comparison.comparisonFlankCost'),
           tone: 'desired',
-          values: cumulative(changedAssignment),
+          values: comparedCosts,
         },
       ],
       reference: assignmentCost(changedOptimum),
     },
     findings: [
-      t('studyAifg.slot-assignment.model.comparisonSelectedRosterTotalMinimum', {
-        value1: describeAssignment(t, assignment),
-        value2: fixed(assignmentCost(assignment)),
-        value3: fixed(assignmentCost(selectedOptimum)),
+      t('studyAifg.slot-assignment.model.comparison.selectedRosterTotalMinimum', {
+        assignment: describeAssignment(t, assignment),
+        totalCost: fixed(assignmentCost(assignment)),
+        optimalCost: fixed(assignmentCost(selectedOptimum)),
       }),
-      t('studyAifg.slot-assignment.model.comparisonComparisonRosterTotalChecking', {
-        value1: describeAssignment(t, changedAssignment),
-        value2: fixed(assignmentCost(changedAssignment)),
-        value3: describeAssignment(t, changedOptimum),
-        value4: fixed(assignmentCost(changedOptimum)),
-        value5: fixed(
+      t('studyAifg.slot-assignment.model.comparison.comparisonRosterTotalChecking', {
+        assignment: describeAssignment(t, changedAssignment),
+        totalCost: fixed(assignmentCost(changedAssignment)),
+        optimalAssignment: describeAssignment(t, changedOptimum),
+        optimalCost: fixed(assignmentCost(changedOptimum)),
+        excessCost: fixed(
           Math.max(0, assignmentCost(changedAssignment) - assignmentCost(changedOptimum)),
         ),
       }),
     ],
-    note: t('studyAifg.slot-assignment.model.comparisonReferenceMinimumCompleteCost'),
+    note: t('studyAifg.slot-assignment.model.comparison.referenceMinimumCompleteCost'),
   };
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  assignment: ReturnType<typeof allocate>,
-  changedAssignment: ReturnType<typeof allocate>,
-  example: SlotExample,
-  cumulative: (entries: readonly SlotAssignment[]) => number[],
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, run: AllocationDescription): TimelineModel {
+  const { example, changedAssignment, seconds, assignment, selectedCosts } = run;
+
   return {
-    title: t('studyAifg.slot-assignment.model.costCommittedEachDecision'),
-    xLabel: t('studyAifg.slot-assignment.model.presentationTimeSeconds'),
-    yLabel: t('studyAifg.slot-assignment.model.accumulatedRoleCost'),
+    title: t('studyAifg.slot-assignment.model.timeline.costCommittedEachDecision'),
+    xLabel: t('studyAifg.slot-assignment.model.labels.presentationTimeSeconds'),
+    yLabel: t('studyAifg.slot-assignment.model.labels.accumulatedRoleCost'),
     seconds,
     yRange: [
       0,
@@ -341,9 +403,9 @@ function runTimeline(
     series: [
       {
         id: 'greedy',
-        label: t('studyAifg.slot-assignment.model.selectedCostTable'),
+        label: t('studyAifg.slot-assignment.model.labels.selectedCostTable'),
         tone: 'actual',
-        values: cumulative(assignment),
+        values: selectedCosts,
       },
     ],
   };
@@ -351,24 +413,12 @@ function runTimeline(
 
 export const present = (
   example: SlotExample,
-  assignment: ReturnType<typeof allocate>,
+  assignment: readonly SlotAssignment[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const selectedOptimum = cheapestComplete(example);
-  const frames = Array.from({ length: assignment.length + 1 }, (_unused, stage) =>
-    frameOf(t, example, assignment, stage, selectedOptimum),
-  );
-  const changed: SlotExample = {
-    ...example,
-    costs: { ...example.costs, 'cost.reserve.flank': example.comparisonFlankCost },
-  };
-  const changedAssignment = allocate(changed);
-  const changedOptimum = cheapestComplete(changed);
-  const cumulative = (entries: readonly SlotAssignment[]) =>
-    frames.map((_frame, stage) => assignmentCost(entries.slice(0, stage)));
-  const seconds = frames.map(({ seconds }) => seconds);
+  const run = describeRun(example, assignment);
+  const frames = run.seconds.map((_second, stage) => frameOf(t, describeFrame(t, run, stage)));
   const margin = example.spacing;
-  const sameCost = slotCost(example.costs, 'reserve', 'flank') === example.comparisonFlankCost;
   return {
     family: 'motion',
     motion: {
@@ -381,47 +431,38 @@ export const present = (
       frames,
       trail: false,
     },
-    timeline: runTimeline(t, seconds, assignment, changedAssignment, example, cumulative),
+    timeline: runTimeline(t, run),
     initialStep: 2,
     moments: [
-      { label: t('studyAifg.slot-assignment.model.readTable'), step: 0 },
+      { label: t('studyAifg.slot-assignment.model.labels.readTable'), step: 0 },
       ...assignment.map(({ unitId }, index) => ({
-        label: t('studyAifg.slot-assignment.model.chooses', { unitId: guardName(t, unitId) }),
+        label: t('studyAifg.slot-assignment.model.labels.chooses', {
+          unitId: guardName(t, unitId),
+        }),
         step: index + 1,
       })),
     ],
     legend: [
       {
         tone: 'subject',
-        label: t('studyAifg.slot-assignment.model.namedDotsGuardsWaiting'),
+        label: t('studyAifg.slot-assignment.model.labels.namedDotsGuardsWaiting'),
       },
       {
         tone: 'target',
-        label: t('studyAifg.slot-assignment.model.namedRingsRolePosts'),
+        label: t('studyAifg.slot-assignment.model.labels.namedRingsRolePosts'),
       },
       {
         tone: 'actual',
-        label: t('studyAifg.slot-assignment.model.linksCommittedReservations'),
+        label: t('studyAifg.slot-assignment.model.labels.linksCommittedReservations'),
       },
     ],
-    caption: t('studyAifg.slot-assignment.model.caption'),
-    comparison: compareRuns(
-      t,
-      sameCost,
-      example,
-      changed,
-      changedAssignment,
-      seconds,
-      assignment,
-      changedOptimum,
-      cumulative,
-      selectedOptimum,
-    ),
+    caption: t('studyAifg.slot-assignment.model.overview.caption'),
+    comparison: compareRuns(t, run),
     inputs: [
       {
         name: 'cost.reserve.flank',
-        label: t('studyAifg.slot-assignment.model.ariFlankCost'),
-        unit: t('studyAifg.slot-assignment.model.cost'),
+        label: t('studyAifg.slot-assignment.model.labels.ariFlankCost'),
+        unit: t('studyAifg.slot-assignment.model.labels.cost'),
         min: 0.1,
         max: 1.2,
         step: 0.1,
@@ -433,11 +474,11 @@ export const present = (
 function guardName(t: StudyTranslate, value: string): string {
   switch (value) {
     case 'Ari':
-      return t('studyAifg.slot-assignment.model.guardNameAri');
+      return t('studyAifg.slot-assignment.model.names.guardNameAri');
     case 'Bryn':
-      return t('studyAifg.slot-assignment.model.guardNameBryn');
+      return t('studyAifg.slot-assignment.model.names.guardNameBryn');
     case 'Cleo':
-      return t('studyAifg.slot-assignment.model.guardNameCleo');
+      return t('studyAifg.slot-assignment.model.names.guardNameCleo');
     default:
       return value;
   }
@@ -446,11 +487,11 @@ function guardName(t: StudyTranslate, value: string): string {
 function roleName(t: StudyTranslate, value: string): string {
   switch (value) {
     case 'front':
-      return t('studyAifg.slot-assignment.model.roleNamefront');
+      return t('studyAifg.slot-assignment.model.names.roleNamefront');
     case 'flank':
-      return t('studyAifg.slot-assignment.model.roleNameflank');
+      return t('studyAifg.slot-assignment.model.names.roleNameflank');
     case 'rear':
-      return t('studyAifg.slot-assignment.model.roleNamerear');
+      return t('studyAifg.slot-assignment.model.names.roleNamerear');
     default:
       return value;
   }
@@ -459,11 +500,11 @@ function roleName(t: StudyTranslate, value: string): string {
 function roleLabel(t: StudyTranslate, value: string): string {
   switch (value) {
     case 'front':
-      return t('studyAifg.slot-assignment.model.roleLabelfront');
+      return t('studyAifg.slot-assignment.model.names.roleLabelfront');
     case 'flank':
-      return t('studyAifg.slot-assignment.model.roleLabelflank');
+      return t('studyAifg.slot-assignment.model.names.roleLabelflank');
     case 'rear':
-      return t('studyAifg.slot-assignment.model.roleLabelrear');
+      return t('studyAifg.slot-assignment.model.names.roleLabelrear');
     default:
       return value;
   }

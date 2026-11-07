@@ -18,7 +18,12 @@ export const creatureNote = (
   step: number,
   p: CreatureParameters,
 ): string =>
-  describeCreatureNote(t, creatures, step, p, readCreature(creatures, 0, step * p.timeStep, p));
+  describeCreatureNote(t, {
+    creatures,
+    step,
+    example: p,
+    reading: readCreature(creatures, 0, step * p.timeStep, p),
+  });
 
 export {
   creatureFrames,

@@ -1,16 +1,41 @@
 import { distance, dot, length, scale, subtract } from '@dotln-angular/scene-engine';
 
 import { drawingWidth } from '../drawing';
+import { createNumberFormat } from '../number-format';
 import type {
   MotionFrame,
-  MotionLink,
-  MotionMark,
   MotionStudyModel,
+  StudyComparison,
+  StudyMoment,
   StudyWorkedStep,
+  TimelineModel,
 } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { fixed, pair } from './presentation';
+import { type MotionLabelRow, withLabelRow } from './presentation';
 import { type PursueFrame, pursueFrames, type PursueParameters } from './pursue.simulation';
+
+interface PursuitDescription {
+  readonly example: PursueParameters;
+  readonly states: readonly PursueFrame[];
+  readonly gaps: readonly number[];
+  readonly tagged: number;
+  readonly closest: number;
+  readonly shortened: number;
+}
+function describePursuit(
+  example: PursueParameters,
+  states: readonly PursueFrame[],
+): PursuitDescription {
+  const gaps = states.map(({ calculation }) => calculation.distance);
+  const tagged = states.findIndex(({ calculation }) => calculation.distance <= example.tagRadius);
+  const closest = gaps.reduce((best, gap, step) => (gap < gaps[best] ? step : best), 0);
+  const shortened = states.findIndex(
+    ({ calculation }) => calculation.prediction < example.maxPrediction,
+  );
+  return { example, states, gaps, tagged, closest, shortened };
+}
+
+const { number: fixed, vector: pair } = createNumberFormat({ normalizeNegativeZero: true });
 
 function workedStep(
   t: StudyTranslate,
@@ -21,42 +46,42 @@ function workedStep(
   const { prediction, predicted, acceleration, next } = calculation;
   const offset = subtract(predicted, ash.position);
   return {
-    title: t('studyAifg.pursue.model.workedWorkedStepSeconds', {
+    title: t('studyAifg.pursue.model.worked.workedStepSeconds', {
       seconds: fixed(seconds),
-      seconds2: fixed(seconds + example.timeStep),
+      nextSeconds: fixed(seconds + example.timeStep),
     }),
     lines: [
-      t('studyAifg.pursue.model.workedReedMinusAshSeparation', {
+      t('studyAifg.pursue.model.worked.reedMinusAshSeparation', {
         reedPosition: pair(reed.position),
         ashPosition: pair(ash.position),
         calculationDistance: fixed(calculation.distance),
         calculationSpeed: fixed(calculation.speed),
       }),
       calculation.speed === 0
-        ? t('studyAifg.pursue.model.workedAshStationaryUseCap', {
+        ? t('studyAifg.pursue.model.worked.ashStationaryUseCap', {
             exampleMaxPrediction: fixed(example.maxPrediction),
           })
-        : t('studyAifg.pursue.model.workedLookaheadMin', {
+        : t('studyAifg.pursue.model.worked.lookaheadMin', {
             exampleMaxPrediction: fixed(example.maxPrediction),
             calculationDistance: fixed(calculation.distance),
             calculationSpeed: fixed(calculation.speed),
             prediction: fixed(prediction),
           }),
-      t('studyAifg.pursue.model.workedPredictedReed', {
+      t('studyAifg.pursue.model.worked.predictedReed', {
         reedPosition: pair(reed.position),
         reedVelocity: pair(reed.velocity),
         prediction: fixed(prediction),
         predicted: pair(predicted),
       }),
       length(offset) === 0
-        ? t('studyAifg.pursue.model.workedPredictedPointCoincidesAsh')
-        : t('studyAifg.pursue.model.workedEngineSeek', {
+        ? t('studyAifg.pursue.model.worked.predictedPointCoincidesAsh')
+        : t('studyAifg.pursue.model.worked.engineSeek', {
             offset: pair(offset),
-            offset2: fixed(length(offset)),
+            distance: fixed(length(offset)),
             exampleMaxAcceleration: fixed(example.maxAcceleration),
             acceleration: pair(acceleration),
           }),
-      t('studyAifg.pursue.model.workedTrialVelocityClipLength', {
+      t('studyAifg.pursue.model.worked.trialVelocityClipLength', {
         ashVelocity: pair(ash.velocity),
         acceleration: pair(acceleration),
         exampleTimeStep: fixed(example.timeStep),
@@ -64,14 +89,14 @@ function workedStep(
         exampleMaxSpeed: fixed(example.maxSpeed),
         nextVelocity: pair(next.velocity),
       }),
-      t('studyAifg.pursue.model.workedNewAsh', {
+      t('studyAifg.pursue.model.worked.newAsh', {
         ashPosition: pair(ash.position),
         nextVelocity: pair(next.velocity),
         exampleTimeStep: fixed(example.timeStep),
         nextPosition: pair(next.position),
       }),
     ],
-    note: t('studyAifg.pursue.model.workedForecastRecomputedAfterEach', {
+    note: t('studyAifg.pursue.model.worked.forecastRecomputedAfterEach', {
       prediction: fixed(prediction),
       exampleTimeStep: fixed(example.timeStep),
     }),
@@ -91,17 +116,17 @@ function phaseNote(
   previous?: PursueFrame,
 ): string {
   if (length(frame.calculation.acceleration) === 0)
-    return t('studyAifg.pursue.model.phaseAshAimMotionLeft');
+    return t('studyAifg.pursue.model.phase.ashAimMotionLeft');
   if (frame.calculation.distance <= example.tagRadius)
-    return t('studyAifg.pursue.model.phaseAshCloseEnoughTag');
+    return t('studyAifg.pursue.model.phase.ashCloseEnoughTag');
   if (previous && previous.calculation.distance <= example.tagRadius)
-    return t('studyAifg.pursue.model.phaseAshLeftTagRange');
-  if (closingRate(frame) < 0) return t('studyAifg.pursue.model.phaseAshMovingAwayReed');
+    return t('studyAifg.pursue.model.phase.ashLeftTagRange');
+  if (closingRate(frame) < 0) return t('studyAifg.pursue.model.phase.ashMovingAwayReed');
   if (frame.calculation.prediction === example.maxPrediction)
-    return t('studyAifg.pursue.model.phaseAshAimsAheadReed');
+    return t('studyAifg.pursue.model.phase.ashAimsAheadReed');
   if (previous && frame.calculation.prediction < previous.calculation.prediction)
-    return t('studyAifg.pursue.model.phaseAshClosesReedShorter');
-  return t('studyAifg.pursue.model.phaseAshClosingReedAim');
+    return t('studyAifg.pursue.model.phase.ashClosesReedShorter');
+  return t('studyAifg.pursue.model.phase.ashClosingReedAim');
 }
 
 function frameOf(
@@ -121,13 +146,13 @@ function frameOf(
         id: 'ash',
         ...ash.position,
         tone: 'subject',
-        label: t('studyAifg.pursue.model.ash'),
+        label: t('studyAifg.pursue.model.labels.ash'),
       },
       {
         id: 'reed',
         ...reed.position,
         tone: 'target',
-        label: t('studyAifg.pursue.model.reed'),
+        label: t('studyAifg.pursue.model.labels.reed'),
       },
     ],
     marks: [
@@ -135,7 +160,7 @@ function frameOf(
         ...calculation.predicted,
         shape: 'cross',
         tone: 'desired',
-        label: t('studyAifg.pursue.model.aim'),
+        label: t('studyAifg.pursue.model.labels.aim'),
       },
     ],
     zones: [{ ...reed.position, radius: example.tagRadius, tone: 'zone' }],
@@ -164,10 +189,10 @@ function frameOf(
       accelerationMagnitude: fixed(length(calculation.acceleration)),
       closingRelation:
         closingRate(frame) > 0
-          ? t('studyAifg.pursue.model.valueClosing')
+          ? t('studyAifg.pursue.model.values.closing')
           : closingRate(frame) < 0
-            ? t('studyAifg.pursue.model.valueMovingAway')
-            : t('studyAifg.pursue.model.valueHoldingSameSeparation'),
+            ? t('studyAifg.pursue.model.values.movingAway')
+            : t('studyAifg.pursue.model.values.holdingSameSeparation'),
       speed: fixed(calculation.speed),
       prediction: fixed(calculation.prediction),
       tagRadius: fixed(example.tagRadius),
@@ -179,75 +204,21 @@ function frameOf(
 }
 
 /** Separate close names in a row below the run, keeping their connectors clear of the text. */
-function labelFrame(
-  t: StudyTranslate,
-  frame: MotionFrame,
-  left: number,
-  span: number,
-  rowY: number,
-): MotionFrame {
-  const ash = frame.bodies[0];
-  const reed = frame.bodies[1];
-  const aim = frame.marks?.[0];
-  if (!aim) return frame;
-  const unit = span / drawingWidth;
-  const named = [
-    { label: t('studyAifg.pursue.model.ash'), point: ash },
-    { label: t('studyAifg.pursue.model.reed'), point: reed },
-    { label: t('studyAifg.pursue.model.aim'), point: aim },
-  ];
-  const crowded = named.some(({ point }, index) =>
-    named
-      .slice(index + 1)
-      .some(
-        ({ point: other }) =>
-          Math.abs(point.x - other.x) < 72 * unit && Math.abs(point.y - other.y) < 32 * unit,
-      ),
+function labelFrame(t: StudyTranslate, frame: MotionFrame, layout: MotionLabelRow): MotionFrame {
+  const mark = frame.marks?.[0];
+  if (!mark) return frame;
+  return withLabelRow(
+    frame,
+    [
+      { label: t('studyAifg.pursue.model.labels.ash'), point: frame.bodies[0] },
+      { label: t('studyAifg.pursue.model.labels.reed'), point: frame.bodies[1] },
+      { label: t('studyAifg.pursue.model.labels.aim'), point: mark },
+    ],
+    layout,
   );
-  const crossesArrow = named.some(({ label, point }) =>
-    (frame.vectors ?? []).some((vector) => {
-      const left = point.x - label.length * 8 * unit;
-      const right = point.x + label.length * 8 * unit;
-      const top = point.y - 40 * unit;
-      const bottom = point.y - 12 * unit;
-      return (
-        Math.max(vector.x, vector.x + vector.dx) + 8 * unit >= left &&
-        Math.min(vector.x, vector.x + vector.dx) - 8 * unit <= right &&
-        Math.max(vector.y, vector.y + vector.dy) + 8 * unit >= top &&
-        Math.min(vector.y, vector.y + vector.dy) - 8 * unit <= bottom
-      );
-    }),
-  );
-  if (!crowded && !crossesArrow) return frame;
-  const callouts = named.map<MotionMark>(({ label }, index) => ({
-    x: left + (span * (index + 1)) / (named.length + 1),
-    y: rowY,
-    shape: 'dot',
-    tone: 'muted',
-    label,
-  }));
-  const connectors = named.flatMap<MotionLink>(({ point }, index) => {
-    const callout = callouts[index];
-    const above = { x: callout.x + 64 * unit, y: rowY - 48 * unit };
-    const beside = { x: above.x, y: rowY };
-    return [
-      { from: point, to: above, tone: 'muted' },
-      { from: above, to: beside, tone: 'muted' },
-      { from: beside, to: callout, tone: 'muted' },
-    ];
-  });
-  return {
-    ...frame,
-    bodies: frame.bodies.map((body) => ({ ...body, label: undefined })),
-    marks: [{ ...aim, label: undefined }, ...callouts],
-    links: [...(frame.links ?? []), ...connectors],
-  };
 }
 
-function comparison(
-  t: StudyTranslate,
-  example: PursueParameters,
-): NonNullable<MotionStudyModel['comparison']> {
+function comparison(t: StudyTranslate, example: PursueParameters): StudyComparison {
   const changed = { ...example, turnAt: example.comparisonTurnAt };
   const normal = pursueFrames(example);
   const turned = pursueFrames(changed);
@@ -258,17 +229,17 @@ function comparison(
   );
   const futureTime = first.seconds + first.calculation.prediction;
   return {
-    title: t('studyAifg.pursue.model.comparisonWhatIfReedReverses'),
-    intro: t('studyAifg.pursue.model.comparisonChangeReedReversalTime', {
+    title: t('studyAifg.pursue.model.comparison.whatIfReedReverses'),
+    intro: t('studyAifg.pursue.model.comparison.changeReedReversalTime', {
       exampleTurnAt: fixed(example.turnAt),
       changedTurnAt: fixed(changed.turnAt),
       exampleMaxPrediction: fixed(example.maxPrediction),
       exampleSteps: fixed(example.steps * example.timeStep),
     }),
     timeline: {
-      title: t('studyAifg.pursue.model.comparisonForecastMissChosenFuture'),
-      xLabel: t('studyAifg.pursue.model.comparisonTimeForecastWasMade'),
-      yLabel: t('studyAifg.pursue.model.comparisonPredictionError'),
+      title: t('studyAifg.pursue.model.comparison.forecastMissChosenFuture'),
+      xLabel: t('studyAifg.pursue.model.comparison.timeForecastWasMade'),
+      yLabel: t('studyAifg.pursue.model.comparison.predictionError'),
       seconds: normal.map(({ seconds }) => seconds),
       xRange: [
         0,
@@ -285,13 +256,13 @@ function comparison(
       series: [
         {
           id: 'steady',
-          label: t('studyAifg.pursue.model.comparisonSteadyReed'),
+          label: t('studyAifg.pursue.model.comparison.steadyReed'),
           tone: 'actual',
           values: normal.map(({ forecastError }) => forecastError),
         },
         {
           id: 'reversal',
-          label: t('studyAifg.pursue.model.comparisonReedReverses'),
+          label: t('studyAifg.pursue.model.comparison.reedReverses'),
           tone: 'desired',
           values: turned.map(({ forecastError }) => forecastError),
         },
@@ -300,42 +271,38 @@ function comparison(
     },
     findings: [
       futureTime <= changed.turnAt
-        ? t('studyAifg.pursue.model.comparisonFirstForecastEndsBefore', {
+        ? t('studyAifg.pursue.model.comparison.firstForecastEndsBefore', {
             calculationPrediction: fixed(first.calculation.prediction),
           })
-        : t('studyAifg.pursue.model.comparisonRunsInitiallyLeadReed', {
-            value1: fixed(distance(first.reed.position, first.calculation.predicted)),
+        : t('studyAifg.pursue.model.comparison.runsInitiallyLeadReed', {
+            initialLead: fixed(distance(first.reed.position, first.calculation.predicted)),
             calculationPrediction: fixed(first.calculation.prediction),
             firstForecastError: fixed(first.forecastError),
             futureTime: fixed(futureTime),
           }),
-      t('studyAifg.pursue.model.comparisonLargestSampledMissForecast', {
+      t('studyAifg.pursue.model.comparison.largestSampledMissForecast', {
         peakForecastError: fixed(peak.forecastError),
         peakSeconds: fixed(peak.seconds),
       }),
     ],
-    note: t('studyAifg.pursue.model.comparisonErrorComparesEachForecast'),
+    note: t('studyAifg.pursue.model.comparison.errorComparesEachForecast'),
   };
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  states: ReturnType<typeof pursueFrames>,
-  example: PursueParameters,
-  gaps: number[],
-  tagged: number,
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, run: PursuitDescription): TimelineModel {
+  const { states, example, gaps, tagged } = run;
+
   return {
-    title: t('studyAifg.pursue.model.separationReed'),
-    xLabel: t('studyAifg.pursue.model.timeSeconds'),
-    yLabel: t('studyAifg.pursue.model.separation'),
+    title: t('studyAifg.pursue.model.timeline.separationReed'),
+    xLabel: t('studyAifg.pursue.model.timeline.timeSeconds'),
+    yLabel: t('studyAifg.pursue.model.timeline.separation'),
     seconds: states.map(({ seconds }) => seconds),
     yRange: [0, Math.max(example.tagRadius, ...gaps)],
     reference: example.tagRadius,
     series: [
       {
         id: 'separation',
-        label: t('studyAifg.pursue.model.greenAshReed'),
+        label: t('studyAifg.pursue.model.timeline.greenAshReed'),
         tone: 'actual',
         values: gaps,
       },
@@ -344,37 +311,28 @@ function runTimeline(
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  shortened: number,
-  tagged: number,
-  closest: number,
-  example: PursueParameters,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, run: PursuitDescription): readonly StudyMoment[] {
+  const { shortened, tagged, closest, example } = run;
+
   return [
-    { label: t('studyAifg.pursue.model.cappedLead'), step: 0 },
+    { label: t('studyAifg.pursue.model.moments.cappedLead'), step: 0 },
     ...(shortened >= 0
-      ? [{ label: t('studyAifg.pursue.model.leadShortens'), step: shortened }]
+      ? [{ label: t('studyAifg.pursue.model.moments.leadShortens'), step: shortened }]
       : []),
     {
       label:
         tagged >= 0
-          ? t('studyAifg.pursue.model.tagRange')
-          : t('studyAifg.pursue.model.closestPass'),
+          ? t('studyAifg.pursue.model.moments.tagRange')
+          : t('studyAifg.pursue.model.moments.closestPass'),
       step: tagged >= 0 ? tagged : closest,
     },
-    { label: t('studyAifg.pursue.model.steering'), step: example.steps },
+    { label: t('studyAifg.pursue.model.moments.steering'), step: example.steps },
   ];
 }
 
-function motionFrames(
-  t: StudyTranslate,
-  states: ReturnType<typeof pursueFrames>,
-  example: PursueParameters,
-  gaps: number[],
-  closest: number,
-  tagged: number,
-): readonly MotionFrame[] {
+function motionFrames(t: StudyTranslate, run: PursuitDescription): readonly MotionFrame[] {
+  const { states, example, gaps, closest, tagged } = run;
+
   return states.map((frame, step) => {
     const view = frameOf(t, frame, example, states[step - 1]);
     return {
@@ -384,8 +342,8 @@ function motionFrames(
         closestPass: fixed(gaps[closest]),
         tagOutcome:
           tagged >= 0
-            ? t('studyAifg.pursue.model.ashEntersTagRange')
-            : t('studyAifg.pursue.model.ashStaysOutsideTag'),
+            ? t('studyAifg.pursue.model.labels.ashEntersTagRange')
+            : t('studyAifg.pursue.model.labels.ashStaysOutsideTag'),
       },
     };
   });
@@ -393,13 +351,12 @@ function motionFrames(
 
 export const present = (
   example: PursueParameters,
-  states: ReturnType<typeof pursueFrames>,
+  states: readonly PursueFrame[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const gaps = states.map(({ calculation }) => calculation.distance);
-  const tagged = states.findIndex(({ calculation }) => calculation.distance <= example.tagRadius);
-  const closest = gaps.reduce((best, gap, step) => (gap < gaps[best] ? step : best), 0);
-  const rawFrames = motionFrames(t, states, example, gaps, closest, tagged);
+  const run = describePursuit(example, states);
+  const { shortened } = run;
+  const rawFrames = motionFrames(t, run);
   const rawPoints = rawFrames.flatMap((frame) => [
     ...frame.bodies,
     ...(frame.marks ?? []),
@@ -423,11 +380,10 @@ export const present = (
     Math.min(...rawPoints.map(({ x }) => x)) +
     2 * padding;
   const rowY = Math.max(...rawPoints.map(({ y }) => y)) + (64 * spanX) / drawingWidth;
-  const frames = rawFrames.map((frame) => labelFrame(t, frame, left, spanX, rowY));
-  const points = [...rawPoints, ...frames.flatMap((frame) => frame.marks ?? [])];
-  const shortened = states.findIndex(
-    ({ calculation }) => calculation.prediction < example.maxPrediction,
+  const frames = rawFrames.map((frame) =>
+    labelFrame(t, frame, { left, span: spanX, y: rowY, minimumGap: 72 }),
   );
+  const points = [...rawPoints, ...frames.flatMap((frame) => frame.marks ?? [])];
   return {
     family: 'motion',
     motion: {
@@ -440,16 +396,16 @@ export const present = (
       frames,
       trail: true,
     },
-    timeline: runTimeline(t, states, example, gaps, tagged),
+    timeline: runTimeline(t, run),
     initialStep: shortened < 0 ? 0 : shortened,
-    moments: runMoments(t, shortened, tagged, closest, example),
+    moments: runMoments(t, run),
     legend: [
-      { tone: 'target', label: t('studyAifg.pursue.model.reedVelocity') },
-      { tone: 'actual', label: t('studyAifg.pursue.model.ashVelocity') },
-      { tone: 'desired', label: t('studyAifg.pursue.model.aimAshAcceleration') },
-      { tone: 'zone', label: t('studyAifg.pursue.model.tagRangeLabel') },
+      { tone: 'target', label: t('studyAifg.pursue.model.labels.reedVelocity') },
+      { tone: 'actual', label: t('studyAifg.pursue.model.labels.ashVelocity') },
+      { tone: 'desired', label: t('studyAifg.pursue.model.labels.aimAshAcceleration') },
+      { tone: 'zone', label: t('studyAifg.pursue.model.labels.tagRangeLabel') },
     ],
-    caption: t('studyAifg.pursue.model.caption', {
+    caption: t('studyAifg.pursue.model.overview.caption', {
       exampleVelocitySeconds: fixed(example.velocitySeconds),
       exampleAccelerationSecondsSquared: fixed(example.accelerationSecondsSquared),
       exampleTagRadius: fixed(example.tagRadius),
@@ -458,8 +414,8 @@ export const present = (
     inputs: [
       {
         name: 'maxPrediction',
-        label: t('studyAifg.pursue.model.predictionCap'),
-        unit: t('studyAifg.pursue.model.inputsUnitS'),
+        label: t('studyAifg.pursue.model.labels.predictionCap'),
+        unit: t('studyAifg.pursue.model.inputs.unitS'),
         min: 0.25,
         max: 3,
         step: 0.25,

@@ -1,40 +1,76 @@
 import { length, scale } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyMoment,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
   type EquilibriumParameters,
   type EquilibriumStep,
   equilibriumSteps,
 } from './equilibrium-fallback.simulation';
-import { boundsOfPoints, decimal as fixed, vectorText as vector } from './presentation';
+import { boundsOfPoints } from './presentation';
+
+interface EquilibriumDescription {
+  readonly example: EquilibriumParameters;
+  readonly run: readonly EquilibriumStep[];
+  readonly comparison: readonly EquilibriumStep[];
+  readonly seconds: readonly number[];
+  readonly inputValues: StudyValues;
+
+  readonly firstPrimary: number;
+  readonly firstReturn: number;
+  readonly fallbackSteps: number;
+  readonly maxOffset: number;
+  readonly comparisonMaxOffset: number;
+  readonly comparisonInitialMagnitude: number;
+  readonly comparisonStart: string;
+  readonly comparisonStarts: boolean;
+  readonly primaryHandover: string;
+  readonly returnReading: string;
+  readonly movementReading: string;
+}
+interface EquilibriumFrame {
+  readonly reading: EquilibriumDescription;
+  readonly index: number;
+  readonly step: EquilibriumStep;
+}
+
+const { number: fixed, vector } = createNumberFormat();
 
 function noteOf(
   t: StudyTranslate,
   step: EquilibriumStep,
   example: EquilibriumParameters,
   index: number,
-) {
+): string {
   if (step.activeGroup === 'None')
     return length(step.state.velocity) === 0
       ? length(step.primary) === 0
-        ? t('studyAifg.equilibrium-fallback.model.phaseBeaconPullsCancelFallback')
-        : t('studyAifg.equilibrium-fallback.model.phaseNeitherRequestClearsThreshold')
-      : t('studyAifg.equilibrium-fallback.model.phaseRequestsTooSmallTake');
+        ? t('studyAifg.equilibrium-fallback.model.phase.beaconPullsCancelFallback')
+        : t('studyAifg.equilibrium-fallback.model.phase.neitherRequestClearsThreshold')
+      : t('studyAifg.equilibrium-fallback.model.phase.requestsTooSmallTake');
   if (step.activeGroup === 'Wander fallback')
     return index === 0
-      ? t('studyAifg.equilibrium-fallback.model.fallbackNudge')
-      : t('studyAifg.equilibrium-fallback.model.phaseBeaconPullTooSmall');
+      ? t('studyAifg.equilibrium-fallback.model.phase.fallbackNudge')
+      : t('studyAifg.equilibrium-fallback.model.phase.beaconPullTooSmall');
   return (step.state.position.y - example.beaconY) * step.state.velocity.y > 0
-    ? t('studyAifg.equilibrium-fallback.model.phaseBeaconsReclaimedControlNori')
-    : t('studyAifg.equilibrium-fallback.model.phaseBeaconsPullNoriBack');
+    ? t('studyAifg.equilibrium-fallback.model.phase.beaconsReclaimedControlNori')
+    : t('studyAifg.equilibrium-fallback.model.phase.beaconsPullNoriBack');
 }
 
 function describeRun(
   t: StudyTranslate,
   example: EquilibriumParameters,
-  run: ReturnType<typeof equilibriumSteps>,
-) {
+  run: readonly EquilibriumStep[],
+): EquilibriumDescription {
   const comparison = equilibriumSteps(example, example.weakFallbackWeight);
   const seconds = run.map((_step, index) => index * example.timeStep);
   const firstPrimary = run.findIndex(({ activeGroup }) => activeGroup === 'Beacon blend');
@@ -53,28 +89,30 @@ function describeRun(
   const comparisonInitialMagnitude = length(comparison[0].fallback);
   const comparisonStarts = comparisonInitialMagnitude > example.epsilon;
   const comparisonStart = comparisonStarts
-    ? t('studyAifg.equilibrium-fallback.model.comparisonFallbackClearsThreshold')
-    : t('studyAifg.equilibrium-fallback.model.comparisonFallbackDoesNot');
+    ? t('studyAifg.equilibrium-fallback.model.comparison.fallbackClearsThreshold')
+    : t('studyAifg.equilibrium-fallback.model.comparison.fallbackDoesNot');
   const primaryHandover =
     firstPrimary < 0
-      ? t('studyAifg.equilibrium-fallback.model.beaconGroupNeverReclaims')
-      : t('studyAifg.equilibrium-fallback.model.beaconGroupFirstReclaims', {
+      ? t('studyAifg.equilibrium-fallback.model.labels.beaconGroupNeverReclaims')
+      : t('studyAifg.equilibrium-fallback.model.labels.beaconGroupFirstReclaims', {
           seconds: fixed(seconds[firstPrimary]),
         });
   const returnReading =
     firstReturn < 0
-      ? t('studyAifg.equilibrium-fallback.model.noriDoesNotMove')
-      : t('studyAifg.equilibrium-fallback.model.noriFirstMovesBack', {
+      ? t('studyAifg.equilibrium-fallback.model.labels.noriDoesNotMove')
+      : t('studyAifg.equilibrium-fallback.model.labels.noriFirstMovesBack', {
           seconds: fixed(seconds[firstReturn]),
         });
   const movementReading =
     maxOffset === 0
-      ? t('studyAifg.equilibrium-fallback.model.noriStaysRestBecause')
-      : t('studyAifg.equilibrium-fallback.model.noriLeavesBalanceNeither');
+      ? t('studyAifg.equilibrium-fallback.model.labels.noriStaysRestBecause')
+      : t('studyAifg.equilibrium-fallback.model.labels.noriLeavesBalanceNeither');
   const inputValues = Object.fromEntries(
     Object.entries(example).map(([name, value]) => [name, String(Number(fixed(value)))]),
   );
   return {
+    example,
+    run,
     seconds,
     inputValues,
     firstPrimary,
@@ -92,72 +130,66 @@ function describeRun(
   };
 }
 
-function frameWorked(
-  t: StudyTranslate,
-  reading: ReturnType<typeof describeRun>,
-  index: number,
-  step: EquilibriumStep,
-  example: EquilibriumParameters,
-): StudyWorkedStep {
+function frameWorked(t: StudyTranslate, frame: EquilibriumFrame): StudyWorkedStep {
+  const { reading, index, step } = frame;
+  const { example } = reading;
+
   return {
-    title: t('studyAifg.equilibrium-fallback.model.workedNori', {
+    title: t('studyAifg.equilibrium-fallback.model.worked.nori', {
       seconds: fixed(reading.seconds[index]),
     }),
     lines: [
-      t('studyAifg.equilibrium-fallback.model.workedBeginPositionVelocity', {
+      t('studyAifg.equilibrium-fallback.model.worked.beginPositionVelocity', {
         statePosition: vector(step.state.position),
         stateVelocity: vector(step.state.velocity),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedWeightedBeaconRequestsClip', {
-        value1: vector(scale(step.left, example.beaconWeight)),
-        value2: vector(scale(step.right, example.beaconWeight)),
+      t('studyAifg.equilibrium-fallback.model.worked.weightedBeaconRequestsClip', {
+        leftRequest: vector(scale(step.left, example.beaconWeight)),
+        rightRequest: vector(scale(step.right, example.beaconWeight)),
         exampleMaxAcceleration: fixed(example.maxAcceleration),
         stepPrimary: vector(step.primary),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedUnroundedBeaconMagnitudeEpsilon', {
-        value1:
+      t('studyAifg.equilibrium-fallback.model.worked.unroundedBeaconMagnitudeEpsilon', {
+        thresholdStatus:
           length(step.primary) > example.epsilon
-            ? t('studyAifg.equilibrium-fallback.model.workedClears')
-            : t('studyAifg.equilibrium-fallback.model.workedDoesNotClear'),
+            ? t('studyAifg.equilibrium-fallback.model.worked.clears')
+            : t('studyAifg.equilibrium-fallback.model.worked.doesNotClear'),
         exampleEpsilon: fixed(example.epsilon),
         stepPrimary: fixed(length(step.primary)),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedEngineWanderRequestsMultiply', {
+      t('studyAifg.equilibrium-fallback.model.worked.engineWanderRequestsMultiply', {
         stepWander: vector(step.wander),
         exampleFallbackWeight: fixed(example.fallbackWeight),
         stepFallback: vector(step.fallback),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedFirstActiveBeaconBlendWander', {
+      t('studyAifg.equilibrium-fallback.model.worked.firstActiveBeaconBlendWander', {
         stepActiveGroup: groupName(t, step.activeGroup),
         stepAcceleration: vector(step.acceleration),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedNewVelocityClipLength', {
+      t('studyAifg.equilibrium-fallback.model.worked.newVelocityClipLength', {
         stateVelocity: vector(step.state.velocity),
         stepAcceleration: vector(step.acceleration),
         exampleTimeStep: fixed(example.timeStep),
         exampleMaxSpeed: fixed(example.maxSpeed),
         nextVelocity: vector(step.next.velocity),
       }),
-      t('studyAifg.equilibrium-fallback.model.workedNewPosition', {
+      t('studyAifg.equilibrium-fallback.model.worked.newPosition', {
         statePosition: vector(step.state.position),
         nextVelocity: vector(step.next.velocity),
         exampleTimeStep: fixed(example.timeStep),
         nextPosition: vector(step.next.position),
       }),
     ],
-    note: t('studyAifg.equilibrium-fallback.model.workedDisplayedValuesRoundedCalculations'),
+    note: t('studyAifg.equilibrium-fallback.model.worked.displayedValuesRoundedCalculations'),
   };
 }
 
-function compareRuns(
-  t: StudyTranslate,
-  example: EquilibriumParameters,
-  reading: ReturnType<typeof describeRun>,
-  run: ReturnType<typeof equilibriumSteps>,
-): NonNullable<MotionStudyModel['comparison']> {
+function compareRuns(t: StudyTranslate, reading: EquilibriumDescription): StudyComparison {
+  const { example, run } = reading;
+
   return {
-    title: t('studyAifg.equilibrium-fallback.model.comparisonDoesFallbackClearThreshold'),
-    intro: t('studyAifg.equilibrium-fallback.model.comparisonCompareChosenFallbackWeight', {
+    title: t('studyAifg.equilibrium-fallback.model.comparison.doesFallbackClearThreshold'),
+    intro: t('studyAifg.equilibrium-fallback.model.comparison.compareChosenFallbackWeight', {
       exampleFallbackWeight: fixed(example.fallbackWeight),
       exampleWeakFallbackWeight: fixed(example.weakFallbackWeight),
       exampleEpsilon: fixed(example.epsilon),
@@ -165,16 +197,16 @@ function compareRuns(
       comparisonStart: reading.comparisonStart,
     }),
     timeline: {
-      title: t('studyAifg.equilibrium-fallback.model.comparisonDisplacementBeaconLine'),
-      xLabel: t('studyAifg.equilibrium-fallback.model.timeSeconds'),
-      yLabel: t('studyAifg.equilibrium-fallback.model.comparisonAbsoluteDistanceLine'),
+      title: t('studyAifg.equilibrium-fallback.model.comparison.displacementBeaconLine'),
+      xLabel: t('studyAifg.equilibrium-fallback.model.labels.timeSeconds'),
+      yLabel: t('studyAifg.equilibrium-fallback.model.comparison.absoluteDistanceLine'),
       seconds: reading.seconds,
       yRange: [0, Math.max(example.radius, reading.maxOffset, reading.comparisonMaxOffset)],
       reference: 0,
       series: [
         {
           id: 'chosen',
-          label: t('studyAifg.equilibrium-fallback.model.comparisonChosenWeight', {
+          label: t('studyAifg.equilibrium-fallback.model.comparison.chosenWeight', {
             exampleFallbackWeight: fixed(example.fallbackWeight),
           }),
           tone: 'actual',
@@ -182,7 +214,7 @@ function compareRuns(
         },
         {
           id: 'comparison',
-          label: t('studyAifg.equilibrium-fallback.model.comparisonComparisonWeight', {
+          label: t('studyAifg.equilibrium-fallback.model.comparison.comparisonWeight', {
             exampleWeakFallbackWeight: fixed(example.weakFallbackWeight),
           }),
           tone: 'desired',
@@ -193,30 +225,27 @@ function compareRuns(
       ],
     },
     findings: [
-      t('studyAifg.equilibrium-fallback.model.comparisonChosenRunReachesMaximum', {
+      t('studyAifg.equilibrium-fallback.model.comparison.chosenRunReachesMaximum', {
         maxOffset: fixed(reading.maxOffset),
         comparisonMaxOffset: fixed(reading.comparisonMaxOffset),
-        value3: reading.comparisonStarts
-          ? t('studyAifg.equilibrium-fallback.model.comparisonComparisonFallbackStrongEnough')
-          : t('studyAifg.equilibrium-fallback.model.comparisonComparisonStaysRestBecause'),
+        comparisonOutcome: reading.comparisonStarts
+          ? t('studyAifg.equilibrium-fallback.model.comparison.comparisonFallbackStrongEnough')
+          : t('studyAifg.equilibrium-fallback.model.comparison.comparisonStaysRestBecause'),
       }),
-      t('studyAifg.equilibrium-fallback.model.comparisonFallbackOwnsSimulatedUpdates', {
+      t('studyAifg.equilibrium-fallback.model.comparison.fallbackOwnsSimulatedUpdates', {
         primaryHandover: reading.primaryHandover,
         fallbackSteps: reading.fallbackSteps,
         movementReading: reading.movementReading,
       }),
     ],
-    note: t('studyAifg.equilibrium-fallback.model.comparisonLinesJoinDeterministicFixed'),
+    note: t('studyAifg.equilibrium-fallback.model.comparison.linesJoinDeterministicFixed'),
   };
 }
 
-function frameValues(
-  t: StudyTranslate,
-  reading: ReturnType<typeof describeRun>,
-  index: number,
-  step: EquilibriumStep,
-  example: EquilibriumParameters,
-): Readonly<Record<string, string>> {
+function frameValues(t: StudyTranslate, frame: EquilibriumFrame): StudyValues {
+  const { reading, index, step } = frame;
+  const { example } = reading;
+
   return {
     ...reading.inputValues,
     seconds: fixed(reading.seconds[index]),
@@ -234,17 +263,17 @@ function frameValues(
     selectedMagnitude: fixed(length(step.acceleration)),
     beaconReading:
       length(step.primary) === 0
-        ? t('studyAifg.equilibrium-fallback.model.opposingBeaconRequestsCancel')
-        : t('studyAifg.equilibrium-fallback.model.beaconsPullBackTowards', {
+        ? t('studyAifg.equilibrium-fallback.model.values.opposingBeaconRequestsCancel')
+        : t('studyAifg.equilibrium-fallback.model.values.beaconsPullBackTowards', {
             stepPrimary: fixed(length(step.primary)),
           }),
     firstPrimaryTime:
       reading.firstPrimary < 0
-        ? t('studyAifg.equilibrium-fallback.model.notReached')
+        ? t('studyAifg.equilibrium-fallback.model.values.notReached')
         : fixed(reading.seconds[reading.firstPrimary]),
     firstReturnTime:
       reading.firstReturn < 0
-        ? t('studyAifg.equilibrium-fallback.model.notReached')
+        ? t('studyAifg.equilibrium-fallback.model.values.notReached')
         : fixed(reading.seconds[reading.firstReturn]),
     primaryHandover: reading.primaryHandover,
     returnReading: reading.returnReading,
@@ -257,24 +286,22 @@ function frameValues(
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  reading: ReturnType<typeof describeRun>,
-  example: EquilibriumParameters,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, reading: EquilibriumDescription): readonly StudyMoment[] {
+  const { example } = reading;
+
   return [
-    { label: t('studyAifg.equilibrium-fallback.model.requestsCancel'), step: 0 },
+    { label: t('studyAifg.equilibrium-fallback.model.moments.requestsCancel'), step: 0 },
     {
       label:
         reading.maxOffset === 0
-          ? t('studyAifg.equilibrium-fallback.model.rest')
-          : t('studyAifg.equilibrium-fallback.model.nudgeMovesNori'),
+          ? t('studyAifg.equilibrium-fallback.model.moments.rest')
+          : t('studyAifg.equilibrium-fallback.model.moments.nudgeMovesNori'),
       step: Math.min(1, example.steps),
     },
     ...(reading.firstPrimary > 1
       ? [
           {
-            label: t('studyAifg.equilibrium-fallback.model.beaconGroupResumes'),
+            label: t('studyAifg.equilibrium-fallback.model.moments.beaconGroupResumes'),
             step: reading.firstPrimary,
           },
         ]
@@ -282,24 +309,21 @@ function runMoments(
     ...(reading.firstReturn > 1
       ? [
           {
-            label: t('studyAifg.equilibrium-fallback.model.returningTowardsLine'),
+            label: t('studyAifg.equilibrium-fallback.model.moments.returningTowardsLine'),
             step: reading.firstReturn,
           },
         ]
       : []),
     {
-      label: t('studyAifg.equilibrium-fallback.model.endRun'),
+      label: t('studyAifg.equilibrium-fallback.model.moments.endRun'),
       step: example.steps,
     },
   ];
 }
 
-function motionFrames(
-  t: StudyTranslate,
-  run: ReturnType<typeof equilibriumSteps>,
-  reading: ReturnType<typeof describeRun>,
-  example: EquilibriumParameters,
-): readonly MotionFrame[] {
+function motionFrames(t: StudyTranslate, reading: EquilibriumDescription): readonly MotionFrame[] {
+  const { example, run } = reading;
+
   return run.map((step, index) => ({
     seconds: reading.seconds[index],
     bodies: [
@@ -307,7 +331,7 @@ function motionFrames(
         id: 'Nori',
         ...step.state.position,
         tone: 'subject',
-        label: t('studyAifg.equilibrium-fallback.model.nori'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.nori'),
       },
     ],
     marks: [
@@ -316,14 +340,14 @@ function motionFrames(
         y: example.beaconY,
         shape: 'cross',
         tone: 'target',
-        label: t('studyAifg.equilibrium-fallback.model.west'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.west'),
       },
       {
         x: example.beaconHalfSpan,
         y: example.beaconY,
         shape: 'cross',
         tone: 'target',
-        label: t('studyAifg.equilibrium-fallback.model.east'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.east'),
       },
     ],
     links: [
@@ -362,40 +386,37 @@ function motionFrames(
         tone: 'actual',
       },
     ],
-    values: frameValues(t, reading, index, step, example),
+    values: frameValues(t, { reading, index, step }),
     note: noteOf(t, step, example, index),
-    worked: frameWorked(t, reading, index, step, example),
+    worked: frameWorked(t, { reading, index, step }),
   }));
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  reading: ReturnType<typeof describeRun>,
-  example: EquilibriumParameters,
-  run: ReturnType<typeof equilibriumSteps>,
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, reading: EquilibriumDescription): TimelineModel {
+  const { example, run } = reading;
+
   return {
-    title: t('studyAifg.equilibrium-fallback.model.cancellationControlReturningBeacon'),
-    xLabel: t('studyAifg.equilibrium-fallback.model.timeSeconds'),
-    yLabel: t('studyAifg.equilibrium-fallback.model.accelerationMagnitude'),
+    title: t('studyAifg.equilibrium-fallback.model.timeline.cancellationControlReturningBeacon'),
+    xLabel: t('studyAifg.equilibrium-fallback.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.equilibrium-fallback.model.timeline.accelerationMagnitude'),
     seconds: reading.seconds,
     reference: example.epsilon,
     series: [
       {
         id: 'primary',
-        label: t('studyAifg.equilibrium-fallback.model.beaconBlend'),
+        label: t('studyAifg.equilibrium-fallback.model.timeline.beaconBlend'),
         tone: 'other',
         values: run.map(({ primary }) => length(primary)),
       },
       {
         id: 'fallback',
-        label: t('studyAifg.equilibrium-fallback.model.wanderFallbackRequest'),
+        label: t('studyAifg.equilibrium-fallback.model.timeline.wanderFallbackRequest'),
         tone: 'desired',
         values: run.map(({ fallback }) => length(fallback)),
       },
       {
         id: 'selected',
-        label: t('studyAifg.equilibrium-fallback.model.selectedAcceleration'),
+        label: t('studyAifg.equilibrium-fallback.model.timeline.selectedAcceleration'),
         tone: 'actual',
         values: run.map(({ acceleration }) => length(acceleration)),
       },
@@ -405,11 +426,11 @@ function runTimeline(
 
 export const present = (
   example: EquilibriumParameters,
-  run: ReturnType<typeof equilibriumSteps>,
+  run: readonly EquilibriumStep[],
   t: StudyTranslate,
 ): MotionStudyModel => {
   const reading = describeRun(t, example, run);
-  const frames: readonly MotionFrame[] = motionFrames(t, run, reading, example);
+  const frames: readonly MotionFrame[] = motionFrames(t, reading);
   const points = frames.flatMap((frame) => [
     ...frame.bodies,
     ...(frame.marks ?? []),
@@ -429,42 +450,42 @@ export const present = (
       bounds: boundsOfPoints(points, padding),
       trail: true,
     },
-    timeline: runTimeline(t, reading, example, run),
+    timeline: runTimeline(t, reading),
     initialStep: 0,
-    moments: runMoments(t, reading, example),
+    moments: runMoments(t, reading),
     legend: [
       {
         tone: 'target',
-        label: t('studyAifg.equilibrium-fallback.model.arrowsThroughNoriWeighted'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.arrowsThroughNoriWeighted'),
       },
       {
         tone: 'other',
-        label: t('studyAifg.equilibrium-fallback.model.arrowThroughNoriNet'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.arrowThroughNoriNet'),
       },
       {
         tone: 'desired',
-        label: t('studyAifg.equilibrium-fallback.model.rightArrowFallbackRequest'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.rightArrowFallbackRequest'),
       },
       {
         tone: 'actual',
-        label: t('studyAifg.equilibrium-fallback.model.leftArrowSelectedAcceleration'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.leftArrowSelectedAcceleration'),
       },
     ],
-    caption: t('studyAifg.equilibrium-fallback.model.caption'),
-    comparison: compareRuns(t, example, reading, run),
+    caption: t('studyAifg.equilibrium-fallback.model.overview.caption'),
+    comparison: compareRuns(t, reading),
     inputs: [
       {
         name: 'fallbackWeight',
-        label: t('studyAifg.equilibrium-fallback.model.fallbackWeight'),
-        unit: t('studyAifg.equilibrium-fallback.model.weight'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.fallbackWeight'),
+        unit: t('studyAifg.equilibrium-fallback.model.labels.weight'),
         min: 0,
         max: 1,
         step: 0.01,
       },
       {
         name: 'epsilon',
-        label: t('studyAifg.equilibrium-fallback.model.activationThreshold'),
-        unit: t('studyAifg.equilibrium-fallback.model.inputsUnitUnitsS'),
+        label: t('studyAifg.equilibrium-fallback.model.labels.activationThreshold'),
+        unit: t('studyAifg.equilibrium-fallback.model.inputs.unitUnitsS'),
         min: 0.05,
         max: 1,
         step: 0.05,
@@ -476,11 +497,11 @@ export const present = (
 function groupName(t: StudyTranslate, value: string): string {
   switch (value) {
     case 'Beacon blend':
-      return t('studyAifg.equilibrium-fallback.model.groupNameBeaconblend');
+      return t('studyAifg.equilibrium-fallback.model.names.groupNameBeaconblend');
     case 'Wander fallback':
-      return t('studyAifg.equilibrium-fallback.model.groupNameWanderfallback');
+      return t('studyAifg.equilibrium-fallback.model.names.groupNameWanderfallback');
     case 'None':
-      return t('studyAifg.equilibrium-fallback.model.groupNameNone');
+      return t('studyAifg.equilibrium-fallback.model.names.groupNameNone');
     default:
       return value;
   }
