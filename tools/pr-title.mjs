@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 
 const gitmoji = JSON.parse(readFileSync(new URL('../.github/gitmoji-map.json', import.meta.url)));
 
+/** @param {string} title Current title. @returns {string} Title with its supported gitmoji. */
 export function decorateTitle(title) {
   if (typeof title !== 'string' || /[\p{Cc}\p{Zl}\p{Zp}]/u.test(title)) {
     throw new Error('The pull-request title must be a single line of text.');
@@ -24,6 +25,11 @@ export function decorateTitle(title) {
   return prefix === shortcode || prefix === emoji ? title : `${shortcode} ${subject}`;
 }
 
+/**
+ * @param {{pull_request?: {number?: number}, repository?: {full_name?: string}}} event PR event.
+ * @param {typeof spawnSync} run Process runner, replaceable by the tests.
+ * @returns {boolean} Whether the current remote title needed and received an edit.
+ */
 export function updateTitle(event, run = spawnSync) {
   const number = event.pull_request?.number;
   const repository = event.repository?.full_name;

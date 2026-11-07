@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+/** @param {string} document Markdown text. @returns {Set<string>} Script references in tables. */
 function tableReferences(document) {
   const references = new Set();
   let fence = null;
@@ -33,6 +34,10 @@ function tableReferences(document) {
   return references;
 }
 
+/**
+ * @param {string} root Workspace whose script inventory must match its reference tables.
+ * @returns {void} Prints the checked counts; throws on missing or stale entries.
+ */
 export function checkScriptReference(root = process.cwd()) {
   const scripts = Object.keys(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts);
   const files = readdirSync(join(root, 'tools/scripts'), { withFileTypes: true })
