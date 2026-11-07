@@ -53,7 +53,7 @@ it('attaches the record to the Control Bus row and draws its flow from this modu
   for (const frame of flow.frames)
     for (const name of names) expect(frame.values[name], name).toBeDefined();
   expect(fillValues(record.visual.textEquivalent, flow.frames[9].values)).toBe(
-    'At step 9, on the work queue and the control bus, p (analysis:) moves from Control bus to Verifier. Now Operator: sent the pause; Executor: works on order 33; Work queue: 1 record; Verifier: paused; Work queue holds 32; Verifier holds 31.',
+    'At step 9, on the work queue and the control bus, p (analysis:) moves from Control bus to Verifier. Now Operator: sent the pause; Executor: works on order 33; Work queue: Records: 1; Verifier: paused; Work queue holds 32; Verifier holds 31.',
   );
 });
 

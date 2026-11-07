@@ -28,6 +28,12 @@ interface Delivered {
   readonly value: unknown;
 }
 
+export interface MarbleExpectationOptions {
+  readonly translate?: StudyTranslate;
+  /** Authored descriptions have their own assertions in the study's spec. */
+  readonly descriptions?: 'payload' | 'authored';
+}
+
 /**
  * Runs an example under the TestScheduler and asserts every string it declares: each output's
  * marbles, every inner stream's subscription marbles and each input's declared ones. It then
@@ -38,9 +44,9 @@ interface Delivered {
  */
 export function expectMarbleExample(
   example: MarbleExample,
-  t: StudyTranslate = studyTranslate,
+  { translate: t = studyTranslate, descriptions = 'payload' }: MarbleExpectationOptions = {},
 ): void {
-  if (t === studyTranslate) expectDeclaredPresentation(example);
+  if (descriptions === 'payload') expectDeclaredPresentation(example, t);
   const delivered: Record<string, Delivered[]> = {};
   let inputs: [string, Logged][] = [];
   const scheduler = new TestScheduler((actual, expected) => expect(actual).toEqual(expected));
@@ -139,16 +145,15 @@ function renderedDeliveries(
   }));
 }
 
-/** English value descriptions must still name the exact payloads the scheduler receives. */
-function expectDeclaredPresentation(example: MarbleExample): void {
+/** In payload mode, descriptions name the exact values the scheduler receives. */
+function expectDeclaredPresentation(example: MarbleExample, t: StudyTranslate): void {
   for (const stream of [
     ...Object.values(example.inputs),
     ...Object.values(example.inner ?? {}),
     ...Object.values(example.outputs),
   ]) {
     for (const [key, value] of Object.entries(stream.values ?? {}))
-      expect(marbleValue(stream, key, value, studyTranslate)).toBe(nameOf(value));
-    if (stream.error !== undefined)
-      expect(marbleError(stream, studyTranslate)).toBe(nameOf(stream.error));
+      expect(marbleValue(stream, key, value, t)).toBe(nameOf(value));
+    if (stream.error !== undefined) expect(marbleError(stream, t)).toBe(nameOf(stream.error));
   }
 }

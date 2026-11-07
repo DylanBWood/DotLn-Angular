@@ -173,8 +173,11 @@ it.each(studies)(
       english.moments.map(({ step }) => step),
     );
     if ('run' in study.example) {
-      expectMarbleExample(study.example);
-      expectMarbleExample(study.example, alternate);
+      // The combineLatest display names each field; its raw values remain scheduler inputs.
+      expectMarbleExample(study.example, {
+        descriptions: study.slug === 'combine-latest' ? 'authored' : 'payload',
+      });
+      expectMarbleExample(study.example, { translate: alternate, descriptions: 'authored' });
     }
   },
 );

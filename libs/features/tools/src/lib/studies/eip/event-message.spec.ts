@@ -150,7 +150,7 @@ it('opens at the start and says so in the text equivalent', async () => {
   expect(text).toContain('v (verified, pass, at 10:00) moves from Beacon to Sweep');
   expect(text).toContain('whose threshold is 20 minutes');
   expect(text).toContain('Beacon: says verified, 10:00');
-  expect(text).toContain('Sweep: 10:30: stale, 30 min old');
+  expect(text).toContain('Sweep: At 10:30: stale, 30 min old');
   expect(text).toContain('Held: Event store holds v, r; Beacon holds v');
 });
 
@@ -195,6 +195,6 @@ it('keeps one observation template while changed clock data changes its computed
     key: 'studyEip.event-message.model.sweepState',
     params: { time: '10:07', age: 7 },
   });
-  expect(studyMessage(studyTranslate, fresh)).toBe('10:07: fresh, 7 min old');
-  expect(studyMessage(studyTranslate, stale)).toBe('10:07: stale, 7 min old');
+  expect(studyMessage(studyTranslate, fresh)).toBe('At 10:07: fresh, 7 min old');
+  expect(studyMessage(studyTranslate, stale)).toBe('At 10:07: stale, 7 min old');
 });

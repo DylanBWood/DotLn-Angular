@@ -307,7 +307,15 @@ pipeline under the TestScheduler, asserts every output's marbles, every inner st
 marbles (an inner stream must declare them, since they place it in the drawing) and every input's
 declared ones, then holds the drawing to the run: what the model draws as delivered on each output
 is what the output delivered, frame for frame, and a cold input the example does not place was first
-subscribed at frame 0, where the model draws it. The model names where each output value comes
+subscribed at frame 0, where the model draws it.
+
+The helper's options name a custom `translate` function and a `descriptions` mode. The default
+`payload` mode also checks that each description names its raw value, including when a spec uses
+a fixture translator. A spec whose displayed words intentionally differ chooses `authored` and
+asserts that wording separately; scheduler and rendered-delivery checks still run. Translator
+identity never selects which assertions run.
+
+The model names where each output value comes
 from, for the courier that rides down while playing: the example's `origins` where it names one (a
 stream id, or null for a value a scheduler held back), else the inner stream, then the input, that
 emits at that frame, else the one that errors or completes there. Origin references retain

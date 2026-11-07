@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
@@ -16,6 +16,11 @@ import {
   routeOf,
   rules,
 } from './content-based-router';
+
+// Only the altered test runs use these messages.
+const studyTranslate = withStudyMessages({
+  'studyEip.content-based-router.model.renamedFinding': 'finding F1, unmetCriterion criterion 2',
+});
 
 const path = 'libs/features/tools/src/lib/studies/eip/content-based-router.ts';
 const parameters = {
@@ -175,7 +180,7 @@ it('turns a blocking finding into a follow-up when its field is renamed, and not
       },
     },
   };
-  expectMarbleExample(changed);
+  expectMarbleExample(changed, { translate: studyTranslate });
   const { flow: drawn } = flowFromMarbles(
     changed,
     { ...flow, states: {}, held: {} },

@@ -903,14 +903,14 @@
           "6": {
             "states": {
               "sessionB": "done with 7",
-              "store": "{{results}} result for 7"
+              "store": "For 7: {{results}} result"
             },
             "note": "Session B sends its result, b, to the event store. It names command 7, so it can be matched to the request that asked for it."
           },
           "7": {
             "states": {
               "sessionA": "done with 7",
-              "store": "{{results}} results for 7"
+              "store": "For 7: {{results}} results"
             },
             "note": "Session A sends its result, a, to the event store, also naming 7. The id shows that both answer one request, so a reader can keep one, but nothing undoes the second verification."
           }
@@ -929,7 +929,7 @@
             "label": "Run twice"
           },
           "4": {
-            "label": "{{results}} results"
+            "label": "Results: {{results}}"
           }
         },
         "caption": "Each box is one part of the example. The Kernel, the part of DotLn that decides what happens next, sends commands. Dispatch, the pipe with the bold name, is the channel the pattern relies on: a command waits there until one session takes it. Session A and Session B are the two sessions that can carry a command out, and the Event store keeps their results. A token is a message: 7 is command 7, verify order 41, and b and a are the results that Session B and Session A send back. A token is green while it moves and outlined inside the box that holds it; a box a message leaves or reaches is outlined in green, and the words inside each box say what it is doing. Step forward to move the messages on.",
@@ -1409,14 +1409,14 @@
         },
         "states": {
           "0": {
-            "verifier": "{{remaining}} findings to file",
+            "verifier": "To file: {{remaining}} findings",
             "router": "blocking, then operator, else follow-up",
             "executor": "blocking: none yet",
             "operator": "operator: none yet",
             "board": "follow-up: none yet"
           },
           "1": {
-            "verifier": "{{remaining}} to file",
+            "verifier": "To file: {{remaining}}",
             "router": "F1: unmet criterion, so blocking"
           },
           "2": {
@@ -1424,7 +1424,7 @@
             "executor": "blocking: F1"
           },
           "3": {
-            "verifier": "{{remaining}} to file",
+            "verifier": "To file: {{remaining}}",
             "router": "F2: no rule fits, so follow-up"
           },
           "4": {
@@ -1432,7 +1432,7 @@
             "board": "follow-up: F2"
           },
           "5": {
-            "verifier": "{{remaining}} to file",
+            "verifier": "To file: {{remaining}}",
             "router": "F3: a decision, so operator"
           },
           "6": {
@@ -1440,7 +1440,7 @@
             "operator": "operator: F3"
           },
           "7": {
-            "verifier": "{{remaining}} to file",
+            "verifier": "To file: {{remaining}}",
             "router": "F4: a regression, so blocking"
           },
           "8": {
@@ -1457,8 +1457,7 @@
           }
         },
         "caption": "Each token is one finding, numbered as the verifier numbers it: token 1 is F1, and so on to 5. The Verifier reviews a change and files the findings. The Finding router reads each one, holds it for a step while it chooses, then sends it on. The Executor, which repairs the change, receives blocking findings; the Operator, the person directing the work, receives decisions that are theirs alone; the Board, a list of later work, receives everything else as a follow-up. The words in a box say what that box holds or has decided, and a destination's words start with the route it receives. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green."
-      },
-      "renamedFinding": "finding F1, unmetCriterion criterion 2"
+      }
     }
   },
   "control-bus": {
@@ -1612,7 +1611,7 @@
           "0": {
             "states": {
               "executor": "works on order 32",
-              "queue": "{{count}} record"
+              "queue": "Records: {{count}}"
             },
             "note": "The executor puts 31, the evidence of order 31, on the work queue."
           },
@@ -1626,7 +1625,7 @@
           "2": {
             "states": {
               "executor": "works on order 33",
-              "queue": "{{count}} record"
+              "queue": "Records: {{count}}"
             },
             "note": "The executor puts 32 on the work queue. The verifier is busy with 31, so 32 waits in the queue."
           },
@@ -1663,7 +1662,7 @@
           "9": {
             "states": {
               "executor": "works on order 34",
-              "queue": "{{count}} records"
+              "queue": "Records: {{count}}"
             },
             "note": "The pause was addressed to the verifier alone, so the executor puts 33 on the work queue as usual. It joins 32, and the backlog grows while the verifier is paused."
           },
@@ -1930,7 +1929,7 @@
         },
         "states": {
           "0": {
-            "kernel": "{{pending}} to send",
+            "kernel": "To send: {{pending}}",
             "worker1": "idle",
             "worker2": "idle",
             "worker3": "idle",
@@ -1940,12 +1939,12 @@
             "await3": "not open"
           },
           "1": {
-            "kernel": "{{pending}} to send",
+            "kernel": "To send: {{pending}}",
             "worker1": "running cmd_1",
             "await1": "waits for cmd_1"
           },
           "2": {
-            "kernel": "{{pending}} to send",
+            "kernel": "To send: {{pending}}",
             "worker2": "running cmd_2",
             "await2": "waits for cmd_2"
           },
@@ -1979,13 +1978,7 @@
         },
         "caption": "Each token is one message. a, b and c are the Kernel's commands cmd_1, cmd_2 and cmd_3; A, B and C are the workers' results, and each capital names its lower-case command's id: A names cmd_1, B cmd_2 and C cmd_3, and D is a second copy of B. The Kernel is the part of DotLn that sends the commands. Worker 1, 2 and 3 each run one command. Results is the one channel every worker answers on, so results arrive in the order the work finishes. Await 1, 2 and 3 are the Kernel's waits, one for each command sent, and each takes only the result naming its command's id. The words in a box say what that box is doing. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green."
       },
-      "byArrival": {
-        "operator": "zip(command$, result$)",
-        "label": "paired$",
-        "x": "cmd_1 got cmd_3",
-        "y": "cmd_2 got cmd_1",
-        "z": "cmd_3 got cmd_2"
-      }
+      "byArrival": {}
     }
   },
   "event-message": {
@@ -2202,7 +2195,7 @@
           }
         }
       },
-      "sweepState": "{{time}}: {{status}}, {{age}} min old",
+      "sweepState": "At {{time}}: {{status}}, {{age}} min old",
       "fresh": "fresh",
       "stale": "stale"
     }
@@ -2831,7 +2824,7 @@
             "label": "First one verified"
           },
           "1": {
-            "label": "{{waiting}} waiting"
+            "label": "Waiting: {{waiting}}"
           },
           "2": {
             "label": "b's last good step"
@@ -2875,7 +2868,7 @@
         },
         "states": {
           "0": {
-            "operator": "{{requests}} requests to send",
+            "operator": "To send: {{requests}} requests",
             "queue": "empty",
             "verifier": "free",
             "dead": "empty"
@@ -2913,8 +2906,7 @@
           }
         },
         "caption": "Each token is one request from the operator, the person directing the work, to verify an order: a, b and c ask for orders 31, 32 and 33. The Operator box sends them. The Request queue is the channel they wait in, each carrying the step until which it is still worth starting. The Verifier works on one request at a time, and the Dead letter box is a second channel that keeps the requests that waited too long, unverified, where someone can see them. The words in a box say what that box is doing or holding. A token is green while it moves and outlined while a box holds it, and a box a token leaves or reaches is outlined in green."
-      },
-      "verification32": "verification(32)"
+      }
     }
   },
   "message-store": {
@@ -3058,7 +3050,7 @@
             "states": {
               "executor": "works on order 32",
               "verifier": "checking 31",
-              "log": "{{count}} entry"
+              "log": "Entries: {{count}}"
             },
             "note": "The executor sends e, evidence 31, to the verifier and at the same moment fires 1, its envelope, at the control log: which record, on which channel, at which step. The hand-over does not wait for the log."
           },
@@ -3066,7 +3058,7 @@
             "states": {
               "verifier": "waiting",
               "reviewer": "reviewing 31",
-              "log": "{{count}} entries"
+              "log": "Entries: {{count}}"
             },
             "note": "The verifier sends r, its report on order 31, to the reviewer and fires 2, a copy of the whole report, at the log. A report is short and its verdict matters later, so its copy keeps it all."
           },
@@ -3327,7 +3319,7 @@
           }
         },
         "notes": {
-          "0": "Nothing has moved yet. {{inputCount}} rows wait in the legacy chunk: t, n and c.",
+          "0": "Nothing has moved yet. The legacy chunk holds {{inputCount}} rows: t, n and c.",
           "1": "The chunk sends t, the Message Translator row, to the translator, which hands T, the same row rebuilt in tool-v1, to the Tools home in the same step.",
           "2": "The chunk sends n, the Normalizer row, to the translator, which hands N to the Tools home. Nothing of t was kept, so n is rebuilt exactly as t was.",
           "3": "The chunk sends c, the Canonical Data Model row, to the translator, which hands C to the Tools home: {{outputCount}} rows out for {{inputCount}} in, in the order they were sent.",
@@ -3362,10 +3354,7 @@
           }
         },
         "caption": "Legacy chunk is a bundle of catalog rows still written in the old shape, tool-v0; Translator is the pattern’s part, which rebuilds each row; Tools home is the catalog page, which reads only the new shape, tool-v1. A token is one row: t, n and c are the Message Translator, Normalizer and Canonical Data Model rows as the chunk wrote them, and T, N and C the same rows rebuilt in tool-v1. A row and its rebuilt copy move in the same step, because the translator hands each row on as soon as it arrives. A token is green while it moves and outlined while a box holds it; a box a token leaves or reaches is outlined in green, and the words inside a box say what it does. Step forward to move the rows on."
-      },
-      "unknownRow": "id {{id}}, schema {{schema}}",
-      "unknownShapeError": "Error: no translation from {{schema}}",
-      "refusedMoment": "Refused"
+      }
     }
   },
   "process-manager": {
@@ -3618,9 +3607,7 @@
           }
         },
         "caption": "The boxes: the Operator starts the route and is the only one who may merge; the Router is the process manager, which keeps its record of the order and decides each next step; the Executor builds and repairs the order, the Verifier checks it and the Reviewer gives it a final review. The workers never send to each other: every line runs to or from the Router. Each token is one message, and d is the operator's drive. Capitals are the router's phrases, each telling one worker to start: N resume: next (build), V resume: verify, F resume: fix (repair), R resume: final review, and M the stop that asks the operator to merge. Small letters are the workers' reports back: i implementation-ready, x a failed verification, c repair-complete, p a passed verification and a a passed final review. The words in a box say what that box is doing; in the Router they are its record: the step it calls for or awaits, and how many verifications have failed of the {{failureLimit}} allowed. A token is green while it moves, and a box a token leaves or reaches is outlined in green."
-      },
-      "failureStop": "stop after {{failures}} failed verifications",
-      "limitMoment": "Limit"
+      }
     }
   },
   "publish-subscribe-channel": {
@@ -4031,7 +4018,7 @@
           "5": "The Recipient list sends no copy at all, and sends entry q, WO-241 to none, to the Close record, so the empty list is on record too.",
           "6": "Declared siblings sends y to the Recipient list: Sibling C now receives releases as well. Nothing already sent is sent again, so C still has none.",
           "7": "Release close sends close 2: order WO-242 has closed and published v0.96.0. The list is worked out now, from A, B and C.",
-          "8": "The Recipient list sends a copy of close 2 to each of A, B and C and entry r to the Close record, and the closes end. {{closes}} closes made {{copies}} copies, and v0.96.0 is C's first release."
+          "8": "The Recipient list sends a copy of close 2 to each of A, B and C and entry r to the Close record, and the closes end. The {{closes}} closes made {{copies}} copies, and v0.96.0 is C's first release."
         },
         "caption": "Time runs in frames, one event to a frame. closes$ is what release close sends: 0, 1 and 2 are the closes of WO-240, WO-241 and WO-242. declared$ is the declared siblings: x is A and B, y adds C. toA$, toB$ and toC$ are the three siblings' channels and record$ is the close record; a close leaves on every channel its list names, one frame after it arrives."
       },
@@ -4078,7 +4065,7 @@
           },
           "3": {
             "list": "siblings: A, B",
-            "record": "{{entries}} entry",
+            "record": "Entries: {{entries}}",
             "a": "v0.95.0",
             "b": "v0.95.0"
           },
@@ -4088,7 +4075,7 @@
           },
           "5": {
             "list": "siblings: A, B",
-            "record": "{{entries}} entries"
+            "record": "Entries: {{entries}}"
           },
           "6": {
             "declared": "A, B and C",
@@ -4102,7 +4089,7 @@
           "8": {
             "close": "all {{closes}} closed",
             "list": "siblings: A, B, C",
-            "record": "{{entries}} entries",
+            "record": "Entries: {{entries}}",
             "a": "v0.96.0",
             "b": "v0.96.0",
             "c": "v0.96.0, first"
@@ -4499,7 +4486,7 @@
             "label": "Gap fills"
           },
           "2": {
-            "label": "{{held}} held"
+            "label": "Held: {{held}}"
           },
           "3": {
             "label": "evt_4 arrives"
@@ -4810,293 +4797,71 @@
     }
   },
   "titles": {
-    "eip:1": "Pattern language for messaging integration",
-    "eip:10": "Business criticality of integration",
-    "eip:100": "Predictive router vs reactive filtering",
     "eip:101": "Message Filter",
-    "eip:102": "Stateless vs stateful filters (duplicate elimination)",
     "eip:103": "Dynamic Router",
-    "eip:104": "Dynamic router trade-offs: rule conflicts, rule-base upkeep, recipient participation",
     "eip:105": "Recipient List",
-    "eip:106": "Recipient list variants: static vs dynamic; list from content, configuration or subscriptions",
     "eip:107": "Robust delivery to every recipient: transactional send or idempotent receivers",
     "eip:108": "Splitter",
-    "eip:109": "Iterating vs static splitter; parts carry sequence and correlation",
-    "eip:11": "Limited control over endpoints",
     "eip:110": "Aggregator",
-    "eip:111": "Aggregator design decisions: correlation, completeness condition, aggregation algorithm",
-    "eip:112": "Completeness: wait for all",
-    "eip:113": "Completeness: timeout",
-    "eip:114": "Completeness: first best",
-    "eip:115": "Completeness: timeout with override",
-    "eip:116": "Completeness: external event",
-    "eip:117": "Aggregation strategies: select the best answer, condense data, collect for later evaluation",
-    "eip:118": "Aggregate initialisation: by first member vs by a separate initialising message; known vs unknown expected count",
     "eip:119": "Aggregator state, persistence, scaling and late arrivals",
-    "eip:12": "Few standards, vendor extensions",
     "eip:120": "Resequencer",
     "eip:121": "Sequence numbering requirements",
-    "eip:122": "Buffer overflow and unbounded buffers",
-    "eip:123": "Throttling by active acknowledgment",
-    "eip:124": "Buffer persistence",
-    "eip:125": "Missing messages: wait, stand-in, or skip after timeout",
-    "eip:126": "Composed Message Processor",
     "eip:127": "Scatter-Gather",
-    "eip:128": "Distribution (recipient list) vs auction (publish-subscribe) variants",
     "eip:129": "Routing Slip",
-    "eip:13": "Semantic differences",
-    "eip:130": "Routing slip limits and strengths",
     "eip:131": "Process Manager",
-    "eip:132": "Process definition vs process instance; correlating replies to the instance",
     "eip:133": "Process manager vs routing slip",
     "eip:134": "Hub risks: bottleneck, single point of control, state persistence and recovery",
-    "eip:135": "Message Broker",
-    "eip:136": "Broker trade-offs: bottleneck, complexity, broker hierarchy",
-    "eip:137": "Transformation complements routing; metadata management",
-    "eip:138": "Envelope Wrapper",
-    "eip:139": "Wrapping steps and chained envelopes",
-    "eip:14": "Operational complexity",
     "eip:140": "Content Enricher",
     "eip:141": "Content Filter",
-    "eip:142": "Content filter vs message filter; security use",
     "eip:143": "Claim Check",
-    "eip:144": "Claim-check key choice and store management",
     "eip:145": "Normalizer",
     "eip:146": "Canonical Data Model",
     "eip:147": "Canonical model costs: double translation, model design, body-only scope, evolution",
-    "eip:148": "Loan broker scenario and participants",
-    "eip:149": "Design choice: obtaining the credit score with a content enricher",
-    "eip:15": "Information Portal",
-    "eip:150": "Design choice: fixed bank list vs criteria-based distribution vs auction",
-    "eip:151": "Design choice: sequential synchronous vs parallel asynchronous requests",
-    "eip:152": "Design choice: one shared reply channel with correlation vs one reply channel per bank",
-    "eip:153": "Design choice: pool of broker instances with a dispatcher vs a single event-driven instance",
-    "eip:154": "Patterns composed in the loan broker",
-    "eip:155": "Variant A: synchronous web services (Java/Axis)",
-    "eip:156": "Lesson: latency accumulates and degrades under load in synchronous composition",
-    "eip:157": "Variant B: asynchronous queues (C#/MSMQ)",
-    "eip:158": "Asynchronous Completion Token; correlate by an application-generated id, not the message id",
-    "eip:159": "Mock queues and gateways; a test client that matches replies to outstanding requests",
-    "eip:16": "Data Replication",
-    "eip:160": "Lesson: bottlenecks migrate under tuning",
-    "eip:161": "Deliberate omissions: error handling, transactions, thread safety",
-    "eip:162": "Variant C: asynchronous auction on a publish-subscribe infrastructure (TIBCO)",
-    "eip:163": "Sliding-timeout aggregator (timer resets on each bid; late bids ignored)",
-    "eip:164": "Lesson: visual workflow tools simplify but can obscure",
-    "eip:165": "Lesson: publish-subscribe decoupling hides naming errors and dropped messages",
-    "eip:166": "Endpoint themes: encapsulation, format translation, external transactions, throttling on the receive side",
     "eip:167": "Messaging Gateway",
-    "eip:168": "Gateway variants: synchronous vs asynchronous facade; stubs for testing; chained gateways",
-    "eip:169": "Messaging Mapper",
-    "eip:17": "Shared Business Function",
     "eip:170": "Transactional Client",
     "eip:171": "Transactional uses: send-receive pairs, receive-then-database, message groups; request-reply cannot share one transaction",
     "eip:172": "Polling Consumer",
     "eip:173": "Event-Driven Consumer",
-    "eip:174": "Polling vs event-driven: control of pace vs idle cost",
     "eip:175": "Message Dispatcher",
-    "eip:176": "Dispatcher vs competing consumers",
     "eip:177": "Selective Consumer",
     "eip:178": "Durable Subscriber",
-    "eip:179": "Durable subscription costs: storage, subscribers that never return, explicit unsubscribe",
-    "eip:18": "Service-Oriented Architecture",
     "eip:180": "Idempotent Receiver",
-    "eip:181": "Explicit de-duplication store with a retention window vs semantic idempotency (set vs increment)",
-    "eip:182": "Service Activator",
-    "eip:183": "Three management groups: monitoring and controlling; observing and analysing traffic; testing and debugging",
     "eip:184": "Control Bus",
     "eip:185": "Control message kinds: configuration, heartbeat, test, exception, statistics, live console",
     "eip:186": "Separate control channels vs in-band management",
     "eip:187": "Detour",
     "eip:188": "Wire Tap",
-    "eip:189": "Paired taps for processing time; taps cannot see inside a component",
-    "eip:19": "Distributed Business Process",
     "eip:190": "Message History",
     "eip:191": "History uses: loop detection, duplicate-publication avoidance; history vs central store",
     "eip:192": "Message Store",
-    "eip:193": "Smart Proxy",
-    "eip:194": "Smart proxy measurements and limits: response times, outstanding requests, summary statistics on a timer; stateful; lost replies need a timeout",
     "eip:195": "Test Message",
-    "eip:196": "Heartbeat vs test message (alive vs correct)",
-    "eip:197": "Marking test messages: header flag vs magic value; side effects on stateful components",
-    "eip:198": "Channel Purger",
-    "eip:199": "Purging danger: live traffic and append-only records",
-    "eip:2": "Scope: asynchronous messaging, vendor-neutral",
-    "eip:20": "Business-to-Business Integration",
-    "eip:200": "Audience and assumptions",
-    "eip:201": "Origin: author discussions from 2001 and pattern-conference papers",
-    "eip:202": "Explicit exclusions: security, complex data mapping, workflow, rule engines, scalability, distributed transactions",
-    "eip:203": "One-sentence problem and one-sentence solution in bold",
-    "eip:204": "Sketch notation: messages as small trees, channels as pipes, no formal UML",
-    "eip:205": "Role-based reading paths and non-linear reading",
-    "eip:206": "Six root patterns organise the pattern chapters",
-    "eip:207": "Supporting web site as the living catalog",
-    "eip:208": "Push vs pull cost: about three messages per observer per update under pull",
-    "eip:209": "Sharing channels among related subjects: datatype channel plus selective consumer; durable subscribers for missed notices",
-    "eip:21": "Loose coupling as fewer assumptions",
-    "eip:210": "Invalid-message handling in the examples: forward with the original id as correlation",
     "eip:211": "Competing Consumers",
-    "eip:212": "Ordering loss under competition; key-based grouping restores per-key order",
-    "eip:213": "Management console as mediator",
-    "eip:214": "Measuring broker response time and load with a smart proxy",
-    "eip:215": "External-service health check with periodic test messages",
-    "eip:216": "Failover to a secondary provider through a context-based router and a translator",
-    "eip:217": "Event logging from the control bus",
-    "eip:218": "Limitation: messages already queued before a failed service stay stuck",
-    "eip:219": "Named but not implemented: message history for flow reconstruction; competing consumers as basic failover",
-    "eip:22": "The illusion of local calls (RPC/RMI critique)",
-    "eip:220": "Scenario: bond pricing system at an investment bank",
-    "eip:221": "Style decision: messaging over RPC, file transfer and shared database",
-    "eip:222": "Cross-platform bridge: paired channel adapters over a distributed-object link forming a messaging bridge and translator",
-    "eip:223": "Channel layout: one subject per bond upstream, one channel per trader downstream, routed by a pricing gateway",
-    "eip:224": "Direction rule: publish-subscribe server-to-client, point-to-point client-to-server",
-    "eip:225": "Rejected options: recipient list (too complex), message filter (would drop needed fields), competing consumers (not on publish-subscribe)",
-    "eip:226": "Aggregating partial updates to reduce flashing, later undone when immediacy mattered",
-    "eip:227": "Client as polling consumer to survive bursts; command request answered by document reply",
-    "eip:228": "Production bottleneck fixed with a message dispatcher and pooled performers",
-    "eip:229": "Diagnosing a crash through the dead letter channel and message expiration",
-    "eip:23": "Four hidden assumptions: platform technology, location, time, data format",
-    "eip:230": "Lesson: patterns do not replace upfront design",
-    "eip:231": "Message bus as shared infrastructure for future applications",
-    "eip:232": "Standardising a pattern's implementation extends the pattern, not retires it",
-    "eip:233": "Business process component",
-    "eip:234": "Choreography of service interactions",
-    "eip:235": "Future implementation strategies: model-driven, schema-based scripts, aspects, intentions",
-    "eip:236": "Object and process view of integration",
-    "eip:237": "Standards bodies: W3C, OASIS, WS-I, JCP, UN/CEFACT, OMG, ad hoc vendor consortia",
-    "eip:238": "Standards development process and intellectual-property policies",
-    "eip:239": "EDI, ebXML and ebMS",
-    "eip:24": "Remedies: self-describing format, addressable channels, queued self-contained messages, in-channel transformers",
-    "eip:240": "BPEL4WS (from WSFL and XLANG), BizTalk",
-    "eip:241": "WSCI and BPML",
-    "eip:242": "Java process standards: JSR-207 (process definition via metadata), JSR-175 (annotations), JSR-208 (Java Business Integration)",
-    "eip:243": "Core web services stack: SOAP, WSDL, XML Schema, UDDI; SOAP with Attachments; interoperability profile",
-    "eip:244": "WS-Coordination and WS-Transaction: atomic transaction vs business activity",
-    "eip:245": "WS-Reliability vs WS-ReliableMessaging; delivery assurances (at-most-once, at-least-once, exactly-once, in-order)",
-    "eip:246": "WS-Conversation: start and continue headers with conversation identifiers",
-    "eip:247": "WS-Security on XML Signature and XML Encryption; transport security (HTTPS, SSL, PKI, Kerberos)",
-    "eip:248": "WS-Addressing: standard sender and destination endpoints, reply addressing, recipient lists",
-    "eip:249": "WS-Policy family (assertions, attachment)",
-    "eip:25": "Six basic elements: channel, message, translation, routing, systems management, endpoint",
-    "eip:250": "J2EE messaging strategies: JMS, JCA, JAX-RPC; XA two-phase commit; XPath in process languages",
-    "eip:251": "Bibliography",
-    "eip:252": "Revision history (site)",
-    "eip:253": "Conversation Patterns (web, work in progress)",
-    "eip:254": "Describing a conversation: participant roles, message types, protocol rules; sequence, state and choreography views",
-    "eip:255": "Choreography (conversation)",
-    "eip:256": "Orchestration (conversation)",
-    "eip:257": "Hypermedia State (conversation)",
-    "eip:258": "Conversation vocabulary: conversation identifier, initiating message, follow-on messages (retry, sub-conversation, acknowledgment, range acknowledgment)",
-    "eip:259": "Dynamic Discovery (conversation)",
-    "eip:26": "WGRUS scenario and requirements",
-    "eip:260": "Advertise Availability (conversation)",
-    "eip:261": "Consult Directory (conversation)",
-    "eip:262": "Referral (conversation)",
-    "eip:263": "Leader Election (conversation)",
-    "eip:264": "Three-Way Hand Shake (conversation)",
-    "eip:265": "Acquire Token First (conversation)",
-    "eip:266": "Rotate Tokens (conversation)",
-    "eip:267": "Verify Identity (conversation)",
-    "eip:268": "User Grants Access (conversation)",
-    "eip:269": "Fire-and-Forget (conversation)",
-    "eip:27": "Taking orders: adapters, gateway, translators, canonical order document",
-    "eip:270": "Asynchronous Request-Response (conversation)",
-    "eip:271": "Request-Response with Retry (conversation)",
-    "eip:272": "Polling (conversation)",
-    "eip:273": "Subscribe-Notify (conversation)",
-    "eip:274": "Quick Acknowledgment (conversation)",
-    "eip:275": "Proxy (conversation)",
-    "eip:276": "Relay (conversation)",
-    "eip:277": "Load Balancer (conversation)",
-    "eip:278": "Scatter-Gather (conversation)",
-    "eip:279": "Heartbeat (conversation)",
-    "eip:28": "Processing orders: parallel checks, aggregation, routing of valid and invalid orders, splitting into items",
-    "eip:280": "Stranded resources; explicit vs implicit termination; who may end and who keeps alive a conversation",
-    "eip:281": "Incremental State Build-up (conversation)",
-    "eip:282": "Lease (conversation)",
-    "eip:283": "Renewal Reminder (conversation)",
-    "eip:284": "Consistency without transactions: optimistic vs pessimistic; most likely failure first, hardest-to-revert last",
-    "eip:285": "Ignore Error (conversation)",
-    "eip:286": "Compensating Action (conversation)",
-    "eip:287": "Tentative Operation (conversation)",
-    "eip:288": "Coordinated Agreement (conversation)",
-    "eip:29": "Checking status: wire tap into a message store, claim check, process manager, shared-database read, smart proxy",
-    "eip:3": "Visual pattern notation (icon per pattern)",
-    "eip:30": "Change address: carry data with each order vs propagate on a separate channel; granularity of business actions",
-    "eip:31": "New catalog via file transfer",
-    "eip:32": "Dynamic Recipient List (announcements)",
-    "eip:33": "Testing and monitoring: smart proxy to control bus, test messages with verifier, statistical sampling",
-    "eip:34": "Six pattern categories (construction, routing, transformation, endpoints, channels, system management) with root patterns as entry points",
-    "eip:35": "Eight integration criteria",
-    "eip:36": "Styles ordered by increasing sophistication; mix styles per connection",
-    "eip:37": "Why messaging gets the most attention",
-    "eip:38": "Messaging as asynchronous, decoupled communication",
-    "eip:39": "Channels are created, not given",
-    "eip:4": "Pattern form (name, icon, context, problem, forces, solution, sketch, results, next patterns, sidebars, examples)",
-    "eip:40": "Message as atomic packet; delivery retried until it succeeds",
-    "eip:41": "Five-step transmission: create, send, deliver, receive, process",
-    "eip:42": "Multi-step delivery, routing, transformation, endpoints",
-    "eip:43": "File Transfer",
-    "eip:44": "File Transfer trade-offs",
     "eip:45": "Shared Database",
-    "eip:46": "Shared Database trade-offs",
     "eip:47": "Remote Procedure Invocation",
-    "eip:48": "Remote Procedure Invocation trade-offs",
-    "eip:49": "Messaging (integration style)",
-    "eip:5": "Implementing frameworks (Spring Integration, Apache Camel, Mule, Red Hat Fuse, Guaraná DSL)",
-    "eip:50": "Messaging benefits: asynchrony, in-transit decoupling, flexible topologies, separation of concerns, better design",
-    "eip:51": "Messaging challenges: complex programming model, sequence issues, synchronous scenarios, performance, limited platform support, vendor lock-in",
-    "eip:52": "Message Channel",
-    "eip:53": "Message",
-    "eip:54": "Pipes and Filters",
-    "eip:55": "Pipeline trade-offs: parallel filter instances vs channel overhead and harder tracing",
-    "eip:56": "Stateless vs stateful filters",
-    "eip:57": "Message Router",
     "eip:58": "Router trade-offs: central rules vs hidden dependency, inspection cost, and pub-sub plus filters as the alternative",
-    "eip:59": "Router taxonomy: fixed, content-based, context-based; stateless vs stateful",
-    "eip:6": "Application sprawl",
     "eip:60": "Message Translator",
-    "eip:61": "Levels of transformation: transport, data representation, data types, data structure",
-    "eip:62": "Message Endpoint",
-    "eip:63": "Channel design themes: one-to-one vs one-to-many, typed channels, error channels, crash-proofing, non-messaging clients, backbone",
     "eip:64": "Point-to-Point Channel",
     "eip:65": "Publish-Subscribe Channel",
     "eip:66": "Datatype Channel",
-    "eip:67": "Typed channels vs format indicator vs selective consumer; channel proliferation",
     "eip:68": "Invalid Message Channel",
-    "eip:69": "Invalid message vs failed processing; invalid vs dead letter",
-    "eip:7": "Best-of-breed overlap",
     "eip:70": "Dead Letter Channel",
     "eip:71": "Guaranteed Delivery",
     "eip:72": "Guaranteed Delivery costs and when to skip it",
     "eip:73": "Channel Adapter",
-    "eip:74": "Adapter attachment layers: user interface, business logic, database; metadata adapters",
     "eip:75": "Messaging Bridge",
     "eip:76": "Message Bus",
-    "eip:77": "Construction decisions: intent, response, large data, slow messages, format change",
     "eip:78": "Command Message",
     "eip:79": "Document Message",
-    "eip:8": "One customer transaction, many systems",
     "eip:80": "Event Message",
-    "eip:81": "Observer over messaging: push vs pull notification",
-    "eip:82": "Intent trichotomy: command vs document vs event",
     "eip:83": "Request-Reply",
     "eip:84": "Synchronous block vs asynchronous callback requestor",
-    "eip:85": "Messaging RPC, Messaging Query, Notify/Acknowledge",
     "eip:86": "Return Address",
     "eip:87": "Correlation Identifier",
     "eip:88": "Correlation key choice: generated message id vs business key; correlating chains",
     "eip:89": "Message Sequence",
-    "eip:9": "Politics and organisation (Conway's law)",
-    "eip:90": "Reassembly, out-of-order parts, and the claim-check alternative",
     "eip:91": "Message Expiration",
     "eip:92": "Expiration mechanics: timestamp vs time-to-live, clock skew, reply expiration",
     "eip:93": "Format Indicator",
-    "eip:94": "Simple messaging examples (JMS and .NET request/reply, JMS publish/subscribe)",
-    "eip:95": "JMS Request/Reply Example",
-    "eip:96": ".NET Request/Reply Example",
-    "eip:97": "JMS Publish/Subscribe Example (Observer over a topic)",
-    "eip:98": "Routing taxonomy: simple routers, composed routers, architectural routers",
     "eip:99": "Content-Based Router"
   }
 }

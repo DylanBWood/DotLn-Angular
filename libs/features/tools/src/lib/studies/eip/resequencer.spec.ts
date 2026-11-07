@@ -172,7 +172,7 @@ it('opens at the start, with the moments of the run named', () => {
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['evt_3 held', 3],
     ['Gap fills', 4],
-    ['2 held', 7],
+    ['Held: 2', 7],
     ['evt_4 arrives', 8],
     ['Run of 3', 9],
   ]);

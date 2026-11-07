@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
@@ -8,6 +8,13 @@ import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, flow, model, toToolV1 } from './message-translator';
+
+// Only the altered test runs use these messages.
+const studyTranslate = withStudyMessages({
+  'studyEip.message-translator.model.unknownRow': 'id {{id}}, schema {{schema}}',
+  'studyEip.message-translator.model.unknownShapeError': 'Error: no translation from {{schema}}',
+  'studyEip.message-translator.model.refusedMoment': 'Refused',
+});
 
 const modulePath = 'libs/features/tools/src/lib/studies/eip/message-translator.ts';
 
@@ -125,7 +132,7 @@ it('keeps the id, marks what the older shape lacks and refuses any other shape',
 });
 
 it('loses every later row when one row cannot be translated', () => {
-  expectMarbleExample(unknownShape);
+  expectMarbleExample(unknownShape, { translate: studyTranslate });
   // This run's chunk holds t, x and c, and the Tools home gets only T: the boxes hold what it sends.
   const run = flowFromMarbles(
     unknownShape,

@@ -1,10 +1,19 @@
 import { map, zip } from 'rxjs';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowModel } from '../study-model';
 import { commandId, example, flow, model } from './correlation-identifier';
+
+// Only the altered test runs use these messages.
+const studyTranslate = withStudyMessages({
+  'studyEip.correlation-identifier.model.byArrival.operator': 'zip(command$, result$)',
+  'studyEip.correlation-identifier.model.byArrival.label': 'paired$',
+  'studyEip.correlation-identifier.model.byArrival.x': 'cmd_1 got cmd_3',
+  'studyEip.correlation-identifier.model.byArrival.y': 'cmd_2 got cmd_1',
+  'studyEip.correlation-identifier.model.byArrival.z': 'cmd_3 got cmd_2',
+});
 
 const modulePath = 'libs/features/tools/src/lib/studies/eip/correlation-identifier.ts';
 
@@ -175,7 +184,7 @@ it('would give every command another command’s result if results were paired b
       ),
     }),
   };
-  expectMarbleExample(byArrival);
+  expectMarbleExample(byArrival, { translate: studyTranslate });
 });
 
 it('leaves a command waiting for ever when its result arrives before its wait opens', () => {

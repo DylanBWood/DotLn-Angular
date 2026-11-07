@@ -1,9 +1,14 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import { example, model, queueWithLimit, timeToLive } from './message-expiration';
+
+// Only the altered test runs use these messages.
+const studyTranslate = withStudyMessages({
+  'studyEip.message-expiration.model.verification32': 'verification(32)',
+});
 
 const path = 'libs/features/tools/src/lib/studies/eip/message-expiration.ts';
 
@@ -100,7 +105,7 @@ it('sends the request past its limit to the dead letter channel and verifies the
   ]);
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['First one verified', 2],
-    ['2 waiting', 5],
+    ['Waiting: 2', 5],
     ["b's last good step", 7],
     ['b expires', 8],
     ['c verified', 9],
@@ -168,7 +173,7 @@ it('loses the younger request instead when the limit is raised', () => {
     notes: {},
     origins: {},
   };
-  expectMarbleExample(longer);
+  expectMarbleExample(longer, { translate: studyTranslate });
 });
 
 it('supplies every value the record’s prose reads, at every step', async () => {
