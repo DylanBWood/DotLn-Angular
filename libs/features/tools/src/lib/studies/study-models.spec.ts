@@ -4,10 +4,12 @@ import type { ConceptStudy } from '@dotln-angular/models';
 import { studyTranslate } from '../../../testing/src';
 import { flowDrawing } from '../composites/study-visuals/flow/flow-drawing';
 import { motionDrawing } from '../composites/study-visuals/motion/motion-drawing';
+import { order as processOrder } from './eip/process-manager';
 import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
 import { translateStudy } from './study-record';
 import { placeholdersIn } from './study-text';
+import type { StudyTranslate } from './study-translate';
 
 const records = async () => {
   const loader = createCatalogLoader();
@@ -19,6 +21,59 @@ const records = async () => {
     .filter((study): study is ConceptStudy => study !== null)
     .map((study) => translateStudy(study, studyTranslate));
 };
+
+/** A resolved message may contain nested messages; text outside either end stays untrusted. */
+function outsideMessages(text: string): string {
+  let depth = 0;
+  let outside = '';
+  for (const character of text) {
+    if (character === '⟦') depth++;
+    else if (character === '⟧' && depth > 0) depth--;
+    else if (depth === 0) outside += character;
+  }
+  return outside;
+}
+
+function hasUntranslatedWords(text: string): boolean {
+  // Scientific notation is still a number, including when a vector contains several numbers.
+  const outside = outsideMessages(text).replace(/[+-]?\d+(?:\.\d+)?e[+-]?\d+/gi, '');
+  return /\p{L}/u.test(outside);
+}
+
+// Only these message fields name machine symbols. The same strings in a caption or other
+// parameter still need translation; a whole word is never accepted as a marble symbol.
+const symbolMessages = new Set([
+  'studyCommon.marbles.emittedValue',
+  'studyCommon.marbles.keyValue',
+  'studyCommon.marbles.valueAt',
+  'studyCommon.flow.move',
+  'studyCommon.flow.moveOnChannel',
+]);
+
+function isMachineParameter(key: string, name: string, value: string): boolean {
+  const symbol = (text: string) => /^[a-zA-Z0-9]$/.test(text);
+  if (name === 'key' && symbolMessages.has(key)) return symbol(value);
+  if (key === 'studyCommon.marbles.value' && name === 'value') return symbol(value);
+  if (key === 'studyCommon.flow.held' && name === 'keys') return value.split('⟦, ⟧').every(symbol);
+  return (
+    key.startsWith('studyEip.process-manager.model.') && name === 'order' && value === processOrder
+  );
+}
+
+it('recognizes words appended or prepended to a message and accepts nested translated values', () => {
+  expect(hasUntranslatedWords('⟦A resolved message⟧ untranslated suffix')).toBe(true);
+  expect(hasUntranslatedWords('untranslated prefix ⟦A resolved message⟧')).toBe(true);
+  expect(hasUntranslatedWords('⟦Outer ⟦translated value⟧ message⟧')).toBe(false);
+  expect(hasUntranslatedWords('(1.2e-8, -3e+9)')).toBe(false);
+});
+
+it('admits machine symbols only in declared message fields', () => {
+  expect(isMachineParameter('studyCommon.marbles.emittedValue', 'key', 'a')).toBe(true);
+  expect(isMachineParameter('studyCommon.flow.held', 'keys', 'a⟦, ⟧B')).toBe(true);
+  expect(isMachineParameter('studyCommon.flow.held', 'keys', 'untranslated')).toBe(false);
+  expect(isMachineParameter('studyCommon.marbles.emittedValue', 'key', 'literal')).toBe(false);
+  expect(isMachineParameter('studyCommon.marbles.emittedValue', 'value', 'a')).toBe(false);
+});
 
 it('lists a model for exactly the paths the records name', async () => {
   const named = (await records()).flatMap(({ visual }) => visual?.model ?? []);
@@ -163,18 +218,20 @@ it('routes visible narration through messages across every model and its input b
     'content',
     'value',
   ]);
-  const problems: string[] = [];
-  const translated = (key: string, parameters?: Readonly<Record<string, string | number>>) =>
-    `§${studyTranslate(key, parameters)}`;
+  const problems = new Set<string>();
+  const translated: StudyTranslate = (key, parameters) => {
+    for (const [name, value] of Object.entries(parameters ?? {}))
+      if (
+        typeof value === 'string' &&
+        hasUntranslatedWords(value) &&
+        !isMachineParameter(key, name, value)
+      )
+        problems.add(`${key}: literal parameter ${name} = ${value}`);
+    return `⟦${studyTranslate(key, parameters)}⟧`;
+  };
   const inspect = (value: unknown, path: string, visible = false) => {
     if (typeof value === 'string') {
-      if (
-        visible &&
-        /[a-zA-Z]/.test(value) &&
-        !value.includes('§') &&
-        !/^[+-]?[\d.]+e[+-]?\d+$/i.test(value)
-      )
-        problems.push(path);
+      if (visible && hasUntranslatedWords(value)) problems.add(path);
       return;
     }
     if (!value || typeof value !== 'object') return;
@@ -207,5 +264,5 @@ it('routes visible narration through messages across every model and its input b
     for (const [index, parameters] of inputs.entries())
       inspect(model(parameters, translated), `${record.slug} case ${index}`);
   }
-  expect(problems).toEqual([]);
+  expect([...problems]).toEqual([]);
 });
