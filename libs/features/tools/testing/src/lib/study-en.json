@@ -3735,7 +3735,7 @@
       "record": {
         "intuition": {
           "text": "Give the courier a feeler ahead of its travel. A hit supplies more than a warning: the surface normal tells it which way leads back into free space. Put a temporary target along that normal and let the courier pull towards it. The ray can see a wall before the courier’s body reaches it, but detection still needs time to change motion.",
-          "situation": "A courier approaches the end of a depot courtyard wall on the way to an offset delivery point. Watch its forward ray meet the wall and the temporary target turn it towards free space. Then put the delivery straight ahead: the same local rule brakes and switches targets without choosing a side."
+          "situation": "A courier approaches the end of a depot courtyard wall on the way to an offset delivery point. Compare its path with the same run using a ray too short to hit. The difference reveals how much of the turn comes from avoidance and how much comes from seeking the delivery."
         },
         "example": {
           "name": "Courier at the depot courtyard wall",
@@ -3792,8 +3792,8 @@
           }
         },
         "limits": {
-          "item0": "A shorter ray gives the courier less time to turn. Try rayLength {comparisonRayLength}: the model keeps any overlap visible instead of clamping the body back to free space.",
-          "item1": "With the delivery straight ahead at height {comparisonGoalY}, the comparison has no sideways cue. The courier switches between delivery and avoidance targets while staying on the same line. A ray-based local pull does not choose a route round a wall.",
+          "item0": "A longer ray is not automatically safer. Across the offered lengths from 10 to 12, the greatest body overlap in this setup is {longRayOverlap} units. These rays hit from the start and can pull towards a target still ahead before braking. A shorter ray of length {comparisonRayLength} supplies the comparison; neither length guarantees collision-free motion.",
+          "item1": "Try the delivery straight ahead at height {comparisonGoalY}: there is no sideways cue. The courier can switch between delivery and avoidance targets while staying on the same line. A ray-based local pull does not choose a route round a wall.",
           "item2": "A single centre ray does not sweep the whole disc. It can miss a wall edge that the courier’s radius clips. The local detector also deliberately returns no collision for parallel or collinear segments.",
           "item3": "Several rays can alternate between adjacent faces at a corner and keep reversing the chosen target. That is the Corner trap; this straight-wall example does not implement a remedy for it."
         },
@@ -3861,24 +3861,23 @@
         },
         "comparison": {
           "timeline": {
-            "title": "An offset destination and a straight-on destination",
+            "title": "The same setup with the comparison ray",
             "xLabel": "Time (s)",
             "yLabel": "Distance to wall − radius (units)",
             "series": {
               "labels": {
-                "deliveryHeight": "Delivery height {{goalY}}",
-                "deliveryHeight2": "Delivery height {{comparisonGoalY}}"
+                "rayLength": "Ray length {{rayLength}}"
               }
             }
           },
-          "title": "Straight ahead gives no side to choose",
-          "intro": "Change only the delivery height goalY from {{goalY}} to {{comparisonGoalY}}. Keep the same initial motion, ray length, radius, normal offset, speed and acceleration.",
+          "title": "Compare ray lengths",
+          "intro": "Change only the ray length from {{rayLength}} to {{comparisonRayLength}}. Keep the same initial motion, delivery point, radius, normal offset, speed and acceleration. In the default example the short ray never hits, so its curve shows Seek without an avoidance pull.",
           "findings": {
-            "minimumBodyClearanceExample": "Minimum body clearance is {{minClearances}} units in the example and {{minComparedClearances}} units with the changed destination.",
-            "changedRunEndsLargest": "The changed run ends at {{comparisonPosition}}; its largest sideways displacement from the start is {{greatestSidewaysDisplacement}} units. Clearance alone does not show whether it finds a way round.",
-            "bothDestinationHeightsEqual": "Both destination heights are equal, so these are the same run."
+            "minimumBodyClearanceExample": "Minimum body clearance is {{minClearances}} units with the selected ray and {{minComparedClearances}} units with the comparison ray. A negative clearance is body overlap.",
+            "rayInfluence": "The selected ray hits on {{hitFrames}} of {{frameCount}} frames; the comparison ray hits on {{shortHitFrames}}. The greatest heading difference is {{maximumHeadingDifference}} degrees.",
+            "bothRayLengthsEqual": "Both ray lengths are equal, so these are the same run."
           },
-          "note": "There is no wall clamp or collision response. The straight-on approach can brake and alternate targets without choosing a side. A centre ray can also miss a wall end that the body clips; neither is route planning."
+          "note": "There is no wall clamp or collision response. In the default example, the shorter ray clips the wall slightly, and the longer ray gives a small clearance correction; the offset delivery supplies most of the turn. Use the ray-length control to step through either trace in the drawing. A centre ray can miss a wall end that the body clips; this is not route planning."
         },
         "timeline": {
           "title": "Body clearance from the wall",
@@ -3894,9 +3893,9 @@
           "labels": {
             "startRayMisses": "Start · ray misses",
             "rayFirstHits": "Ray first hits",
-            "turningAlongWall": "Turning along the wall",
             "smallestClearance": "Smallest clearance",
-            "endRun": "End of run"
+            "endRun": "End of run",
+            "rayMissesAgain": "Ray misses again"
           }
         },
         "legend": {
@@ -3918,7 +3917,7 @@
             "distance": "units"
           }
         },
-        "caption": "The long line is the wall. The forward ray runs from the courier to its ray end. On a hit, the normal points back from the surface to the amber avoidance cross. The courier ring is its physical radius. Below the courier, parallel lanes separate velocity above and acceleration below at the same scale as the construction. In the default example, the offset delivery gives the approach a sideways cue: watch the avoidance target turn the courier along the face and the delivery pull resume when the ray clears the end. The clearance chart includes distance round the wall’s ends; it does not treat the wall as infinite."
+        "caption": "The long line is the wall. The forward ray runs from the courier to its ray end. On a hit, the normal points back from the surface to the amber avoidance cross. The courier ring is its physical radius. Below it, parallel lanes separate velocity above and acceleration below. In the default run, seeking the offset delivery causes most of the turn; avoidance adds only a brief pull and slightly increases the closest clearance. Step from Ray first hits to Ray misses again, then compare the short-ray trace. This is a small clearance correction, not sustained steering along the wall. The chart measures the finite wall, including its ends."
       }
     },
     "priority-steering": {

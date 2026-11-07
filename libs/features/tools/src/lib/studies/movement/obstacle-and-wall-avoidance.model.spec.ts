@@ -159,10 +159,40 @@ it('retains the dead-on failure when only the delivery height changes', () => {
   expect(straight.every(({ position }) => position.y === 0)).toBe(true);
   expect(straight.at(-1)?.position.x).toBeLessThan(example.wallX);
   expect(straight.some(({ velocity }) => velocity.x < 0)).toBe(true);
+});
+
+it('compares exactly the same destination and motion with a ray too short to hit', () => {
   const run = model(parameters, studyTranslate);
+  const short = wallAvoidanceFrames(example, example.comparisonRayLength);
+  expect(
+    short.every(
+      (state) =>
+        calculateWallAvoidanceStep(state, example, example.comparisonRayLength).hit === null,
+    ),
+  ).toBe(true);
   expect(run.comparison?.timeline.series[1].values).toEqual(
-    straight.map(({ position }) => wallClearance(position, example)),
+    short.map(({ position }) => wallClearance(position, example)),
   );
+  if (!run.comparison) throw new Error('The wall run needs its short-ray comparison.');
+  expect(Math.min(...run.comparison.timeline.series[0].values)).toBeCloseTo(0.118665, 5);
+  expect(Math.min(...run.comparison.timeline.series[1].values)).toBeCloseTo(-0.082825, 5);
+  expect(run.comparison?.findings[1]).toContain('2 of 81 frames; the comparison ray hits on 0');
+  expect(run.comparison?.findings[1]).toContain('6.47 degrees');
+});
+
+it('states the limited default effect and the measured longer-ray overlap', () => {
+  const run = model(parameters, studyTranslate);
+  expect(run.moments.slice(0, 2)).toEqual([
+    { label: 'Ray first hits', step: 5 },
+    { label: 'Ray misses again', step: 7 },
+  ]);
+  expect(run.caption).toContain('seeking the offset delivery causes most of the turn');
+  expect(run.motion.frames[0].values['longRayOverlap']).toBe('0.74');
+  for (const rayLength of [10, 10.5, 11, 11.5, 12]) {
+    const states = wallAvoidanceFrames(example, rayLength);
+    const clearance = Math.min(...states.map(({ position }) => wallClearance(position, example)));
+    expect(clearance).toBeCloseTo(-0.739372, 5);
+  }
 });
 
 it('measures the finite wall at either side and round an end', () => {
@@ -216,15 +246,15 @@ it('draws its ray as a link and supplies every selected-frame text-equivalent va
   expect(run.timeline?.reference).toBe(0);
   expect(run.timeline?.series[0].values).toHaveLength(81);
   expect(run.comparison?.timeline.series.map((series) => series.values.length)).toEqual([81, 81]);
-  expect(Math.min(...(run.comparison?.timeline.series[1].values ?? []))).toBeGreaterThan(0);
+  expect(Math.min(...(run.comparison?.timeline.series[1].values ?? []))).toBeLessThan(0);
   expect(run.moments).toHaveLength(4);
 });
 
-it('is deterministic and calls out equal destinations in its comparison', () => {
+it('is deterministic and calls out equal ray lengths in its comparison', () => {
   expect(model(parameters, studyTranslate)).toEqual(model(parameters, studyTranslate));
-  const same = model({ ...parameters, goalY: example.comparisonGoalY }, studyTranslate);
+  const same = model({ ...parameters, rayLength: example.comparisonRayLength }, studyTranslate);
   expect(same.comparison?.findings).toContain(
-    'Both destination heights are equal, so these are the same run.',
+    'Both ray lengths are equal, so these are the same run.',
   );
 });
 
@@ -237,11 +267,9 @@ it('offers only hit and turn moments that occur in the selected run', () => {
     'End of run',
   ]);
   const straight = model({ ...parameters, goalY: 0 }, studyTranslate);
-  expect(straight.moments.map((moment) => moment.label)).toEqual([
-    'Ray first hits',
-    'Smallest clearance',
-    'End of run',
-  ]);
+  expect(straight.moments.every((moment) => moment.label !== 'Turning along the wall')).toBe(true);
+  const rayMiss = straight.moments.find((moment) => moment.label === 'Ray misses again');
+  if (rayMiss) expect(straight.motion.frames[rayMiss.step].values['rayStatus']).toBe('no hit');
 });
 
 it('translates presentation at the boundary while preserving computed motion', () => {
