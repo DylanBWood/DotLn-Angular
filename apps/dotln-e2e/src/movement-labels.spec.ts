@@ -71,3 +71,103 @@ for (const viewport of [
     });
   }
 }
+
+test('a displaced name guide stops before entering its glyphs', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await page.goto('/tools/catalog/aifg-a:143');
+  const svg = page.locator('tools-study-motion svg');
+  await expect(svg).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  const slider = page.locator('tools-study-motion').getByRole('slider');
+  const measurements: { step: number; bad: boolean }[] = [];
+  let guides = 0;
+  for (let step = 0; step <= Number(await slider.getAttribute('max')); step++) {
+    await slider.fill(String(step));
+    await expect(svg).toHaveAttribute('data-step', String(step));
+    const result = await svg.evaluate((drawing) => {
+      const boxes = [...drawing.querySelectorAll<SVGTextElement>('text.label')].map((label) => {
+        const box = label.getBBox();
+        return {
+          x: box.x,
+          y: box.y + box.height * 0.22,
+          width: box.width,
+          height: box.height * 0.56,
+        };
+      });
+      const lines = [...drawing.querySelectorAll<SVGLineElement>('.label-guide')];
+      const bad = lines.some((line) => {
+        const start = { x: line.x1.baseVal.value, y: line.y1.baseVal.value };
+        const end = { x: line.x2.baseVal.value, y: line.y2.baseVal.value };
+        const distance = (box: (typeof boxes)[number]) =>
+          Math.max(box.x - end.x, 0, end.x - box.x - box.width) ** 2 +
+          Math.max(box.y - end.y, 0, end.y - box.y - box.height) ** 2;
+        const target = [...boxes].sort((a, b) => distance(a) - distance(b))[0];
+        if (!target) return false;
+        // Inspect the complete segment, not just an endpoint just past the text's baseline.
+        for (let part = 1; part <= 100; part++) {
+          const x = start.x + ((end.x - start.x) * part) / 100;
+          const y = start.y + ((end.y - start.y) * part) / 100;
+          if (
+            x > target.x + 1 &&
+            x < target.x + target.width - 1 &&
+            y > target.y + 1 &&
+            y < target.y + target.height - 1
+          )
+            return true;
+        }
+        return false;
+      });
+      return { bad, count: lines.length };
+    });
+    guides += result.count;
+    measurements.push({ step, bad: result.bad });
+  }
+  expect(guides).toBeGreaterThan(0);
+  expect(measurements.filter(({ bad }) => bad).map(({ step }) => step)).toEqual([]);
+});
+
+test('a stopped cart leaves no unreadable vector tick', async ({ page }) => {
+  await page.goto('/tools/catalog/aifg-a:192');
+  const svg = page.locator('tools-study-motion svg');
+  await expect(svg).toBeVisible();
+  await page.locator('tools-study-motion').getByRole('slider').fill('100');
+  await expect(svg).toHaveAttribute('data-step', '100');
+  const lengths = await svg.locator('line.vector').evaluateAll((lines) =>
+    lines.map((element) => {
+      const line = element as SVGLineElement;
+      return Math.hypot(
+        line.x2.baseVal.value - line.x1.baseVal.value,
+        line.y2.baseVal.value - line.y1.baseVal.value,
+      );
+    }),
+  );
+  expect(lengths.every((length) => length >= 4)).toBe(true);
+});
+
+test('a wide drawing keeps a fitting trolley name at its authored offset', async ({ page }) => {
+  await page.setViewportSize({ width: 2080, height: 1460 });
+  await page.goto('/tools/catalog/aifg-a:149');
+  const svg = page.locator('tools-study-motion svg');
+  await expect(svg).toBeVisible();
+  await page.locator('tools-study-motion').getByRole('slider').fill('0');
+  await expect(svg).toHaveAttribute('data-step', '0');
+  await page.evaluate(() => document.fonts.ready);
+  const placement = await svg.evaluate((drawing) => {
+    const label = [...drawing.querySelectorAll<SVGTextElement>('text.label')].find(
+      (node) => node.textContent?.trim() === 'Trolley',
+    );
+    const trolley = drawing.querySelector<SVGCircleElement>('circle.dot[data-tone="other"]');
+    if (!label || !trolley) throw new Error('The trolley and its name must be drawn');
+    const box = label.getBBox();
+    const preferred = trolley.cy.baseVal.value - 16;
+    return {
+      fontSize: getComputedStyle(label).fontSize,
+      preferred,
+      actual: label.y.baseVal[0].value,
+      preferredTop: box.y + preferred - label.y.baseVal[0].value,
+    };
+  });
+  expect(placement.fontSize).toBe('15px');
+  expect(placement.preferredTop).toBeGreaterThanOrEqual(0);
+  expect(placement.actual).toBeCloseTo(placement.preferred, 4);
+});

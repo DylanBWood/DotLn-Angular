@@ -75,33 +75,31 @@
       [attr.y2]="vector.y2"
       [attr.data-tone]="vector.tone"
     />
-    @if (vector.head; as head) {
-      <polygon class="vector-end" [attr.points]="head" [attr.data-tone]="vector.tone" />
-    }
+    <polygon class="vector-end" [attr.points]="vector.head" [attr.data-tone]="vector.tone" />
   }
   <g>
     @for (body of view.bodies; track body.id) {
       @if (body.label) {
-        @if (body.labelX !== body.x || body.labelY !== body.y - 16) {
+        @if (body.labelGuide; as guide) {
           <line
             class="label-guide"
             [attr.x1]="body.x"
             [attr.y1]="body.y"
-            [attr.x2]="body.labelX"
-            [attr.y2]="body.labelY + 4"
+            [attr.x2]="guide.x"
+            [attr.y2]="guide.y"
           />
         }
       }
     }
     @for (mark of view.marks; track $index) {
       @if (mark.label) {
-        @if (mark.labelX !== mark.x || mark.labelY !== mark.y - 16) {
+        @if (mark.labelGuide; as guide) {
           <line
             class="label-guide"
             [attr.x1]="mark.x"
             [attr.y1]="mark.y"
-            [attr.x2]="mark.labelX"
-            [attr.y2]="mark.labelY + 4"
+            [attr.x2]="guide.x"
+            [attr.y2]="guide.y"
           />
         }
       }

@@ -333,8 +333,8 @@ Geometry derives from the model in a pure `*-drawing.ts` module with its own spe
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
 dimensions. Its names are placed independently of the physical points: `motion/motion-labels.ts`
 keeps each above its anchor when there is room, then uses the nearest clear row or horizontal gap,
-with a thin guide back to the unchanged point. It reserves space for the larger narrow-screen
-font; all guides render before all names, and names render above vectors with a surface-coloured
+with a thin guide ending at the near edge of the name. It reserves space for the font size in use,
+including the larger narrow-screen font; all guides render before all names, and names render above vectors with a surface-coloured
 outline. The corpus check retains every
 supplied name on every default frame, and browser regressions measure real glyphs at narrow and
 operator-sized viewports. The [placement decision and corpus comparison](../../dotln/evidence/WO-028/decisions.md#wo-028-d026)

@@ -186,7 +186,10 @@ it('supplies every prose value, keeps all geometry inside bounds and plots the s
       expect(point.y).toBeLessThanOrEqual(bounds.maxY);
     }
     expect(frame.bodies).toHaveLength(3);
-    expect(motionDrawing(run.motion, step).vectors).toHaveLength(5);
+    expect(frame.vectors).toHaveLength(5);
+    // A contribution may become too small for a readable arrow as the flock settles.
+    for (const { x1, y1, x2, y2 } of motionDrawing(run.motion, step).vectors)
+      expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThanOrEqual(4);
     expect(run.timeline?.series[0].values[step]).toBeCloseTo(velocitySpread(states[step]));
     expect(frame.worked?.lines.length).toBeGreaterThan(0);
   }

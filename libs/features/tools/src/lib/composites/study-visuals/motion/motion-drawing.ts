@@ -6,7 +6,7 @@ import type {
   StudyPoint,
   StudyTone,
 } from '../../../studies/study-model';
-import { motionLabels } from './motion-labels';
+import { motionLabels, type PlacedLabel } from './motion-labels';
 
 const trailMoments = 24;
 const trailSpacing = 3;
@@ -14,19 +14,16 @@ const arrowLength = 16;
 const arrowWidth = 10;
 const headLength = 10;
 const headWidth = 8;
-// A vector shorter than this, in the drawing's units, is too small to carry a head.
+// A vector shorter than this, in the drawing's units, reads as a stray tick.
 const shortestHeaded = 4;
 
-export interface DrawnBody {
+export interface DrawnBody extends PlacedLabel {
   readonly id: string;
   readonly tone: StudyTone;
   readonly x: number;
   readonly y: number;
   /** The arrowhead's points, or null for a body drawn as a dot. */
   readonly arrow: string | null;
-  readonly label: string | null;
-  readonly labelX: number;
-  readonly labelY: number;
 }
 
 export interface MotionDrawing {
@@ -39,14 +36,12 @@ export interface MotionDrawing {
     readonly y2: number;
     readonly tone: StudyTone;
   }[];
-  readonly marks: readonly (StudyPoint & {
-    readonly shape: 'cross' | 'ring' | 'dot';
-    readonly tone: StudyTone;
-    readonly cross: string;
-    readonly label: string | null;
-    readonly labelX: number;
-    readonly labelY: number;
-  })[];
+  readonly marks: readonly (StudyPoint &
+    PlacedLabel & {
+      readonly shape: 'cross' | 'ring' | 'dot';
+      readonly tone: StudyTone;
+      readonly cross: string;
+    })[];
   readonly trail: readonly StudyPoint[];
   readonly bodies: readonly DrawnBody[];
   readonly vectors: readonly {
@@ -55,8 +50,8 @@ export interface MotionDrawing {
     readonly x2: number;
     readonly y2: number;
     readonly tone: StudyTone;
-    /** The arrowhead's points, or null for a vector too short to carry one. */
-    readonly head: string | null;
+    /** Every retained vector is long enough to carry this arrowhead. */
+    readonly head: string;
   }[];
 }
 
@@ -99,7 +94,7 @@ const trailOf = (
     .flatMap((frame) => frame.bodies.map(scale));
 
 /** Turns a moment of the model into the drawing's coordinates, all derived from the bounds. */
-export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
+export function motionDrawing(model: MotionModel, step: number, fontSize = 24): MotionDrawing {
   const { minX, maxX, minY, maxY } = model.bounds;
   const scale = drawingWidth / (maxX - minX);
   const toDrawing = ({ x, y }: StudyPoint) => ({
@@ -108,7 +103,7 @@ export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
   });
   const frame = model.frames[Math.max(0, Math.min(model.frames.length - 1, step))];
   const height = rounded((maxY - minY) * scale);
-  const name = motionLabels(height);
+  const name = motionLabels(height, fontSize);
   const body = ({ id, tone = 'subject', heading, label, ...place }: MotionBody): DrawnBody => {
     const point = toDrawing(place);
     return {
@@ -144,10 +139,11 @@ export function motionDrawing(model: MotionModel, step: number): MotionDrawing {
     }),
     trail: model.trail ? trailOf(model.frames, step, toDrawing) : [],
     bodies,
-    vectors: (frame.vectors ?? []).map(({ dx, dy, tone, ...place }) => {
+    vectors: (frame.vectors ?? []).flatMap(({ dx, dy, tone, ...place }) => {
       const start = toDrawing(place);
       const [x2, y2] = [rounded(start.x + dx * scale), rounded(start.y + dy * scale)];
-      return { x1: start.x, y1: start.y, x2, y2, tone, head: vectorHead(start.x, start.y, x2, y2) };
+      const head = vectorHead(start.x, start.y, x2, y2);
+      return head === null ? [] : [{ x1: start.x, y1: start.y, x2, y2, tone, head }];
     }),
   };
 }
