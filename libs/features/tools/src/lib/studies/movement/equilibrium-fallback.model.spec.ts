@@ -182,7 +182,9 @@ it('supplies every prose value and draws the same deterministic vectors and char
     ]);
   }
   for (const moment of run.moments) expect(run.motion.frames[moment.step]).toBeDefined();
-  expect(motionDrawing(run.motion, run.initialStep).vectors).toHaveLength(5);
+  expect(run.motion.frames[run.initialStep].vectors).toHaveLength(5);
+  // The zero primary contribution remains in the model, but has no readable arrow.
+  expect(motionDrawing(run.motion, run.initialStep).vectors).toHaveLength(4);
   if (!run.timeline || !run.comparison) throw new Error('Equilibrium fallback needs both charts.');
   expect(
     timelineDrawing(run.timeline, run.initialStep).series.every(({ dot }) => dot !== null),

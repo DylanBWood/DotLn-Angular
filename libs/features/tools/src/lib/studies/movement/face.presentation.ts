@@ -1,28 +1,59 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { cosine, sine } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyPoint, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyPoint,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { type AlignStep, type AngularState, radians, wrapDegrees } from './align.simulation';
+import { type AngularState, radians, wrapDegrees } from './align.simulation';
 import {
   beaconAt,
-  calculateFaceStep,
-  faceFrames,
   type FaceParameters,
+  type FaceSample,
   faceSamples,
   type FaceStep,
 } from './face.simulation';
-import { fixed } from './presentation';
 
-function alignmentLines(
-  t: StudyTranslate,
-  alignment: AlignStep,
+interface FaceFrameDescription {
+  readonly example: FaceParameters;
+  readonly sample: FaceSample;
+  readonly step: number;
+  readonly seconds: number;
+  readonly target: StudyPoint;
+  readonly parameterValues: StudyValues;
+}
+function describeFrame(
   example: FaceParameters,
-  state: AngularState,
-): readonly string[] {
+  sample: FaceSample,
+  step: number,
+  parameterValues: StudyValues,
+): FaceFrameDescription {
+  const seconds = step * example.timeStep;
+  return { example, sample, step, seconds, target: beaconAt(seconds, example), parameterValues };
+}
+
+const { number: fixed } = createNumberFormat({ normalizeNegativeZero: true });
+
+function alignmentLines(t: StudyTranslate, frame: FaceFrameDescription): readonly string[] {
+  const {
+    example,
+    sample: {
+      state,
+      calculation: { alignment },
+    },
+  } = frame;
+
   return alignment.settled
     ? [
-        t('studyAifg.face.model.workedTolerancesPassSnapSet', {
+        t('studyAifg.face.model.worked.tolerancesPassSnapSet', {
           alignmentError: fixed(alignment.error),
           exampleAngleTolerance: fixed(example.angleTolerance),
           stateAngularVelocity: fixed(state.angularVelocity),
@@ -32,17 +63,17 @@ function alignmentLines(
       ]
     : [
         Math.abs(alignment.error) <= example.angleTolerance
-          ? t('studyAifg.face.model.workedInsideAngularToleranceAsk', {
+          ? t('studyAifg.face.model.worked.insideAngularToleranceAsk', {
               exampleAngleTolerance: fixed(example.angleTolerance),
             })
-          : t('studyAifg.face.model.workedDesiredAngularVelocitySign', {
+          : t('studyAifg.face.model.worked.desiredAngularVelocitySign', {
               alignmentError: fixed(alignment.error),
               exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
-              alignmentError2: fixed(Math.abs(alignment.error)),
+              absoluteError: fixed(Math.abs(alignment.error)),
               exampleSlowRadius: fixed(example.slowRadius),
               alignmentDesiredVelocity: fixed(alignment.desiredVelocity),
             }),
-        t('studyAifg.face.model.workedRequestedAccelerationCapUse', {
+        t('studyAifg.face.model.worked.requestedAccelerationCapUse', {
           alignmentDesiredVelocity: fixed(alignment.desiredVelocity),
           stateAngularVelocity: fixed(state.angularVelocity),
           exampleResponseTime: fixed(example.responseTime),
@@ -50,14 +81,14 @@ function alignmentLines(
           exampleMaxAngularAcceleration: fixed(example.maxAngularAcceleration),
           alignmentAcceleration: fixed(alignment.acceleration),
         }),
-        t('studyAifg.face.model.workedAngularVelocityCapped', {
+        t('studyAifg.face.model.worked.angularVelocityCapped', {
           stateAngularVelocity: fixed(state.angularVelocity),
           alignmentAcceleration: fixed(alignment.acceleration),
           exampleTimeStep: fixed(example.timeStep),
           nextAngularVelocity: fixed(alignment.next.angularVelocity),
           exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
         }),
-        t('studyAifg.face.model.workedHeading', {
+        t('studyAifg.face.model.worked.heading', {
           stateHeading: fixed(state.heading),
           nextAngularVelocity: fixed(alignment.next.angularVelocity),
           exampleTimeStep: fixed(example.timeStep),
@@ -66,19 +97,20 @@ function alignmentLines(
       ];
 }
 
-function workedLines(
-  t: StudyTranslate,
-  seconds: number,
-  example: FaceParameters,
-  travel: string,
-  target: StudyPoint,
-  offset: StudyPoint,
-  bearing: number | null,
-  state: AngularState,
-  alignment: AlignStep,
-): readonly string[] {
+function workedLines(t: StudyTranslate, frame: FaceFrameDescription): readonly string[] {
+  const {
+    example,
+    seconds,
+    target,
+    sample: {
+      state,
+      calculation: { offset, bearing, alignment },
+    },
+  } = frame;
+  const travel = fixed(Math.min(seconds, example.travelDuration));
+
   return [
-    t('studyAifg.face.model.workedBeaconTravelTimeMin', {
+    t('studyAifg.face.model.worked.beaconTravelTimeMin', {
       seconds: fixed(seconds),
       exampleTravelDuration: fixed(example.travelDuration),
       travel,
@@ -89,7 +121,7 @@ function workedLines(
       targetX: fixed(target.x),
       targetY: fixed(target.y),
     }),
-    t('studyAifg.face.model.workedDirectionCamera', {
+    t('studyAifg.face.model.worked.directionCamera', {
       targetX: fixed(target.x),
       exampleCameraX: fixed(example.cameraX),
       targetY: fixed(target.y),
@@ -98,71 +130,69 @@ function workedLines(
       offsetY: fixed(offset.y),
     }),
     bearing === null
-      ? t('studyAifg.face.model.workedComponentsZeroBearingUndefined')
-      : t('studyAifg.face.model.workedBearingAtanClockwiseRight', {
+      ? t('studyAifg.face.model.worked.componentsZeroBearingUndefined')
+      : t('studyAifg.face.model.worked.bearingAtanClockwiseRight', {
           offsetY: fixed(offset.y),
           offsetX: fixed(offset.x),
           bearing: fixed(bearing),
         }),
-    t('studyAifg.face.model.workedDelegateAlignWrap', {
+    t('studyAifg.face.model.worked.delegateAlignWrap', {
       bearing: fixed(bearing ?? state.heading),
       stateHeading: fixed(state.heading),
       alignmentError: fixed(alignment.error),
     }),
-    ...alignmentLines(t, alignment, example, state),
-    t('studyAifg.face.model.workedCameraStaysNextFrame', {
+    ...alignmentLines(t, frame),
+    t('studyAifg.face.model.worked.cameraStaysNextFrame', {
       exampleCameraX: fixed(example.cameraX),
       exampleCameraY: fixed(example.cameraY),
     }),
   ];
 }
 
-function workedStep(
-  t: StudyTranslate,
-  state: AngularState,
-  target: StudyPoint,
-  calculation: FaceStep,
-  step: number,
-  example: FaceParameters,
-): StudyWorkedStep {
-  const { alignment, bearing, offset } = calculation;
-  const seconds = step * example.timeStep;
-  const travel = fixed(Math.min(seconds, example.travelDuration));
+function workedStep(t: StudyTranslate, frame: FaceFrameDescription): StudyWorkedStep {
+  const {
+    example,
+    seconds,
+    sample: {
+      calculation: { bearing },
+    },
+  } = frame;
+
   return {
-    title: t('studyAifg.face.model.workedWorkedFacingStep', {
+    title: t('studyAifg.face.model.worked.workedFacingStep', {
       seconds: fixed(seconds),
-      seconds2: fixed(seconds + example.timeStep),
+      nextSeconds: fixed(seconds + example.timeStep),
     }),
-    lines: workedLines(t, seconds, example, travel, target, offset, bearing, state, alignment),
+    lines: workedLines(t, frame),
     note:
       bearing === null
-        ? t('studyAifg.face.model.workedNoDirectionExistsCoincidence')
+        ? t('studyAifg.face.model.worked.noDirectionExistsCoincidence')
         : seconds < example.travelDuration
-          ? t('studyAifg.face.model.workedBeaconKeepsMovingMotor')
-          : t('studyAifg.face.model.workedBeaconStoppedSameController'),
+          ? t('studyAifg.face.model.worked.beaconKeepsMovingMotor')
+          : t('studyAifg.face.model.worked.beaconStoppedSameController'),
   };
 }
 
-function phaseOf(
-  t: StudyTranslate,
-  state: AngularState,
-  calculation: FaceStep,
-  step: number,
-  example: FaceParameters,
-): string {
+function phaseOf(t: StudyTranslate, frame: FaceFrameDescription): string {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const { bearing, alignment, offset } = calculation;
-  if (bearing === null) return t('studyAifg.face.model.phaseBeaconPedestalThereNo');
-  if (step === 0) return t('studyAifg.face.model.phaseCameraStartsTurningTowards');
+  if (bearing === null) return t('studyAifg.face.model.phase.beaconPedestalThereNo');
+  if (step === 0) return t('studyAifg.face.model.phase.cameraStartsTurningTowards');
   if (step * example.timeStep >= example.travelDuration)
     return alignment.settled
       ? state.angularVelocity === 0 && alignment.error === 0
-        ? t('studyAifg.face.model.phaseCameraPointsStoppedBeacon')
-        : t('studyAifg.face.model.phaseBeaconStoppedCameraClose')
+        ? t('studyAifg.face.model.phase.cameraPointsStoppedBeacon')
+        : t('studyAifg.face.model.phase.beaconStoppedCameraClose')
       : alignment.error * state.angularVelocity < 0
-        ? t('studyAifg.face.model.phaseCameraTurnedPastStopped')
-        : t('studyAifg.face.model.phaseBeaconStoppedCameraNeeds');
+        ? t('studyAifg.face.model.phase.cameraTurnedPastStopped')
+        : t('studyAifg.face.model.phase.beaconStoppedCameraNeeds');
   if (alignment.error * state.angularVelocity < 0)
-    return t('studyAifg.face.model.phaseCameraTurnedPastMoving');
+    return t('studyAifg.face.model.phase.cameraTurnedPastMoving');
   const bearingRate =
     (((offset.x * example.targetVelocityY - offset.y * example.targetVelocityX) /
       (offset.x * offset.x + offset.y * offset.y)) *
@@ -171,23 +201,24 @@ function phaseOf(
   const fallingBehind = alignment.error * (bearingRate - state.angularVelocity) > 0;
   if (fallingBehind)
     return Math.abs(state.angularVelocity) >= example.maxAngularSpeed - 1e-8
-      ? t('studyAifg.face.model.phaseBeaconPullsAheadBecause')
-      : t('studyAifg.face.model.phaseBeaconBearingChangesFaster');
+      ? t('studyAifg.face.model.phase.beaconPullsAheadBecause')
+      : t('studyAifg.face.model.phase.beaconBearingChangesFaster');
   return alignment.acceleration * state.angularVelocity < 0
-    ? t('studyAifg.face.model.phaseCameraEasesTurnCatches')
-    : t('studyAifg.face.model.phaseCameraNarrowsGapBeacon');
+    ? t('studyAifg.face.model.phase.cameraEasesTurnCatches')
+    : t('studyAifg.face.model.phase.cameraNarrowsGapBeacon');
 }
 
-function frameValues(
-  t: StudyTranslate,
-  parameterValues: Readonly<Record<string, string>>,
-  seconds: number,
-  target: ReturnType<typeof beaconAt>,
-  offset: StudyPoint,
-  bearing: number | null,
-  alignment: AlignStep,
-  state: AngularState,
-): Readonly<Record<string, string>> {
+function frameValues(t: StudyTranslate, frame: FaceFrameDescription): StudyValues {
+  const {
+    parameterValues,
+    seconds,
+    target,
+    sample: {
+      state,
+      calculation: { offset, bearing, alignment },
+    },
+  } = frame;
+
   return {
     ...parameterValues,
     seconds: fixed(seconds),
@@ -195,24 +226,24 @@ function frameValues(
     targetY: fixed(target.y),
     dx: fixed(offset.x),
     dy: fixed(offset.y),
-    bearing: bearing === null ? t('studyAifg.face.model.valueUndefined') : fixed(bearing),
+    bearing: bearing === null ? t('studyAifg.face.model.values.undefined') : fixed(bearing),
     bearingText:
       bearing === null
-        ? t('studyAifg.face.model.valueUndefinedBecauseBeaconCamera')
-        : t('studyAifg.face.model.valueClockwiseRight', {
+        ? t('studyAifg.face.model.values.undefinedBecauseBeaconCamera')
+        : t('studyAifg.face.model.values.clockwiseRight', {
             bearing: fixed(bearing),
           }),
     bearingRelation:
       bearing === null
-        ? t('studyAifg.face.model.valueBeaconCameraCoincideThere')
+        ? t('studyAifg.face.model.values.beaconCameraCoincideThere')
         : alignment.error === 0
-          ? t('studyAifg.face.model.valueCameraPointsDirectlyBeacon')
-          : t('studyAifg.face.model.valueBeaconLiesCameraFacing', {
+          ? t('studyAifg.face.model.values.cameraPointsDirectlyBeacon')
+          : t('studyAifg.face.model.values.beaconLiesCameraFacing', {
               alignmentError: fixed(Math.abs(alignment.error)),
-              value2:
+              direction:
                 alignment.error > 0
-                  ? t('studyAifg.face.model.valueClockwise')
-                  : t('studyAifg.face.model.valueAnticlockwise'),
+                  ? t('studyAifg.face.model.values.clockwise')
+                  : t('studyAifg.face.model.values.anticlockwise'),
             }),
     heading: fixed(wrapDegrees(state.heading)),
     error: fixed(alignment.error),
@@ -224,17 +255,15 @@ function frameValues(
   };
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: AngularState,
-  step: number,
-  example: FaceParameters,
-  parameterValues: Readonly<Record<string, string>>,
-  calculation: ReturnType<typeof calculateFaceStep>,
-): MotionFrame {
-  const seconds = step * example.timeStep;
-  const target = beaconAt(seconds, example);
-  const { alignment, bearing, offset } = calculation;
+function frameOf(t: StudyTranslate, frame: FaceFrameDescription): MotionFrame {
+  const {
+    example,
+    seconds,
+    target,
+    sample: { state, calculation },
+  } = frame;
+
+  const { bearing, offset } = calculation;
   const distance = Math.hypot(offset.x, offset.y);
   // End the rays before the beacon so neither ray crosses the name above it.
   const rayLength =
@@ -244,14 +273,14 @@ function frameOf(
     bodies: [
       {
         id: 'dock-camera',
-        label: t('studyAifg.face.model.camera'),
+        label: t('studyAifg.face.model.labels.camera'),
         x: example.cameraX,
         y: example.cameraY,
         heading: radians(state.heading),
       },
       {
         id: 'ferry-beacon',
-        label: bearing === null ? undefined : t('studyAifg.face.model.beacon'),
+        label: bearing === null ? undefined : t('studyAifg.face.model.labels.beacon'),
         ...target,
         tone: 'target',
       },
@@ -279,17 +308,17 @@ function frameOf(
     links: [
       { from: beaconAt(0, example), to: beaconAt(example.travelDuration, example), tone: 'muted' },
     ],
-    values: frameValues(t, parameterValues, seconds, target, offset, bearing, alignment, state),
-    note: phaseOf(t, state, calculation, step, example),
-    worked: workedStep(t, state, target, calculation, step, example),
+    values: frameValues(t, frame),
+    note: phaseOf(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
 function slowMotor(
   t: StudyTranslate,
   example: FaceParameters,
-  currentSamples: ReturnType<typeof faceSamples>,
-): NonNullable<MotionStudyModel['comparison']> {
+  currentSamples: readonly FaceSample[],
+): StudyComparison {
   const current = currentSamples.map(({ state }) => state);
   const slowSamples = faceSamples(example, example.slowMotorSpeed);
   const slow = slowSamples.map(({ state }) => state);
@@ -299,26 +328,26 @@ function slowMotor(
   const stopStep = Math.min(example.steps, Math.ceil(example.travelDuration / example.timeStep));
   const last = current.length - 1;
   return {
-    title: t('studyAifg.face.model.compareMotorSpeedLimits'),
+    title: t('studyAifg.face.model.labels.compareMotorSpeedLimits'),
     intro:
       example.maxAngularSpeed === example.slowMotorSpeed
-        ? t('studyAifg.face.model.motorsLimitLinesCoincide', {
+        ? t('studyAifg.face.model.labels.motorsLimitLinesCoincide', {
             exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
           })
-        : t('studyAifg.face.model.changeMotorSpeedLimit', {
+        : t('studyAifg.face.model.labels.changeMotorSpeedLimit', {
             exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
             exampleSlowMotorSpeed: fixed(example.slowMotorSpeed),
           }),
     timeline: {
-      title: t('studyAifg.face.model.signedFacingError'),
-      xLabel: t('studyAifg.face.model.timeSeconds'),
-      yLabel: t('studyAifg.face.model.signedFacingErrorDegrees'),
+      title: t('studyAifg.face.model.labels.signedFacingError'),
+      xLabel: t('studyAifg.face.model.labels.timeSeconds'),
+      yLabel: t('studyAifg.face.model.labels.signedFacingErrorDegrees'),
       seconds,
       reference: 0,
       series: [
         {
           id: 'normal',
-          label: t('studyAifg.face.model.solidGreenCurrentMotor', {
+          label: t('studyAifg.face.model.labels.solidGreenCurrentMotor', {
             exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
           }),
           tone: 'actual',
@@ -326,7 +355,7 @@ function slowMotor(
         },
         {
           id: 'slow',
-          label: t('studyAifg.face.model.dashedAmberMotorLimit', {
+          label: t('studyAifg.face.model.labels.dashedAmberMotorLimit', {
             exampleSlowMotorSpeed: fixed(example.slowMotorSpeed),
           }),
           tone: 'desired',
@@ -339,17 +368,17 @@ function slowMotor(
       ],
     },
     findings: [
-      t('studyAifg.face.model.whenBeaconStopsCurrent', {
+      t('studyAifg.face.model.labels.whenBeaconStopsCurrent', {
         seconds: fixed(seconds[stopStep]),
         currentErrors: fixed(currentErrors[stopStep]),
         slowErrors: fixed(slowErrors[stopStep]),
       }),
-      t('studyAifg.face.model.currentCameraComparisonCamera', {
+      t('studyAifg.face.model.labels.currentCameraComparisonCamera', {
         seconds: fixed(seconds[last]),
-        value2:
+        currentStatus:
           currentErrors[last] === 0 && current[last].angularVelocity === 0
-            ? t('studyAifg.face.model.restBeaconBearing')
-            : t('studyAifg.face.model.correctingSignedErrorAngular', {
+            ? t('studyAifg.face.model.labels.restBeaconBearing')
+            : t('studyAifg.face.model.labels.correctingSignedErrorAngular', {
                 currentErrors: fixed(currentErrors[last]),
                 currentLastAngularVelocity: fixed(current[last].angularVelocity),
               }),
@@ -357,31 +386,31 @@ function slowMotor(
         slowLastAngularVelocity: fixed(slow[last].angularVelocity),
       }),
     ],
-    note: t('studyAifg.face.model.dotsMarkWhenBeacon'),
+    note: t('studyAifg.face.model.labels.dotsMarkWhenBeacon'),
   };
 }
 
 function runTimeline(
   t: StudyTranslate,
-  states: ReturnType<typeof faceFrames>,
+  states: readonly AngularState[],
   example: FaceParameters,
   calculations: FaceStep[],
-): NonNullable<MotionStudyModel['timeline']> {
+): TimelineModel {
   return {
-    title: t('studyAifg.face.model.cameraHeadingCurrentBeacon'),
-    xLabel: t('studyAifg.face.model.timeSeconds'),
-    yLabel: t('studyAifg.face.model.angleDegreesClockwiseRight'),
+    title: t('studyAifg.face.model.timeline.cameraHeadingCurrentBeacon'),
+    xLabel: t('studyAifg.face.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.face.model.timeline.angleDegreesClockwiseRight'),
     seconds: states.map((_state, step) => step * example.timeStep),
     series: [
       {
         id: 'actual',
-        label: t('studyAifg.face.model.solidGreenCameraHeading'),
+        label: t('studyAifg.face.model.timeline.solidGreenCameraHeading'),
         tone: 'actual',
         values: states.map(({ heading }) => wrapDegrees(heading)),
       },
       {
         id: 'desired',
-        label: t('studyAifg.face.model.dashedAmberDesiredHeading'),
+        label: t('studyAifg.face.model.timeline.dashedAmberDesiredHeading'),
         tone: 'desired',
         values: calculations.map(({ bearing }, step) =>
           bearing === null ? wrapDegrees(states[step].heading) : bearing,
@@ -391,20 +420,20 @@ function runTimeline(
   };
 }
 
-function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
+function runInputs(t: StudyTranslate): readonly StudyInput[] {
   return [
     {
       name: 'maxAngularSpeed',
-      label: t('studyAifg.face.model.motorSpeedLimit'),
-      unit: t('studyAifg.face.model.inputsUnitS'),
+      label: t('studyAifg.face.model.inputs.motorSpeedLimit'),
+      unit: t('studyAifg.face.model.inputs.unitS'),
       min: 10,
       max: 120,
       step: 5,
     },
     {
       name: 'targetVelocityX',
-      label: t('studyAifg.face.model.beaconHorizontalVelocity'),
-      unit: t('studyAifg.face.model.inputsUnitUnitsS'),
+      label: t('studyAifg.face.model.inputs.beaconHorizontalVelocity'),
+      unit: t('studyAifg.face.model.inputs.unitUnitsS'),
       min: -20,
       max: -5,
       step: 1,
@@ -414,7 +443,7 @@ function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
 
 export const present = (
   example: FaceParameters,
-  statesSamples: ReturnType<typeof faceSamples>,
+  statesSamples: readonly FaceSample[],
   parameters: StudyParameters,
   t: StudyTranslate,
 ): MotionStudyModel => {
@@ -442,10 +471,10 @@ export const present = (
       ]),
     ),
     trackingOutcome: finished
-      ? t('studyAifg.face.model.cameraRestStoppedBeacon', {
+      ? t('studyAifg.face.model.values.cameraRestStoppedBeacon', {
           last: fixed(last * example.timeStep),
         })
-      : t('studyAifg.face.model.cameraCorrectingFacingError', {
+      : t('studyAifg.face.model.values.cameraCorrectingFacingError', {
           alignmentError: fixed(Math.abs(calculations[last].alignment.error)),
           statesLastAngularVelocity: fixed(states[last].angularVelocity),
           last: fixed(last * example.timeStep),
@@ -461,29 +490,29 @@ export const present = (
         minY: Math.min(example.cameraY - example.directionLength, start.y, end.y) - padding,
         maxY: Math.max(example.cameraY + example.directionLength, start.y, end.y) + padding,
       },
-      frames: states.map((state, step) =>
-        frameOf(t, state, step, example, parameterValues, statesSamples[step].calculation),
+      frames: statesSamples.map((sample, step) =>
+        frameOf(t, describeFrame(example, sample, step, parameterValues)),
       ),
     },
     timeline: runTimeline(t, states, example, calculations),
     initialStep: crossing,
     moments: [
-      { label: t('studyAifg.face.model.firstSightBeacon'), step: 0 },
-      { label: t('studyAifg.face.model.beaconCrossesBelowCamera'), step: crossing },
-      { label: t('studyAifg.face.model.beaconStops'), step: stopStep },
+      { label: t('studyAifg.face.model.labels.firstSightBeacon'), step: 0 },
+      { label: t('studyAifg.face.model.labels.beaconCrossesBelowCamera'), step: crossing },
+      { label: t('studyAifg.face.model.labels.beaconStops'), step: stopStep },
       {
         label:
           settled < 0
-            ? t('studyAifg.face.model.followingStoppedBeacon')
-            : t('studyAifg.face.model.cameraRestBearing'),
+            ? t('studyAifg.face.model.labels.followingStoppedBeacon')
+            : t('studyAifg.face.model.labels.cameraRestBearing'),
         step: settled < 0 ? last : settled,
       },
     ],
     legend: [
-      { tone: 'actual', label: t('studyAifg.face.model.solidGreenActual') },
-      { tone: 'desired', label: t('studyAifg.face.model.dashedAmberDesired') },
+      { tone: 'actual', label: t('studyAifg.face.model.labels.solidGreenActual') },
+      { tone: 'desired', label: t('studyAifg.face.model.labels.dashedAmberDesired') },
     ],
-    caption: t('studyAifg.face.model.caption'),
+    caption: t('studyAifg.face.model.overview.caption'),
     comparison: slowMotor(t, example, statesSamples),
     inputs: runInputs(t),
   };

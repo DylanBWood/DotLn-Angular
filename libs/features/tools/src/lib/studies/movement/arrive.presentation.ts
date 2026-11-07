@@ -1,13 +1,73 @@
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
   arriveFrames,
   type ArriveParameters,
   type ArriveSample,
   type ArriveState,
-  calculateArriveStep,
 } from './arrive.simulation';
-import { brief, decimal as fixed } from './presentation';
+
+function describeComparison(
+  example: ArriveParameters,
+  normal: readonly ArriveState[],
+): ArrivalComparison {
+  const late =
+    example.slowRadius === example.lateRadius ? normal : arriveFrames(example, example.lateRadius);
+  const seconds = normal.map((_frame, step) => Number(fixed(step * example.timeStep, 1)));
+  const normalPeak = peakOf(normal, example);
+  const latePeak = peakOf(late, example);
+  // Keep the chart on arrival, widening it only for runs that need more room.
+  const highest = Math.max(normalPeak.reached, latePeak.reached);
+  const top = Math.max(110, Math.ceil((highest + 5) / 10) * 10);
+  const lastPeak = Math.max(
+    ...[normalPeak, latePeak]
+      .filter(({ overshoot }) => overshoot > 0.005)
+      .map(({ step }) => seconds[step]),
+    0,
+  );
+  const end = Math.max(16, Math.min(seconds[seconds.length - 1], Math.ceil(lastPeak / 4 + 1) * 4));
+  return {
+    example,
+    current: { states: normal, peak: normalPeak },
+    late: { states: late, peak: latePeak },
+    seconds,
+    end,
+    top,
+  };
+}
+
+interface ArriveFrameDescription {
+  readonly example: ArriveParameters;
+  readonly sample: ArriveSample;
+  readonly step: number;
+}
+interface ArrivalPeak {
+  readonly step: number;
+  readonly reached: number;
+  readonly overshoot: number;
+}
+interface ArrivalTrace {
+  readonly states: readonly ArriveState[];
+  readonly peak: ArrivalPeak;
+}
+interface ArrivalComparison {
+  readonly example: ArriveParameters;
+  readonly current: ArrivalTrace;
+  readonly late: ArrivalTrace;
+  readonly seconds: readonly number[];
+  readonly end: number;
+  readonly top: number;
+}
+
+const { number: fixed } = createNumberFormat();
+const brief = (value: number): string => fixed(value, 1);
 
 // How long an arrow is for each unit per second, in the drawing's units.
 const vectorScale = 1;
@@ -17,43 +77,50 @@ const actualLane = -8;
 
 const desiredLane = 9;
 
-function phaseOf(t: StudyTranslate, state: ArriveState, step: number, example: ArriveParameters) {
+function phaseOf(t: StudyTranslate, frame: ArriveFrameDescription): string {
+  const {
+    example,
+    step,
+    sample: { state },
+  } = frame;
+
   const distance = Math.abs(example.target - state.position);
   if (distance === 0 && state.velocity === 0)
-    return t('studyAifg.arrive.model.phaseCloseEnoughAlmostMotionless');
-  if (step === 0) return t('studyAifg.arrive.model.phaseStartDesiredSpeedHigh');
+    return t('studyAifg.arrive.model.phase.closeEnoughAlmostMotionless');
+  if (step === 0) return t('studyAifg.arrive.model.phase.startDesiredSpeedHigh');
   if (state.position > example.target)
-    return t('studyAifg.arrive.model.phaseCharacterPassedTargetDesired');
+    return t('studyAifg.arrive.model.phase.characterPassedTargetDesired');
   return distance < example.slowRadius
-    ? t('studyAifg.arrive.model.phaseInsideSlowingZoneDesired')
-    : t('studyAifg.arrive.model.phaseOutsideSlowingZoneCharacter');
+    ? t('studyAifg.arrive.model.phase.insideSlowingZoneDesired')
+    : t('studyAifg.arrive.model.phase.outsideSlowingZoneCharacter');
 }
 
-function workedLines(
-  t: StudyTranslate,
-  position: string,
-  velocity: string,
-  example: ArriveParameters,
-  distance: string,
-  inside: boolean,
-  desired: string,
-  calculation: ReturnType<typeof calculateArriveStep>,
-  acceleration: string,
-  next: ArriveState,
-): readonly string[] {
+function workedLines(t: StudyTranslate, frame: ArriveFrameDescription): readonly string[] {
+  const {
+    example,
+    sample: { state, calculation },
+  } = frame;
+  const position = fixed(state.position);
+  const velocity = fixed(state.velocity);
+  const distance = fixed(calculation.distance);
+  const desired = fixed(calculation.desired);
+  const acceleration = fixed(calculation.acceleration);
+  const inside = calculation.distance < example.slowRadius;
+  const next = calculation.next;
+
   return [
-    t('studyAifg.arrive.model.workedBeginPositionVelocityTarget', {
+    t('studyAifg.arrive.model.worked.beginPositionVelocityTarget', {
       position,
       velocity,
       exampleTarget: fixed(example.target),
     }),
-    t('studyAifg.arrive.model.workedFindRemainingDistance', {
+    t('studyAifg.arrive.model.worked.findRemainingDistance', {
       exampleTarget: fixed(example.target),
       position,
       distance,
     }),
     inside
-      ? t('studyAifg.arrive.model.workedInsideSlowingRadiusScale', {
+      ? t('studyAifg.arrive.model.worked.insideSlowingRadiusScale', {
           exampleTarget: fixed(example.target),
           position,
           exampleMaxSpeed: fixed(example.maxSpeed),
@@ -61,28 +128,28 @@ function workedLines(
           exampleSlowRadius: fixed(example.slowRadius),
           desired,
         })
-      : t('studyAifg.arrive.model.workedOutsideSlowingRadiusAsk', {
+      : t('studyAifg.arrive.model.worked.outsideSlowingRadiusAsk', {
           exampleSlowRadius: fixed(example.slowRadius),
           desired,
         }),
-    t('studyAifg.arrive.model.workedAskCloseVelocityGap', {
+    t('studyAifg.arrive.model.worked.askCloseVelocityGap', {
       exampleResponseTime: fixed(example.responseTime),
       desired,
       velocity,
       calculationRequestedAcceleration: fixed(calculation.requestedAcceleration),
     }),
-    t('studyAifg.arrive.model.workedLimitAccelerationMagnitudeAcceleration', {
+    t('studyAifg.arrive.model.worked.limitAccelerationMagnitudeAcceleration', {
       exampleMaxAcceleration: fixed(example.maxAcceleration),
       acceleration,
     }),
-    t('studyAifg.arrive.model.workedUpdateVelocityOverLimited', {
+    t('studyAifg.arrive.model.worked.updateVelocityOverLimited', {
       exampleTimeStep: fixed(example.timeStep),
       exampleMaxSpeed: fixed(example.maxSpeed),
       velocity,
       acceleration,
       nextVelocity: fixed(next.velocity),
     }),
-    t('studyAifg.arrive.model.workedUseUpdatedVelocityMove', {
+    t('studyAifg.arrive.model.worked.useUpdatedVelocityMove', {
       position,
       nextVelocity: fixed(next.velocity),
       exampleTimeStep: fixed(example.timeStep),
@@ -91,81 +158,67 @@ function workedLines(
   ];
 }
 
-function workedStep(
-  t: StudyTranslate,
-  state: ArriveState,
-  step: number,
-  example: ArriveParameters,
-  calculation: ReturnType<typeof calculateArriveStep>,
-): StudyWorkedStep {
+function workedStep(t: StudyTranslate, frame: ArriveFrameDescription): StudyWorkedStep {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const seconds = step * example.timeStep;
-  const position = fixed(state.position);
+
   const velocity = fixed(state.velocity);
-  const desired = fixed(calculation.desired);
+
   const distance = fixed(calculation.distance);
   if (calculation.settled)
     return {
-      title: t('studyAifg.arrive.model.workedRestSeconds', {
+      title: t('studyAifg.arrive.model.worked.restSeconds', {
         seconds: fixed(seconds),
       }),
       lines: [],
-      note: t('studyAifg.arrive.model.workedDistanceWithinToleranceSpeed', {
+      note: t('studyAifg.arrive.model.worked.distanceWithinToleranceSpeed', {
         distance,
         exampleTolerance: fixed(example.tolerance),
         velocity,
       }),
     };
-  const next = calculation.next;
-  const acceleration = fixed(calculation.acceleration);
-  const inside = calculation.distance < example.slowRadius;
   const heading =
     state.velocity * (example.target - state.position) >= 0
-      ? t('studyAifg.arrive.model.workedToward')
-      : t('studyAifg.arrive.model.workedAway');
+      ? t('studyAifg.arrive.model.worked.toward')
+      : t('studyAifg.arrive.model.worked.away');
   const sign =
     calculation.acceleration < 0
-      ? t('studyAifg.arrive.model.workedNegative')
-      : t('studyAifg.arrive.model.workedPositive');
+      ? t('studyAifg.arrive.model.worked.negative')
+      : t('studyAifg.arrive.model.worked.positive');
   const motion =
     Math.abs(calculation.acceleration) < 0.005
-      ? t('studyAifg.arrive.model.workedAccelerationRoundsZeroPrecision')
+      ? t('studyAifg.arrive.model.worked.accelerationRoundsZeroPrecision')
       : calculation.acceleration * state.velocity < 0
-        ? t('studyAifg.arrive.model.workedAccelerationBrakesCharacterMoving', {
+        ? t('studyAifg.arrive.model.worked.accelerationBrakesCharacterMoving', {
             sign,
             heading,
           })
-        : t('studyAifg.arrive.model.workedAccelerationBuildsSpeedTarget', {
+        : t('studyAifg.arrive.model.worked.accelerationBuildsSpeedTarget', {
             sign,
             heading,
           });
   return {
-    title: t('studyAifg.arrive.model.workedWorkedStepSeconds', {
+    title: t('studyAifg.arrive.model.worked.workedStepSeconds', {
       seconds: fixed(seconds),
-      seconds2: fixed(seconds + example.timeStep),
+      nextSeconds: fixed(seconds + example.timeStep),
     }),
-    lines: workedLines(
-      t,
-      position,
-      velocity,
-      example,
-      distance,
-      inside,
-      desired,
-      calculation,
-      acceleration,
-      next,
-    ),
+    lines: workedLines(t, frame),
     note: motion,
   };
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: ArriveState,
-  step: number,
-  example: ArriveParameters,
-  calculation: ReturnType<typeof calculateArriveStep>,
-): MotionFrame {
+function frameOf(t: StudyTranslate, frame: ArriveFrameDescription): MotionFrame {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const desired = calculation.desired;
   return {
     seconds: step * example.timeStep,
@@ -190,13 +243,13 @@ function frameOf(
       slowRadius: String(example.slowRadius),
       maxAcceleration: String(example.maxAcceleration),
     },
-    note: phaseOf(t, state, step, example),
-    worked: workedStep(t, state, step, example, calculation),
+    note: phaseOf(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
 /** What one run does at its peak, in the words the comparison reads. */
-function peakOf(frames: readonly ArriveState[], example: ArriveParameters) {
+function peakOf(frames: readonly ArriveState[], example: ArriveParameters): ArrivalPeak {
   const step = frames.reduce(
     (best, frame, index) => (frame.position > frames[best].position ? index : best),
     0,
@@ -206,29 +259,15 @@ function peakOf(frames: readonly ArriveState[], example: ArriveParameters) {
 }
 
 /** The motion rule and limits stay the example's; only the slowing radius changes. */
-function lateBrakingTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  end: number,
-  top: number,
-  example: ArriveParameters,
-  normal: ReturnType<typeof arriveFrames>,
-  late: ReturnType<typeof arriveFrames>,
-  normalPeak: {
-    step: number;
-    reached: number;
-    overshoot: number;
-  },
-  latePeak: {
-    step: number;
-    reached: number;
-    overshoot: number;
-  },
-): NonNullable<MotionStudyModel['timeline']> {
+function lateBrakingTimeline(t: StudyTranslate, comparison: ArrivalComparison): TimelineModel {
+  const { example, seconds, end, top, current, late: other } = comparison;
+  const { states: normal, peak: normalPeak } = current;
+  const { states: late, peak: latePeak } = other;
+
   return {
-    title: t('studyAifg.arrive.model.lateBrakingPosition'),
-    xLabel: t('studyAifg.arrive.model.lateBrakingTimeSeconds'),
-    yLabel: t('studyAifg.arrive.model.positionUnits'),
+    title: t('studyAifg.arrive.model.comparison.position'),
+    xLabel: t('studyAifg.arrive.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.arrive.model.timeline.positionUnits'),
     seconds,
     xRange: [4, end],
     yRange: [50, top],
@@ -238,7 +277,7 @@ function lateBrakingTimeline(
     series: [
       {
         id: 'normal',
-        label: t('studyAifg.arrive.model.lateBrakingSolidGreenSlowingRadius', {
+        label: t('studyAifg.arrive.model.comparison.solidGreenSlowingRadius', {
           exampleSlowRadius: example.slowRadius,
         }),
         tone: 'actual',
@@ -246,7 +285,7 @@ function lateBrakingTimeline(
       },
       {
         id: 'late',
-        label: t('studyAifg.arrive.model.lateBrakingDashedAmberSlowingRadius', {
+        label: t('studyAifg.arrive.model.comparison.dashedAmberSlowingRadius', {
           exampleLateRadius: example.lateRadius,
         }),
         tone: 'desired',
@@ -264,33 +303,27 @@ function lateBraking(
   t: StudyTranslate,
   example: ArriveParameters,
   normal: readonly ArriveState[],
-): NonNullable<MotionStudyModel['comparison']> {
-  const late =
-    example.slowRadius === example.lateRadius ? normal : arriveFrames(example, example.lateRadius);
-  const seconds = normal.map((_frame, step) => Number((step * example.timeStep).toFixed(1)));
-  const [normalPeak, latePeak] = [peakOf(normal, example), peakOf(late, example)];
-  const overshootOf = ({ step, reached, overshoot }: ReturnType<typeof peakOf>) =>
+): StudyComparison {
+  const comparison = describeComparison(example, normal);
+  const {
+    seconds,
+    end,
+    top,
+    current: { peak: normalPeak },
+    late: { peak: latePeak },
+  } = comparison;
+  const overshootOf = ({ step, reached, overshoot }: ArrivalPeak) =>
     overshoot > 0.005
-      ? t('studyAifg.arrive.model.lateBrakingReachesPositionAboutOvershooting', {
-          value1: reached.toFixed(2),
-          value2: seconds[step].toFixed(1),
-          value3: overshoot.toFixed(2),
+      ? t('studyAifg.arrive.model.comparison.reachesPositionAboutOvershooting', {
+          position: fixed(reached),
+          seconds: fixed(seconds[step], 1),
+          overshoot: fixed(overshoot),
         })
-      : t('studyAifg.arrive.model.lateBrakingApproachesTargetWithoutPassing');
+      : t('studyAifg.arrive.model.comparison.approachesTargetWithoutPassing');
   const same = example.slowRadius === example.lateRadius;
-  // The window stays on arrival, and widens only for a run that needs more room.
-  const highest = Math.max(normalPeak.reached, latePeak.reached);
-  const top = Math.max(110, Math.ceil((highest + 5) / 10) * 10);
-  const lastPeak = Math.max(
-    ...[normalPeak, latePeak]
-      .filter(({ overshoot }) => overshoot > 0.005)
-      .map(({ step }) => seconds[step]),
-    0,
-  );
-  const end = Math.max(16, Math.min(seconds[seconds.length - 1], Math.ceil(lastPeak / 4 + 1) * 4));
   return {
-    title: t('studyAifg.arrive.model.lateBrakingWhatHappensWhenSlowing'),
-    intro: t('studyAifg.arrive.model.lateBrakingTwoRunsExampleChange', {
+    title: t('studyAifg.arrive.model.comparison.whatHappensWhenSlowing'),
+    intro: t('studyAifg.arrive.model.comparison.twoRunsExampleChange', {
       exampleSlowRadius: example.slowRadius,
       exampleLateRadius: example.lateRadius,
       exampleTarget: example.target,
@@ -299,36 +332,26 @@ function lateBraking(
       exampleResponseTime: example.responseTime,
       exampleTimeStep: example.timeStep,
     }),
-    timeline: lateBrakingTimeline(
-      t,
-      seconds,
-      end,
-      top,
-      example,
-      normal,
-      late,
-      normalPeak,
-      latePeak,
-    ),
+    timeline: lateBrakingTimeline(t, comparison),
     findings: same
       ? [
-          t('studyAifg.arrive.model.lateBrakingRunsNowUseRadius', {
+          t('studyAifg.arrive.model.comparison.runsNowUseRadius', {
             exampleLateRadius: example.lateRadius,
-            value2: overshootOf(latePeak),
+            overshoot: overshootOf(latePeak),
           }),
         ]
       : [
-          t('studyAifg.arrive.model.lateBrakingRadiusCharacterRun', {
+          t('studyAifg.arrive.model.comparison.radiusCharacterRun', {
             exampleLateRadius: example.lateRadius,
-            value2: overshootOf(latePeak),
+            lateOvershoot: overshootOf(latePeak),
             exampleSlowRadius: example.slowRadius,
-            value4: overshootOf(normalPeak),
+            normalOvershoot: overshootOf(normalPeak),
           }),
-          t('studyAifg.arrive.model.lateBrakingSmallerZoneAsksLess', {
+          t('studyAifg.arrive.model.comparison.smallerZoneAsksLess', {
             exampleMaxAcceleration: example.maxAcceleration,
           }),
         ],
-    note: t('studyAifg.arrive.model.lateBrakingChartZoomsArrivalSeconds', {
+    note: t('studyAifg.arrive.model.comparison.chartZoomsArrivalSeconds', {
       end,
       top,
     }),
@@ -337,16 +360,19 @@ function lateBraking(
 
 function runTimeline(
   t: StudyTranslate,
-  seconds: number[],
-  lowest: number,
   example: ArriveParameters,
-  velocities: number[],
-  desired: number[],
-): NonNullable<MotionStudyModel['timeline']> {
+  samples: readonly ArriveSample[],
+): TimelineModel {
+  const seconds = samples.map((_sample, step) => Number(fixed(step * example.timeStep, 1)));
+  const velocities = samples.map(({ state }) => state.velocity);
+  const desired = samples.map(({ calculation }) => calculation.desired);
+  // A run that overshoots comes back with a negative velocity, which the chart must still show.
+  const lowest = Math.floor(Math.min(0, ...velocities, ...desired));
+
   return {
-    title: t('studyAifg.arrive.model.velocity'),
-    xLabel: t('studyAifg.arrive.model.lateBrakingTimeSeconds'),
-    yLabel: t('studyAifg.arrive.model.velocityUnits'),
+    title: t('studyAifg.arrive.model.timeline.velocity'),
+    xLabel: t('studyAifg.arrive.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.arrive.model.timeline.velocityUnits'),
     seconds,
     yRange: [lowest, example.maxSpeed],
     xTicks: [0, example.steps * example.timeStep],
@@ -354,13 +380,13 @@ function runTimeline(
     series: [
       {
         id: 'actual',
-        label: t('studyAifg.arrive.model.solidGreenActualVelocity'),
+        label: t('studyAifg.arrive.model.labels.solidGreenActualVelocity'),
         tone: 'actual',
         values: velocities,
       },
       {
         id: 'desired',
-        label: t('studyAifg.arrive.model.dashedAmberDesiredVelocity'),
+        label: t('studyAifg.arrive.model.labels.dashedAmberDesiredVelocity'),
         tone: 'desired',
         values: desired,
       },
@@ -374,14 +400,9 @@ export const present = (
   t: StudyTranslate,
 ): MotionStudyModel => {
   const states = statesSamples.map(({ state }) => state);
-  const seconds = states.map((_state, step) => Number((step * example.timeStep).toFixed(1)));
   // The drawing's box holds the slowing circle and the furthest the run goes, at any input.
   const furthest = Math.max(...states.map(({ position }) => position));
   const reach = Math.max(example.slowRadius, 36) + 4;
-  const velocities = states.map(({ velocity }) => velocity);
-  const desired = statesSamples.map(({ calculation }) => calculation.desired);
-  // A run that overshoots comes back with a negative velocity, which the chart must still show.
-  const lowest = Math.floor(Math.min(0, ...velocities, ...desired));
   return {
     family: 'motion',
     motion: {
@@ -391,44 +412,42 @@ export const present = (
         minY: -reach,
         maxY: reach,
       },
-      frames: states.map((state, step) =>
-        frameOf(t, state, step, example, statesSamples[step].calculation),
-      ),
+      frames: statesSamples.map((sample, step) => frameOf(t, { example, sample, step })),
       trail: true,
     },
-    timeline: runTimeline(t, seconds, lowest, example, velocities, desired),
+    timeline: runTimeline(t, example, statesSamples),
     initialStep: 75,
     moments: [
-      { label: t('studyAifg.arrive.model.start'), step: 0 },
-      { label: t('studyAifg.arrive.model.cruise'), step: 40 },
-      { label: t('studyAifg.arrive.model.slowDown'), step: 75 },
-      { label: t('studyAifg.arrive.model.rest'), step: example.steps },
+      { label: t('studyAifg.arrive.model.labels.start'), step: 0 },
+      { label: t('studyAifg.arrive.model.labels.cruise'), step: 40 },
+      { label: t('studyAifg.arrive.model.labels.slowDown'), step: 75 },
+      { label: t('studyAifg.arrive.model.labels.rest'), step: example.steps },
     ],
     legend: [
       {
         tone: 'actual',
-        label: t('studyAifg.arrive.model.solidGreenActualVelocity'),
+        label: t('studyAifg.arrive.model.labels.solidGreenActualVelocity'),
       },
       {
         tone: 'desired',
-        label: t('studyAifg.arrive.model.dashedAmberDesiredVelocity'),
+        label: t('studyAifg.arrive.model.labels.dashedAmberDesiredVelocity'),
       },
     ],
-    caption: t('studyAifg.arrive.model.caption'),
+    caption: t('studyAifg.arrive.model.overview.caption'),
     comparison: lateBraking(t, example, states),
     inputs: [
       {
         name: 'slowRadius',
-        label: t('studyAifg.arrive.model.slowingRadius'),
-        unit: t('studyAifg.arrive.model.inputsUnitUnits'),
+        label: t('studyAifg.arrive.model.labels.slowingRadius'),
+        unit: t('studyAifg.arrive.model.inputs.unitUnits'),
         min: 4,
         max: 60,
         step: 2,
       },
       {
         name: 'maxAcceleration',
-        label: t('studyAifg.arrive.model.maximumAcceleration'),
-        unit: t('studyAifg.arrive.model.inputsUnitUnitsS'),
+        label: t('studyAifg.arrive.model.labels.maximumAcceleration'),
+        unit: t('studyAifg.arrive.model.inputs.unitUnitsS'),
         min: 4,
         max: 24,
         step: 1,

@@ -238,7 +238,9 @@ it('gives every selected moment complete prose values and geometry on the same c
       expect(point.y).toBeLessThanOrEqual(bounds.maxY);
     }
     expect(frame.bodies).toHaveLength(5);
-    expect(motionDrawing(run.motion, step).vectors).toHaveLength(4);
+    expect(frame.vectors).toHaveLength(4);
+    for (const { x1, y1, x2, y2 } of motionDrawing(run.motion, step).vectors)
+      expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThanOrEqual(4);
     expect(run.timeline?.series[0].values[step]).toBe(speciesTravel(states[step], 'sheep', p));
     expect(run.timeline?.series[1].values[step]).toBe(speciesTravel(states[step], 'goat', p));
     expect(frame.worked?.lines.length).toBeGreaterThan(0);

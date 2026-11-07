@@ -1,5 +1,6 @@
 import type { MotionModel } from '../../../studies/study-model';
 import { motionDrawing } from './motion-drawing';
+import { motionLabels } from './motion-labels';
 
 const frame = (x: number) => ({
   seconds: x / 10,
@@ -38,6 +39,7 @@ it('derives every coordinate of a moment from the bounds', () => {
     label: 'Noor',
     labelX: 300,
     labelY: 134,
+    labelGuide: null,
   });
   expect(drawing.vectors).toMatchObject([{ x1: 60, y1: 60, x2: 90, y2: 30, tone: 'actual' }]);
   expect(drawing.zones).toEqual([{ x: 600, y: 0, r: 60, tone: 'zone' }]);
@@ -58,13 +60,13 @@ it('points a body with a heading along it', () => {
   expect(turned.bodies[0].arrow).toBe('0,9.6 -5,-6.4 5,-6.4');
 });
 
-it('points a vector with a head, unless it is too short to carry one', () => {
+it('points a readable vector with a head and omits a vector too short to read', () => {
   const vectors = (dx: number): MotionModel => ({
     ...model,
     frames: [{ ...frame(0), vectors: [{ x: 0, y: 0, dx, dy: 0, tone: 'actual' }] }],
   });
   expect(motionDrawing(vectors(10), 0).vectors[0].head).toBe('66,0 56,4 56,-4');
-  expect(motionDrawing(vectors(0.1), 0).vectors[0].head).toBeNull();
+  expect(motionDrawing(vectors(0.1), 0).vectors).toEqual([]);
 });
 
 it('names a body or a mark only when the model gives it a label', () => {
@@ -139,4 +141,26 @@ it('brings names at every edge inside the drawing, keeping their physical anchor
   expect(drawing.bodies[0].labelY).toBeGreaterThanOrEqual(26);
   expect(drawing.bodies[1]).toMatchObject({ x: 600, y: 300, label: 'Delivery' });
   expect(drawing.bodies[1].labelX).toBeLessThan(600);
+});
+
+it('ends a displaced name guide at its near edge, whether the name is above or below', () => {
+  for (const point of [
+    { x: 0, y: 0 },
+    { x: 600, y: 300 },
+  ]) {
+    const label = motionLabels(300)(point, 'Courier');
+    expect(label.labelGuide).not.toBeNull();
+    const end = label.labelGuide;
+    if (!end) throw new Error('The displaced label needs a guide.');
+    expect(end.y <= label.labelY - 26 || end.y >= label.labelY + 6).toBe(true);
+    expect(Math.abs(end.y - point.y)).toBeLessThan(Math.abs(label.labelY - 10 - point.y));
+  }
+});
+
+it('reserves the active font size, leaving a desktop name that fits in its authored place', () => {
+  const point = { x: 100, y: 35 };
+  const desktop = motionLabels(300, 15)(point, 'Courier');
+  const narrow = motionLabels(300, 24)(point, 'Courier');
+  expect(desktop).toMatchObject({ labelX: 100, labelY: 19, labelGuide: null });
+  expect(narrow.labelY).toBeGreaterThan(19);
 });

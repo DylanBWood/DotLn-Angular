@@ -269,9 +269,22 @@ the mechanism, `.presentation.ts` files describe frames and explanations, and th
 entry module composes them. A run retains the step calculations and next states
 that its presentation needs, so frame labels, worked arithmetic and comparisons
 read the same results that advanced the simulation. Existing state-only helpers
-can project those samples for callers that need only a trajectory. Shared
-formatting and drawing helpers replace repeated plumbing. The translator is a presentation dependency; changing language never
-changes physics or executable stream values. The result contains the frames the drawing reads, a timeline, the
+can project those samples for callers that need only a trajectory.
+
+A presentation describes its example once, with named interfaces for the run and
+the frame values its prose needs. A function takes that description, a frame, a
+translator or a selection, rather than repeating a list of scalar arguments;
+four parameters is the reading rule, not a lint target. Keep each function whole
+around one job. `studies/number-format.ts` supplies the shared formatter, whose
+options preserve the study's authored precision and negative-zero convention.
+Messages are nested by study and part, such as
+`studyAifg.seek.model.worked`, and their placeholders name what they hold, such
+as `speed` or `clearance`. They never use numbered `valueN` placeholders. The
+first movement batch follows this shape; subsequent standards passes read the
+remaining batches and newly landed code under the same rule.
+
+The translator is a presentation dependency; changing language never changes
+physics or executable stream values. The result contains the frames the drawing reads, a timeline, the
 named moments, the legend and caption, and, where they help, each moment's note, the worked
 arithmetic of that moment, a comparison that makes a failure visible and the inputs a reader may
 change. `studies/study-models.ts` lists the modules by the path the record names, and each loads
@@ -294,7 +307,15 @@ pipeline under the TestScheduler, asserts every output's marbles, every inner st
 marbles (an inner stream must declare them, since they place it in the drawing) and every input's
 declared ones, then holds the drawing to the run: what the model draws as delivered on each output
 is what the output delivered, frame for frame, and a cold input the example does not place was first
-subscribed at frame 0, where the model draws it. The model names where each output value comes
+subscribed at frame 0, where the model draws it.
+
+The helper's options name a custom `translate` function and a `descriptions` mode. The default
+`payload` mode also checks that each description names its raw value, including when a spec uses
+a fixture translator. A spec whose displayed words intentionally differ chooses `authored` and
+asserts that wording separately; scheduler and rendered-delivery checks still run. Translator
+identity never selects which assertions run.
+
+The model names where each output value comes
 from, for the courier that rides down while playing: the example's `origins` where it names one (a
 stream id, or null for a value a scheduler held back), else the inner stream, then the input, that
 emits at that frame, else the one that errors or completes there. Origin references retain
@@ -333,8 +354,8 @@ Geometry derives from the model in a pure `*-drawing.ts` module with its own spe
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
 dimensions. Its names are placed independently of the physical points: `motion/motion-labels.ts`
 keeps each above its anchor when there is room, then uses the nearest clear row or horizontal gap,
-with a thin guide back to the unchanged point. It reserves space for the larger narrow-screen
-font; all guides render before all names, and names render above vectors with a surface-coloured
+with a thin guide ending at the near edge of the name. It reserves space for the font size in use,
+including the larger narrow-screen font; all guides render before all names, and names render above vectors with a surface-coloured
 outline. The corpus check retains every
 supplied name on every default frame, and browser regressions measure real glyphs at narrow and
 operator-sized viewports. The [placement decision and corpus comparison](../../dotln/evidence/WO-028/decisions.md#wo-028-d026)

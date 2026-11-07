@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
@@ -14,6 +14,12 @@ import {
   order,
   type Status,
 } from './process-manager';
+
+// Only the altered test runs use these messages.
+const studyTranslate = withStudyMessages({
+  'studyEip.process-manager.model.failureStop': 'stop after {{failures}} failed verifications',
+  'studyEip.process-manager.model.limitMoment': 'Limit',
+});
 
 const path = 'libs/features/tools/src/lib/studies/eip/process-manager.ts';
 const record = await loadFlowStudy('eip:131');
@@ -153,7 +159,7 @@ it('stops reading reports when the route ends', () => {
 });
 
 it('ends the route at the failure limit instead of sending another repair', () => {
-  expectMarbleExample(failing);
+  expectMarbleExample(failing, { translate: studyTranslate });
   const stopped = flowFromMarbles(
     failing,
     { ...flow, states: {} },

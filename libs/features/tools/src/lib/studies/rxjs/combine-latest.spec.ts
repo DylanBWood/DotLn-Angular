@@ -34,7 +34,8 @@ const listed = (values: Readonly<Record<string, unknown>> = {}) => {
 };
 
 it('runs the dashboard example against the marbles the drawing shows', () => {
-  expectMarbleExample(example);
+  // This display deliberately names the budget before its number; payload strings stay fixed.
+  expectMarbleExample(example, { descriptions: 'authored' });
 });
 
 it('attaches the record to the combineLatest row and reads its inputs from this module', async () => {
@@ -84,7 +85,9 @@ it('tells of the first row and names each moment', () => {
   const run = marbleModel(example, {}, studyTranslate);
   const first = run.marbles.frames[4];
   expect(first.frame).toBe(4);
-  expect(first.values['now']).toBe('budget$ emits a (90% left); row$ emits 1 (reading, 90% left)');
+  expect(first.values['now']).toBe(
+    'budget$ emits a (Left: 90%); row$ emits 1 (State: reading, 90% left)',
+  );
   expect(run.moments.map(({ label, step }) => [label, run.marbles.frames[step].frame])).toEqual([
     ['Still waiting', 2],
     ['First row', 4],
@@ -104,14 +107,14 @@ it('keeps the completed budget’s last value and completes only with the last i
       );
   expect(events('budget$')?.at(-1)).toBe('complete 10');
   expect(events('row$')).toEqual([
-    'next 4 reading, 90% left',
-    'next 6 writing, 90% left',
-    'next 8 writing, 40% left',
-    'next 12 done, 40% left',
+    'next 4 State: reading, 90% left',
+    'next 6 State: writing, 90% left',
+    'next 8 State: writing, 40% left',
+    'next 12 State: done, 40% left',
     'complete 15',
   ]);
   expect(marbles.frames[marbles.frames.length - 1].values['delivered']).toBe(
-    '1 (reading, 90% left), 2 (writing, 90% left), 3 (writing, 40% left), 4 (done, 40% left)',
+    '1 (State: reading, 90% left), 2 (State: writing, 90% left), 3 (State: writing, 40% left), 4 (State: done, 40% left)',
   );
 });
 
@@ -182,11 +185,11 @@ it('retains composed row templates while changed reports alter the paired budget
     3: 'writing, 20% left',
     4: 'done, 20% left',
   });
-  expectMarbleExample(changed);
+  expectMarbleExample(changed, { descriptions: 'authored' });
   const translate = vi.fn(studyTranslate);
   const run = marbleModel(changed, {}, translate);
   expect(run.marbles.lines.find(({ id }) => id === 'row$')?.events[0].value).toBe(
-    'reading, 75% left',
+    'State: reading, 75% left',
   );
   expect(run.marbles.frames[12].note).toBe(
     'The worker is done. The row pairs done with the 20% left that the completed budget left in its slot.',

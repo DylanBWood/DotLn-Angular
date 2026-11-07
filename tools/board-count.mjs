@@ -7,6 +7,7 @@ import ts from 'typescript';
 const workspaceRoot = fileURLToPath(new URL('../', import.meta.url));
 const scriptExtensions = new Set(['.ts', '.mts', '.mjs', '.js']);
 
+/** @param {string} source JavaScript or TypeScript text. @returns {Set<number>} Comment offsets. */
 function scriptComments(source) {
   const starts = new Set();
   const file = ts.createSourceFile('source.ts', source, ts.ScriptTarget.Latest, true);
@@ -22,6 +23,11 @@ function scriptComments(source) {
   return starts;
 }
 
+/**
+ * @param {string} source HTML or Sass text.
+ * @param {string} extension Its dotted extension, which selects the comment syntax.
+ * @returns {Set<number>} Comment offsets outside quoted values and HTML raw text.
+ */
 function textComments(source, extension) {
   // Consume quoted values before comments, so a marker inside one stays text.
   const tokens =
@@ -35,6 +41,7 @@ function textComments(source, extension) {
   );
 }
 
+/** @param {string} source YAML text. @returns {Set<number>} Comments outside scalars. */
 function yamlComments(source) {
   const starts = new Set();
   let blockIndent = null;
@@ -95,6 +102,11 @@ function yamlComments(source) {
   return starts;
 }
 
+/**
+ * @param {string} path Workspace-relative filename.
+ * @param {string} source The file's text.
+ * @returns {{path: string, line: number, text: string}[]} Standalone boarded comments.
+ */
 export function boardMarkers(path, source) {
   const extension = extname(path);
   const starts = scriptExtensions.has(extension)
@@ -119,6 +131,10 @@ export function boardMarkers(path, source) {
   return markers;
 }
 
+/**
+ * @param {string} root Workspace to read, without following untracked files or symlinks.
+ * @returns {{path: string, line: number, text: string}[]} Tracked source's boarded comments.
+ */
 export function countBoards(root = workspaceRoot) {
   const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' });
   return tracked

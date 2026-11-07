@@ -114,7 +114,7 @@ it('refuses a flow over marbles that names a line, link, node, message or step t
 
 it('makes each frame of a marble example a step, and each delivered emission a hop', () => {
   // The example runs as its strings say; the study fixture names this spec as its evidence.
-  expectMarbleExample(marbleFlowExample, fixtureTranslate);
+  expectMarbleExample(marbleFlowExample, { translate: fixtureTranslate });
   const { flow, diagram, moments } = marbleFlowStudyModel;
   expect(diagram).not.toBeNull();
   expect(flow.frames).toHaveLength(diagram?.marbles.frames.length ?? 0);

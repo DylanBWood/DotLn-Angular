@@ -1,6 +1,14 @@
 import { distance, length, subtract, type Vec2 } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyInput, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
   type FixedFormationParameters,
@@ -8,12 +16,35 @@ import {
   fixedFormationSamples,
   fixedOffsets,
 } from './fixed-formations.simulation';
-import { fixed, pair as point } from './presentation';
+
+function describeRun(
+  example: FixedFormationParameters,
+  samples: readonly FixedFormationSample[],
+): FixedFormationDescription {
+  const peakSpeed = Math.max(...samples.map(({ requiredSpeed }) => requiredSpeed));
+  // Keep the scale steady across the spacing slider so a wider escort looks wider.
+  const drawingSpacing = Math.max(example.spacing, spacingRange.max);
+  const radius = Math.max(...fixedOffsets({ ...example, spacing: drawingSpacing }).map(length));
+  const extent = radius + drawingSpacing;
+  const finish = example.turnStart + example.turnSteps;
+
+  return { example, samples, peakSpeed, extent, finish };
+}
+
+interface FixedFormationDescription {
+  readonly example: FixedFormationParameters;
+  readonly samples: readonly FixedFormationSample[];
+  readonly peakSpeed: number;
+  readonly extent: number;
+  readonly finish: number;
+}
+
+const { number: fixed, vector: point } = createNumberFormat({ normalizeNegativeZero: true });
 
 const namedPoints = (t: StudyTranslate, points: readonly Vec2[]) =>
   points
     .map((position, index) =>
-      t('studyAifg.fixed-formations.model.slot', {
+      t('studyAifg.fixed-formations.model.labels.slot', {
         index: index + 1,
         position: point(position),
       }),
@@ -24,15 +55,15 @@ const spacingRange = { min: 3, max: 6, step: 0.5 } as const;
 
 const spacingInput = (t: StudyTranslate): StudyInput => ({
   name: 'spacing',
-  label: t('studyAifg.fixed-formations.model.slotSpacing'),
-  unit: t('studyAifg.fixed-formations.model.spacingInputUnitUnits'),
+  label: t('studyAifg.fixed-formations.model.inputs.slotSpacing'),
+  unit: t('studyAifg.fixed-formations.model.inputs.spacingInputUnitUnits'),
   ...spacingRange,
 });
 
 const turnInput = (t: StudyTranslate): StudyInput => ({
   name: 'turnSteps',
-  label: t('studyAifg.fixed-formations.model.turnDuration'),
-  unit: t('studyAifg.fixed-formations.model.frames'),
+  label: t('studyAifg.fixed-formations.model.inputs.turnDuration'),
+  unit: t('studyAifg.fixed-formations.model.inputs.frames'),
   min: 2,
   max: 30,
   step: 1,
@@ -40,9 +71,11 @@ const turnInput = (t: StudyTranslate): StudyInput => ({
 
 function workedStep(
   t: StudyTranslate,
+  run: FixedFormationDescription,
   sample: FixedFormationSample,
-  example: FixedFormationParameters,
 ): StudyWorkedStep {
+  const { example } = run;
+
   const offset = sample.formation.slots[1];
   const { x: forwardX, y: forwardY } = sample.formation.heading;
   const { anchor } = sample.formation;
@@ -50,20 +83,20 @@ function workedStep(
   const previous = sample.previousTargets[1];
   const delta = subtract(target, previous);
   return {
-    title: t('studyAifg.fixed-formations.model.workedMiraPivotSeconds', {
+    title: t('studyAifg.fixed-formations.model.worked.miraPivotSeconds', {
       sampleSeconds: fixed(sample.seconds),
     }),
     lines: [
-      t('studyAifg.fixed-formations.model.workedKeepSlotLocalOffset', {
+      t('studyAifg.fixed-formations.model.worked.keepSlotLocalOffset', {
         offset: point(offset),
         anchor: point(anchor),
       }),
-      t('studyAifg.fixed-formations.model.workedScheduledHeadingForwardEngine', {
+      t('studyAifg.fixed-formations.model.worked.scheduledHeadingForwardEngine', {
         sampleAngleDegrees: fixed(sample.angleDegrees),
         forwardX: fixed(forwardX),
         forwardY: fixed(forwardY),
       }),
-      t('studyAifg.fixed-formations.model.workedSlotX', {
+      t('studyAifg.fixed-formations.model.worked.slotX', {
         anchorX: fixed(anchor.x),
         offsetX: fixed(offset.x),
         forwardX: fixed(forwardX),
@@ -71,7 +104,7 @@ function workedStep(
         forwardY: fixed(forwardY),
         targetX: fixed(target.x),
       }),
-      t('studyAifg.fixed-formations.model.workedSlotY', {
+      t('studyAifg.fixed-formations.model.worked.slotY', {
         anchorY: fixed(anchor.y),
         offsetX: fixed(offset.x),
         forwardY: fixed(forwardY),
@@ -79,15 +112,15 @@ function workedStep(
         forwardX: fixed(forwardX),
         targetY: fixed(target.y),
       }),
-      t('studyAifg.fixed-formations.model.workedSlotMovesChordLength', {
+      t('studyAifg.fixed-formations.model.worked.slotMovesChordLength', {
         previous: point(previous),
         target: point(target),
         delta: point(delta),
         deltaX: fixed(delta.x),
         deltaY: fixed(delta.y),
-        value6: fixed(distance(target, previous)),
+        chordLength: fixed(distance(target, previous)),
       }),
-      t('studyAifg.fixed-formations.model.workedLargestEscortChordFrame', {
+      t('studyAifg.fixed-formations.model.worked.largestEscortChordFrame', {
         sampleDisplacement: fixed(sample.displacement),
         exampleTimeStep: fixed(example.timeStep),
         sampleRequiredSpeed: fixed(sample.requiredSpeed),
@@ -96,34 +129,36 @@ function workedStep(
     ],
     note:
       sample.step === 0
-        ? t('studyAifg.fixed-formations.model.workedInitialLayoutThereNo')
-        : t('studyAifg.fixed-formations.model.workedDisplacementEndsSelectedMoment'),
+        ? t('studyAifg.fixed-formations.model.worked.initialLayoutThereNo')
+        : t('studyAifg.fixed-formations.model.worked.displacementEndsSelectedMoment'),
   };
 }
 
 function frameNote(
   t: StudyTranslate,
+  run: FixedFormationDescription,
   sample: FixedFormationSample,
-  example: FixedFormationParameters,
-  peakSpeed: number,
 ): string {
+  const { example, peakSpeed } = run;
+
   if (sample.step <= example.turnStart)
-    return t('studyAifg.fixed-formations.model.phaseMiraHoldsEscortSlots');
+    return t('studyAifg.fixed-formations.model.phase.miraHoldsEscortSlots');
   if (sample.step <= example.turnStart + example.turnSteps)
     return sample.requiredSpeed > example.speedLimit
-      ? t('studyAifg.fixed-formations.model.phaseMiraTurnsPlaceSweeping')
-      : t('studyAifg.fixed-formations.model.phaseMiraTurnsPlaceHer');
+      ? t('studyAifg.fixed-formations.model.phase.miraTurnsPlaceSweeping')
+      : t('studyAifg.fixed-formations.model.phase.miraTurnsPlaceHer');
   return peakSpeed > example.speedLimit
-    ? t('studyAifg.fixed-formations.model.phaseMiraSlotsAgainAlthough')
-    : t('studyAifg.fixed-formations.model.phaseMiraStopsTurningEscort');
+    ? t('studyAifg.fixed-formations.model.phase.miraSlotsAgainAlthough')
+    : t('studyAifg.fixed-formations.model.phase.miraStopsTurningEscort');
 }
 
 function frameOf(
   t: StudyTranslate,
+  run: FixedFormationDescription,
   sample: FixedFormationSample,
-  example: FixedFormationParameters,
-  peakSpeed: number,
 ): MotionFrame {
+  const { example, peakSpeed } = run;
+
   const { anchor, slots } = sample.formation;
   const escorts = sample.targets.slice(1);
   const preceding = sample.previousTargets.slice(1);
@@ -133,7 +168,7 @@ function frameOf(
     bodies: [
       {
         id: 'mira',
-        label: t('studyAifg.fixed-formations.model.mira'),
+        label: t('studyAifg.fixed-formations.model.labels.mira'),
         ...anchor,
         heading: sample.angleRadians,
       },
@@ -147,7 +182,7 @@ function frameOf(
       ...escorts.map((position, index) => ({
         ...position,
         shape: 'ring' as const,
-        label: t('studyAifg.fixed-formations.model.slotLabel', { index: index + 1 }),
+        label: t('studyAifg.fixed-formations.model.labels.slotLabel', { index: index + 1 }),
       })),
     ],
     zones: [{ ...anchor, radius: orbitRadius }],
@@ -163,8 +198,8 @@ function frameOf(
       peakSpeed: fixed(peakSpeed),
       runSpeedStatus:
         peakSpeed > example.speedLimit
-          ? t('studyAifg.fixed-formations.model.valueOverSampledBudget')
-          : t('studyAifg.fixed-formations.model.valueWithinSampledBudget'),
+          ? t('studyAifg.fixed-formations.model.values.overSampledBudget')
+          : t('studyAifg.fixed-formations.model.values.withinSampledBudget'),
       seconds: fixed(sample.seconds),
       anchor: point(anchor),
       localSlots: namedPoints(t, slots.slice(1)),
@@ -180,35 +215,33 @@ function frameOf(
       speedLimit: fixed(example.speedLimit),
       speedStatus:
         sample.requiredSpeed > example.speedLimit
-          ? t('studyAifg.fixed-formations.model.valueOverBudget')
-          : t('studyAifg.fixed-formations.model.valueWithinBudget'),
+          ? t('studyAifg.fixed-formations.model.values.overBudget')
+          : t('studyAifg.fixed-formations.model.values.withinBudget'),
     },
-    note: frameNote(t, sample, example, peakSpeed),
-    worked: workedStep(t, sample, example),
+    note: frameNote(t, run, sample),
+    worked: workedStep(t, run, sample),
   };
 }
 
-function comparison(
-  t: StudyTranslate,
-  normal: readonly FixedFormationSample[],
-  example: FixedFormationParameters,
-): NonNullable<MotionStudyModel['comparison']> {
+function comparison(t: StudyTranslate, run: FixedFormationDescription): StudyComparison {
+  const { samples: normal, example } = run;
+
   const fast = fixedFormationSamples(example, example.fastTurnSteps);
   const normalPeak = Math.max(...normal.map(({ requiredSpeed }) => requiredSpeed));
   const fastPeak = Math.max(...fast.map(({ requiredSpeed }) => requiredSpeed));
   const firstOver = fast.find(({ requiredSpeed }) => requiredSpeed > example.speedLimit);
   const fastMove = fast[example.turnStart + 1];
   return {
-    title: t('studyAifg.fixed-formations.model.comparisonSamePivotCompletedSooner'),
-    intro: t('studyAifg.fixed-formations.model.comparisonChangeTurnStepsHeadingChange', {
+    title: t('studyAifg.fixed-formations.model.comparison.samePivotCompletedSooner'),
+    intro: t('studyAifg.fixed-formations.model.comparison.changeTurnStepsHeadingChange', {
       exampleTurnSteps: example.turnSteps,
       exampleFastTurnSteps: example.fastTurnSteps,
       exampleTurnDegrees: fixed(example.turnDegrees),
     }),
     timeline: {
-      title: t('studyAifg.fixed-formations.model.comparisonMinimumSpeedNeededReach'),
-      xLabel: t('studyAifg.fixed-formations.model.comparisonTimeSeconds'),
-      yLabel: t('studyAifg.fixed-formations.model.comparisonRequiredSpeed'),
+      title: t('studyAifg.fixed-formations.model.comparison.minimumSpeedNeededReach'),
+      xLabel: t('studyAifg.fixed-formations.model.comparison.timeSeconds'),
+      yLabel: t('studyAifg.fixed-formations.model.comparison.requiredSpeed'),
       seconds: normal.map(({ seconds }) => seconds),
       yRange: [0, Math.max(normalPeak, fastPeak, example.speedLimit)],
       yTicks: [...new Set([0, example.speedLimit, Math.max(normalPeak, fastPeak)])],
@@ -216,7 +249,7 @@ function comparison(
       series: [
         {
           id: 'normal',
-          label: t('studyAifg.fixed-formations.model.comparisonSolidGreenTurnOver', {
+          label: t('studyAifg.fixed-formations.model.comparison.solidGreenTurnOver', {
             exampleTurnSteps: fixed(example.turnSteps * example.timeStep),
           }),
           tone: 'actual',
@@ -224,7 +257,7 @@ function comparison(
         },
         {
           id: 'fast',
-          label: t('studyAifg.fixed-formations.model.comparisonDashedAmberTurnOver', {
+          label: t('studyAifg.fixed-formations.model.comparison.dashedAmberTurnOver', {
             exampleFastTurnSteps: fixed(example.fastTurnSteps * example.timeStep),
           }),
           tone: 'desired',
@@ -233,39 +266,36 @@ function comparison(
       ],
     },
     findings: [
-      t('studyAifg.fixed-formations.model.comparisonChosenTurnPeaksShorter', {
+      t('studyAifg.fixed-formations.model.comparison.chosenTurnPeaksShorter', {
         normalPeak: fixed(normalPeak),
         fastPeak: fixed(fastPeak),
         exampleSpeedLimit: fixed(example.speedLimit),
-        value4: firstOver
-          ? t('studyAifg.fixed-formations.model.comparisonShorterRunFirstExceeds', {
+        shorterRunStatus: firstOver
+          ? t('studyAifg.fixed-formations.model.comparison.shorterRunFirstExceeds', {
               firstOverSeconds: fixed(firstOver.seconds),
             })
-          : t('studyAifg.fixed-formations.model.comparisonShorterRunStaysWithin'),
+          : t('studyAifg.fixed-formations.model.comparison.shorterRunStaysWithin'),
       }),
-      t('studyAifg.fixed-formations.model.comparisonFirstChangedSampleShorter', {
+      t('studyAifg.fixed-formations.model.comparison.firstChangedSampleShorter', {
         fastMoveDisplacement: fixed(fastMove.displacement),
         exampleTimeStep: fixed(example.timeStep),
         fastMoveRequiredSpeed: fixed(fastMove.requiredSpeed),
       }),
       firstOver
-        ? t('studyAifg.fixed-formations.model.comparisonGeneratorReturnsEveryTarget')
-        : t('studyAifg.fixed-formations.model.comparisonSampledSpeedLimit'),
+        ? t('studyAifg.fixed-formations.model.comparison.generatorReturnsEveryTarget')
+        : t('studyAifg.fixed-formations.model.comparison.sampledSpeedLimit'),
     ],
-    note: t('studyAifg.fixed-formations.model.comparisonHorizontalReferenceGuardSpeed'),
+    note: t('studyAifg.fixed-formations.model.comparison.horizontalReferenceGuardSpeed'),
   };
 }
 
-function runTimeline(
-  t: StudyTranslate,
-  samples: ReturnType<typeof fixedFormationSamples>,
-  example: FixedFormationParameters,
-  peakSpeed: number,
-): NonNullable<MotionStudyModel['timeline']> {
+function runTimeline(t: StudyTranslate, run: FixedFormationDescription): TimelineModel {
+  const { samples, example, peakSpeed } = run;
+
   return {
-    title: t('studyAifg.fixed-formations.model.escortTargetDemandDuring'),
-    xLabel: t('studyAifg.fixed-formations.model.comparisonTimeSeconds'),
-    yLabel: t('studyAifg.fixed-formations.model.comparisonRequiredSpeed'),
+    title: t('studyAifg.fixed-formations.model.timeline.escortTargetDemandDuring'),
+    xLabel: t('studyAifg.fixed-formations.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.fixed-formations.model.comparison.requiredSpeed'),
     seconds: samples.map(({ seconds }) => seconds),
     yRange: [0, Math.max(example.speedLimit, ...samples.map(({ requiredSpeed }) => requiredSpeed))],
     yTicks: [...new Set([0, example.speedLimit, peakSpeed])],
@@ -273,7 +303,7 @@ function runTimeline(
     series: [
       {
         id: 'required',
-        label: t('studyAifg.fixed-formations.model.solidGreenLargestSampled'),
+        label: t('studyAifg.fixed-formations.model.timeline.solidGreenLargestSampled'),
         tone: 'actual',
         values: samples.map(({ requiredSpeed }) => requiredSpeed),
       },
@@ -283,15 +313,11 @@ function runTimeline(
 
 export const present = (
   example: FixedFormationParameters,
-  samples: ReturnType<typeof fixedFormationSamples>,
+  samples: readonly FixedFormationSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const peakSpeed = Math.max(...samples.map(({ requiredSpeed }) => requiredSpeed));
-  // Keep the scale steady across the spacing slider so a wider escort looks wider.
-  const drawingSpacing = Math.max(example.spacing, spacingRange.max);
-  const radius = Math.max(...fixedOffsets({ ...example, spacing: drawingSpacing }).map(length));
-  const extent = radius + drawingSpacing;
-  const finish = example.turnStart + example.turnSteps;
+  const run = describeRun(example, samples);
+  const { extent, finish } = run;
   return {
     family: 'motion',
     motion: {
@@ -301,49 +327,49 @@ export const present = (
         minY: example.leaderY - extent,
         maxY: example.leaderY + extent,
       },
-      frames: samples.map((sample) => frameOf(t, sample, example, peakSpeed)),
+      frames: samples.map((sample) => frameOf(t, run, sample)),
     },
-    timeline: runTimeline(t, samples, example, peakSpeed),
+    timeline: runTimeline(t, run),
     initialStep: example.turnStart + Math.ceil(example.turnSteps / 2),
     moments: [
-      { label: t('studyAifg.fixed-formations.model.offsetsRest'), step: 0 },
+      { label: t('studyAifg.fixed-formations.model.labels.offsetsRest'), step: 0 },
       {
-        label: t('studyAifg.fixed-formations.model.firstTurnSample'),
+        label: t('studyAifg.fixed-formations.model.labels.firstTurnSample'),
         step: example.turnStart + 1,
       },
       {
-        label: t('studyAifg.fixed-formations.model.midTurn'),
+        label: t('studyAifg.fixed-formations.model.labels.midTurn'),
         step: example.turnStart + Math.ceil(example.turnSteps / 2),
       },
-      { label: t('studyAifg.fixed-formations.model.turnCompleted'), step: finish },
+      { label: t('studyAifg.fixed-formations.model.labels.turnCompleted'), step: finish },
       {
-        label: t('studyAifg.fixed-formations.model.targetsAgain'),
+        label: t('studyAifg.fixed-formations.model.labels.targetsAgain'),
         step: Math.min(finish + 1, example.steps),
       },
     ].filter(
       (moment, index, moments) => moments.findIndex(({ step }) => step === moment.step) === index,
     ),
     legend: [
-      { tone: 'subject', label: t('studyAifg.fixed-formations.model.leaderArrowMira') },
+      { tone: 'subject', label: t('studyAifg.fixed-formations.model.labels.leaderArrowMira') },
       {
         tone: 'target',
-        label: t('studyAifg.fixed-formations.model.ringsEscortDestinations'),
+        label: t('studyAifg.fixed-formations.model.labels.ringsEscortDestinations'),
       },
       {
         tone: 'muted',
-        label: t('studyAifg.fixed-formations.model.dotsPrecedingDestinationsSpokes'),
+        label: t('studyAifg.fixed-formations.model.labels.dotsPrecedingDestinationsSpokes'),
       },
       {
         tone: 'desired',
-        label: t('studyAifg.fixed-formations.model.arrowsOneSampledDisplacement'),
+        label: t('studyAifg.fixed-formations.model.labels.arrowsOneSampledDisplacement'),
       },
       {
         tone: 'zone',
-        label: t('studyAifg.fixed-formations.model.circularGuideOuterSlot'),
+        label: t('studyAifg.fixed-formations.model.labels.circularGuideOuterSlot'),
       },
     ],
-    caption: t('studyAifg.fixed-formations.model.caption'),
-    comparison: comparison(t, samples, example),
+    caption: t('studyAifg.fixed-formations.model.overview.caption'),
+    comparison: comparison(t, run),
     inputs: [turnInput(t), spacingInput(t)],
   };
 };

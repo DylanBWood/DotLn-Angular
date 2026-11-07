@@ -118,9 +118,15 @@
   Preserve IDs, URLs, module paths and machine parameters. A change after shipping is a new
   schema version; keep the published `concept-study-v0` immutable.
 - A model’s labels, notes, worked arithmetic and comparisons use parameterized messages.
-  Separate mechanisms from presentation, reuse useful formatting and frame helpers, and keep
-  exported model composition small. The 80-line function guard is a ceiling, not a design target.
-  Critics review the house rules and the actual code, including reused shapes.
+  Separate mechanisms from presentation. Describe an example once through named run and frame
+  interfaces; pass those descriptions, the translator or a selection to each function, with at
+  most four parameters. Name the parameter and return shapes rather than borrowing another
+  function's return type. Use `studies/number-format.ts` for the authored precision and rounding
+  convention, and nest message keys by study and part with semantic placeholders such as
+  `speed` and `clearance`, never `valueN`. Keep each function whole around one job and exported
+  model composition small. The 80-line guard is a ceiling, not a design target. Critics read
+  the actual code, including reused shapes; a dedicated standards pass reads each landed batch
+  and the code added since the preceding pass.
 - `MessageCatalog` loads only the work’s messages and shared narration. A failed code or message
   load remains retryable. The translator is bound to its loaded language; a superseded response
   must not replace the current reading.

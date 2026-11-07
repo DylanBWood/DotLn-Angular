@@ -1,50 +1,98 @@
 import type { StudyParameters } from '@dotln-angular/models';
 import { cosine, sine } from '@dotln-angular/scene-engine';
 
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyMoment,
+  StudyValues,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
-  alignFrames,
   type AlignParameters,
+  type AlignSample,
   alignSamples,
   type AlignStep,
   type AngularState,
-  calculateAlignStep,
   fullTurn,
   radians,
   wrapDegrees,
 } from './align.simulation';
-import { fixed } from './presentation';
 
-function workedLines(
-  t: StudyTranslate,
+function selectMoments(
   example: AlignParameters,
-  state: AngularState,
-  calculation: AlignStep,
-): readonly string[] {
+  samples: readonly AlignSample[],
+): AlignmentMoments {
+  const states = samples.map(({ state }) => state);
+  const calculations = samples.map(({ calculation }) => calculation);
+  const last = states.length - 1;
+  const braking = states.findIndex(
+    (state, step) => calculations[step].acceleration * state.angularVelocity < 0,
+  );
+  const initialTurn = Math.floor((example.initialHeading + fullTurn / 2) / fullTurn);
+  const boundary = states.findIndex(
+    (state) => Math.floor((state.heading + fullTurn / 2) / fullTurn) !== initialTurn,
+  );
+  const inside = states.findIndex(
+    (_state, step) => Math.abs(calculations[step].error) <= example.angleTolerance,
+  );
+  const stopped = states.findIndex(
+    (state, step) => calculations[step].settled && state.angularVelocity === 0,
+  );
+
+  return { braking, boundary, inside, stopped, last };
+}
+
+interface AlignFrameDescription {
+  readonly example: AlignParameters;
+  readonly sample: AlignSample;
+  readonly step: number;
+  readonly parameterValues: StudyValues;
+}
+interface AlignmentMoments {
+  readonly braking: number;
+  readonly boundary: number;
+  readonly inside: number;
+  readonly stopped: number;
+  readonly last: number;
+}
+
+const { number: fixed } = createNumberFormat({ normalizeNegativeZero: true });
+
+function workedLines(t: StudyTranslate, frame: AlignFrameDescription): readonly string[] {
+  const {
+    example,
+    sample: { state, calculation },
+  } = frame;
+
   return [
-    t('studyAifg.align.model.workedSubtractHeadingsWrapShortest', {
+    t('studyAifg.align.model.worked.subtractHeadingsWrapShortest', {
       exampleTargetHeading: fixed(example.targetHeading),
       stateHeading: fixed(state.heading),
       calculationRawError: fixed(calculation.rawError),
       calculationError: fixed(calculation.error),
     }),
-    t('studyAifg.align.model.workedStopTestFailsError', {
+    t('studyAifg.align.model.worked.stopTestFailsError', {
       calculationError: fixed(Math.abs(calculation.error)),
       stateAngularVelocity: fixed(Math.abs(state.angularVelocity)),
     }),
     Math.abs(calculation.error) <= example.angleTolerance
-      ? t('studyAifg.align.model.workedInsideToleranceRequestZero', {
+      ? t('studyAifg.align.model.worked.insideToleranceRequestZero', {
           exampleAngleTolerance: fixed(example.angleTolerance),
         })
-      : t('studyAifg.align.model.workedDesiredAngularVelocitySign', {
+      : t('studyAifg.align.model.worked.desiredAngularVelocitySign', {
           calculationError: fixed(calculation.error),
           exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
-          calculationError2: fixed(Math.abs(calculation.error)),
+          absoluteError: fixed(Math.abs(calculation.error)),
           exampleSlowRadius: fixed(example.slowRadius),
           calculationDesiredVelocity: fixed(calculation.desiredVelocity),
         }),
-    t('studyAifg.align.model.workedRequestedAccelerationCapUse', {
+    t('studyAifg.align.model.worked.requestedAccelerationCapUse', {
       calculationDesiredVelocity: fixed(calculation.desiredVelocity),
       stateAngularVelocity: fixed(state.angularVelocity),
       exampleResponseTime: fixed(example.responseTime),
@@ -52,14 +100,14 @@ function workedLines(
       exampleMaxAngularAcceleration: fixed(example.maxAngularAcceleration),
       calculationAcceleration: fixed(calculation.acceleration),
     }),
-    t('studyAifg.align.model.workedAngularVelocityCapped', {
+    t('studyAifg.align.model.worked.angularVelocityCapped', {
       stateAngularVelocity: fixed(state.angularVelocity),
       calculationAcceleration: fixed(calculation.acceleration),
       exampleTimeStep: fixed(example.timeStep),
       nextAngularVelocity: fixed(calculation.next.angularVelocity),
       exampleMaxAngularSpeed: fixed(example.maxAngularSpeed),
     }),
-    t('studyAifg.align.model.workedHeadingPedestalStays', {
+    t('studyAifg.align.model.worked.headingPedestalStays', {
       stateHeading: fixed(state.heading),
       nextAngularVelocity: fixed(calculation.next.angularVelocity),
       exampleTimeStep: fixed(example.timeStep),
@@ -70,81 +118,81 @@ function workedLines(
   ];
 }
 
-function workedStep(
-  t: StudyTranslate,
-  state: AngularState,
-  step: number,
-  calculation: AlignStep,
-  example: AlignParameters,
-): StudyWorkedStep {
+function workedStep(t: StudyTranslate, frame: AlignFrameDescription): StudyWorkedStep {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const seconds = step * example.timeStep;
   if (calculation.settled)
     return {
-      title: t('studyAifg.align.model.workedSettlingCheck', {
+      title: t('studyAifg.align.model.worked.settlingCheck', {
         seconds: fixed(seconds),
       }),
       lines: [
-        t('studyAifg.align.model.workedWrappedErrorWithinAngular', {
+        t('studyAifg.align.model.worked.wrappedErrorWithinAngular', {
           calculationError: fixed(calculation.error),
           exampleAngleTolerance: fixed(example.angleTolerance),
           stateAngularVelocity: fixed(state.angularVelocity),
           exampleSpeedTolerance: fixed(example.speedTolerance),
         }),
-        t('studyAifg.align.model.workedApplySmallFinalCorrection', {
+        t('studyAifg.align.model.worked.applySmallFinalCorrection', {
           stateHeading: fixed(state.heading),
           calculationError: fixed(calculation.error),
           nextHeading: fixed(calculation.next.heading),
           exampleTargetHeading: fixed(example.targetHeading),
         }),
       ],
-      note: t('studyAifg.align.model.workedExplicitSettlingRuleSmall'),
+      note: t('studyAifg.align.model.worked.explicitSettlingRuleSmall'),
     };
   return {
-    title: t('studyAifg.align.model.workedWorkedTurn', {
+    title: t('studyAifg.align.model.worked.workedTurn', {
       seconds: fixed(seconds),
-      seconds2: fixed(seconds + example.timeStep),
+      nextSeconds: fixed(seconds + example.timeStep),
     }),
-    lines: workedLines(t, example, state, calculation),
+    lines: workedLines(t, frame),
     note:
       calculation.acceleration * state.angularVelocity < 0
-        ? t('studyAifg.align.model.workedCameraTurningTowardsCommand')
-        : t('studyAifg.align.model.workedRequestedAngularVelocityGoal'),
+        ? t('studyAifg.align.model.worked.cameraTurningTowardsCommand')
+        : t('studyAifg.align.model.worked.requestedAngularVelocityGoal'),
   };
 }
 
-function phaseOf(
-  t: StudyTranslate,
-  state: AngularState,
-  step: number,
-  calculation: AlignStep,
-  example: AlignParameters,
-): string {
+function phaseOf(t: StudyTranslate, frame: AlignFrameDescription): string {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   if (calculation.settled)
     return state.angularVelocity === 0 && calculation.error === 0
-      ? t('studyAifg.align.model.phaseCameraHoldsCommandBecause')
-      : t('studyAifg.align.model.phaseCameraCloseSlowEnough');
-  if (step === 0) return t('studyAifg.align.model.phaseCommandLiesJustAcross');
+      ? t('studyAifg.align.model.phase.cameraHoldsCommandBecause')
+      : t('studyAifg.align.model.phase.cameraCloseSlowEnough');
+  if (step === 0) return t('studyAifg.align.model.phase.commandLiesJustAcross');
   if (Math.abs(calculation.error) <= example.angleTolerance)
-    return t('studyAifg.align.model.phaseCameraNearCommandTurning');
+    return t('studyAifg.align.model.phase.cameraNearCommandTurning');
   if (calculation.error * state.angularVelocity < 0)
-    return t('studyAifg.align.model.phaseCameraPassedCommandMust');
+    return t('studyAifg.align.model.phase.cameraPassedCommandMust');
   if (calculation.error * wrapDegrees(example.targetHeading - example.initialHeading) < 0)
-    return t('studyAifg.align.model.phaseCameraTurnsBackTowards');
+    return t('studyAifg.align.model.phase.cameraTurnsBackTowards');
   if (calculation.acceleration * state.angularVelocity < 0)
-    return t('studyAifg.align.model.phaseCameraBrakesGapCloses');
+    return t('studyAifg.align.model.phase.cameraBrakesGapCloses');
   return calculation.acceleration * state.angularVelocity > 0 || state.angularVelocity === 0
-    ? t('studyAifg.align.model.phaseCameraBuildsTurningSpeed')
-    : t('studyAifg.align.model.phaseCameraKeepsTurningActual');
+    ? t('studyAifg.align.model.phase.cameraBuildsTurningSpeed')
+    : t('studyAifg.align.model.phase.cameraKeepsTurningActual');
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: AngularState,
-  step: number,
-  example: AlignParameters,
-  parameterValues: Readonly<Record<string, string>>,
-  calculation: ReturnType<typeof calculateAlignStep>,
-): MotionFrame {
+function frameOf(t: StudyTranslate, frame: AlignFrameDescription): MotionFrame {
+  const {
+    example,
+    step,
+    parameterValues,
+    sample: { state, calculation },
+  } = frame;
+
   const commandLength = example.directionLength * 1.5;
   const command = {
     x: cosine(radians(example.targetHeading)) * commandLength,
@@ -155,7 +203,7 @@ function frameOf(
     bodies: [
       {
         id: 'dock-camera',
-        label: t('studyAifg.align.model.camera'),
+        label: t('studyAifg.align.model.labels.camera'),
         x: example.cameraX,
         y: example.cameraY,
         heading: radians(state.heading),
@@ -167,7 +215,7 @@ function frameOf(
         y: example.cameraY + command.y,
         shape: 'ring',
         tone: 'desired',
-        label: t('studyAifg.align.model.command'),
+        label: t('studyAifg.align.model.labels.command'),
       },
     ],
     vectors: [
@@ -196,13 +244,13 @@ function frameOf(
       error: fixed(calculation.error),
       alignmentText:
         calculation.error === 0
-          ? t('studyAifg.align.model.valueCameraCommandPointSame')
-          : t('studyAifg.align.model.valueCommandLiesCamera', {
+          ? t('studyAifg.align.model.values.cameraCommandPointSame')
+          : t('studyAifg.align.model.values.commandLiesCamera', {
               calculationError: fixed(Math.abs(calculation.error)),
-              value2:
+              direction:
                 calculation.error > 0
-                  ? t('studyAifg.align.model.valueClockwise')
-                  : t('studyAifg.align.model.valueAnticlockwise'),
+                  ? t('studyAifg.align.model.values.clockwise')
+                  : t('studyAifg.align.model.values.anticlockwise'),
             }),
       angularSpeed: fixed(state.angularVelocity),
       desiredAngularSpeed: fixed(calculation.desiredVelocity),
@@ -210,8 +258,8 @@ function frameOf(
       nextAngularSpeed: fixed(calculation.next.angularVelocity),
       nextHeading: fixed(calculation.next.heading),
     },
-    note: phaseOf(t, state, step, calculation, example),
-    worked: workedStep(t, state, step, calculation, example),
+    note: phaseOf(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
@@ -247,7 +295,7 @@ function lateBraking(
   t: StudyTranslate,
   example: AlignParameters,
   current: readonly AngularState[],
-): NonNullable<MotionStudyModel['comparison']> {
+): StudyComparison {
   const lateSamples = alignSamples(example, example.lateSlowRadius);
   const late = lateSamples.map(({ state }) => state);
   const normal = summarise(current, example);
@@ -255,26 +303,26 @@ function lateBraking(
   const errorOf = (state: AngularState) => wrapDegrees(example.targetHeading - state.heading);
   const seconds = current.map((_state, step) => step * example.timeStep);
   return {
-    title: t('studyAifg.align.model.lateBrakingCompareSlowingAnglesSame'),
+    title: t('studyAifg.align.model.comparison.compareSlowingAnglesSame'),
     intro:
       example.slowRadius === example.lateSlowRadius
-        ? t('studyAifg.align.model.lateBrakingRunsUseSlowingAngle', {
+        ? t('studyAifg.align.model.comparison.runsUseSlowingAngle', {
             exampleSlowRadius: fixed(example.slowRadius),
           })
-        : t('studyAifg.align.model.lateBrakingChangeSlowingAngleCommand', {
+        : t('studyAifg.align.model.comparison.changeSlowingAngleCommand', {
             exampleSlowRadius: fixed(example.slowRadius),
             exampleLateSlowRadius: fixed(example.lateSlowRadius),
           }),
     timeline: {
-      title: t('studyAifg.align.model.lateBrakingSignedHeadingError'),
-      xLabel: t('studyAifg.align.model.lateBrakingTimeSeconds'),
-      yLabel: t('studyAifg.align.model.lateBrakingSignedHeadingErrorDegrees'),
+      title: t('studyAifg.align.model.comparison.signedHeadingError'),
+      xLabel: t('studyAifg.align.model.comparison.timeSeconds'),
+      yLabel: t('studyAifg.align.model.comparison.signedHeadingErrorDegrees'),
       seconds,
       reference: 0,
       series: [
         {
           id: 'normal',
-          label: t('studyAifg.align.model.lateBrakingSolidGreenCurrentSlowing', {
+          label: t('studyAifg.align.model.comparison.solidGreenCurrentSlowing', {
             exampleSlowRadius: fixed(example.slowRadius),
           }),
           tone: 'actual',
@@ -282,7 +330,7 @@ function lateBraking(
         },
         {
           id: 'late',
-          label: t('studyAifg.align.model.lateBrakingDashedAmberSlowingAngle', {
+          label: t('studyAifg.align.model.comparison.dashedAmberSlowingAngle', {
             exampleLateSlowRadius: fixed(example.lateSlowRadius),
           }),
           tone: 'desired',
@@ -295,56 +343,56 @@ function lateBraking(
     },
     findings: [
       comparison.overshoot > 0
-        ? t('studyAifg.align.model.lateBrakingRunPassesCommandCurrent', {
+        ? t('studyAifg.align.model.comparison.runPassesCommandCurrent', {
             exampleLateSlowRadius: fixed(example.lateSlowRadius),
             comparisonOvershoot: fixed(comparison.overshoot),
             seconds: fixed(seconds[comparison.peakStep]),
             normalOvershoot: fixed(normal.overshoot),
           })
-        : t('studyAifg.align.model.lateBrakingRunApproachesWithoutPassing', {
+        : t('studyAifg.align.model.comparison.runApproachesWithoutPassing', {
             exampleLateSlowRadius: fixed(example.lateSlowRadius),
             normalOvershoot: fixed(normal.overshoot),
           }),
-      t('studyAifg.align.model.lateBrakingCurrentRunSignedError', {
+      t('studyAifg.align.model.comparison.currentRunSignedError', {
         seconds: fixed(seconds[seconds.length - 1]),
-        value2: normal.resting
-          ? t('studyAifg.align.model.lateBrakingRest')
-          : t('studyAifg.align.model.lateBrakingCorrecting'),
+        currentStatus: normal.resting
+          ? t('studyAifg.align.model.comparison.rest')
+          : t('studyAifg.align.model.comparison.correcting'),
         normalFinalError: fixed(normal.finalError),
         normalFinalAngularVelocity: fixed(normal.finalAngularVelocity),
-        value5: comparison.resting
-          ? t('studyAifg.align.model.lateBrakingRest')
-          : t('studyAifg.align.model.lateBrakingCorrecting'),
+        comparisonStatus: comparison.resting
+          ? t('studyAifg.align.model.comparison.rest')
+          : t('studyAifg.align.model.comparison.correcting'),
         comparisonFinalError: fixed(comparison.finalError),
         comparisonFinalAngularVelocity: fixed(comparison.finalAngularVelocity),
       }),
     ],
-    note: t('studyAifg.align.model.lateBrakingHorizontalReferenceExactAlignment'),
+    note: t('studyAifg.align.model.comparison.horizontalReferenceExactAlignment'),
   };
 }
 
 function runTimeline(
   t: StudyTranslate,
-  states: ReturnType<typeof alignFrames>,
+  states: readonly AngularState[],
   example: AlignParameters,
   calculations: AlignStep[],
-): NonNullable<MotionStudyModel['timeline']> {
+): TimelineModel {
   return {
-    title: t('studyAifg.align.model.angularVelocity'),
-    xLabel: t('studyAifg.align.model.lateBrakingTimeSeconds'),
-    yLabel: t('studyAifg.align.model.angularVelocityDegrees'),
+    title: t('studyAifg.align.model.timeline.angularVelocity'),
+    xLabel: t('studyAifg.align.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.align.model.timeline.angularVelocityDegrees'),
     seconds: states.map((_state, step) => step * example.timeStep),
     reference: 0,
     series: [
       {
         id: 'actual',
-        label: t('studyAifg.align.model.solidGreenActualAngular'),
+        label: t('studyAifg.align.model.timeline.solidGreenActualAngular'),
         tone: 'actual',
         values: states.map(({ angularVelocity }) => angularVelocity),
       },
       {
         id: 'desired',
-        label: t('studyAifg.align.model.dashedAmberDesiredAngular'),
+        label: t('studyAifg.align.model.timeline.dashedAmberDesiredAngular'),
         tone: 'desired',
         values: calculations.map(({ desiredVelocity }) => desiredVelocity),
       },
@@ -352,52 +400,49 @@ function runTimeline(
   };
 }
 
-function runMoments(
-  t: StudyTranslate,
-  braking: number,
-  boundary: number,
-  inside: number,
-  stopped: number,
-  last: number,
-): MotionStudyModel['moments'] {
+function runMoments(t: StudyTranslate, selection: AlignmentMoments): readonly StudyMoment[] {
+  const { braking, boundary, inside, stopped, last } = selection;
+
   return [
-    { label: t('studyAifg.align.model.startAcrossAngleBoundary'), step: 0 },
-    ...(braking < 0 ? [] : [{ label: t('studyAifg.align.model.brakingBegins'), step: braking }]),
+    { label: t('studyAifg.align.model.moments.startAcrossAngleBoundary'), step: 0 },
+    ...(braking < 0
+      ? []
+      : [{ label: t('studyAifg.align.model.moments.brakingBegins'), step: braking }]),
     ...(boundary < 0
       ? []
       : [
           {
-            label: t('studyAifg.align.model.headingCrossesBoundary'),
+            label: t('studyAifg.align.model.moments.headingCrossesBoundary'),
             step: boundary,
           },
         ]),
     ...(inside < 0
       ? []
-      : [{ label: t('studyAifg.align.model.insideAngleTolerance'), step: inside }]),
+      : [{ label: t('studyAifg.align.model.moments.insideAngleTolerance'), step: inside }]),
     {
       label:
         stopped < 0
-          ? t('studyAifg.align.model.stillCorrectingMoment')
-          : t('studyAifg.align.model.atRestMoment'),
+          ? t('studyAifg.align.model.moments.stillCorrectingMoment')
+          : t('studyAifg.align.model.moments.atRestMoment'),
       step: stopped < 0 ? last : stopped,
     },
   ];
 }
 
-function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
+function runInputs(t: StudyTranslate): readonly StudyInput[] {
   return [
     {
       name: 'slowRadius',
-      label: t('studyAifg.align.model.slowingAngle'),
-      unit: t('studyAifg.align.model.degreeUnit'),
+      label: t('studyAifg.align.model.inputs.slowingAngle'),
+      unit: t('studyAifg.align.model.inputs.degreeUnit'),
       min: 2,
       max: 90,
       step: 2,
     },
     {
       name: 'maxAngularAcceleration',
-      label: t('studyAifg.align.model.motorAccelerationLimit'),
-      unit: t('studyAifg.align.model.inputsUnitS'),
+      label: t('studyAifg.align.model.inputs.motorAccelerationLimit'),
+      unit: t('studyAifg.align.model.inputs.unitS'),
       min: 30,
       max: 120,
       step: 10,
@@ -407,26 +452,14 @@ function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
 
 export const present = (
   example: AlignParameters,
-  statesSamples: ReturnType<typeof alignSamples>,
+  statesSamples: readonly AlignSample[],
   parameters: StudyParameters,
   t: StudyTranslate,
 ): MotionStudyModel => {
   const states = statesSamples.map(({ state }) => state);
   const calculations = statesSamples.map(({ calculation }) => calculation);
-  const last = states.length - 1;
-  const braking = states.findIndex(
-    (state, step) => calculations[step].acceleration * state.angularVelocity < 0,
-  );
-  const initialTurn = Math.floor((example.initialHeading + fullTurn / 2) / fullTurn);
-  const boundary = states.findIndex(
-    (state) => Math.floor((state.heading + fullTurn / 2) / fullTurn) !== initialTurn,
-  );
-  const inside = states.findIndex(
-    (_state, step) => Math.abs(calculations[step].error) <= example.angleTolerance,
-  );
-  const stopped = states.findIndex(
-    (state, step) => calculations[step].settled && state.angularVelocity === 0,
-  );
+  const selection = selectMoments(example, statesSamples);
+  const { braking, boundary } = selection;
   const summary = summarise(states, example);
   const duration = example.steps * example.timeStep;
   const parameterValues = {
@@ -436,16 +469,16 @@ export const present = (
         typeof value === 'number' ? fixed(value) : value,
       ]),
     ),
-    runOutcome: t('studyAifg.align.model.currentRun', {
-      value1:
+    runOutcome: t('studyAifg.align.model.values.currentRun', {
+      approach:
         summary.overshoot > 0
-          ? t('studyAifg.align.model.passesCommand', {
+          ? t('studyAifg.align.model.values.passesCommand', {
               summaryOvershoot: fixed(summary.overshoot),
             })
-          : t('studyAifg.align.model.approachesWithoutPassingCommand'),
-      value2: summary.resting
-        ? t('studyAifg.align.model.rest')
-        : t('studyAifg.align.model.correcting'),
+          : t('studyAifg.align.model.values.approachesWithoutPassingCommand'),
+      status: summary.resting
+        ? t('studyAifg.align.model.values.rest')
+        : t('studyAifg.align.model.values.correcting'),
       duration: fixed(duration),
     }),
   };
@@ -460,18 +493,18 @@ export const present = (
         minY: example.cameraY - extent,
         maxY: example.cameraY + extent,
       },
-      frames: states.map((state, step) =>
-        frameOf(t, state, step, example, parameterValues, statesSamples[step].calculation),
+      frames: statesSamples.map((sample, step) =>
+        frameOf(t, { example, sample, step, parameterValues }),
       ),
     },
     timeline: runTimeline(t, states, example, calculations),
     initialStep: boundary < 0 ? Math.max(0, braking) : boundary,
-    moments: runMoments(t, braking, boundary, inside, stopped, last),
+    moments: runMoments(t, selection),
     legend: [
-      { tone: 'actual', label: t('studyAifg.align.model.solidGreenActual') },
-      { tone: 'desired', label: t('studyAifg.align.model.dashedAmberDesired') },
+      { tone: 'actual', label: t('studyAifg.align.model.labels.solidGreenActual') },
+      { tone: 'desired', label: t('studyAifg.align.model.labels.dashedAmberDesired') },
     ],
-    caption: t('studyAifg.align.model.caption'),
+    caption: t('studyAifg.align.model.overview.caption'),
     comparison: lateBraking(t, example, states),
     inputs: runInputs(t),
   };

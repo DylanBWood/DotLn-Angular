@@ -1,14 +1,19 @@
 import { add, type Vec2 } from '@dotln-angular/scene-engine';
 
+import { createNumberFormat } from '../number-format';
 import type {
   MotionBounds,
   MotionFrame,
   MotionStudyModel,
+  StudyComparison,
   StudyInput,
+  StudyLegendEntry,
+  StudyPoint,
+  StudyValues,
   StudyWorkedStep,
+  TimelineModel,
 } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { fixed, pair as point } from './presentation';
 import {
   anchorOf,
   type ScalableFormationParameters,
@@ -16,27 +21,70 @@ import {
   scalableFormationSamples,
 } from './scalable-formations.simulation';
 
+const { number: fixed, vector: point } = createNumberFormat({ normalizeNegativeZero: true });
+
+interface ScalableFormationDescription {
+  readonly example: ScalableFormationParameters;
+  readonly samples: readonly ScalableFormationSample[];
+  readonly bounds: MotionBounds;
+  readonly finalSample: ScalableFormationSample;
+  readonly fullStep: number;
+  readonly anchor: StudyPoint;
+  readonly upperEdge: number;
+  readonly lowerEdge: number;
+  readonly wallInset: number;
+}
+interface MembershipComparison {
+  readonly example: ScalableFormationParameters;
+  readonly normal: readonly ScalableFormationSample[];
+  readonly reference: readonly ScalableFormationSample[];
+  readonly normalLast: ScalableFormationSample;
+  readonly referenceLast: ScalableFormationSample;
+  readonly referenceCount: number;
+  readonly failed: ScalableFormationSample | undefined;
+  readonly referenceFailure: ScalableFormationSample | undefined;
+}
+function describeRun(
+  example: ScalableFormationParameters,
+  samples: readonly ScalableFormationSample[],
+): ScalableFormationDescription {
+  const bounds = boundsOf(samples, example);
+  const anchor = anchorOf(example);
+  return {
+    example,
+    samples,
+    bounds,
+    anchor,
+    finalSample: samples[samples.length - 1],
+    fullStep:
+      example.joinStart + (example.targetCount - example.initialCount - 1) * example.joinInterval,
+    upperEdge: anchor.y - example.laneWidth / 2,
+    lowerEdge: anchor.y + example.laneWidth / 2,
+    wallInset: Math.max(example.spacing, (bounds.maxX - bounds.minX) / 8),
+  };
+}
+
 const inputs = (t: StudyTranslate): readonly StudyInput[] => [
   {
     name: 'targetCount',
-    label: t('studyAifg.scalable-formations.model.requestedMembers'),
-    unit: t('studyAifg.scalable-formations.model.scouts'),
+    label: t('studyAifg.scalable-formations.model.labels.requestedMembers'),
+    unit: t('studyAifg.scalable-formations.model.labels.scouts'),
     min: 4,
     max: 7,
     step: 1,
   },
   {
     name: 'spacing',
-    label: t('studyAifg.scalable-formations.model.slotSpacing'),
-    unit: t('studyAifg.scalable-formations.model.inputsUnitUnits'),
+    label: t('studyAifg.scalable-formations.model.labels.slotSpacing'),
+    unit: t('studyAifg.scalable-formations.model.inputs.unitUnits'),
     min: 1.5,
     max: 3,
     step: 0.25,
   },
   {
     name: 'laneWidth',
-    label: t('studyAifg.scalable-formations.model.laneWidth'),
-    unit: t('studyAifg.scalable-formations.model.inputsUnitUnits'),
+    label: t('studyAifg.scalable-formations.model.labels.laneWidth'),
+    unit: t('studyAifg.scalable-formations.model.inputs.unitUnits'),
     min: 6,
     max: 14,
     step: 0.5,
@@ -46,7 +94,7 @@ const inputs = (t: StudyTranslate): readonly StudyInput[] => [
 const namedPoints = (t: StudyTranslate, points: readonly Vec2[]) =>
   points
     .map((position, index) =>
-      t('studyAifg.scalable-formations.model.slot', {
+      t('studyAifg.scalable-formations.model.labels.slot', {
         index,
         position: point(position),
       }),
@@ -55,9 +103,11 @@ const namedPoints = (t: StudyTranslate, points: readonly Vec2[]) =>
 
 function workedStep(
   t: StudyTranslate,
+  run: ScalableFormationDescription,
   sample: ScalableFormationSample,
-  example: ScalableFormationParameters,
 ): StudyWorkedStep {
+  const { example } = run;
+
   const sum = sample.rawOffsets.reduce(add, { x: 0, y: 0 });
   const tip = sample.offsets[0];
   const upperArm = 2 * Math.floor((sample.count - 1) / 2);
@@ -65,51 +115,51 @@ function workedStep(
   const upper = Math.min(...sample.positions.map(({ y }) => y));
   const lower = Math.max(...sample.positions.map(({ y }) => y));
   return {
-    title: t('studyAifg.scalable-formations.model.workedScoutProposalSeconds', {
+    title: t('studyAifg.scalable-formations.model.worked.scoutProposalSeconds', {
       sampleCount: sample.count,
       sampleSeconds: fixed(sample.seconds),
     }),
     lines: [
-      t('studyAifg.scalable-formations.model.workedMembershipScheduleScoutsEngine', {
+      t('studyAifg.scalable-formations.model.worked.membershipScheduleScoutsEngine', {
         sampleCount: sample.count,
         exampleSpacing: fixed(example.spacing),
       }),
-      t('studyAifg.scalable-formations.model.workedBeforeCentringTipRelative', {
-        value1: namedPoints(t, sample.rawOffsets),
+      t('studyAifg.scalable-formations.model.worked.beforeCentringTipRelative', {
+        rawOffsets: namedPoints(t, sample.rawOffsets),
       }),
-      t('studyAifg.scalable-formations.model.workedRawMean', {
+      t('studyAifg.scalable-formations.model.worked.rawMean', {
         sumX: fixed(sum.x),
         sampleCount: sample.count,
         sumY: fixed(sum.y),
         sampleRawCentre: point(sample.rawCentre),
       }),
-      t('studyAifg.scalable-formations.model.workedCentreTipAddAnchor', {
+      t('studyAifg.scalable-formations.model.worked.centreTipAddAnchor', {
         rawCentreX: fixed(sample.rawCentre.x),
         rawCentreY: fixed(sample.rawCentre.y),
         tip: point(tip),
-        value4: point(anchorOf(example)),
-        value5: point(sample.positions[0]),
+        anchor: point(anchorOf(example)),
+        tipPosition: point(sample.positions[0]),
       }),
-      t('studyAifg.scalable-formations.model.workedUpperArmEndsSlot', {
+      t('studyAifg.scalable-formations.model.worked.upperArmEndsSlot', {
         upperArm,
-        value2: point(sample.positions[upperArm]),
+        upperPosition: point(sample.positions[upperArm]),
         lowerArm,
-        value4: point(sample.positions[lowerArm]),
+        lowerPosition: point(sample.positions[lowerArm]),
       }),
-      t('studyAifg.scalable-formations.model.workedTransverseCentreSpanFull', {
+      t('studyAifg.scalable-formations.model.worked.transverseCentreSpanFull', {
         lower: fixed(lower),
         upper: fixed(upper),
         sampleCentreSpan: fixed(sample.centreSpan),
         exampleMemberRadius: fixed(example.memberRadius),
         sampleWidth: fixed(sample.width),
       }),
-      t('studyAifg.scalable-formations.model.workedCompareLaneWidthSmallest', {
+      t('studyAifg.scalable-formations.model.worked.compareLaneWidthSmallest', {
         exampleLaneWidth: fixed(example.laneWidth),
         sampleClearance: fixed(sample.clearance),
         sampleRetainedShift: fixed(sample.retainedShift),
       }),
     ],
-    note: t('studyAifg.scalable-formations.model.workedLocalXRunsAlong'),
+    note: t('studyAifg.scalable-formations.model.worked.localXRunsAlong'),
   };
 }
 
@@ -141,30 +191,30 @@ function boundsOf(
 
 function frameNote(
   t: StudyTranslate,
+  run: ScalableFormationDescription,
   sample: ScalableFormationSample,
-  example: ScalableFormationParameters,
 ): string {
+  const { example } = run;
+
   if (sample.clearance < 0)
     return sample.retainedShift > 0
-      ? t('studyAifg.scalable-formations.model.phaseScoutJoinsWiderWedge')
-      : t('studyAifg.scalable-formations.model.phaseWedgeCrossesLaneEdges');
-  if (sample.step === 0) return t('studyAifg.scalable-formations.model.phaseInitialWedgeFitsLane');
+      ? t('studyAifg.scalable-formations.model.phase.scoutJoinsWiderWedge')
+      : t('studyAifg.scalable-formations.model.phase.wedgeCrossesLaneEdges');
+  if (sample.step === 0) return t('studyAifg.scalable-formations.model.phase.initialWedgeFitsLane');
   if (sample.retainedShift > 0)
-    return t('studyAifg.scalable-formations.model.phaseScoutJoinsWedgeRecentres');
+    return t('studyAifg.scalable-formations.model.phase.scoutJoinsWedgeRecentres');
   return sample.count === example.targetCount
-    ? t('studyAifg.scalable-formations.model.phaseCompletedPatrolHoldsWedge')
-    : t('studyAifg.scalable-formations.model.phasePatrolHoldsWedgeInside');
+    ? t('studyAifg.scalable-formations.model.phase.completedPatrolHoldsWedge')
+    : t('studyAifg.scalable-formations.model.phase.patrolHoldsWedgeInside');
 }
 
 function frameValues(
   t: StudyTranslate,
+  run: ScalableFormationDescription,
   sample: ScalableFormationSample,
-  example: ScalableFormationParameters,
-  finalSample: ScalableFormationSample,
-  anchor: ReturnType<typeof anchorOf>,
-  upperEdge: number,
-  lowerEdge: number,
-): Readonly<Record<string, string>> {
+): StudyValues {
+  const { example, finalSample, anchor, upperEdge, lowerEdge } = run;
+
   return {
     seconds: fixed(sample.seconds),
     count: String(sample.count),
@@ -173,8 +223,8 @@ function frameValues(
     finalWidth: fixed(finalSample.width),
     finalFitStatus:
       finalSample.clearance >= 0
-        ? t('studyAifg.scalable-formations.model.valueFitsLane')
-        : t('studyAifg.scalable-formations.model.valueDoesNotFitLane'),
+        ? t('studyAifg.scalable-formations.model.values.fitsLane')
+        : t('studyAifg.scalable-formations.model.values.doesNotFitLane'),
     spacing: fixed(example.spacing),
     anchor: point(anchor),
     rawCentre: point(sample.rawCentre),
@@ -190,33 +240,28 @@ function frameValues(
     clearance: fixed(sample.clearance),
     fitStatus:
       sample.clearance >= 0
-        ? t('studyAifg.scalable-formations.model.valueFitsLane')
-        : t('studyAifg.scalable-formations.model.valueDoesNotFitLane'),
+        ? t('studyAifg.scalable-formations.model.values.fitsLane')
+        : t('studyAifg.scalable-formations.model.values.doesNotFitLane'),
   };
 }
 
 function frameOf(
   t: StudyTranslate,
+  run: ScalableFormationDescription,
   sample: ScalableFormationSample,
-  example: ScalableFormationParameters,
-  bounds: MotionBounds,
-  finalSample: ScalableFormationSample,
 ): MotionFrame {
-  const anchor = anchorOf(example);
-  const upperEdge = anchor.y - example.laneWidth / 2;
-  const lowerEdge = anchor.y + example.laneWidth / 2;
-  const wallInset = Math.max(example.spacing, (bounds.maxX - bounds.minX) / 8);
+  const { example, bounds, anchor, upperEdge, lowerEdge, wallInset } = run;
   return {
     seconds: sample.seconds,
     bodies: sample.positions.map((position, index) => ({
       id: `proposal-slot-${index}`,
       label:
         index === 0
-          ? t('studyAifg.scalable-formations.model.tip')
+          ? t('studyAifg.scalable-formations.model.labels.tip')
           : index >= sample.count - 2
             ? index % 2 === 0
-              ? t('studyAifg.scalable-formations.model.upperArm')
-              : t('studyAifg.scalable-formations.model.lowerArm')
+              ? t('studyAifg.scalable-formations.model.labels.upperArm')
+              : t('studyAifg.scalable-formations.model.labels.lowerArm')
             : undefined,
       ...position,
     })),
@@ -226,21 +271,21 @@ function frameOf(
         ...anchor,
         shape: 'cross',
         tone: 'other',
-        label: t('studyAifg.scalable-formations.model.anchor'),
+        label: t('studyAifg.scalable-formations.model.labels.anchor'),
       },
       {
         x: bounds.minX + wallInset,
         y: upperEdge,
         shape: 'dot',
         tone: 'actual',
-        label: t('studyAifg.scalable-formations.model.upperEdge'),
+        label: t('studyAifg.scalable-formations.model.labels.upperEdge'),
       },
       {
         x: bounds.minX + wallInset,
         y: lowerEdge,
         shape: 'dot',
         tone: 'actual',
-        label: t('studyAifg.scalable-formations.model.lowerEdge'),
+        label: t('studyAifg.scalable-formations.model.labels.lowerEdge'),
       },
     ],
     zones: sample.positions.map((position) => ({ ...position, radius: example.memberRadius })),
@@ -255,27 +300,28 @@ function frameOf(
         tone: 'actual' as const,
       })),
     ],
-    values: frameValues(t, sample, example, finalSample, anchor, upperEdge, lowerEdge),
-    note: frameNote(t, sample, example),
-    worked: workedStep(t, sample, example),
+    values: frameValues(t, run, sample),
+    note: frameNote(t, run, sample),
+    worked: workedStep(t, run, sample),
   };
 }
 
-function comparisonTimeline(
-  t: StudyTranslate,
-  normal: readonly ScalableFormationSample[],
-  example: ScalableFormationParameters,
-  reference: ReturnType<typeof scalableFormationSamples>,
-  normalLast: ScalableFormationSample,
-  referenceLast: ScalableFormationSample,
-  referenceCount: number,
-  failed: ScalableFormationSample | undefined,
-  referenceFailure: ScalableFormationSample | undefined,
-): NonNullable<MotionStudyModel['timeline']> {
+function comparisonTimeline(t: StudyTranslate, comparison: MembershipComparison): TimelineModel {
+  const {
+    example,
+    normal,
+    reference,
+    normalLast,
+    referenceLast,
+    failed,
+    referenceFailure,
+    referenceCount,
+  } = comparison;
+
   return {
-    title: t('studyAifg.scalable-formations.model.comparisonTransverseFootprintIncludingBody'),
-    xLabel: t('studyAifg.scalable-formations.model.comparisonTimeSeconds'),
-    yLabel: t('studyAifg.scalable-formations.model.comparisonFullWidth'),
+    title: t('studyAifg.scalable-formations.model.comparison.transverseFootprintIncludingBody'),
+    xLabel: t('studyAifg.scalable-formations.model.comparison.timeSeconds'),
+    yLabel: t('studyAifg.scalable-formations.model.comparison.fullWidth'),
     seconds: normal.map(({ seconds }) => seconds),
     yRange: [
       0,
@@ -291,7 +337,7 @@ function comparisonTimeline(
     series: [
       {
         id: 'normal',
-        label: t('studyAifg.scalable-formations.model.comparisonSolidGreenRequestScouts', {
+        label: t('studyAifg.scalable-formations.model.comparison.solidGreenRequestScouts', {
           exampleTargetCount: example.targetCount,
         }),
         tone: 'actual',
@@ -299,7 +345,7 @@ function comparisonTimeline(
       },
       {
         id: 'reference',
-        label: t('studyAifg.scalable-formations.model.comparisonDashedAmberRequestScouts', {
+        label: t('studyAifg.scalable-formations.model.comparison.dashedAmberRequestScouts', {
           referenceCount,
         }),
         tone: 'desired',
@@ -312,11 +358,9 @@ function comparisonTimeline(
   };
 }
 
-function comparison(
-  t: StudyTranslate,
-  normal: readonly ScalableFormationSample[],
-  example: ScalableFormationParameters,
-): NonNullable<MotionStudyModel['comparison']> {
+function comparison(t: StudyTranslate, run: ScalableFormationDescription): StudyComparison {
+  const { example, samples: normal } = run;
+
   // Always compare different memberships, including when the reader requests the reference count.
   const referenceCount =
     example.targetCount === example.comparisonCount
@@ -328,11 +372,11 @@ function comparison(
   const referenceFailure = reference.find(({ clearance }) => clearance < 0);
   const failed = referenceFailure ?? normal.find(({ clearance }) => clearance < 0);
   const failedRun = referenceFailure
-    ? t('studyAifg.scalable-formations.model.comparisonReferenceMuster')
-    : t('studyAifg.scalable-formations.model.comparisonChosenMuster');
+    ? t('studyAifg.scalable-formations.model.comparison.referenceMuster')
+    : t('studyAifg.scalable-formations.model.comparison.chosenMuster');
   return {
-    title: t('studyAifg.scalable-formations.model.comparisonMembershipChangesFootprintNot'),
-    intro: t('studyAifg.scalable-formations.model.comparisonChangeTargetCountMustersStart', {
+    title: t('studyAifg.scalable-formations.model.comparison.membershipChangesFootprintNot'),
+    intro: t('studyAifg.scalable-formations.model.comparison.changeTargetCountMustersStart', {
       exampleTargetCount: example.targetCount,
       referenceCount,
       exampleInitialCount: example.initialCount,
@@ -340,19 +384,18 @@ function comparison(
       exampleMemberRadius: fixed(example.memberRadius),
       exampleLaneWidth: fixed(example.laneWidth),
     }),
-    timeline: comparisonTimeline(
-      t,
-      normal,
+    timeline: comparisonTimeline(t, {
       example,
+      normal,
       reference,
       normalLast,
       referenceLast,
       referenceCount,
       failed,
       referenceFailure,
-    ),
+    }),
     findings: [
-      t('studyAifg.scalable-formations.model.comparisonChosenMusterEndsScouts', {
+      t('studyAifg.scalable-formations.model.comparison.chosenMusterEndsScouts', {
         normalLastCount: normalLast.count,
         normalLastWidth: fixed(normalLast.width),
         normalLastClearance: fixed(normalLast.clearance),
@@ -361,71 +404,68 @@ function comparison(
         referenceLastClearance: fixed(referenceLast.clearance),
       }),
       failed
-        ? t('studyAifg.scalable-formations.model.comparisonFirstFailedProposalScouts', {
+        ? t('studyAifg.scalable-formations.model.comparison.firstFailedProposalScouts', {
             failedSeconds: fixed(failed.seconds),
             failedCount: failed.count,
             failedRun,
             failedCentreSpan: fixed(failed.centreSpan),
             exampleMemberRadius: fixed(example.memberRadius),
             failedWidth: fixed(failed.width),
-            failedWidth2: fixed(failed.width - example.laneWidth),
+            excessWidth: fixed(failed.width - example.laneWidth),
           })
-        : t('studyAifg.scalable-formations.model.comparisonEveryProposedLayoutMusters'),
-      t('studyAifg.scalable-formations.model.comparisonEngineGeneratesLayoutsChoosing'),
+        : t('studyAifg.scalable-formations.model.comparison.everyProposedLayoutMusters'),
+      t('studyAifg.scalable-formations.model.comparison.engineGeneratesLayoutsChoosing'),
     ],
-    note: t('studyAifg.scalable-formations.model.comparisonHorizontalReferenceLaneWidth'),
+    note: t('studyAifg.scalable-formations.model.comparison.horizontalReferenceLaneWidth'),
   };
 }
 
-function motionLegend(t: StudyTranslate): MotionStudyModel['legend'] {
+function motionLegend(t: StudyTranslate): readonly StudyLegendEntry[] {
   return [
     {
       tone: 'subject',
-      label: t('studyAifg.scalable-formations.model.dotsProposedMemberCentres'),
+      label: t('studyAifg.scalable-formations.model.labels.dotsProposedMemberCentres'),
     },
     {
       tone: 'target',
-      label: t('studyAifg.scalable-formations.model.ringsGeneratedDestinations'),
+      label: t('studyAifg.scalable-formations.model.labels.ringsGeneratedDestinations'),
     },
     {
       tone: 'zone',
-      label: t('studyAifg.scalable-formations.model.circlesPhysicalMemberRadius'),
+      label: t('studyAifg.scalable-formations.model.labels.circlesPhysicalMemberRadius'),
     },
     {
       tone: 'other',
-      label: t('studyAifg.scalable-formations.model.crossStationaryAnchor'),
+      label: t('studyAifg.scalable-formations.model.labels.crossStationaryAnchor'),
     },
     {
       tone: 'actual',
-      label: t('studyAifg.scalable-formations.model.greenEdgesLaneLimits'),
+      label: t('studyAifg.scalable-formations.model.labels.greenEdgesLaneLimits'),
     },
     {
       tone: 'muted',
-      label: t('studyAifg.scalable-formations.model.linksSuccessiveSlotsEach'),
+      label: t('studyAifg.scalable-formations.model.labels.linksSuccessiveSlotsEach'),
     },
   ];
 }
 
 export const present = (
   example: ScalableFormationParameters,
-  samples: ReturnType<typeof scalableFormationSamples>,
+  samples: readonly ScalableFormationSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
-  const bounds = boundsOf(samples, example);
-  const fullStep =
-    example.joinStart + (example.targetCount - example.initialCount - 1) * example.joinInterval;
+  const run = describeRun(example, samples);
+  const { fullStep, bounds } = run;
   return {
     family: 'motion',
     motion: {
       bounds,
-      frames: samples.map((sample) =>
-        frameOf(t, sample, example, bounds, samples[samples.length - 1]),
-      ),
+      frames: samples.map((sample) => frameOf(t, run, sample)),
     },
     timeline: {
-      title: t('studyAifg.scalable-formations.model.musterFullWidthScouts'),
-      xLabel: t('studyAifg.scalable-formations.model.comparisonTimeSeconds'),
-      yLabel: t('studyAifg.scalable-formations.model.comparisonFullWidth'),
+      title: t('studyAifg.scalable-formations.model.labels.musterFullWidthScouts'),
+      xLabel: t('studyAifg.scalable-formations.model.comparison.timeSeconds'),
+      yLabel: t('studyAifg.scalable-formations.model.comparison.fullWidth'),
       seconds: samples.map(({ seconds }) => seconds),
       yRange: [
         0,
@@ -439,7 +479,7 @@ export const present = (
       series: [
         {
           id: 'width',
-          label: t('studyAifg.scalable-formations.model.solidGreenFullProposed'),
+          label: t('studyAifg.scalable-formations.model.labels.solidGreenFullProposed'),
           tone: 'actual',
           values: samples.map(({ width }) => width),
         },
@@ -447,25 +487,25 @@ export const present = (
     },
     initialStep: fullStep,
     moments: [
-      { label: t('studyAifg.scalable-formations.model.initialPatrol'), step: 0 },
+      { label: t('studyAifg.scalable-formations.model.labels.initialPatrol'), step: 0 },
       {
-        label: t('studyAifg.scalable-formations.model.incompleteNewRow'),
+        label: t('studyAifg.scalable-formations.model.labels.incompleteNewRow'),
         step: example.joinStart,
       },
       {
-        label: t('studyAifg.scalable-formations.model.requestedPatrolComplete'),
+        label: t('studyAifg.scalable-formations.model.labels.requestedPatrolComplete'),
         step: fullStep,
       },
       {
-        label: t('studyAifg.scalable-formations.model.musterAssessed'),
+        label: t('studyAifg.scalable-formations.model.labels.musterAssessed'),
         step: example.steps,
       },
     ].filter(
       (moment, index, moments) => moments.findIndex(({ step }) => step === moment.step) === index,
     ),
     legend: motionLegend(t),
-    caption: t('studyAifg.scalable-formations.model.caption'),
-    comparison: comparison(t, samples, example),
+    caption: t('studyAifg.scalable-formations.model.overview.caption'),
+    comparison: comparison(t, run),
     inputs: inputs(t),
   };
 };

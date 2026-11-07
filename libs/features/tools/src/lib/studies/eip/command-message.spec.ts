@@ -106,7 +106,7 @@ it('returns each result as a message of its own, two of them for one request', (
   expect(heldAt(7, 'store')).toEqual(['b']);
   expect(hopsAt(8)).toEqual(['a on a-result']);
   expect(heldAt(8, 'store')).toEqual(['b', 'a']);
-  expect(stateAt(8, 'store')).toBe('2 results for 7');
+  expect(stateAt(8, 'store')).toBe('For 7: 2 results');
   expect(heldAt(8, 'sessionA')).toEqual([]);
   expect(heldAt(8, 'sessionB')).toEqual([]);
 });
@@ -126,7 +126,7 @@ it('opens at the start and says so in the text equivalent', async () => {
     { label: 'One taker', step: 3 },
     { label: 'Sent again', step: 5 },
     { label: 'Run twice', step: 6 },
-    { label: '2 results', step: 8 },
+    { label: 'Results: 2', step: 8 },
   ]);
   expect(run.legend.map(({ tone }) => tone)).toEqual(['subject', 'other', 'actual', 'muted']);
   const text = fillValues(record.visual.textEquivalent, frame(3).values);

@@ -5,4 +5,4 @@ export {
   provideToolsFacadeTestKit,
   provideToolsHomeFacadeTestKit,
 } from './lib/tools-test-kits';
-export { studyTranslate, studyMessages } from './lib/study-translations';
+export { studyTranslate, studyMessages, withStudyMessages } from './lib/study-translations';

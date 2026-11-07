@@ -12,15 +12,60 @@ import {
   goal,
   nearestWallPoint,
   type WallAvoidanceParameters,
+  type WallAvoidanceSample,
   wallAvoidanceSamples,
   type WallAvoidanceState,
   type WallAvoidanceStep,
-  wallClearance,
   wallEnd,
   type WallRayHit,
   wallStart,
 } from './obstacle-and-wall-avoidance.simulation';
 import { boundsOfPoints, fixed, pair } from './presentation';
+
+interface WallRunDescription {
+  readonly example: WallAvoidanceParameters;
+  readonly samples: readonly WallAvoidanceSample[];
+  readonly comparison: readonly WallAvoidanceSample[];
+  readonly seconds: readonly number[];
+  readonly clearances: readonly number[];
+  readonly comparedClearances: readonly number[];
+  readonly firstHit: number;
+  readonly missesAgain: number;
+  readonly nearest: number;
+  readonly longRayOverlap: number;
+  readonly maximumHeadingDifference: number;
+}
+
+function describeRun(example: WallAvoidanceParameters): WallRunDescription {
+  const samples = wallAvoidanceSamples(example);
+  const comparison = wallAvoidanceSamples(example, example.comparisonRayLength);
+  const clearances = samples.map(({ calculation }) => calculation.clearance);
+  const firstHit = samples.findIndex(({ calculation }) => calculation.hit !== null);
+  const missesAgain =
+    firstHit < 0
+      ? -1
+      : samples.findIndex(({ calculation }, step) => step > firstHit && calculation.hit === null);
+  const longClearances = [10, 10.5, 11, 11.5, 12].flatMap((rayLength) =>
+    wallAvoidanceSamples(example, rayLength).map(({ calculation }) => calculation.clearance),
+  );
+  const headingDifferences = samples.map(({ state }, step) => {
+    const alignment = dot(state.heading, comparison[step].state.heading);
+    return (Math.acos(Math.max(-1, Math.min(1, alignment))) * 180) / Math.PI;
+  });
+  return {
+    example,
+    samples,
+    comparison,
+    clearances,
+    firstHit,
+    missesAgain,
+    seconds: samples.map((_sample, step) => step * example.timeStep),
+    comparedClearances: comparison.map(({ calculation }) => calculation.clearance),
+    nearest: clearances.indexOf(Math.min(...clearances)),
+    longRayOverlap: Math.max(0, -Math.min(...longClearances)),
+    maximumHeadingDifference: Math.max(...headingDifferences),
+  };
+}
 
 function decision(state: WallAvoidanceState, calculation: WallAvoidanceStep, t: StudyTranslate) {
   if (calculation.clearance < 0)
@@ -206,7 +251,7 @@ function frameOf(
   example: WallAvoidanceParameters,
   state: WallAvoidanceState,
   t: StudyTranslate,
-  seconds: number[],
+  seconds: readonly number[],
 ): MotionFrame {
   const calculation = calculations[index];
   const hit = calculation.hit;
@@ -246,59 +291,46 @@ function frameOf(
   };
 }
 
-function comparisonTimeline(
-  t: StudyTranslate,
-  seconds: number[],
-  example: WallAvoidanceParameters,
-  clearances: number[],
-  comparedClearances: number[],
-): NonNullable<MotionStudyModel['comparison']>['timeline'] {
-  return {
-    title: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.title'),
-    xLabel: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.xLabel'),
-    yLabel: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.yLabel'),
-    seconds,
-    reference: 0,
-    series: [
-      {
-        id: 'main',
-        label: t(
-          'studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.series.labels.deliveryHeight',
-          {
-            goalY: example.goalY,
-          },
-        ),
-        tone: 'actual',
-        values: clearances,
-      },
-      {
-        id: 'head-on',
-        label: t(
-          'studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.series.labels.deliveryHeight2',
-          { comparisonGoalY: example.comparisonGoalY },
-        ),
-        tone: 'other',
-        values: comparedClearances,
-      },
-    ],
-  };
-}
-
 function comparisonOf(
   t: StudyTranslate,
-  example: WallAvoidanceParameters,
-  seconds: number[],
-  clearances: number[],
-  comparedClearances: number[],
-  comparison: readonly WallAvoidanceState[],
+  run: WallRunDescription,
 ): NonNullable<MotionStudyModel['comparison']> {
+  const { example, comparison, clearances, comparedClearances, seconds } = run;
+  const hitFrames = run.samples.filter(({ calculation }) => calculation.hit !== null).length;
+  const shortHitFrames = comparison.filter(({ calculation }) => calculation.hit !== null).length;
   return {
     title: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.title'),
     intro: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.intro', {
-      goalY: example.goalY,
-      comparisonGoalY: example.comparisonGoalY,
+      rayLength: example.rayLength,
+      comparisonRayLength: example.comparisonRayLength,
     }),
-    timeline: comparisonTimeline(t, seconds, example, clearances, comparedClearances),
+    timeline: {
+      title: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.title'),
+      xLabel: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.xLabel'),
+      yLabel: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.yLabel'),
+      seconds,
+      reference: 0,
+      series: [
+        {
+          id: 'main',
+          tone: 'actual',
+          values: clearances,
+          label: t(
+            'studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.series.labels.rayLength',
+            { rayLength: example.rayLength },
+          ),
+        },
+        {
+          id: 'short-ray',
+          tone: 'other',
+          values: comparedClearances,
+          label: t(
+            'studyAifg.obstacle-and-wall-avoidance.model.comparison.timeline.series.labels.rayLength',
+            { rayLength: example.comparisonRayLength },
+          ),
+        },
+      ],
+    },
     findings: [
       t(
         'studyAifg.obstacle-and-wall-avoidance.model.comparison.findings.minimumBodyClearanceExample',
@@ -307,18 +339,14 @@ function comparisonOf(
           minComparedClearances: fixed(Math.min(...comparedClearances)),
         },
       ),
-      t('studyAifg.obstacle-and-wall-avoidance.model.comparison.findings.changedRunEndsLargest', {
-        comparisonPosition: pair(comparison[comparison.length - 1].position),
-        greatestSidewaysDisplacement: fixed(
-          Math.max(...comparison.map((state) => Math.abs(state.position.y - example.startY))),
-        ),
+      t('studyAifg.obstacle-and-wall-avoidance.model.comparison.findings.rayInfluence', {
+        hitFrames,
+        shortHitFrames,
+        frameCount: run.samples.length,
+        maximumHeadingDifference: fixed(run.maximumHeadingDifference),
       }),
-      ...(example.goalY === example.comparisonGoalY
-        ? [
-            t(
-              'studyAifg.obstacle-and-wall-avoidance.model.comparison.findings.bothDestinationHeightsEqual',
-            ),
-          ]
+      ...(example.rayLength === example.comparisonRayLength
+        ? [t('studyAifg.obstacle-and-wall-avoidance.model.comparison.findings.bothRayLengthsEqual')]
         : []),
     ],
     note: t('studyAifg.obstacle-and-wall-avoidance.model.comparison.note'),
@@ -327,8 +355,8 @@ function comparisonOf(
 
 function timelineOf(
   t: StudyTranslate,
-  seconds: number[],
-  clearances: number[],
+  seconds: readonly number[],
+  clearances: readonly number[],
 ): MotionStudyModel['timeline'] {
   return {
     title: t('studyAifg.obstacle-and-wall-avoidance.model.timeline.title'),
@@ -361,36 +389,30 @@ function motionOf(
   };
 }
 
-function momentsOf(
-  firstHit: number,
-  t: StudyTranslate,
-  turning: number,
-  nearest: number,
-  states: readonly WallAvoidanceState[],
-): MotionStudyModel['moments'] {
+function momentsOf(t: StudyTranslate, run: WallRunDescription): MotionStudyModel['moments'] {
   return [
     {
       label:
-        firstHit < 0
+        run.firstHit < 0
           ? t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.startRayMisses')
           : t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.rayFirstHits'),
-      step: Math.max(0, firstHit),
+      step: Math.max(0, run.firstHit),
     },
-    ...(turning < 0
+    ...(run.missesAgain < 0
       ? []
       : [
           {
-            label: t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.turningAlongWall'),
-            step: turning,
+            label: t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.rayMissesAgain'),
+            step: run.missesAgain,
           },
         ]),
     {
       label: t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.smallestClearance'),
-      step: nearest,
+      step: run.nearest,
     },
     {
       label: t('studyAifg.obstacle-and-wall-avoidance.model.moments.labels.endRun'),
-      step: states.length - 1,
+      step: run.samples.length - 1,
     },
   ];
 }
@@ -455,17 +477,12 @@ export function presentStudy(
   example: WallAvoidanceParameters,
   t: StudyTranslate,
 ): MotionStudyModel {
-  const statesSamples = wallAvoidanceSamples(example);
-  const states = statesSamples.map(({ state }) => state);
-  const comparisonSamples = wallAvoidanceSamples({ ...example, goalY: example.comparisonGoalY });
-  const comparison = comparisonSamples.map(({ state }) => state);
-  const calculations = statesSamples.map(({ calculation }) => calculation);
-  const clearances = calculations.map((calculation) => calculation.clearance);
-  const comparedClearances = comparison.map((state) => wallClearance(state.position, example));
-  const seconds = states.map((_state, index) => index * example.timeStep);
-  const frames: readonly MotionFrame[] = states.map((state, index) =>
-    frameOf(calculations, index, example, state, t, seconds),
-  );
+  const run = describeRun(example);
+  const calculations = run.samples.map(({ calculation }) => calculation);
+  const frames: readonly MotionFrame[] = run.samples.map(({ state }, index) => {
+    const frame = frameOf(calculations, index, example, state, t, run.seconds);
+    return { ...frame, values: { ...frame.values, longRayOverlap: fixed(run.longRayOverlap) } };
+  });
   const points = frames.flatMap((frame) => [
     ...frame.bodies,
     ...(frame.marks ?? []),
@@ -475,23 +492,16 @@ export function presentStudy(
       y: vector.y + vector.dy,
     })),
   ]);
-  const firstHit = calculations.findIndex((calculation) => calculation.hit !== null);
-  const turning = calculations.findIndex(
-    (calculation) =>
-      calculation.hit !== null &&
-      Math.abs(calculation.acceleration.y) > Math.abs(calculation.acceleration.x),
-  );
-  const nearest = clearances.indexOf(Math.min(...clearances));
   const padding = example.radius * 3;
   return {
     family: 'motion',
-    initialStep: Math.max(0, firstHit),
+    initialStep: Math.max(0, run.firstHit),
     motion: motionOf(points, padding, frames),
-    timeline: timelineOf(t, seconds, clearances),
-    moments: momentsOf(firstHit, t, turning, nearest, states),
+    timeline: timelineOf(t, run.seconds, run.clearances),
+    moments: momentsOf(t, run),
     legend: legendOf(t, example),
     caption: t('studyAifg.obstacle-and-wall-avoidance.model.caption'),
-    comparison: comparisonOf(t, example, seconds, clearances, comparedClearances, comparison),
+    comparison: comparisonOf(t, run),
     inputs: inputsOf(t),
   };
 }

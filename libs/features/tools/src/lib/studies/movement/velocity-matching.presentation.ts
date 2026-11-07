@@ -1,117 +1,160 @@
-import type { MotionFrame, MotionStudyModel, StudyWorkedStep } from '../study-model';
+import { createNumberFormat } from '../number-format';
+import type {
+  MotionFrame,
+  MotionStudyModel,
+  StudyComparison,
+  StudyInput,
+  StudyMoment,
+  StudyWorkedStep,
+  TimelineModel,
+} from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import { decimal } from './presentation';
 import {
-  calculateVelocityMatchingStep,
-  velocityMatchingFrames,
   type VelocityMatchingParameters,
+  type VelocityMatchingSample,
   velocityMatchingSamples,
   type VelocityMatchingState,
-  type VelocityMatchingStep,
 } from './velocity-matching.simulation';
 
-function workedStep(
-  t: StudyTranslate,
-  state: VelocityMatchingState,
-  step: number,
+const { number: decimal } = createNumberFormat({ zeroThreshold: 0.005 });
+
+function describeMatching(
   example: VelocityMatchingParameters,
-  calculation: ReturnType<typeof calculateVelocityMatchingStep>,
-): StudyWorkedStep {
+  statesSamples: readonly VelocityMatchingSample[],
+): VelocityMatchingSummary {
+  const states = statesSamples.map(({ state }) => state);
+  const capped = statesSamples.findIndex(
+    ({ calculation }) => Math.abs(calculation.requestedAcceleration) > example.maxAcceleration,
+  );
+  const release = statesSamples.findIndex(
+    ({ calculation }, step) =>
+      step > capped && Math.abs(calculation.requestedAcceleration) <= example.maxAcceleration,
+  );
+  const overshoot = states.findIndex(
+    ({ courierVelocity }) => courierVelocity > example.cartVelocity,
+  );
+  const initialStep =
+    release > 0
+      ? release
+      : overshoot >= 0
+        ? overshoot
+        : Math.min(Math.ceil(example.responseTime / example.timeStep), example.steps);
+  const last = states[states.length - 1];
+
+  return { capped, release, overshoot, initialStep, last };
+}
+
+interface VelocityFrameDescription {
+  readonly example: VelocityMatchingParameters;
+  readonly sample: VelocityMatchingSample;
+  readonly step: number;
+}
+interface VelocityMatchingSummary {
+  readonly capped: number;
+  readonly release: number;
+  readonly overshoot: number;
+  readonly initialStep: number;
+  readonly last: VelocityMatchingState;
+}
+
+function workedStep(t: StudyTranslate, frame: VelocityFrameDescription): StudyWorkedStep {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   return {
-    title: t('studyAifg.velocity-matching.model.workedMiraNextUpdate', {
-      step: decimal(step * example.timeStep, 2, 0.005),
+    title: t('studyAifg.velocity-matching.model.worked.miraNextUpdate', {
+      step: decimal(step * example.timeStep),
     }),
     lines: [
-      t('studyAifg.velocity-matching.model.workedReadCartVelocityNot', {
-        exampleCartVelocity: decimal(example.cartVelocity, 2, 0.005),
-        stateCourierVelocity: decimal(state.courierVelocity, 2, 0.005),
-        calculationVelocityGap: decimal(calculation.velocityGap, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.readCartVelocityNot', {
+        exampleCartVelocity: decimal(example.cartVelocity),
+        stateCourierVelocity: decimal(state.courierVelocity),
+        calculationVelocityGap: decimal(calculation.velocityGap),
       }),
-      t('studyAifg.velocity-matching.model.workedRequestAcceleration', {
-        calculationVelocityGap: decimal(calculation.velocityGap, 2, 0.005),
-        exampleResponseTime: decimal(example.responseTime, 2, 0.005),
-        calculationRequestedAcceleration: decimal(calculation.requestedAcceleration, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.requestAcceleration', {
+        calculationVelocityGap: decimal(calculation.velocityGap),
+        exampleResponseTime: decimal(example.responseTime),
+        calculationRequestedAcceleration: decimal(calculation.requestedAcceleration),
       }),
-      t('studyAifg.velocity-matching.model.workedEngineLimitsMagnitudeUse', {
-        exampleMaxAcceleration: decimal(example.maxAcceleration, 2, 0.005),
-        calculationAcceleration: decimal(calculation.acceleration, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.engineLimitsMagnitudeUse', {
+        exampleMaxAcceleration: decimal(example.maxAcceleration),
+        calculationAcceleration: decimal(calculation.acceleration),
       }),
-      t('studyAifg.velocity-matching.model.workedUpdateVelocityLimited', {
-        exampleMaxSpeed: decimal(example.maxSpeed, 2, 0.005),
-        stateCourierVelocity: decimal(state.courierVelocity, 2, 0.005),
-        calculationAcceleration: decimal(calculation.acceleration, 2, 0.005),
-        exampleTimeStep: decimal(example.timeStep, 2, 0.005),
-        nextCourierVelocity: decimal(calculation.next.courierVelocity, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.updateVelocityLimited', {
+        exampleMaxSpeed: decimal(example.maxSpeed),
+        stateCourierVelocity: decimal(state.courierVelocity),
+        calculationAcceleration: decimal(calculation.acceleration),
+        exampleTimeStep: decimal(example.timeStep),
+        nextCourierVelocity: decimal(calculation.next.courierVelocity),
       }),
-      t('studyAifg.velocity-matching.model.workedMoveMiraUpdatedVelocity', {
-        stateCourierPosition: decimal(state.courierPosition, 2, 0.005),
-        nextCourierVelocity: decimal(calculation.next.courierVelocity, 2, 0.005),
-        exampleTimeStep: decimal(example.timeStep, 2, 0.005),
-        nextCourierPosition: decimal(calculation.next.courierPosition, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.moveMiraUpdatedVelocity', {
+        stateCourierPosition: decimal(state.courierPosition),
+        nextCourierVelocity: decimal(calculation.next.courierVelocity),
+        exampleTimeStep: decimal(example.timeStep),
+        nextCourierPosition: decimal(calculation.next.courierPosition),
       }),
-      t('studyAifg.velocity-matching.model.workedMoveCartPrescribedVelocity', {
-        stateCartPosition: decimal(state.cartPosition, 2, 0.005),
-        exampleCartVelocity: decimal(example.cartVelocity, 2, 0.005),
-        exampleTimeStep: decimal(example.timeStep, 2, 0.005),
-        nextCartPosition: decimal(calculation.next.cartPosition, 2, 0.005),
+      t('studyAifg.velocity-matching.model.worked.moveCartPrescribedVelocity', {
+        stateCartPosition: decimal(state.cartPosition),
+        exampleCartVelocity: decimal(example.cartVelocity),
+        exampleTimeStep: decimal(example.timeStep),
+        nextCartPosition: decimal(calculation.next.cartPosition),
       }),
-      t('studyAifg.velocity-matching.model.workedNextPositionGapNever', {
-        nextCartPosition: decimal(
-          calculation.next.cartPosition - calculation.next.courierPosition,
-          2,
-          0.005,
-        ),
+      t('studyAifg.velocity-matching.model.worked.nextPositionGapNever', {
+        nextCartPosition: decimal(calculation.next.cartPosition - calculation.next.courierPosition),
       }),
     ],
     note:
       Math.abs(calculation.requestedAcceleration) > example.maxAcceleration
-        ? t('studyAifg.velocity-matching.model.workedAccelerationCapActiveResponse')
-        : t('studyAifg.velocity-matching.model.workedBelowAccelerationCapSpeed'),
+        ? t('studyAifg.velocity-matching.model.worked.accelerationCapActiveResponse')
+        : t('studyAifg.velocity-matching.model.worked.belowAccelerationCapSpeed'),
   };
 }
 
-function frameNote(
-  t: StudyTranslate,
-  state: VelocityMatchingState,
-  step: number,
-  calculation: VelocityMatchingStep,
-  example: VelocityMatchingParameters,
-): string {
-  if (step === 0) return t('studyAifg.velocity-matching.model.phaseCartAlreadyMovingMira');
+function frameNote(t: StudyTranslate, frame: VelocityFrameDescription): string {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
+  if (step === 0) return t('studyAifg.velocity-matching.model.phase.cartAlreadyMovingMira');
   if (state.courierVelocity >= example.maxSpeed && example.cartVelocity > example.maxSpeed)
-    return t('studyAifg.velocity-matching.model.phaseMiraReachedHerSpeed');
+    return t('studyAifg.velocity-matching.model.phase.miraReachedHerSpeed');
   if (Math.abs(calculation.velocityGap) < 0.005)
-    return t('studyAifg.velocity-matching.model.phaseMiraNearlyMatchesCart');
+    return t('studyAifg.velocity-matching.model.phase.miraNearlyMatchesCart');
   if (calculation.velocityGap < 0)
-    return t('studyAifg.velocity-matching.model.phaseMiraMovingFasterCart');
+    return t('studyAifg.velocity-matching.model.phase.miraMovingFasterCart');
   if (calculation.next.courierVelocity > example.cartVelocity)
-    return t('studyAifg.velocity-matching.model.phaseMiraSlowerCorrectionSends');
+    return t('studyAifg.velocity-matching.model.phase.miraSlowerCorrectionSends');
   return Math.abs(calculation.requestedAcceleration) > example.maxAcceleration
-    ? t('studyAifg.velocity-matching.model.phaseMiraAcceleratesHerLimit')
-    : t('studyAifg.velocity-matching.model.phaseMiraEasesHerAcceleration');
+    ? t('studyAifg.velocity-matching.model.phase.miraAcceleratesHerLimit')
+    : t('studyAifg.velocity-matching.model.phase.miraEasesHerAcceleration');
 }
 
-function frameOf(
-  t: StudyTranslate,
-  state: VelocityMatchingState,
-  step: number,
-  example: VelocityMatchingParameters,
-  calculation: ReturnType<typeof calculateVelocityMatchingStep>,
-): MotionFrame {
+function frameOf(t: StudyTranslate, frame: VelocityFrameDescription): MotionFrame {
+  const {
+    example,
+    step,
+    sample: { state, calculation },
+  } = frame;
+
   const lane = example.radius * 5;
   return {
     seconds: step * example.timeStep,
     bodies: [
       {
         id: 'mira',
-        label: t('studyAifg.velocity-matching.model.mira'),
+        label: t('studyAifg.velocity-matching.model.labels.mira'),
         x: state.courierPosition,
         y: 0,
         tone: 'subject',
       },
       {
         id: 'cart',
-        label: t('studyAifg.velocity-matching.model.cart'),
+        label: t('studyAifg.velocity-matching.model.labels.cart'),
         x: state.cartPosition,
         y: 0,
         tone: 'target',
@@ -140,26 +183,26 @@ function frameOf(
       },
     ],
     values: {
-      seconds: decimal(step * example.timeStep, 2, 0.005),
-      courierPosition: decimal(state.courierPosition, 2, 0.005),
-      cartPosition: decimal(state.cartPosition, 2, 0.005),
-      courierVelocity: decimal(state.courierVelocity, 2, 0.005),
-      cartVelocity: decimal(example.cartVelocity, 2, 0.005),
-      positionGap: decimal(state.cartPosition - state.courierPosition, 2, 0.005),
-      velocityGap: decimal(calculation.velocityGap, 2, 0.005),
-      responseTime: decimal(example.responseTime, 2, 0.005),
-      requestedAcceleration: decimal(calculation.requestedAcceleration, 2, 0.005),
-      acceleration: decimal(calculation.acceleration, 2, 0.005),
-      maxAcceleration: decimal(example.maxAcceleration, 2, 0.005),
-      timeStep: decimal(example.timeStep, 2, 0.005),
-      nextVelocity: decimal(calculation.next.courierVelocity, 2, 0.005),
-      nextPosition: decimal(calculation.next.courierPosition, 2, 0.005),
-      errorMultiplier: decimal(1 - example.timeStep / example.responseTime, 2, 0.005),
-      arrowSeconds: decimal(example.arrowSeconds, 2, 0.005),
-      shortResponseTime: decimal(example.shortResponseTime, 2, 0.005),
+      seconds: decimal(step * example.timeStep),
+      courierPosition: decimal(state.courierPosition),
+      cartPosition: decimal(state.cartPosition),
+      courierVelocity: decimal(state.courierVelocity),
+      cartVelocity: decimal(example.cartVelocity),
+      positionGap: decimal(state.cartPosition - state.courierPosition),
+      velocityGap: decimal(calculation.velocityGap),
+      responseTime: decimal(example.responseTime),
+      requestedAcceleration: decimal(calculation.requestedAcceleration),
+      acceleration: decimal(calculation.acceleration),
+      maxAcceleration: decimal(example.maxAcceleration),
+      timeStep: decimal(example.timeStep),
+      nextVelocity: decimal(calculation.next.courierVelocity),
+      nextPosition: decimal(calculation.next.courierPosition),
+      errorMultiplier: decimal(1 - example.timeStep / example.responseTime),
+      arrowSeconds: decimal(example.arrowSeconds),
+      shortResponseTime: decimal(example.shortResponseTime),
     },
-    note: frameNote(t, state, step, calculation, example),
-    worked: workedStep(t, state, step, example, calculation),
+    note: frameNote(t, frame),
+    worked: workedStep(t, frame),
   };
 }
 
@@ -167,45 +210,45 @@ function shortResponseComparison(
   t: StudyTranslate,
   states: readonly VelocityMatchingState[],
   example: VelocityMatchingParameters,
-): NonNullable<MotionStudyModel['comparison']> {
+): StudyComparison {
   const shortSamples = velocityMatchingSamples(example, example.shortResponseTime);
   const short = shortSamples.map(({ state }) => state);
   const last = states[states.length - 1];
   const tail = short.slice(-2).map(({ courierVelocity }) => courierVelocity);
   const allVelocities = [...states, ...short].map(({ courierVelocity }) => courierVelocity);
   return {
-    title: t('studyAifg.velocity-matching.model.quickCorrectionCanOvershoot'),
+    title: t('studyAifg.velocity-matching.model.comparison.quickCorrectionCanOvershoot'),
     intro:
       example.responseTime === example.shortResponseTime
-        ? t('studyAifg.velocity-matching.model.tracesNowUseResponse', {
-            exampleResponseTime: decimal(example.responseTime, 2, 0.005),
-            exampleTimeStep: decimal(example.timeStep, 2, 0.005),
+        ? t('studyAifg.velocity-matching.model.comparison.tracesNowUseResponse', {
+            exampleResponseTime: decimal(example.responseTime),
+            exampleTimeStep: decimal(example.timeStep),
           })
-        : t('studyAifg.velocity-matching.model.compareChosenResponseTime', {
-            exampleResponseTime: decimal(example.responseTime, 2, 0.005),
-            exampleShortResponseTime: decimal(example.shortResponseTime, 2, 0.005),
-            exampleTimeStep: decimal(example.timeStep, 2, 0.005),
+        : t('studyAifg.velocity-matching.model.comparison.compareChosenResponseTime', {
+            exampleResponseTime: decimal(example.responseTime),
+            exampleShortResponseTime: decimal(example.shortResponseTime),
+            exampleTimeStep: decimal(example.timeStep),
           }),
     timeline: {
-      title: t('studyAifg.velocity-matching.model.miraVelocityTwoResponse'),
-      xLabel: t('studyAifg.velocity-matching.model.timeSeconds'),
-      yLabel: t('studyAifg.velocity-matching.model.velocity'),
+      title: t('studyAifg.velocity-matching.model.comparison.miraVelocityTwoResponse'),
+      xLabel: t('studyAifg.velocity-matching.model.labels.timeSeconds'),
+      yLabel: t('studyAifg.velocity-matching.model.labels.velocity'),
       seconds: states.map((_state, step) => step * example.timeStep),
       yRange: [Math.min(0, ...allVelocities), Math.max(example.cartVelocity, ...allVelocities)],
       reference: example.cartVelocity,
       series: [
         {
           id: 'normal',
-          label: t('studyAifg.velocity-matching.model.solidGreenChosenResponse', {
-            exampleResponseTime: decimal(example.responseTime, 2, 0.005),
+          label: t('studyAifg.velocity-matching.model.comparison.solidGreenChosenResponse', {
+            exampleResponseTime: decimal(example.responseTime),
           }),
           tone: 'actual',
           values: states.map(({ courierVelocity }) => courierVelocity),
         },
         {
           id: 'short',
-          label: t('studyAifg.velocity-matching.model.dashedAmberReferenceResponse', {
-            exampleShortResponseTime: decimal(example.shortResponseTime, 2, 0.005),
+          label: t('studyAifg.velocity-matching.model.comparison.dashedAmberReferenceResponse', {
+            exampleShortResponseTime: decimal(example.shortResponseTime),
           }),
           tone: 'desired',
           values: short.map(({ courierVelocity }) => courierVelocity),
@@ -213,56 +256,54 @@ function shortResponseComparison(
       ],
     },
     findings: [
-      t('studyAifg.velocity-matching.model.referenceRunEndsSuccessive', {
-        tail: decimal(tail[0], 2, 0.005),
-        tail2: decimal(tail[1], 2, 0.005),
-        exampleCartVelocity: decimal(example.cartVelocity, 2, 0.005),
-        lastCourierVelocity: decimal(last.courierVelocity, 2, 0.005),
+      t('studyAifg.velocity-matching.model.comparison.referenceRunEndsSuccessive', {
+        penultimateVelocity: decimal(tail[0]),
+        finalVelocity: decimal(tail[1]),
+        exampleCartVelocity: decimal(example.cartVelocity),
+        lastCourierVelocity: decimal(last.courierVelocity),
       }),
-      t('studyAifg.velocity-matching.model.withoutEitherCapEach', {
-        value1: decimal(1 - example.timeStep / example.responseTime, 2, 0.005),
-        value2: decimal(1 - example.timeStep / example.shortResponseTime, 2, 0.005),
+      t('studyAifg.velocity-matching.model.comparison.withoutEitherCapEach', {
+        selectedDecay: decimal(1 - example.timeStep / example.responseTime),
+        shortResponseDecay: decimal(1 - example.timeStep / example.shortResponseTime),
       }),
-      t('studyAifg.velocity-matching.model.chosenRunLeavesMira', {
-        lastCartPosition: decimal(last.cartPosition - last.courierPosition, 2, 0.005),
+      t('studyAifg.velocity-matching.model.comparison.chosenRunLeavesMira', {
+        lastCartPosition: decimal(last.cartPosition - last.courierPosition),
       }),
     ],
-    note: t('studyAifg.velocity-matching.model.horizontalReferenceCartVelocity'),
+    note: t('studyAifg.velocity-matching.model.comparison.horizontalReferenceCartVelocity'),
   };
 }
 
 function runMoments(
   t: StudyTranslate,
-  capped: number,
-  release: number,
   example: VelocityMatchingParameters,
-  overshoot: number,
-  initialStep: number,
-  last: VelocityMatchingState,
-): MotionStudyModel['moments'] {
+  summary: VelocityMatchingSummary,
+): readonly StudyMoment[] {
+  const { capped, release, overshoot, initialStep, last } = summary;
+
   return [
-    { label: t('studyAifg.velocity-matching.model.cartAlreadyMoving'), step: 0 },
+    { label: t('studyAifg.velocity-matching.model.moments.cartAlreadyMoving'), step: 0 },
     capped >= 0
       ? {
-          label: t('studyAifg.velocity-matching.model.accelerationLimited'),
+          label: t('studyAifg.velocity-matching.model.moments.accelerationLimited'),
           step: Math.min(capped + 1, release > 0 ? release - 1 : example.steps),
         }
       : {
-          label: t('studyAifg.velocity-matching.model.closingVelocityGap'),
+          label: t('studyAifg.velocity-matching.model.moments.closingVelocityGap'),
           step: Math.min(1, example.steps),
         },
     {
       label:
         overshoot >= 0
-          ? t('studyAifg.velocity-matching.model.paceOvershoots')
-          : t('studyAifg.velocity-matching.model.correctionEases'),
+          ? t('studyAifg.velocity-matching.model.moments.paceOvershoots')
+          : t('studyAifg.velocity-matching.model.moments.correctionEases'),
       step: overshoot >= 0 ? overshoot : initialStep,
     },
     {
       label:
         Math.abs(last.courierVelocity - example.cartVelocity) < 0.005
-          ? t('studyAifg.velocity-matching.model.samePaceBehind')
-          : t('studyAifg.velocity-matching.model.paceCorrecting'),
+          ? t('studyAifg.velocity-matching.model.moments.samePaceBehind')
+          : t('studyAifg.velocity-matching.model.moments.paceCorrecting'),
       step: example.steps,
     },
   ];
@@ -272,24 +313,24 @@ function runTimeline(
   t: StudyTranslate,
   frames: MotionFrame[],
   example: VelocityMatchingParameters,
-  states: ReturnType<typeof velocityMatchingFrames>,
-): NonNullable<MotionStudyModel['timeline']> {
+  states: readonly VelocityMatchingState[],
+): TimelineModel {
   return {
-    title: t('studyAifg.velocity-matching.model.miraPaceAgainstCart'),
-    xLabel: t('studyAifg.velocity-matching.model.timeSeconds'),
-    yLabel: t('studyAifg.velocity-matching.model.velocity'),
+    title: t('studyAifg.velocity-matching.model.timeline.miraPaceAgainstCart'),
+    xLabel: t('studyAifg.velocity-matching.model.labels.timeSeconds'),
+    yLabel: t('studyAifg.velocity-matching.model.labels.velocity'),
     seconds: frames.map(({ seconds }) => seconds),
     reference: example.cartVelocity,
     series: [
       {
         id: 'courier',
-        label: t('studyAifg.velocity-matching.model.solidGreenMiraVelocity'),
+        label: t('studyAifg.velocity-matching.model.labels.solidGreenMiraVelocity'),
         tone: 'actual',
         values: states.map(({ courierVelocity }) => courierVelocity),
       },
       {
         id: 'cart',
-        label: t('studyAifg.velocity-matching.model.dashedAmberCartVelocity'),
+        label: t('studyAifg.velocity-matching.model.timeline.dashedAmberCartVelocity'),
         tone: 'desired',
         values: states.map(() => example.cartVelocity),
       },
@@ -297,20 +338,20 @@ function runTimeline(
   };
 }
 
-function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
+function runInputs(t: StudyTranslate): readonly StudyInput[] {
   return [
     {
       name: 'responseTime',
-      label: t('studyAifg.velocity-matching.model.responseTime'),
-      unit: t('studyAifg.velocity-matching.model.inputsUnitS'),
+      label: t('studyAifg.velocity-matching.model.inputs.responseTime'),
+      unit: t('studyAifg.velocity-matching.model.inputs.unitS'),
       min: 0.1,
       max: 1,
       step: 0.05,
     },
     {
       name: 'maxAcceleration',
-      label: t('studyAifg.velocity-matching.model.accelerationLimit'),
-      unit: t('studyAifg.velocity-matching.model.inputsUnitUnitsS'),
+      label: t('studyAifg.velocity-matching.model.inputs.accelerationLimit'),
+      unit: t('studyAifg.velocity-matching.model.inputs.unitUnitsS'),
       min: 1,
       max: 8,
       step: 0.5,
@@ -320,13 +361,11 @@ function runInputs(t: StudyTranslate): MotionStudyModel['inputs'] {
 
 export const present = (
   example: VelocityMatchingParameters,
-  statesSamples: ReturnType<typeof velocityMatchingSamples>,
+  statesSamples: readonly VelocityMatchingSample[],
   t: StudyTranslate,
 ): MotionStudyModel => {
   const states = statesSamples.map(({ state }) => state);
-  const frames = states.map((state, step) =>
-    frameOf(t, state, step, example, statesSamples[step].calculation),
-  );
+  const frames = statesSamples.map((sample, step) => frameOf(t, { example, sample, step }));
   const ends = frames.flatMap((frame) => [
     ...frame.bodies.map(({ x }) => x),
     ...(frame.vectors ?? []).flatMap(({ x, dx }) => [x, x + dx]),
@@ -335,23 +374,8 @@ export const present = (
   const minX = Math.min(...ends) - padding;
   const maxX = Math.max(...ends) + padding;
   const height = Math.max((maxX - minX) / 2, padding * 4);
-  const capped = statesSamples.findIndex(
-    ({ calculation }) => Math.abs(calculation.requestedAcceleration) > example.maxAcceleration,
-  );
-  const release = statesSamples.findIndex(
-    ({ calculation }, step) =>
-      step > capped && Math.abs(calculation.requestedAcceleration) <= example.maxAcceleration,
-  );
-  const overshoot = states.findIndex(
-    ({ courierVelocity }) => courierVelocity > example.cartVelocity,
-  );
-  const initialStep =
-    release > 0
-      ? release
-      : overshoot >= 0
-        ? overshoot
-        : Math.min(Math.ceil(example.responseTime / example.timeStep), example.steps);
-  const last = states[states.length - 1];
+  const summary = describeMatching(example, statesSamples);
+
   return {
     family: 'motion',
     motion: {
@@ -360,24 +384,24 @@ export const present = (
       trail: true,
     },
     timeline: runTimeline(t, frames, example, states),
-    initialStep,
-    moments: runMoments(t, capped, release, example, overshoot, initialStep, last),
+    initialStep: summary.initialStep,
+    moments: runMoments(t, example, summary),
     legend: [
       {
         tone: 'actual',
-        label: t('studyAifg.velocity-matching.model.solidGreenMiraVelocity'),
+        label: t('studyAifg.velocity-matching.model.labels.solidGreenMiraVelocity'),
       },
       {
         tone: 'desired',
-        label: t('studyAifg.velocity-matching.model.cartVelocityAtCourier'),
+        label: t('studyAifg.velocity-matching.model.labels.cartVelocityAtCourier'),
       },
       {
         tone: 'muted',
-        label: t('studyAifg.velocity-matching.model.positionGapUnusedBehaviour'),
+        label: t('studyAifg.velocity-matching.model.labels.positionGapUnusedBehaviour'),
       },
     ],
-    caption: t('studyAifg.velocity-matching.model.caption', {
-      exampleArrowSeconds: decimal(example.arrowSeconds, 2, 0.005),
+    caption: t('studyAifg.velocity-matching.model.overview.caption', {
+      exampleArrowSeconds: decimal(example.arrowSeconds),
     }),
     comparison: shortResponseComparison(t, states, example),
     inputs: runInputs(t),
