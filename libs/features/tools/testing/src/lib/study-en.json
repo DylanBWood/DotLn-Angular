@@ -16180,7 +16180,7 @@
         },
         "nearby": {
           "item0": {
-            "why": "To test the store without the API: the back is where a stub stands in, and its study runs the board store's cases against one, with this gateway's translation unchanged."
+            "why": "To test the store without the API: its study puts the stub where the API would answer, behind this gateway's back, and runs the board store's cases through the front and back unchanged."
           },
           "item1": {
             "why": "When the front should be an interface the app owns, with the implementation chosen elsewhere: the catalog's CatalogLoader behind CatalogToken is built that way, so a mining API could replace the bundled reader."
@@ -16651,7 +16651,7 @@
           "yLabel": "Reads",
           "mapped": "Through the identity map",
           "unmapped": "A read for every lookup",
-          "reads": "By the last step the map has made {{reads}} reads for {{lookups}} lookups, {{hits}} of them hits.",
+          "reads": "By the last step, store reads through the map: {{reads}}; lookups: {{lookups}}; hits among them: {{hits}}.",
           "objects": "Reading on every lookup would also build a new object each time, so the reading and its nearby list could never be handed the same one."
         },
         "inputs": {
@@ -16693,15 +16693,15 @@
             },
             "step1": {
               "title": "Fetch on the first read",
-              "text": "The first read of a study looks up its work in the summary and asks for that work's chunk, keeping the pending load under the work's name. A concept with no study answers none and loads nothing. Chunk requests so far: {requests}."
+              "text": "The first read of a study looks up its work in the summary and asks for the chunk that holds the study: the work's chunk, as the app has it, or the study's own when every study has one. The pending load is kept under that chunk's name. A concept with no study answers none and loads nothing. Chunk requests so far: {requests}."
             },
             "step2": {
               "title": "Bring the collection at once",
-              "text": "The chunk carries every study of the work, so one request fills them all, however few the reader opens. Splitting it per study would cost a request for every study read instead. Records in memory now: {records}."
+              "text": "With one chunk for the work, as the app has it, one request fills every study of the work, however few the reader opens; with a chunk for each study, every study read costs a request of its own. Records in memory now: {records}."
             },
             "step3": {
               "title": "Answer later reads from what was kept",
-              "text": "A later read of any study of the work finds the kept load and waits on it, so it costs no request, and every reading receives the same record."
+              "text": "A later read of a study whose chunk is already kept finds the kept load and waits on it, so it costs no request, and every reading receives the same record."
             },
             "step4": {
               "title": "Forget a failed load",
@@ -16819,7 +16819,7 @@
           "carriesStudy": "This request carries the study of {{name}} alone",
           "beforeLoad": "No record is in memory until a reading asks for one.",
           "fromMemory": "Every later read of the work is answered from memory.",
-          "eachOwn": "Each study still waits for a read of its own.",
+          "eachOwn": "A study not read yet still waits for a read of its own.",
           "forgotten": "The failure is not kept, so the next read asks again."
         },
         "values": {
@@ -17176,7 +17176,7 @@
           }
         },
         "limits": {
-          "item0": "An abandoned lock keeps everyone out until it runs out. Set the saves by Tab A to 0: its tab is closed with the lock still taken, and Tab B, which only wants to start, waits for the timeout rather than for anyone's work. In the same case an optimistic lock lets Tab B save the moment it is done, so a pessimistic lock is the wrong choice where collisions are rare and tabs are often left open.",
+          "item0": "An abandoned lock keeps everyone out until it runs out. Set the saves by Tab A to 0, with a lock that lasts longer than Tab A stays open, as the example's does: its tab is closed with the lock still taken, and Tab B, which only wants to start, waits for the timeout rather than for anyone's work. In the same case an optimistic lock lets Tab B save the moment it is done, so a pessimistic lock is the wrong choice where collisions are rare and tabs are often left open.",
           "item1": "A timeout shorter than the work takes the lock from a tab still using it. Lower the lock's minutes below Tab A's working time: Tab B takes the lock over while Tab A is still at work, and Tab A's save is refused, the very loss the lock was meant to prevent. Renewing the lock while a tab works, as Spring Integration's renew allows, avoids this, but every open tab then has to keep renewing.",
           "item2": "Who owns the lock decides what it protects. Keyed by the operator, as WordPress keys its post lock by user, it would not keep this example's tabs apart at all, since both belong to the one person; here each tab has to be an owner of its own, which means giving every tab its own id.",
           "item3": "Taking the lock must itself be safe between tabs. A lock table kept in browser storage is read and written in two calls, so two tabs opening at the same instant could both find it free and both believe they hold it. The browser's Web Locks API grants one holder at a time across an origin's tabs and can refuse at once instead of queueing, but it holds a lock only while a task in that tab is still running."
@@ -17816,7 +17816,7 @@
         "implementations": {
           "item0": {
             "project": "DotLn-Angular · BoardApi and the /uifa-board-v1 route",
-            "relevance": "The board's data access is the one place the app fetches its data across a network, from the app's own API or the mock that stands in for it.",
+            "relevance": "The board's data access is the one place the app calls its own API across a network, or the mock that stands in for it; the only other fetch loads the message catalogs as static files.",
             "explanation": "The author's reading of the code, not a claim that it was designed as this pattern: BoardApi offers one operation, load(), a single GET of /uifa-board-v1 that brings the whole board, and the page makes no other call to draw its five panels. That is the client's side of a remote facade. The facade itself is not in this repository: board-handlers.ts answers the route with a recorded document, so nothing behind it calls sources, checks a caller or catches a failed read. The recorded document still shows where such a facade puts a failed part: a section whose source could not be read arrives with status unavailable and its explanation, and the board draws that explanation where the rows would be."
           },
           "item1": {
@@ -17842,7 +17842,7 @@
         },
         "limits": {
           "item0": "One call shares one fate. Set the Builds source down to 1 and the reporting to 0, then step to the end: the Builds read fails, the facade stops, the panels it had read are thrown away and the page shows only its load-failed notice, although a page that called each panel itself would still have drawn the others. With reporting on, Builds travels as an unavailable panel, which is what uifa-board-v1's section status and explanation are for, and the client must then draw that state.",
-          "item1": "Coarse cuts both ways. The board's one call brings all {totalRows} rows although the page shows one panel at a time, and a refresh reloads the whole board. A facade shaped for each screen grows a method for every new view; one shaped too broadly sends what nobody reads. Its operations should follow what clients do, not the objects behind them.",
+          "item1": "Coarse cuts both ways. The board's one call brings every panel's rows, {totalRows} when every source answers, although the page shows one panel at a time, and a refresh reloads the whole board. A facade shaped for each screen grows a method for every new view; one shaped too broadly sends what nobody reads. Its operations should follow what clients do, not the objects behind them.",
           "item2": "The facade is the easy place to add a rule, such as hiding actors with no evidence, because every call passes through it. A rule there is missed by every other way into the sources and copied by the next facade; keep the facade to checking, calling and copying, and keep the rule in the domain behind it.",
           "item3": "Inside one process it is pure cost: copying into a response and serialising it buys nothing when the caller could call the sources directly, and a facade that keeps a client's state between calls ties that client to one server. It earns its place only at a network boundary, which the first law of distributed object design argues against drawing at all."
         },
@@ -18145,7 +18145,7 @@
         },
         "example": {
           "name": "The board store's four cases, against a stub",
-          "description": "Four of the cases the board store's spec runs go through the board gateway, with the app's HTTP API replaced by a stub that answers in memory: the recorded board, a refusal with status {refusalStatus}, a dropped connection, and a timeout staged by holding the answer {stubDelayMs} ms against a case limit of {timeoutMs} ms. {stubKind} The stub's board is contract version {fixtureVersion}; at release one call goes to the live API, which serves version {liveVersion}."
+          "description": "Four of the cases the board store's spec runs go through the board gateway, with the app's HTTP API replaced by a stub that answers in memory: the recorded board, a refusal with status {refusalStatus}, a dropped connection, and a timeout, which a stub that reads the scenario stages by holding the answer {stubDelayMs} ms against a case limit of {timeoutMs} ms. {stubKind} The stub's board is contract version {fixtureVersion}; at release one call goes to the live API, which serves version {liveVersion}."
         },
         "mechanism": {
           "steps": {
@@ -18159,7 +18159,7 @@
             },
             "step2": {
               "title": "Translate as in production",
-              "text": "The gateway waits for the stub's answer and translates it exactly as it would the API's. The timeout case costs only its own limit, {timeoutMs} ms, because the stub holds its answer for {stubDelayMs} ms, longer than the case will wait."
+              "text": "The gateway waits for the stub's answer and translates it exactly as it would the API's. A stub that reads the scenario holds the timeout case's answer for {stubDelayMs} ms, longer than the case's limit of {timeoutMs} ms, so that case costs only its own limit; a static stub answers it at once, with the board."
             },
             "step3": {
               "title": "Assert in the app's terms",
@@ -18207,12 +18207,12 @@
         "limits": {
           "item0": "A static stub tests the happy path only. Set the stub to static and run the suite: every request gets the recorded board, so the refusal, lost-connection and timeout cases fail, not because the store is wrong but because the stub cannot say anything else. The failure paths need a stub the test can steer.",
           "item1": "A stub is a recording, and recordings age. Set the live API's version to 2: every case still passes against the stub, and the first call to the live API fails, because the stub still serves the contract it was recorded from. Holding the fixture to a pinned schema, as this app does, catches a fixture that leaves the contract, not a service that moves to a new one; only a check against the service itself does that.",
-          "item2": "A staged timeout holds only while the stub outwaits the case. The timeout case passes because the stub holds its answer for {stubDelayMs} ms and the case stops waiting after {timeoutMs} ms; give the case a limit longer than the stub's delay and the board arrives in time, so the case fails. In this app the two numbers live in two files, the handler and the store's spec, and nothing ties them together.",
+          "item2": "A staged timeout holds only while the stub outwaits the case. With a stub that reads the scenario, the timeout case passes because the stub holds its answer for {stubDelayMs} ms and the case stops waiting after {timeoutMs} ms; were the case's limit longer than the stub's delay, the board would arrive in time and the case would fail, as it does when a static stub answers at once. In this app the two numbers live in two files, the handler and the store's spec, and nothing ties them together.",
           "item3": "A stub at the wrong seam tests the wrong code. One put in place of the gateway's front hands the store finished outcomes and skips the translation these cases exist to check; one put at the network, as here, runs the gateway for real but must speak the API's raw terms, its statuses, bodies and failures, exactly as the API does, and so grows into a second implementation of the API that nothing checks against the first."
         },
         "nearby": {
           "item0": {
-            "why": "The stub needs a seam to stand behind; read it for where the gateway's front ends and the back a stub replaces begins. Its study follows one of these requests to the real API."
+            "why": "The stub needs a seam to stand behind; read it for the front and the back that run unchanged in front of the stub, and for the translation these cases check. Its study follows one of these requests to the real API."
           },
           "item1": {
             "why": "To choose between the stub and the real service by configuration rather than code, as the app's environment files switch its mock worker on for development and off for production."
@@ -18524,7 +18524,7 @@
         },
         "example": {
           "name": "One save for three changes",
-          "description": "Two compositions are stored: Flank left at version {versionFlank} and Hold the ridge at version {versionRidge}. In one session the operator creates Night march, renames Hold the ridge {renames} times and deletes Flank left, then saves once. {rival}"
+          "description": "Two compositions are stored: Flank left at version {versionFlank} and Hold the ridge at version {versionRidge}. In one session the operator creates Night march and deletes Flank left, with renames of Hold the ridge in between: {renames}. Then the operator saves once. {rival}"
         },
         "mechanism": {
           "steps": {
@@ -18560,7 +18560,7 @@
           "item0": {
             "project": "DotLn-Angular · SceneStore with withPersistedState",
             "relevance": "This app's soldier scene keeps the operator's saved compositions in SceneStore, the nearest thing the app has to a unit of work.",
-            "explanation": "The author's reading of the code, not a claim that it was designed as this pattern: the store changes its compositions in memory as events arrive, and withPersistedState writes the whole list to browser storage only when the save counter moves (writeOn: state.saves), so one save is one write. Just before it, SceneFacade.save re-reads the stored list, because another tab may have saved since, and appends the new composition. It keeps no registers and checks no versions; that is safe today only because a save adds a composition and never changes or removes one, which is where a unit of work, and the version check of an optimistic lock, would come in."
+            "explanation": "The author's reading of the code, not a claim that it was designed as this pattern: the store changes its compositions in memory as events arrive, and withPersistedState writes the whole list to browser storage only when the save counter moves (writeOn: state.saves), so one save is one write. Just before it, SceneFacade.save re-reads the stored list, because another tab may have saved since, and appends the new composition. It keeps no registers and checks no versions; that is safe today only because a save adds a composition and never changes or removes a readable one, which is where a unit of work, and the version check of an optimistic lock, would come in. One removal does happen: a stored composition that could not be read is not in the list the save writes, so the save drops it, after the scene has warned that saving will replace it."
           },
           "item1": {
             "project": "Doctrine ORM · UnitOfWork",
@@ -18589,7 +18589,7 @@
           }
         },
         "limits": {
-          "item0": "A unit of work kept open for a long session holds the versions it read at the start. Set the saves by another tab to 1 and step to the commit: Hold the ridge is stored at a newer version than the one held here, so the whole save is refused, and the creation and the deletion are lost with the rename unless the operator makes them again.",
+          "item0": "A unit of work kept open for a long session holds the versions it read at the start. With Hold the ridge renamed at least once, set the saves by another tab to 1 and step to the commit: Hold the ridge is stored at a newer version than the one held here, so the whole save is refused, and the creation and the deletion are lost with the rename unless the operator makes them again. A composition the session left unchanged is not checked, so with no rename the same save goes through.",
           "item1": "Nothing coordinates two units of work. Each tab's unit checks only the versions it read and knows nothing of the other's registers, so they meet only at the store's version check; without that check the later commit silently overwrites the earlier one.",
           "item2": "It writes only what it is told about. An object changed without registerDirty is never written. Frameworks such as Doctrine close that gap by comparing every managed object with what they read, at the cost of that comparison on every commit.",
           "item3": "The commit has to order its statements. A new object that refers to another new one must be inserted after it, and a deleted object must go after the rows that point at it; a unit that ignores those dependencies fails on the store's foreign keys."

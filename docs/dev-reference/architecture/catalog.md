@@ -409,7 +409,9 @@ the row's name and a few words on what the object holds at its left. A token tha
 selected step is green and glides in from the column it left, with an arrow from that column and
 the operation that moved it above the arrow; the column it enters is tinted, and an object that
 leaves the example leaves a dashed ring. Below 600 pixels the same register is drawn at a phone's
-width, so its words keep their size. The family's first pair of rendered comparisons, this register
+width, so names, notes and operations keep their size; a state's name whose longest word is wider
+than its column is drawn smaller, so it stays inside the column. The family's first pair of
+rendered comparisons, this register
 against a state machine of the same model, waits for a dedicated A/B testing pass; until that pass
 decides, the register is the family's drawing. The last name in `visualFamilies`, `relations`,
 lands with the batch that first needs it.
@@ -465,8 +467,10 @@ named on the command line that does not parse is reported the same way. For an e
 reading the check requires the record's `pseudocode.rxjs` to be in the module it names, whitespace,
 trailing commas and comments aside (a comment cannot stand in for the code on either side), the
 spec beside that module to call `expectMarbleExample`, and a `marbles` drawing, or a `flow` drawn
-over that example, to read that same module; in the RxJS and messaging works a reading either runs
-or begins with `// Illustrative:` and its reason.
+over that example, to read that same module. A `states` drawing of a study whose model runs reads
+that model's module as well. In the RxJS and messaging works a reading either runs or begins with
+`// Illustrative:` and its reason; in the enterprise application work, whose models run as
+TypeScript, an RxJS reading a study gives always begins with it.
 `npm run studies:report`
 prints each work's studied, checked and total rows, and `npm run studies:links` opens every cited
 address once; it reaches the network, so a batch runs it by hand and records the result, and no

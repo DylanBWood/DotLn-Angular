@@ -132,7 +132,7 @@ it('compares the map’s reads with a read for every lookup, and names the momen
   expect(mapped.values).toEqual([0, 1, 1, 2, 2, 2, 2, 3]);
   expect(unmapped.values).toEqual([0, 1, 1, 2, 3, 4, 4, 5]);
   expect(run.comparison?.findings[0]).toBe(
-    'By the last step the map has made 3 reads for 5 lookups, 2 of them hits.',
+    'By the last step, store reads through the map: 3; lookups: 5; hits among them: 2.',
   );
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Miss', 1],

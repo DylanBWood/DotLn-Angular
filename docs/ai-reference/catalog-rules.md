@@ -117,7 +117,9 @@
   exists at the integrated base.
 - An enterprise pattern with a mechanism to run draws a `states` register. Its model composes a language-free
   simulation of the mechanism with a presentation that builds the drawing through `statesModel`
-  from one snapshot per moment, so the drawing and the spec read the same run. A structural choice
+  from one snapshot per moment, so the drawing and the spec read the same run. The drawing names the
+  same module as `pseudocode.executable`, and an RxJS reading such a study gives begins with
+  `// Illustrative:` and its reason, since the mechanism runs as TypeScript. A structural choice
   with no mechanism to run carries `executable: null` and `visual: null`, and the batch's decisions
   give its reason.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A

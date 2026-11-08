@@ -138,8 +138,9 @@ export function find(
 }
 
 /**
- * The domain renames its composition. The identity map holds that same object, so it sees the
- * change; nothing touches storage, so the row keeps its earlier title.
+ * The domain renames its composition. The identity map's one entry for it now holds the renamed
+ * composition, so every later lookup sees the change; nothing touches storage, so the row keeps
+ * its earlier title.
  */
 export function rename(mapper: Mapper, id: CompositionId): Mapper {
   const held = mapper.identityMap[id];
