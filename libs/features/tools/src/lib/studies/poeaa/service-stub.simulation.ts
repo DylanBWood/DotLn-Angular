@@ -1,12 +1,12 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 import { arrive, type BoardOutcome, type RawReply, translate } from './gateway.simulation';
 
 /** The example's inputs: what kind of stub answers, how it stages its cases, and the live contract. */
 export interface ServiceStubParameters {
-  /** 1 when the stub reads the scenario each case puts on its request; 0 when it has one answer. */
-  readonly dynamicStub: number;
+  /** True when the stub reads the scenario each case puts on its request; false when it has one answer. */
+  readonly dynamicStub: boolean;
   /** The status the stub answers the refusal case with. */
   readonly refusalStatus: number;
   /** The gateway's time limit inside the spec, lowered so a timeout costs milliseconds. */
@@ -67,7 +67,7 @@ const okStatus = 200;
 const queued: CaseRun = { state: 'queued', answer: null, seen: null, outcome: null, waitedMs: 0 };
 
 export const readParameters = (parameters: StudyParameters): ServiceStubParameters => ({
-  dynamicStub: numberParameter(parameters, 'dynamicStub'),
+  dynamicStub: booleanParameter(parameters, 'dynamicStub'),
   refusalStatus: numberParameter(parameters, 'refusalStatus'),
   timeoutMs: numberParameter(parameters, 'timeoutMs'),
   stubDelayMs: numberParameter(parameters, 'stubDelayMs'),
@@ -77,16 +77,13 @@ export const readParameters = (parameters: StudyParameters): ServiceStubParamete
 
 /** What each case expects the store to end with, in the app's terms. */
 export function expectationOf(id: CaseId, example: ServiceStubParameters): BoardOutcome {
-  switch (id) {
-    case 'recorded':
-      return { kind: 'board', version: example.fixtureVersion };
-    case 'refusal':
-      return { kind: 'failure', error: 'http', status: example.refusalStatus };
-    case 'network':
-      return { kind: 'failure', error: 'network', status: null };
-    default:
-      return { kind: 'failure', error: 'timeout', status: null };
-  }
+  const expected: Record<CaseId, BoardOutcome> = {
+    recorded: { kind: 'board', version: example.fixtureVersion },
+    refusal: { kind: 'failure', error: 'http', status: example.refusalStatus },
+    network: { kind: 'failure', error: 'network', status: null },
+    timeout: { kind: 'failure', error: 'timeout', status: null },
+  };
+  return expected[id];
 }
 
 /** Two outcomes are the same when they name the same board or the same failure. */
@@ -97,7 +94,7 @@ export const sameOutcome = (a: BoardOutcome, b: BoardOutcome): boolean =>
 
 /** How long the stub keeps a case waiting before its answer is ready, in milliseconds. */
 export const stubDelayOf = (id: CaseId, example: ServiceStubParameters): number =>
-  example.dynamicStub !== 0 && id === 'timeout' ? example.stubDelayMs : 0;
+  example.dynamicStub && id === 'timeout' ? example.stubDelayMs : 0;
 
 /**
  * The stub's answer to one case, in the API's own terms. A static stub has one answer, the
@@ -105,16 +102,15 @@ export const stubDelayOf = (id: CaseId, example: ServiceStubParameters): number 
  */
 export function stubAnswer(id: CaseId, example: ServiceStubParameters): RawReply {
   const board: RawReply = { kind: 'response', status: okStatus, version: example.fixtureVersion };
-  if (example.dynamicStub === 0) return board;
-  switch (id) {
-    case 'refusal':
-      return { kind: 'response', status: example.refusalStatus, version: example.fixtureVersion };
-    case 'network':
-      return { kind: 'unreachable' };
-    default:
-      // The timeout case gets the board too, but late: the gateway's limit decides whether it waits.
-      return board;
-  }
+  if (!example.dynamicStub) return board;
+  const answers: Record<CaseId, RawReply> = {
+    recorded: board,
+    refusal: { kind: 'response', status: example.refusalStatus, version: example.fixtureVersion },
+    network: { kind: 'unreachable' },
+    // The timeout case gets the board too, but late: the gateway's limit decides whether it waits.
+    timeout: board,
+  };
+  return answers[id];
 }
 
 /**

@@ -1,6 +1,8 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
@@ -16,6 +18,7 @@ import {
   drafts,
   highestId,
   type SavedComposition,
+  type SaveStage,
   type ServiceLayerParameters,
   type ServiceLayerStep,
   stageOf,
@@ -37,36 +40,39 @@ interface ServiceLayerMoment {
 
 const stepAt = ({ run, index }: ServiceLayerMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, name: CompositionName): string {
-  switch (name) {
-    case 'flank':
-      return t('studyPoeaa.service-layer.model.names.flank');
-    case 'ridge':
-      return t('studyPoeaa.service-layer.model.names.ridge');
-    case 'night':
-      return t('studyPoeaa.service-layer.model.names.night');
-    case 'dawn':
-      return t('studyPoeaa.service-layer.model.names.dawn');
-    default:
-      return t('studyPoeaa.service-layer.model.names.river');
-  }
-}
+// Each composition's name, the letter each saved composition's token shows, and each tab's and
+// each kind of client's name; the compiler requires an entry for every one the example has.
+const names = {
+  flank: 'studyPoeaa.service-layer.model.names.flank',
+  ridge: 'studyPoeaa.service-layer.model.names.ridge',
+  night: 'studyPoeaa.service-layer.model.names.night',
+  dawn: 'studyPoeaa.service-layer.model.names.dawn',
+  river: 'studyPoeaa.service-layer.model.names.river',
+} as const satisfies Record<CompositionName, string>;
+const tokens = { night: 'N', dawn: 'D', river: 'R' } as const satisfies Record<DraftName, string>;
+const tabNames = {
+  a: 'studyPoeaa.service-layer.model.tabs.a',
+  b: 'studyPoeaa.service-layer.model.tabs.b',
+} as const satisfies Record<TabId, string>;
+const clientNames = {
+  saveButton: 'studyPoeaa.service-layer.model.clients.saveButton',
+  importBox: 'studyPoeaa.service-layer.model.clients.importBox',
+} as const satisfies Record<ClientKind, string>;
 
-const tabOf = (t: StudyTranslate, tab: TabId) =>
-  tab === 'a'
-    ? t('studyPoeaa.service-layer.model.tabs.a')
-    : t('studyPoeaa.service-layer.model.tabs.b');
+const nameOf = (t: StudyTranslate, name: CompositionName): string => t(names[name]);
 
-const clientOf = (t: StudyTranslate, client: ClientKind) =>
-  client === 'saveButton'
-    ? t('studyPoeaa.service-layer.model.clients.saveButton')
-    : t('studyPoeaa.service-layer.model.clients.importBox');
+const namesOf = (t: StudyTranslate, list: readonly CompositionName[]) =>
+  listOf(
+    t,
+    list.map((name) => nameOf(t, name)),
+  );
+
+const tabOf = (t: StudyTranslate, tab: TabId) => t(tabNames[tab]);
+
+const clientOf = (t: StudyTranslate, client: ClientKind) => t(clientNames[client]);
 
 const idOf = (t: StudyTranslate, id: number) =>
   t('studyPoeaa.service-layer.model.composition', { id });
-
-const listOf = (t: StudyTranslate, items: readonly string[]) =>
-  items.length ? items.join(t('studyCommon.states.listSeparator')) : t('studyCommon.states.empty');
 
 /** A stored list in words: each composition's name with its id. */
 const savedList = (t: StudyTranslate, list: readonly SavedComposition[]) =>
@@ -93,11 +99,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     },
     { id: 'refused', label: t('studyPoeaa.service-layer.model.stages.refused'), tone: 'subject' },
   ],
-  objects: drafts.map((name) => ({
-    id: name,
-    label: nameOf(t, name),
-    key: name === 'night' ? 'N' : name === 'dawn' ? 'D' : 'R',
-  })),
+  objects: drafts.map((name) => ({ id: name, label: nameOf(t, name), key: tokens[name] })),
   transitions: [
     {
       id: 'check',
@@ -138,38 +140,9 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-const isDraft = (name: CompositionName): name is DraftName =>
-  drafts.some((draft) => draft === name);
-
-/** Which transition each composition took at a step, by the operation that ran. */
-function tookAt(step: ServiceLayerStep): Readonly<Record<string, string>> {
-  const { operation } = step;
-  switch (operation.kind) {
-    case 'check':
-      return {
-        [operation.call.draft.name]: operation.verdict.kind === 'accepted' ? 'check' : 'refuse',
-      };
-    case 'write':
-    case 'announce':
-      return { [operation.call.draft.name]: operation.kind };
-    case 'writeDirect':
-      return Object.fromEntries([
-        [operation.call.draft.name, 'writeDirect'],
-        ...operation.lost.filter(isDraft).map((name) => [name, 'overwritten']),
-      ]);
-    default:
-      return {};
-  }
-}
-
+// Each of the six transitions joins its own two stages, so every move takes its name from them.
 const snapshotOf = (step: ServiceLayerStep): StatesSnapshot => ({
-  at: Object.fromEntries(
-    drafts.flatMap((name) => {
-      const stage = stageOf(step.state, name);
-      return stage === null ? [] : [[name, stage]];
-    }),
-  ),
-  took: tookAt(step),
+  at: Object.fromEntries(drafts.map((name) => [name, stageOf(step.state, name)])),
 });
 
 /** The id a composition has in storage, or in the save still in progress for it. */
@@ -185,24 +158,21 @@ function heldId(step: ServiceLayerStep, name: DraftName): number {
 function objectNote(t: StudyTranslate, moment: ServiceLayerMoment, name: DraftName): string | null {
   const step = stepAt(moment);
   const stage = stageOf(step.state, name);
+  if (stage === null) return null;
   const id = idOf(t, heldId(step, name));
   const ownTab = tabOf(t, name === 'dawn' ? 'b' : 'a');
-  switch (stage) {
-    case null:
-      return null;
-    case 'draft':
+  const notes: Record<SaveStage, () => string> = {
+    draft: () => {
       if (name !== 'river')
         return t('studyPoeaa.service-layer.model.notes.unsaved', { tab: ownTab });
-      return moment.run.example.importForeign > 0
+      return moment.run.example.importForeign
         ? t('studyPoeaa.service-layer.model.notes.foreignExport')
         : t('studyPoeaa.service-layer.model.notes.export', { tab: ownTab });
-    case 'accepted':
-      return t('studyPoeaa.service-layer.model.notes.accepted', { id });
-    case 'stored':
-      return t('studyPoeaa.service-layer.model.notes.stored', { id });
-    case 'refused':
-      return t('studyPoeaa.service-layer.model.notes.refused');
-    default: {
+    },
+    accepted: () => t('studyPoeaa.service-layer.model.notes.accepted', { id }),
+    stored: () => t('studyPoeaa.service-layer.model.notes.stored', { id }),
+    refused: () => t('studyPoeaa.service-layer.model.notes.refused'),
+    announced: () => {
       const tabs = (['a', 'b'] as const).filter((tab) =>
         step.state.listed[tab].some((each) => each.name === name),
       );
@@ -213,8 +183,9 @@ function objectNote(t: StudyTranslate, moment: ServiceLayerMoment, name: DraftNa
           tabs.map((tab) => tabOf(t, tab)),
         ),
       });
-    }
-  }
+    },
+  };
+  return notes[stage]();
 }
 
 /** The sentence under the drawing: what the client asked and which part answered. */
@@ -229,31 +200,20 @@ function stepNote(t: StudyTranslate, moment: ServiceLayerMoment): string {
     id: idOf(t, heldId(stepAt(moment), draft.name)),
     count: state.stored.length,
   };
-  switch (operation.kind) {
-    case 'check':
-      return operation.verdict.kind === 'accepted'
-        ? t('studyPoeaa.service-layer.model.steps.check', {
-            ...words,
-            count: operation.read.length,
-          })
-        : t('studyPoeaa.service-layer.model.steps.refuse', words);
-    case 'write':
-      return t('studyPoeaa.service-layer.model.steps.write', words);
-    case 'announce':
-      return t('studyPoeaa.service-layer.model.steps.announce', words);
-    default: {
-      const lost = {
-        ...words,
-        lost: listOf(
-          t,
-          operation.lost.map((name) => nameOf(t, name)),
-        ),
-      };
+  return matchKind(operation, {
+    check: ({ verdict, read }) =>
+      verdict.kind === 'accepted'
+        ? t('studyPoeaa.service-layer.model.steps.check', { ...words, count: read.length })
+        : t('studyPoeaa.service-layer.model.steps.refuse', words),
+    write: () => t('studyPoeaa.service-layer.model.steps.write', words),
+    announce: () => t('studyPoeaa.service-layer.model.steps.announce', words),
+    writeDirect: ({ lost }) => {
+      const overwrote = { ...words, lost: namesOf(t, lost) };
       return draft.ownScene
-        ? t('studyPoeaa.service-layer.model.steps.writeDirect', lost)
-        : t('studyPoeaa.service-layer.model.steps.writeDirectForeign', lost);
-    }
-  }
+        ? t('studyPoeaa.service-layer.model.steps.writeDirect', overwrote)
+        : t('studyPoeaa.service-layer.model.steps.writeDirectForeign', overwrote);
+    },
+  });
 }
 
 /** The lines the operation itself worked out at this step, in the order it did them. */
@@ -263,72 +223,52 @@ function operationLines(t: StudyTranslate, moment: ServiceLayerMoment): readonly
   if (operation.kind === 'start') return [];
   const name = nameOf(t, operation.call.draft.name);
   const id = idOf(t, heldId(step, operation.call.draft.name));
-  switch (operation.kind) {
-    case 'check': {
-      const read = t('studyPoeaa.service-layer.model.worked.read', {
-        names: savedList(t, operation.read),
+  return matchKind(operation, {
+    check: ({ read, verdict, call }) => {
+      const readLine = t('studyPoeaa.service-layer.model.worked.read', {
+        names: savedList(t, read),
       });
-      if (operation.verdict.kind === 'refused')
-        return [read, t('studyPoeaa.service-layer.model.worked.otherScene')];
+      if (verdict.kind === 'refused')
+        return [readLine, t('studyPoeaa.service-layer.model.worked.otherScene')];
       const highest = t('studyPoeaa.service-layer.model.worked.highest', {
-        highest: highestId(operation.read),
+        highest: highestId(read),
         name,
         id,
       });
-      return operation.call.client === 'importBox'
-        ? [read, t('studyPoeaa.service-layer.model.worked.sameScene'), highest]
-        : [read, highest];
-    }
-    case 'write':
-      return [
-        t('studyPoeaa.service-layer.model.worked.write', { count: state.stored.length, name }),
-      ];
-    case 'announce':
-      return [
-        t('studyPoeaa.service-layer.model.worked.announce', {
-          tab: tabOf(t, operation.call.tab),
-          name,
-        }),
-      ];
-    default:
-      return [
-        t('studyPoeaa.service-layer.model.worked.held', {
-          tab: tabOf(t, operation.call.tab),
-          names: savedList(t, operation.held),
-        }),
-        t('studyPoeaa.service-layer.model.worked.directId', {
-          highest: highestId(operation.held),
-          name,
-          id,
-        }),
-        t('studyPoeaa.service-layer.model.worked.direct', { count: state.stored.length, name }),
-        t('studyPoeaa.service-layer.model.worked.lost', {
-          names: listOf(
-            t,
-            operation.lost.map((lost) => nameOf(t, lost)),
-          ),
-        }),
-      ];
-  }
+      return call.client === 'importBox'
+        ? [readLine, t('studyPoeaa.service-layer.model.worked.sameScene'), highest]
+        : [readLine, highest];
+    },
+    write: () => [
+      t('studyPoeaa.service-layer.model.worked.write', { count: state.stored.length, name }),
+    ],
+    announce: ({ call }) => [
+      t('studyPoeaa.service-layer.model.worked.announce', { tab: tabOf(t, call.tab), name }),
+    ],
+    writeDirect: ({ call, held, lost }) => [
+      t('studyPoeaa.service-layer.model.worked.held', {
+        tab: tabOf(t, call.tab),
+        names: savedList(t, held),
+      }),
+      t('studyPoeaa.service-layer.model.worked.directId', { highest: highestId(held), name, id }),
+      t('studyPoeaa.service-layer.model.worked.direct', { count: state.stored.length, name }),
+      t('studyPoeaa.service-layer.model.worked.lost', { names: namesOf(t, lost) }),
+    ],
+  });
 }
 
 /** Why the step matters for the pattern, in one line beside the worked lines. */
 function workedNote(t: StudyTranslate, step: ServiceLayerStep): string {
-  const { operation } = step;
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.service-layer.model.worked.notes.start');
-    case 'check':
-      return operation.verdict.kind === 'accepted'
+  return matchKind(step.operation, {
+    start: () => t('studyPoeaa.service-layer.model.worked.notes.start'),
+    check: ({ verdict }) =>
+      verdict.kind === 'accepted'
         ? t('studyPoeaa.service-layer.model.worked.notes.check')
-        : t('studyPoeaa.service-layer.model.worked.notes.refuse');
-    case 'write':
-      return t('studyPoeaa.service-layer.model.worked.notes.write');
-    case 'announce':
-      return t('studyPoeaa.service-layer.model.worked.notes.announce');
-    default:
-      return t('studyPoeaa.service-layer.model.worked.notes.writeDirect');
-  }
+        : t('studyPoeaa.service-layer.model.worked.notes.refuse'),
+    write: () => t('studyPoeaa.service-layer.model.worked.notes.write'),
+    announce: () => t('studyPoeaa.service-layer.model.worked.notes.announce'),
+    writeDirect: () => t('studyPoeaa.service-layer.model.worked.notes.writeDirect'),
+  });
 }
 
 /** The operation's own lines, then storage, both tabs' lists and the writes so far. */
@@ -358,29 +298,21 @@ function workedOf(t: StudyTranslate, moment: ServiceLayerMoment): StudyWorkedSte
 function textOf(t: StudyTranslate, moment: ServiceLayerMoment): StatesMomentText {
   const { example, parameters } = moment.run;
   const { stored, writes } = stepAt(moment).state;
-  const notes = Object.fromEntries(
-    drafts.flatMap((name) => {
-      const note = objectNote(t, moment, name);
-      return note === null ? [] : [[name, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(parameters, t),
       stored: savedList(t, stored),
       writes: String(writes),
-      importFile:
-        example.importForeign > 0
-          ? t('studyPoeaa.service-layer.model.values.foreignFile')
-          : t('studyPoeaa.service-layer.model.values.ownFile'),
-      importRoute:
-        example.importBypasses > 0
-          ? t('studyPoeaa.service-layer.model.values.bypass')
-          : t('studyPoeaa.service-layer.model.values.service'),
+      importFile: example.importForeign
+        ? t('studyPoeaa.service-layer.model.values.foreignFile')
+        : t('studyPoeaa.service-layer.model.values.ownFile'),
+      importRoute: example.importBypasses
+        ? t('studyPoeaa.service-layer.model.values.bypass')
+        : t('studyPoeaa.service-layer.model.values.service'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),
-    notes,
+    notes: Object.fromEntries(drafts.map((name) => [name, objectNote(t, moment, name)])),
   };
 }
 

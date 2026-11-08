@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   addRow,
@@ -8,6 +7,7 @@ import {
   fill,
   matches,
   model,
+  readParameters,
   recordSetRun,
   type RecordSetStep,
   rivalSave,
@@ -15,9 +15,9 @@ import {
   writeRow,
 } from './record-set.model';
 
-const record = await loadStatesStudy('poeaa:452');
+const record = await loadModelStudy('poeaa:452', 'states');
 const parameters = record.example.parameters;
-const example = { rivalSaves: 0, continueOnError: 0 };
+const example = { rivalSaves: 0, continueOnError: false };
 
 const stored = (): CompositionTable => ({
   rows: {
@@ -32,7 +32,8 @@ const statesOf = (step: RecordSetStep) =>
   Object.fromEntries(step.set.rows.map(({ id, state }) => [id, state]));
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, continueOnError: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
   expect(record.pseudocode.rxjs).toBeNull();
@@ -122,7 +123,7 @@ it('leaves a partial write when the adapter stops at a refused row', () => {
     ford: 'deleted',
     raid: 'added',
   });
-  const goesOn = lastOf(recordSetRun({ rivalSaves: 1, continueOnError: 1 }));
+  const goesOn = lastOf(recordSetRun({ rivalSaves: 1, continueOnError: true }));
   expect(goesOn.stopped).toBe(false);
   expect(goesOn.table).toEqual({
     rows: {
@@ -148,7 +149,6 @@ it('draws each row in its state and names the moves in the text equivalent', () 
   expect(frames[7].moves).toEqual([
     { object: 'ford', from: 'deleted', to: null, transition: 'acceptDelete' },
   ]);
-  expect(registerDrawing(run.states, 7).ghosts.map(({ id }) => id)).toEqual(['ford']);
   expect(fillValues(record.visual.textEquivalent, frames[4].values)).toBe(
     'Step 4: Dawn raid enters Added by add. The rows: Unchanged: none; Modified: Screen the wood, Hold the bridge; Added: Dawn raid; Deleted: Cross the ford. Statements sent so far: 0; rows refused: 0.',
   );

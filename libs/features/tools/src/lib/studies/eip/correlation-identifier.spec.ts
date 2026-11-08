@@ -1,6 +1,6 @@
 import { map, zip } from 'rxjs';
 
-import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
+import { loadModelStudy, withStudyMessages } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowModel } from '../study-model';
@@ -19,7 +19,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/correlation-identifi
 
 /** The record's own run of the example, with the parameters it ships, as the flow it draws. */
 async function recordRun() {
-  const record = await loadFlowStudy('eip:87');
+  const record = await loadModelStudy('eip:87', 'flow');
   const run = model(record.example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The model does not draw a flow.');
   return { record, run };

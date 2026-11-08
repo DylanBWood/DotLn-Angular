@@ -102,16 +102,28 @@ export interface TimelineSeries {
   readonly id: string;
   readonly label: string;
   readonly tone: StudyTone;
-  /** One value per entry of the timeline's `seconds`. */
+  /** One value per x value of the chart. */
   readonly values: readonly number[];
 }
 
-/** One or more series over time. */
-export interface TimelineModel {
+/**
+ * What a chart's x values hold: the seconds of a movement example's clock, the steps of a run, or
+ * a count, such as the studies a reader has opened.
+ */
+export type TimelineAxis = 'seconds' | 'steps' | 'counts';
+
+/** Where a chart keeps its x values: under the name of what they hold. */
+interface TimelineAxes {
+  readonly seconds: { readonly seconds: readonly number[] };
+  readonly steps: { readonly steps: readonly number[] };
+  readonly counts: { readonly counts: readonly number[] };
+}
+
+/** A chart's series, axes and marks, whatever its x values hold. */
+interface TimelineChart {
   readonly title: string;
   readonly xLabel: string;
   readonly yLabel: string;
-  readonly seconds: readonly number[];
   readonly series: readonly TimelineSeries[];
   /** The window drawn; the whole run and all its values when absent. */
   readonly xRange?: readonly [number, number];
@@ -122,6 +134,22 @@ export interface TimelineModel {
   readonly reference?: number;
   /** Points worth marking, such as a peak. */
   readonly marks?: readonly (StudyPoint & { readonly tone: StudyTone })[];
+}
+
+/**
+ * One or more series along x, with the x values held under the name of what they are, `seconds`
+ * by default. A chart whose x values may be any of them is `TimelineModel<TimelineAxis>`. Reading
+ * the axis from `TimelineAxes` lets the compiler see that a chart over seconds is a chart over some
+ * axis and never the reverse, so a comparison over steps cannot pass for one over seconds.
+ */
+export type TimelineModel<Axis extends TimelineAxis = 'seconds'> = TimelineChart &
+  TimelineAxes[Axis];
+
+/** The x value of each entry of a chart, whatever its x values hold. */
+export function xValuesOf(chart: TimelineModel<TimelineAxis>): readonly number[] {
+  if ('steps' in chart) return chart.steps;
+  if ('counts' in chart) return chart.counts;
+  return chart.seconds;
 }
 
 /** What happens on one marble line at one frame of the diagram. */
@@ -310,11 +338,14 @@ export interface StatesModel {
   readonly frames: readonly StatesFrame[];
 }
 
-/** A second run with one input changed, shown where the study says when the idea fails. */
-export interface StudyComparison {
+/**
+ * A second run with one input changed, shown where the study says when the idea fails. Its chart
+ * runs over seconds unless the comparison names the axis it runs over.
+ */
+export interface StudyComparison<Axis extends TimelineAxis = 'seconds'> {
   readonly title: string;
   readonly intro: string;
-  readonly timeline: TimelineModel;
+  readonly timeline: TimelineModel<Axis>;
   readonly findings: readonly string[];
   readonly note?: string;
 }
@@ -348,7 +379,7 @@ interface StudyModelBase {
   readonly legend: readonly StudyLegendEntry[];
   /** How to read the drawing, shown under it. */
   readonly caption: string;
-  readonly comparison?: StudyComparison;
+  readonly comparison?: StudyComparison<TimelineAxis>;
   /** The parameters worth changing; none leaves the example fixed. */
   readonly inputs?: readonly StudyInput[];
 }
@@ -358,6 +389,8 @@ export interface MotionStudyModel extends StudyModelBase {
   readonly family: 'motion';
   readonly motion: MotionModel;
   readonly timeline: TimelineModel | null;
+  /** A movement comparison runs on the example's own clock, as its chart beside the drawing does. */
+  readonly comparison?: StudyComparison;
 }
 
 /** A stream example: the marble diagram its executable spec asserts. */

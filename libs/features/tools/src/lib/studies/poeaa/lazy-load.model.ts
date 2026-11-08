@@ -9,6 +9,7 @@ export {
   afterEachReading,
   chunkOf,
   lazyLoadRun,
+  readParameters,
   request,
   settle,
   summaryRead,
@@ -18,5 +19,18 @@ export type { LazyLoadStep, StudyLoader } from './lazy-load.simulation';
 
 export const model = (parameters: StudyParameters, t: StudyTranslate): StatesStudyModel => {
   const example = readParameters(parameters);
-  return present({ example, steps: lazyLoadRun(example), parameters }, t);
+  // The comparison's runs differ from the example only in how the work is split, so the example's
+  // own run is whichever of them it chose.
+  const perWork = lazyLoadRun({ ...example, chunkPerStudy: false });
+  const perStudy = lazyLoadRun({ ...example, chunkPerStudy: true });
+  return present(
+    {
+      example,
+      steps: example.chunkPerStudy ? perStudy : perWork,
+      perWork,
+      perStudy,
+      parameters,
+    },
+    t,
+  );
 };

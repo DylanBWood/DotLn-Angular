@@ -1,14 +1,14 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: each row's line, which is its id, whether keys go through an identity map, and the stop. */
 export interface ForeignKeyParameters {
   readonly lineDataMapper: number;
   readonly lineIdentityMap: number;
   readonly lineUnitOfWork: number;
-  /** 1 when the loader resolves keys through an identity map; 0 when every key reads its row afresh. */
-  readonly identityMap: number;
+  /** True when the loader resolves keys through an identity map; false when every key reads its row afresh. */
+  readonly identityMap: boolean;
   /** How many reads this model allows a loader that has not finished before it stops it. */
   readonly readLimit: number;
 }
@@ -16,6 +16,9 @@ export interface ForeignKeyParameters {
 /** The three catalog rows of the example, in the order the drawing lists them. */
 export const catalogRows = ['dataMapper', 'identityMap', 'unitOfWork'] as const;
 export type RowId = (typeof catalogRows)[number];
+
+/** Where a row can stand: no object built from it, one still following keys, or all of them done. */
+export type RowPlace = 'stored' | 'resolving' | 'resolved';
 
 /** A stored row: its line in the map, which is its id, and the keys of the rows it relates to. */
 export interface CatalogRow {
@@ -84,7 +87,7 @@ export const readParameters = (parameters: StudyParameters): ForeignKeyParameter
   lineDataMapper: numberParameter(parameters, 'lineDataMapper'),
   lineIdentityMap: numberParameter(parameters, 'lineIdentityMap'),
   lineUnitOfWork: numberParameter(parameters, 'lineUnitOfWork'),
-  identityMap: numberParameter(parameters, 'identityMap'),
+  identityMap: booleanParameter(parameters, 'identityMap'),
   readLimit: numberParameter(parameters, 'readLimit'),
 });
 
@@ -158,17 +161,35 @@ function finish(loader: Loader, catalog: readonly CatalogRow[]): Finished {
 }
 
 /**
- * Follows the next key of the innermost unfinished object. Through the identity map, a key whose
- * row is built already becomes a reference to that object without a read; any other key loads its
- * row, whose own keys are then followed before this object's next one.
+ * The next key to follow: the unfinished object it belongs to, the key, the row it names, and the
+ * object the identity map already holds for that row. That object is known only through a map, and
+ * only a key without one reads a row.
  */
-export function follow(loader: Loader, catalog: readonly CatalogRow[], useMap: boolean): Followed {
+interface NextKey {
+  readonly top: Pending;
+  readonly from: RowObject;
+  readonly key: number;
+  readonly target: CatalogRow;
+  readonly known: number | undefined;
+}
+
+/** The next key of the innermost unfinished object, refusing a loader with nothing left to follow. */
+function nextKeyOf(loader: Loader, catalog: readonly CatalogRow[], useMap: boolean): NextKey {
   const top = loader.pending.at(-1);
   if (top === undefined) throw new Error('No object has a key left to follow.');
   const from = loader.objects[top.object];
   const key = rowOf(catalog, from.row).keys[top.next];
   const target = rowByKey(catalog, key);
-  const known = useMap ? loader.identityMap[target.id] : undefined;
+  return { top, from, key, target, known: useMap ? loader.identityMap[target.id] : undefined };
+}
+
+/**
+ * Follows the next key of the innermost unfinished object. Through the identity map, a key whose
+ * row is built already becomes a reference to that object without a read; any other key loads its
+ * row, whose own keys are then followed before this object's next one.
+ */
+export function follow(loader: Loader, catalog: readonly CatalogRow[], useMap: boolean): Followed {
+  const { top, from, key, target, known } = nextKeyOf(loader, catalog, useMap);
   const how: Resolution =
     known !== undefined
       ? 'found'
@@ -199,16 +220,21 @@ export function follow(loader: Loader, catalog: readonly CatalogRow[], useMap: b
 /**
  * The example as the loader runs it: open Data Mapper, then follow keys depth first until every
  * object is resolved, or until the read limit stops a loader that would otherwise never finish.
+ * The limit stops the loader only before a key that would read one more row; a key the identity
+ * map resolves costs no read, so it is followed whatever the count.
  */
 export function foreignKeyRun(example: ForeignKeyParameters): readonly ForeignKeyStep[] {
   const catalog = catalogOf(example);
-  const useMap = example.identityMap > 0;
+  const useMap = example.identityMap;
   let loader = load(emptyLoader, rowOf(catalog, 'dataMapper'), useMap);
   const steps: ForeignKeyStep[] = [
     { operation: { kind: 'start' }, loader: emptyLoader },
     { operation: { kind: 'open', row: 'dataMapper' }, loader },
   ];
-  while (loader.pending.length > 0 && loader.reads < example.readLimit) {
+  while (
+    loader.pending.length > 0 &&
+    (loader.reads < example.readLimit || nextKeyOf(loader, catalog, useMap).known !== undefined)
+  ) {
     const { loader: after, ...operation } = follow(loader, catalog, useMap);
     loader = after;
     steps.push({ operation: { kind: 'follow', ...operation }, loader });
@@ -221,7 +247,7 @@ export function foreignKeyRun(example: ForeignKeyParameters): readonly ForeignKe
  * Where a row stands after a step: `stored` while no object stands for it, `resolving` while any
  * object built from it still has keys to follow, and `resolved` once every one of them is done.
  */
-export function placeOf(loader: Loader, row: RowId): string {
+export function placeOf(loader: Loader, row: RowId): RowPlace {
   const built = loader.objects.flatMap((object, index) => (object.row === row ? [index] : []));
   if (built.length === 0) return 'stored';
   return loader.pending.some(({ object }) => built.includes(object)) ? 'resolving' : 'resolved';

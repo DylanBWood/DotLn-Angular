@@ -1,6 +1,6 @@
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import { studyMessage } from '../study-message';
@@ -37,7 +37,7 @@ it('runs the release-close example against the marbles both drawings show', () =
 });
 
 it('attaches the record to the Recipient List row, reads this module and supplies every value its prose names', async () => {
-  const record = await loadFlowStudy('eip:105');
+  const record = await loadModelStudy('eip:105', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable?.module).toBe(path);
   expect(record.example.parameters).toEqual(parameters);

@@ -13,19 +13,25 @@ import type {
   StudyMoment,
   StudyValues,
   StudyWorkedStep,
+  TimelineAxis,
 } from './study-model';
 import { secondsPerFrame } from './study-model';
 import type { StudyTranslate } from './study-translate';
 
 /**
  * One moment of a simulation, in its own identifiers: the state each tracked object is in, and the
- * transition that brought an object there where the simulation names one. It carries no words, so
- * the mechanism that produced it stays independent of language.
+ * transition that brought an object there where the shape alone cannot tell. It carries no words,
+ * so the mechanism that produced it stays independent of language.
  */
 export interface StatesSnapshot {
-  /** The state each tracked object is in, by object id; an untracked object is absent. */
-  readonly at: Readonly<Record<string, string>>;
-  /** The transition each object took to reach this moment, by object id, where it names one. */
+  /** The state each tracked object is in, by object id; an untracked object is absent or null. */
+  readonly at: Readonly<Record<string, string | null>>;
+  /**
+   * The transition an object took to reach this moment, by object id, named only where the shape
+   * cannot infer it: where two transitions join the same two states, or where an object takes a
+   * transition back into the state it was already in. A move between two states that exactly one
+   * transition joins takes that transition without being named here.
+   */
   readonly took?: Readonly<Record<string, string>>;
 }
 
@@ -34,8 +40,8 @@ export interface StatesMomentText {
   readonly values?: StudyValues;
   readonly note?: string;
   readonly worked?: StudyWorkedStep;
-  /** A few words beside an object at this moment, such as `version 4`, by object id. */
-  readonly notes?: Readonly<Record<string, string>>;
+  /** A few words beside an object at this moment, such as `version 4`, by object id; null for none. */
+  readonly notes?: Readonly<Record<string, string | null>>;
 }
 
 /** The states, the objects and the transitions of an example, with their names translated. */
@@ -59,7 +65,8 @@ export interface StatesStudyParts {
   readonly caption?: string;
   /** The moment the drawing opens on; the start when absent. */
   readonly initialStep?: number;
-  readonly comparison?: StudyComparison;
+  /** A second run beside the first, charted over the steps or the counts it runs through. */
+  readonly comparison?: StudyComparison<TimelineAxis>;
   readonly inputs?: readonly StudyInput[];
 }
 
@@ -86,7 +93,7 @@ function checkSnapshot(shape: StatesShape, snapshot: StatesSnapshot, step: numbe
   for (const [object, state] of Object.entries(snapshot.at)) {
     if (!shape.objects.some(({ id }) => id === object))
       throw new Error(`Step ${step} places ${object}, which the example does not have.`);
-    if (!shape.nodes.some(({ id }) => id === state))
+    if (state !== null && !shape.nodes.some(({ id }) => id === state))
       throw new Error(`Step ${step} puts ${object} in ${state}, which the example does not have.`);
   }
   for (const [object, transition] of Object.entries(snapshot.took ?? {}))
@@ -95,8 +102,23 @@ function checkSnapshot(shape: StatesShape, snapshot: StatesSnapshot, step: numbe
 }
 
 /**
- * What changed between two snapshots, in the shape's object order. An object whose state did not
- * change still moves when the snapshot names a transition back into the same state.
+ * The transition a move between two different states takes when its snapshot names none: the one
+ * transition that joins them, or none when no transition does. Two that join them leave the way
+ * ambiguous, and the example is refused until it names one.
+ */
+function inferredTransition(move: StateMove, shape: StatesShape): string | undefined {
+  const joining = shape.transitions.filter(({ from, to }) => from === move.from && to === move.to);
+  if (joining.length > 1)
+    throw new Error(
+      `${move.object} moves from ${move.from} to ${move.to}, which ${joining.map(({ id }) => id).join(' and ')} each join; the snapshot must name one.`,
+    );
+  return joining[0]?.id;
+}
+
+/**
+ * What changed between two snapshots, in the shape's object order. A move takes the transition its
+ * snapshot names, which must join the two states, or else the one transition that joins them. An
+ * object whose state did not change moves only when the snapshot names a transition back into it.
  */
 function movesBetween(
   shape: StatesShape,
@@ -104,15 +126,21 @@ function movesBetween(
   after: StatesSnapshot,
 ): readonly StateMove[] {
   return shape.objects.flatMap(({ id: object }): StateMove[] => {
-    const from = before.at[object] ?? null;
-    const to = after.at[object] ?? null;
-    const transitionId = after.took?.[object];
-    if (from === to && transitionId === undefined) return [];
-    if (transitionId === undefined) return [{ object, from, to }];
-    const transition = shape.transitions.find(({ id }) => id === transitionId);
-    if (!transition || transition.from !== from || transition.to !== to)
-      throw new Error(`${object} cannot take ${transitionId} from ${from} to ${to}.`);
-    return [{ object, from, to, transition: transitionId }];
+    const move: StateMove = {
+      object,
+      from: before.at[object] ?? null,
+      to: after.at[object] ?? null,
+    };
+    const named = after.took?.[object];
+    if (named === undefined) {
+      if (move.from === move.to) return [];
+      const transition = inferredTransition(move, shape);
+      return [transition === undefined ? move : { ...move, transition }];
+    }
+    const transition = shape.transitions.find(({ id }) => id === named);
+    if (!transition || transition.from !== move.from || transition.to !== move.to)
+      throw new Error(`${object} cannot take ${named} from ${move.from} to ${move.to}.`);
+    return [{ ...move, transition: named }];
   });
 }
 
@@ -175,7 +203,7 @@ function moveSentence(shape: StatesShape, group: readonly StateMove[], t: StudyT
   const objects = group.map(({ object }) => labelOf(shape.objects, object, 'object'));
   return t(group.length === 1 ? (named ? oneBy : one) : named ? manyBy : many, {
     object: objects[0],
-    objects: objects.join(t('studyCommon.states.listSeparator')),
+    objects: listOf(t, objects),
     from: move.from === null ? '' : labelOf(shape.nodes, move.from, 'state'),
     to: move.to === null ? '' : labelOf(shape.nodes, move.to, 'state'),
     transition:
@@ -225,10 +253,10 @@ function frameOf(run: StatesRun, step: number, t: StudyTranslate): StatesFrame {
   checkSnapshot(shape, snapshot, step);
   const moves = step === 0 ? [] : movesBetween(shape, snapshots[step - 1], snapshot);
   const placements = shape.objects.flatMap(({ id: object }): StatePlacement[] => {
-    const node = snapshot.at[object];
-    if (node === undefined) return [];
-    const note = words.notes?.[object];
-    return [note === undefined ? { object, node } : { object, node, note }];
+    const node = snapshot.at[object] ?? null;
+    if (node === null) return [];
+    const note = words.notes?.[object] ?? null;
+    return [note === null ? { object, node } : { object, node, note }];
   });
   const movesText = movesSentence(shape, moves, t);
   return {

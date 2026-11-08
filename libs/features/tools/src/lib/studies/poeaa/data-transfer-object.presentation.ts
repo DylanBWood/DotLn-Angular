@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -16,6 +17,7 @@ import {
   objectIds,
   transferred,
   type TransferredId,
+  type TransferState,
   transferState,
 } from './data-transfer-object.simulation';
 
@@ -36,28 +38,26 @@ interface DataTransferMoment {
 
 const stepAt = ({ run, index }: DataTransferMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: TransferredId): string {
-  switch (id) {
-    case 'actor':
-      return t('studyPoeaa.data-transfer-object.model.names.actor');
-    case 'build':
-      return t('studyPoeaa.data-transfer-object.model.names.build');
-    default:
-      return t('studyPoeaa.data-transfer-object.model.names.evidence');
-  }
-}
+// Each object's name, the machine id it travels under in the words the reader sees it as, and the
+// letter its token shows; the compiler requires an entry for every object the example transfers.
+const names = {
+  actor: 'studyPoeaa.data-transfer-object.model.names.actor',
+  build: 'studyPoeaa.data-transfer-object.model.names.build',
+  evidence: 'studyPoeaa.data-transfer-object.model.names.evidence',
+} as const satisfies Record<TransferredId, string>;
+const ids = {
+  actor: 'studyPoeaa.data-transfer-object.model.ids.actor',
+  build: 'studyPoeaa.data-transfer-object.model.ids.build',
+  evidence: 'studyPoeaa.data-transfer-object.model.ids.evidence',
+} as const satisfies Record<TransferredId, string>;
+const tokens = { actor: 'A', build: 'B', evidence: 'E' } as const satisfies Record<
+  TransferredId,
+  string
+>;
 
-/** The machine id an object travels under, in the words the reader sees it as. */
-function idOf(t: StudyTranslate, id: TransferredId): string {
-  switch (id) {
-    case 'actor':
-      return t('studyPoeaa.data-transfer-object.model.ids.actor');
-    case 'build':
-      return t('studyPoeaa.data-transfer-object.model.ids.build');
-    default:
-      return t('studyPoeaa.data-transfer-object.model.ids.evidence');
-  }
-}
+const nameOf = (t: StudyTranslate, id: TransferredId): string => t(names[id]);
+
+const idOf = (t: StudyTranslate, id: TransferredId): string => t(ids[id]);
 
 const versionOf = (t: StudyTranslate, version: number) =>
   t('studyPoeaa.data-transfer-object.model.values.versionName', { version });
@@ -70,11 +70,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     { id: 'view', label: t('studyPoeaa.data-transfer-object.model.states.view') },
     { id: 'refused', label: t('studyPoeaa.data-transfer-object.model.states.refused') },
   ],
-  objects: transferred.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: id === 'actor' ? 'A' : id === 'build' ? 'B' : 'E',
-  })),
+  objects: transferred.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'assemble',
@@ -103,25 +99,9 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition each object took at a step, by what the step did. */
-function tookAt(step: DataTransferStep): Readonly<Record<string, string>> {
-  const { operation, decoded } = step;
-  const all = (transition: string) => Object.fromEntries(transferred.map((id) => [id, transition]));
-  switch (operation.kind) {
-    case 'assemble':
-      return { [operation.id]: 'assemble' };
-    case 'encode':
-      return all('encode');
-    case 'decode':
-      return all(decoded?.read ? 'decode' : 'decodeRefused');
-    default:
-      return {};
-  }
-}
-
+// Each of the four transitions joins its own two states, so every move takes its name from them.
 const snapshotOf = (step: DataTransferStep): StatesSnapshot => ({
   at: Object.fromEntries(transferred.map((id) => [id, transferState(step, id)])),
-  took: tookAt(step),
 });
 
 /** How many cells the page read for an object's row, once it has accepted the document. */
@@ -161,42 +141,37 @@ const copyValues = (t: StudyTranslate, moment: DataTransferMoment) => ({
 /** The few words beside an object's name: what it holds where it stands now. */
 function objectNote(t: StudyTranslate, moment: DataTransferMoment, id: TransferredId): string {
   const step = stepAt(moment);
-  switch (transferState(step, id)) {
-    case 'domain':
-      return t(domainNotes[id], copyValues(t, moment));
-    case 'dto':
-      return t(copiedNotes[id], copyValues(t, moment));
-    case 'wire':
-      return t('studyPoeaa.data-transfer-object.model.notes.wire', {
-        bytes: byteLength(step.text ?? ''),
-      });
-    case 'view':
-      return id === 'evidence'
+  const notes: Record<TransferState, () => string> = {
+    domain: () => t(domainNotes[id], copyValues(t, moment)),
+    dto: () => t(copiedNotes[id], copyValues(t, moment)),
+    wire: () =>
+      t('studyPoeaa.data-transfer-object.model.notes.wire', { bytes: byteLength(step.text ?? '') }),
+    view: () =>
+      id === 'evidence'
         ? t('studyPoeaa.data-transfer-object.model.notes.viewEvidence')
-        : t('studyPoeaa.data-transfer-object.model.notes.viewRow', { cells: cellsRead(step, id) });
-    default:
-      return t('studyPoeaa.data-transfer-object.model.notes.refused', {
+        : t('studyPoeaa.data-transfer-object.model.notes.viewRow', { cells: cellsRead(step, id) }),
+    refused: () =>
+      t('studyPoeaa.data-transfer-object.model.notes.refused', {
         sent: versionOf(t, step.decoded?.sent ?? 0),
-      });
-  }
+      }),
+  };
+  return notes[transferState(step, id)]();
 }
 
 /** The sentence under the drawing: what the assembler, the encoder or the page did at this step. */
 function stepNote(t: StudyTranslate, moment: DataTransferMoment): string {
   const { operation, text, decoded } = stepAt(moment);
   const { example } = moment.run;
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.data-transfer-object.model.steps.start');
-    case 'assemble':
-      return t(assembleNotes[operation.id], copyValues(t, moment));
-    case 'encode':
-      return t('studyPoeaa.data-transfer-object.model.steps.encode', {
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.data-transfer-object.model.steps.start'),
+    assemble: ({ id }) => t(assembleNotes[id], copyValues(t, moment)),
+    encode: () =>
+      t('studyPoeaa.data-transfer-object.model.steps.encode', {
         bytes: byteLength(text ?? ''),
         version: versionOf(t, example.serverVersion),
-      });
-    default:
-      return decoded?.read
+      }),
+    decode: () =>
+      decoded?.read
         ? t('studyPoeaa.data-transfer-object.model.steps.decoded', {
             expected: versionOf(t, example.pageVersion),
             build: idOf(t, 'build'),
@@ -204,31 +179,30 @@ function stepNote(t: StudyTranslate, moment: DataTransferMoment): string {
         : t('studyPoeaa.data-transfer-object.model.steps.refused', {
             expected: versionOf(t, example.pageVersion),
             sent: versionOf(t, decoded?.sent ?? 0),
-          });
-  }
+          }),
+  });
 }
 
 /** The line the worked step adds for what this step did. */
 function operationLine(t: StudyTranslate, moment: DataTransferMoment): string {
   const { operation, text, decoded, assembled } = stepAt(moment);
-  switch (operation.kind) {
-    case 'start':
-      return moment.run.encodesDirectly
+  return matchKind(operation, {
+    start: () =>
+      moment.run.encodesDirectly
         ? t('studyPoeaa.data-transfer-object.model.worked.direct')
-        : t('studyPoeaa.data-transfer-object.model.worked.cycle');
-    case 'assemble':
-      return t(assembleLines[operation.id], copyValues(t, moment));
-    case 'encode':
-      return t('studyPoeaa.data-transfer-object.model.worked.bytes', {
+        : t('studyPoeaa.data-transfer-object.model.worked.cycle'),
+    assemble: ({ id }) => t(assembleLines[id], copyValues(t, moment)),
+    encode: () =>
+      t('studyPoeaa.data-transfer-object.model.worked.bytes', {
         bytes: byteLength(text ?? ''),
         objects: assembled.length,
-      });
-    default:
-      return t('studyPoeaa.data-transfer-object.model.worked.check', {
+      }),
+    decode: () =>
+      t('studyPoeaa.data-transfer-object.model.worked.check', {
         sent: versionOf(t, decoded?.sent ?? 0),
         expected: versionOf(t, moment.run.example.pageVersion),
-      });
-  }
+      }),
+  });
 }
 
 /** The transfer object at this moment, as the mechanism's worked lines. */

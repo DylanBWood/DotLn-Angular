@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
 import { example, model } from './message-store';
@@ -29,7 +29,7 @@ const carriedBy = (frames: readonly FlowFrame[], link: string) =>
   );
 
 it('attaches the record to the Message Store row and draws its flow from this module', async () => {
-  const record = await loadFlowStudy('eip:192');
+  const record = await loadModelStudy('eip:192', 'flow');
   expect(record.visual.model).toBe(modulePath);
   expect(record.pseudocode.executable).toBeNull();
   // The reading does not run, says so first, and names the pattern's parts where the code has them.

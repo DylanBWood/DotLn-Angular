@@ -1,11 +1,11 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter } from '../parameters';
 
 /** The example's input: whether production's configuration names the tests' painter. */
 export interface PluginParameters {
-  /** 1 when production's configuration names the null painter, as if copied from the tests' file. */
-  readonly productionStub: number;
+  /** True when production's configuration names the null painter, as if copied from the tests' file. */
+  readonly productionStub: boolean;
 }
 
 /** The environments the scene runs in, in the order the example starts them. */
@@ -43,17 +43,18 @@ export interface PluginStep {
 }
 
 export const readParameters = (parameters: StudyParameters): PluginParameters => ({
-  productionStub: numberParameter(parameters, 'productionStub'),
+  productionStub: booleanParameter(parameters, 'productionStub'),
 });
 
 /** What each environment's configuration names: canvas where a screen is, null for unit tests. */
 export const configurationOf = (example: PluginParameters): Configuration => ({
   development: 'canvas',
   tests: 'null',
-  production: example.productionStub > 0 ? 'null' : 'canvas',
+  production: example.productionStub ? 'null' : 'canvas',
 });
 
-const isLinked = (name: string): name is PainterName =>
+/** True for a configured name the build links a painter under. */
+export const isLinked = (name: string): name is PainterName =>
   (linkedPainters as readonly string[]).includes(name);
 
 /**

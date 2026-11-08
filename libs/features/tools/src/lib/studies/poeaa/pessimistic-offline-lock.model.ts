@@ -8,6 +8,7 @@ import { pessimisticRun, readParameters } from './pessimistic-offline-lock.simul
 export {
   lostBy,
   pessimisticRun,
+  readParameters,
   requestLock,
   saveUnderLock,
   waitedBy,

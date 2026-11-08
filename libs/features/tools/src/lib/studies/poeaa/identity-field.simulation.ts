@@ -1,13 +1,13 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the numbers of the two stored keys, and whether a save reads storage first. */
 export interface IdentityFieldParameters {
   readonly keyFlank: number;
   readonly keyRidge: number;
-  /** 1 when each save reads the stored list again before choosing, as the scene's save does; 0 when not. */
-  readonly rereads: number;
+  /** True when each save reads the stored list again before choosing, as the scene's save does. */
+  readonly rereads: boolean;
 }
 
 /** The four compositions of the example, by id. */
@@ -73,7 +73,7 @@ export interface IdentityFieldStep {
 export const readParameters = (parameters: StudyParameters): IdentityFieldParameters => ({
   keyFlank: numberParameter(parameters, 'keyFlank'),
   keyRidge: numberParameter(parameters, 'keyRidge'),
-  rereads: numberParameter(parameters, 'rereads'),
+  rereads: booleanParameter(parameters, 'rereads'),
 });
 
 const withTab = (scene: Scene, tab: TabId, change: Tab): Scene => ({
@@ -162,8 +162,8 @@ export function identityFieldRun(example: IdentityFieldParameters): readonly Ide
     { tab: 'here', id: 'night' },
   ] as const;
   steps.push({ operation: { kind: 'compose', made }, scene });
-  const reread = example.rereads > 0;
   const saveDraft = (tab: TabId, id: CompositionId): number => {
+    const reread = example.rereads;
     const { scene: after, read, key } = save(scene, tab, id, reread);
     scene = after;
     steps.push({ operation: { kind: 'save', tab, id, reread, read, key }, scene });

@@ -88,6 +88,12 @@
   pseudocode.
 - A visual has a text equivalent and never autoplays. It moves on command, offers no Play under
   reduced motion, and keeps a short sentence on screen for each moment.
+- A drawing's token letters are symbols, not words: the marble letters are the TestScheduler's
+  syntax, and the flow and states tokens are machine identifiers. Every family shows them through
+  the house symbol template, `tools.study.symbol`, with the translated name beside them (a lane's
+  label, a message's content, a row's name), and none is translated, so a drawing and the spec
+  that reads the same strings cannot part. A family where that fails is recorded in its order's
+  decisions, never translated alone.
 - An executable example has a spec, and a model composes a pure simulation with presentation using an explicit
   `StudyTranslate` argument. Simulation inputs and stream payloads never depend on language. Call
   the scene engine's function where it has the behaviour; do not reimplement it.
@@ -117,7 +123,9 @@
   exists at the integrated base.
 - An enterprise pattern with a mechanism to run draws a `states` register. Its model composes a language-free
   simulation of the mechanism with a presentation that builds the drawing through `statesModel`
-  from one snapshot per moment, so the drawing and the spec read the same run. The drawing names the
+  from one snapshot per moment, so the drawing and the spec read the same run. A snapshot names the
+  transition a move took only where two transitions join its states or the object stays where it
+  was; the builder infers every other one and refuses an ambiguous move. The drawing names the
   same module as `pseudocode.executable`, and an RxJS reading such a study gives begins with
   `// Illustrative:` and its reason, since the mechanism runs as TypeScript. A structural choice
   with no mechanism to run carries `executable: null` and `visual: null`, and the batch's decisions
@@ -135,8 +143,14 @@
   most four parameters. Name the parameter and return shapes rather than borrowing another
   function's return type. Use `studies/number-format.ts` for the authored precision and rounding
   convention, and nest message keys by study and part with semantic placeholders such as
-  `speed` and `clearance`, never `valueN`. Keep each function whole around one job and exported
-  model composition small. The 80-line guard is a ceiling, not a design target. Critics read
+  `speed` and `clearance`, never `valueN`. Look a display name, a token letter or a state's tone
+  up in a table keyed by the study's id union and checked with `satisfies Record<…>`, and choose
+  by an operation's kind through a table of one function per kind (`matchKind` in
+  `studies/match-kind.ts`), never a `switch` whose `default` stands for a case, so the compiler
+  requires an entry for every id and kind. Join every list with `listOf`, read an on/off input as a
+  boolean with `booleanParameter`, and carry a comparison's runs in the run description. Keep each
+  function whole around one job and exported model composition small. The 80-line guard is a
+  ceiling, not a design target. Critics read
   the actual code, including reused shapes; a dedicated standards pass reads each landed batch
   and the code added since the preceding pass.
 - `MessageCatalog` loads only the work’s messages and shared narration. A failed code or message

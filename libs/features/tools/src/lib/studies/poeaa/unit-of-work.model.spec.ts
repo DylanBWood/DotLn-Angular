@@ -1,20 +1,20 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   commit,
   type CompositionStore,
   load,
   model,
+  readParameters,
   registerDirty,
   registerNew,
   registerRemoved,
   unitOfWorkRun,
 } from './unit-of-work.model';
 
-const record = await loadStatesStudy('poeaa:246');
+const record = await loadModelStudy('poeaa:246', 'states');
 const parameters = record.example.parameters;
-const example = { versionFlank: 3, versionRidge: 5, renames: 2, otherTabSaves: 0 };
+const example = { versionFlank: 3, versionRidge: 5, renames: 2, otherTabSaves: false };
 
 const stored = (): CompositionStore => ({
   rows: { flank: { edits: 0, version: 3 }, ridge: { edits: 0, version: 5 } },
@@ -22,7 +22,8 @@ const stored = (): CompositionStore => ({
 });
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, otherTabSaves: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -62,7 +63,7 @@ it('writes every registered change in one call, then empties the registers', () 
 });
 
 it('refuses the whole commit when another tab saved a changed object first', () => {
-  const steps = unitOfWorkRun({ ...example, otherTabSaves: 1 });
+  const steps = unitOfWorkRun({ ...example, otherTabSaves: true });
   const rival = steps[steps.length - 2];
   const last = steps[steps.length - 1];
   expect(rival.operation).toEqual({ kind: 'otherSave', id: 'ridge' });
@@ -111,9 +112,9 @@ it('keeps the drawing’s rows and notes in step with the run, including a refus
   expect(last.placements.find(({ object }) => object === 'ridge')?.note).toBe(
     'holds version 5; the store has 6',
   );
-  const drawing = registerDrawing(refused.states, refused.states.frames.length - 1);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['F', 'R', 'N']);
-  expect(drawing.arrows).toEqual([]);
+  // The refused commit leaves all three compositions where they were, under their token letters.
+  const keys = tokensOf(refused.states);
+  expect(last.placements.map(({ object }) => keys[object])).toEqual(['F', 'R', 'N']);
   // With no renames, nothing becomes dirty and the commit sends no update.
   const untouched = unitOfWorkRun({ ...example, renames: 0 });
   expect(untouched[untouched.length - 1].operation).toMatchObject({

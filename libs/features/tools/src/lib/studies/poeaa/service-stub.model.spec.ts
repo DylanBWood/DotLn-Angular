@@ -1,11 +1,11 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import { arrive, translate } from './gateway.model';
 import {
   expectationOf,
   judge,
   model,
+  readParameters,
   release,
   runCase,
   stubAnswer,
@@ -14,10 +14,10 @@ import {
   tally,
 } from './service-stub.model';
 
-const record = await loadStatesStudy('poeaa:448');
+const record = await loadModelStudy('poeaa:448', 'states');
 const parameters = record.example.parameters;
 const example = {
-  dynamicStub: 1,
+  dynamicStub: true,
   refusalStatus: 503,
   timeoutMs: 30,
   stubDelayMs: 200,
@@ -29,7 +29,8 @@ const statesAfter = (steps: readonly SuiteStep[], index: number) =>
   Object.fromEntries(Object.entries(steps[index].cases).map(([id, { state }]) => [id, state]));
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, dynamicStub: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -82,7 +83,7 @@ it('passes every case in memory, with no call to the live API until release', ()
 });
 
 it('fails the failure paths with a static stub, which has one answer for every case', () => {
-  const steps = suiteRun({ ...example, dynamicStub: 0 });
+  const steps = suiteRun({ ...example, dynamicStub: false });
   expect(statesAfter(steps, 8)).toEqual({
     recorded: 'passed',
     refusal: 'failed',
@@ -174,12 +175,16 @@ it('draws each case in the column of where it stands, and reads the suite aloud'
     ['Suite done', 8],
     ['Release', 9],
   ]);
-  const drawing = registerDrawing(run.states, 8);
-  expect(drawing.tokens.map(({ key, state }) => [key, state])).toEqual([
-    ['D', 'resting'],
-    ['R', 'resting'],
-    ['L', 'resting'],
-    ['T', 'moving'],
+  // Every case stands in the suite under its token letter at its verdict, and only the timeout case moves.
+  const keys = tokensOf(run.states);
+  const moving = new Set(run.states.frames[8].moves.map(({ object }) => object));
+  expect(
+    run.states.frames[8].placements.map(({ object }) => [keys[object], moving.has(object)]),
+  ).toEqual([
+    ['D', false],
+    ['R', false],
+    ['L', false],
+    ['T', true],
   ]);
   const staticRun = model({ ...parameters, dynamicStub: 0 }, studyTranslate);
   expect(staticRun.states.frames[4].moves).toEqual([

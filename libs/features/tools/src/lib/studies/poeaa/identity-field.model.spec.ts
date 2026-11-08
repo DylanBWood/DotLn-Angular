@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   collisionsIn,
@@ -10,14 +9,15 @@ import {
   model,
   nextKey,
   open,
+  readParameters,
   save,
   type Scene,
   sharersOf,
 } from './identity-field.model';
 
-const record = await loadStatesStudy('poeaa:268');
+const record = await loadModelStudy('poeaa:268', 'states');
 const parameters = record.example.parameters;
-const example = { keyFlank: 1, keyRidge: 2, rereads: 1 };
+const example = { keyFlank: 1, keyRidge: 2, rereads: true };
 
 const twoTabs = (): Scene => {
   const stored = [
@@ -31,7 +31,8 @@ const twoTabs = (): Scene => {
 };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, rereads: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -73,7 +74,7 @@ it('takes a fresh key when the save reads storage again, so one key names one co
 });
 
 it('collides when a save keys from the list its tab already holds, and storage drops the first', () => {
-  const steps = identityFieldRun({ ...example, rereads: 0 });
+  const steps = identityFieldRun({ ...example, rereads: false });
   const saved = steps[3];
   expect(saved.operation).toMatchObject({ kind: 'save', id: 'night', key: 3, reread: false });
   const scene = saved.scene;
@@ -117,11 +118,9 @@ it('draws each composition in its column, with the collision as two moves at one
   expect(collided.states.frames[4].note).toBe(
     'This tab opens composition-3 and finds Night march, while in the other tab the same key opens Dawn raid.',
   );
-  const drawing = registerDrawing(collided.states, 3);
-  expect(drawing.tokens.filter(({ state }) => state === 'moving').map(({ key }) => key)).toEqual([
-    'D',
-    'N',
-  ]);
+  // The two compositions that move at the collision are shown by their own token letters.
+  const keys = tokensOf(collided.states);
+  expect(step.moves.map(({ object }) => keys[object])).toEqual(['D', 'N']);
 });
 
 it('names the moments in order, calling the second save a collision only when it is one', () => {

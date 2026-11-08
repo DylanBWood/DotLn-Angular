@@ -1,4 +1,4 @@
-import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
+import { loadModelStudy, withStudyMessages } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
@@ -14,7 +14,7 @@ const path = 'libs/features/tools/src/lib/studies/eip/message-expiration.ts';
 
 /** The example run from the record's own parameters, which this module always draws as a flow. */
 async function drawn(): Promise<FlowStudyModel> {
-  const run = model((await loadFlowStudy('eip:91')).example.parameters, studyTranslate);
+  const run = model((await loadModelStudy('eip:91', 'flow')).example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The study is drawn as a flow.');
   return run;
 }
@@ -29,7 +29,7 @@ it('runs the verification queue against the marbles both drawings show', () => {
 });
 
 it('attaches the record to the Message Expiration row, with this module and its limit', async () => {
-  const record = await loadFlowStudy('eip:91');
+  const record = await loadModelStudy('eip:91', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: path });
   expect(record.example.parameters).toEqual({ timeToLive });
@@ -177,7 +177,7 @@ it('loses the younger request instead when the limit is raised', () => {
 });
 
 it('supplies every value the record’s prose reads, at every step', async () => {
-  const record = await loadFlowStudy('eip:91');
+  const record = await loadModelStudy('eip:91', 'flow');
   const { frames } = (await drawn()).flow;
   const names = [
     ...placeholdersIn(record.visual.textEquivalent),

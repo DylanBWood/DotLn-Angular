@@ -1,13 +1,13 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: a rival save, and what the adapter does with a refused row. */
 export interface RecordSetParameters {
   /** How many times another tab saves a new note for Hold the bridge before the write-back. */
   readonly rivalSaves: number;
-  /** 1 when the adapter skips a refused row and goes on; 0 when it stops at the first refusal. */
-  readonly continueOnError: number;
+  /** True when the adapter skips a refused row and goes on; false when it stops at the first refusal. */
+  readonly continueOnError: boolean;
 }
 
 /** The compositions of the example, by id: three stored, and one the session adds. */
@@ -75,7 +75,7 @@ export interface RecordSetStep {
 
 export const readParameters = (parameters: StudyParameters): RecordSetParameters => ({
   rivalSaves: numberParameter(parameters, 'rivalSaves'),
-  continueOnError: numberParameter(parameters, 'continueOnError'),
+  continueOnError: booleanParameter(parameters, 'continueOnError'),
 });
 
 /** The row of a composition in the record set; undefined once a deletion has been accepted. */
@@ -149,19 +149,16 @@ export function rivalSave(
   return { ...table, rows: { ...table.rows, [id]: { ...stored, [column]: write } } };
 }
 
+// The statement the adapter builds for a row in each state; none for an Unchanged row.
+const statements: Readonly<Record<RowState, Statement | null>> = {
+  unchanged: null,
+  modified: 'update',
+  added: 'insert',
+  deleted: 'delete',
+};
+
 /** The statement the adapter builds for a row from its state; none for an Unchanged row. */
-export function statementFor(row: RecordRow): Statement | null {
-  switch (row.state) {
-    case 'added':
-      return 'insert';
-    case 'modified':
-      return 'update';
-    case 'deleted':
-      return 'delete';
-    default:
-      return null;
-  }
-}
+export const statementFor = (row: RecordRow): Statement | null => statements[row.state];
 
 /**
  * Whether a row's statement finds what it expects: an insert needs its id free, and an update or
@@ -265,7 +262,7 @@ export function recordSetRun(example: RecordSetParameters): readonly RecordSetSt
     const written = writeRow(set, table, id);
     set = written.set;
     table = written.table;
-    stopped = !written.matched && example.continueOnError === 0;
+    stopped = !written.matched && !example.continueOnError;
     record({ kind: 'write', id, statement: written.statement, matched: written.matched });
     if (stopped) break;
   }

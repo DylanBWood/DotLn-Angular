@@ -42,6 +42,16 @@ it('clips to a named window and keeps a flat series on the chart', () => {
   expect(flat.series[0].points).toContain(',145.00');
 });
 
+it('draws a chart over the steps or the counts of a run as it draws the same values over seconds', () => {
+  const { seconds: _seconds, ...chart } = model;
+  // Not the entries' positions, so a drawing that fell back to them would differ.
+  const along = [0, 2, 4, 6];
+  const overSeconds = timelineDrawing({ ...chart, seconds: along }, 2);
+  expect(timelineDrawing({ ...chart, steps: along }, 2)).toEqual(overSeconds);
+  expect(timelineDrawing({ ...chart, counts: along }, 2)).toEqual(overSeconds);
+  expect(overSeconds).not.toEqual(timelineDrawing(model, 2));
+});
+
 it('draws a reference line in place of its grid line', () => {
   const view = timelineDrawing({ ...model, yTicks: [0, 20], yRange: [0, 30], reference: 20 }, null);
   expect(view.referencePath).toBe('M 50 110 H 570');

@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -9,7 +10,12 @@ import {
 import { studyParameterValues } from '../study-message';
 import type { StatesStudyModel, StudyInput, StudyMoment, StudyWorkedStep } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
-import type { BoardOutcome, RawReply } from './gateway.simulation';
+import {
+  type BoardOutcome,
+  type FailureKind,
+  isSuccessStatus,
+  type RawReply,
+} from './gateway.simulation';
 import {
   type CaseId,
   type CaseOperation,
@@ -54,40 +60,36 @@ function answeredCase(step: SuiteStep, id: CaseId): AnsweredCase {
   return { answer, seen, outcome, waitedMs, state };
 }
 
-/** The letter each case's token shows. */
-const keys: Readonly<Record<CaseId, string>> = {
+// Each case's name, the scenario it writes on its request in display words, and the letter its
+// token shows; the compiler requires an entry for every case the suite runs.
+const names = {
+  recorded: 'studyPoeaa.service-stub.model.cases.recorded',
+  refusal: 'studyPoeaa.service-stub.model.cases.refusal',
+  network: 'studyPoeaa.service-stub.model.cases.network',
+  timeout: 'studyPoeaa.service-stub.model.cases.timeout',
+} as const satisfies Record<CaseId, string>;
+const scenarios = {
+  recorded: 'studyPoeaa.service-stub.model.scenarios.recorded',
+  refusal: 'studyPoeaa.service-stub.model.scenarios.refusal',
+  network: 'studyPoeaa.service-stub.model.scenarios.network',
+  timeout: 'studyPoeaa.service-stub.model.scenarios.timeout',
+} as const satisfies Record<CaseId, string>;
+const tokens = {
   recorded: 'D',
   refusal: 'R',
   network: 'L',
   timeout: 'T',
-};
+} as const satisfies Record<CaseId, string>;
+// What each of the app's failures is called as an outcome; a message reads the status where it names one.
+const failures = {
+  http: 'studyPoeaa.service-stub.model.outcomes.http',
+  network: 'studyPoeaa.service-stub.model.outcomes.network',
+  timeout: 'studyPoeaa.service-stub.model.outcomes.timeout',
+} as const satisfies Record<FailureKind, string>;
 
-function caseName(t: StudyTranslate, id: CaseId): string {
-  switch (id) {
-    case 'recorded':
-      return t('studyPoeaa.service-stub.model.cases.recorded');
-    case 'refusal':
-      return t('studyPoeaa.service-stub.model.cases.refusal');
-    case 'network':
-      return t('studyPoeaa.service-stub.model.cases.network');
-    default:
-      return t('studyPoeaa.service-stub.model.cases.timeout');
-  }
-}
+const caseName = (t: StudyTranslate, id: CaseId): string => t(names[id]);
 
-/** The scenario a case writes on its request, in display words; the recorded case writes none. */
-function scenarioName(t: StudyTranslate, id: CaseId): string {
-  switch (id) {
-    case 'recorded':
-      return t('studyPoeaa.service-stub.model.scenarios.recorded');
-    case 'refusal':
-      return t('studyPoeaa.service-stub.model.scenarios.refusal');
-    case 'network':
-      return t('studyPoeaa.service-stub.model.scenarios.network');
-    default:
-      return t('studyPoeaa.service-stub.model.scenarios.timeout');
-  }
-}
+const scenarioName = (t: StudyTranslate, id: CaseId): string => t(scenarios[id]);
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -100,7 +102,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     { id: 'passed', label: t('studyPoeaa.service-stub.model.states.passed') },
     { id: 'failed', label: t('studyPoeaa.service-stub.model.states.failed') },
   ],
-  objects: cases.map((id) => ({ id, label: caseName(t, id), key: keys[id] })),
+  objects: cases.map((id) => ({ id, label: caseName(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'answer',
@@ -135,23 +137,17 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** The transition the case acted on took, read from its state before and after the step. */
+/**
+ * The transition a step's moves cannot be told by their states alone: the recorded case's
+ * expectation met once more against the live API leaves it passed where it stood. Answering,
+ * judging and breaking live each join their two states by a transition of their own.
+ */
 function tookAt(step: SuiteStep, before: SuiteStep | undefined): Readonly<Record<string, string>> {
   const { operation } = step;
-  if (operation.kind === 'start') return {};
+  if (operation.kind !== 'release') return {};
   const { id } = operation;
-  const passed = step.cases[id].state === 'passed';
-  switch (operation.kind) {
-    case 'answer':
-      return { [id]: 'answer' };
-    case 'assert':
-      return { [id]: passed ? 'pass' : 'fail' };
-    default:
-      // Only a case that passed against the stub has an expectation left to test live.
-      return before?.cases[id].state === 'passed'
-        ? { [id]: passed ? 'liveHolds' : 'liveBreaks' }
-        : {};
-  }
+  const holds = before?.cases[id].state === 'passed' && step.cases[id].state === 'passed';
+  return holds ? { [id]: 'liveHolds' } : {};
 }
 
 const snapshotOf = (
@@ -164,34 +160,21 @@ const snapshotOf = (
 });
 
 /** An outcome in the app's terms: a board, or a failure of one of the app's kinds. */
-function outcomeWords(t: StudyTranslate, outcome: BoardOutcome): string {
-  if (outcome.kind === 'board')
-    return t('studyPoeaa.service-stub.model.outcomes.board', { version: outcome.version });
-  switch (outcome.error) {
-    case 'http':
-      return t('studyPoeaa.service-stub.model.outcomes.http', { status: outcome.status ?? 0 });
-    case 'network':
-      return t('studyPoeaa.service-stub.model.outcomes.network');
-    default:
-      return t('studyPoeaa.service-stub.model.outcomes.timeout');
-  }
-}
+const outcomeWords = (t: StudyTranslate, outcome: BoardOutcome): string =>
+  outcome.kind === 'board'
+    ? t('studyPoeaa.service-stub.model.outcomes.board', { version: outcome.version })
+    : t(failures[outcome.error], { status: outcome.status ?? 0 });
 
-/** An answer in the API's own terms, before the gateway translates it. */
+/** An answer in the API's own terms, before the gateway translates it by the gateway's own rule. */
 function answerWords(t: StudyTranslate, answer: RawReply): string {
-  switch (answer.kind) {
-    case 'unreachable':
-      return t('studyPoeaa.service-stub.model.answers.dropped');
-    case 'silence':
-      return t('studyPoeaa.service-stub.model.answers.held', { limit: answer.waitedMs });
-    default:
-      return answer.status >= 200 && answer.status < 300
-        ? t('studyPoeaa.service-stub.model.answers.board', {
-            status: answer.status,
-            version: answer.version,
-          })
-        : t('studyPoeaa.service-stub.model.answers.status', { status: answer.status });
-  }
+  return matchKind(answer, {
+    unreachable: () => t('studyPoeaa.service-stub.model.answers.dropped'),
+    silence: ({ waitedMs }) => t('studyPoeaa.service-stub.model.answers.held', { limit: waitedMs }),
+    response: ({ status, version }) =>
+      isSuccessStatus(status)
+        ? t('studyPoeaa.service-stub.model.answers.board', { status, version })
+        : t('studyPoeaa.service-stub.model.answers.status', { status }),
+  });
 }
 
 /** The few words beside a case's token: what it expects, what it got, and the verdict. */
@@ -202,23 +185,21 @@ function caseNote(
   example: ServiceStubParameters,
 ): string {
   const expected = outcomeWords(t, expectationOf(id, example));
-  if (step.cases[id].state === 'queued')
-    return t('studyPoeaa.service-stub.model.notes.expects', { outcome: expected });
-  const { state, outcome } = answeredCase(step, id);
-  const got = outcomeWords(t, outcome);
+  const got = () => outcomeWords(t, answeredCase(step, id).outcome);
   const live = step.operation.kind === 'release' && step.operation.id === id;
-  switch (state) {
-    case 'answered':
-      return t('studyPoeaa.service-stub.model.notes.got', { outcome: got });
-    case 'passed':
-      return live
-        ? t('studyPoeaa.service-stub.model.notes.livePassed', { outcome: got })
-        : t('studyPoeaa.service-stub.model.notes.passed', { outcome: got });
-    default:
-      return live
-        ? t('studyPoeaa.service-stub.model.notes.liveFailed', { expected, outcome: got })
-        : t('studyPoeaa.service-stub.model.notes.failed', { expected, outcome: got });
-  }
+  const notes: Record<CaseState, () => string> = {
+    queued: () => t('studyPoeaa.service-stub.model.notes.expects', { outcome: expected }),
+    answered: () => t('studyPoeaa.service-stub.model.notes.got', { outcome: got() }),
+    passed: () =>
+      live
+        ? t('studyPoeaa.service-stub.model.notes.livePassed', { outcome: got() })
+        : t('studyPoeaa.service-stub.model.notes.passed', { outcome: got() }),
+    failed: () =>
+      live
+        ? t('studyPoeaa.service-stub.model.notes.liveFailed', { expected, outcome: got() })
+        : t('studyPoeaa.service-stub.model.notes.failed', { expected, outcome: got() }),
+  };
+  return notes[step.cases[id].state]();
 }
 
 /** The sentence for a case the stub has just answered: what it was asked, and what it said. */
@@ -235,8 +216,7 @@ function answerNote(
     outcome: outcomeWords(t, outcome),
   };
   if (id === 'recorded') return t('studyPoeaa.service-stub.model.steps.answerPlain', words);
-  if (example.dynamicStub === 0)
-    return t('studyPoeaa.service-stub.model.steps.answerStatic', words);
+  if (!example.dynamicStub) return t('studyPoeaa.service-stub.model.steps.answerStatic', words);
   // The stub did answer the timeout case, but only after the gateway had stopped waiting.
   return seen.kind === 'silence'
     ? t('studyPoeaa.service-stub.model.steps.answerHeld', {
@@ -295,9 +275,9 @@ function answerWorked(t: StudyTranslate, moment: ServiceStubMoment, id: CaseId):
     ...(id === 'recorded'
       ? []
       : [
-          example.dynamicStub === 0
-            ? t('studyPoeaa.service-stub.model.worked.ignored')
-            : t('studyPoeaa.service-stub.model.worked.read'),
+          example.dynamicStub
+            ? t('studyPoeaa.service-stub.model.worked.read')
+            : t('studyPoeaa.service-stub.model.worked.ignored'),
         ]),
     delay === 0
       ? t('studyPoeaa.service-stub.model.worked.stubNow', { answer: answerWords(t, answer) })
@@ -321,31 +301,27 @@ function caseWorked(
 ): readonly string[] {
   const { example } = moment.run;
   const { answer, outcome, state } = answeredCase(stepAt(moment), operation.id);
-  const got = outcomeWords(t, outcome);
-  switch (operation.kind) {
-    case 'answer':
-      return answerWorked(t, moment, operation.id);
-    case 'assert':
-      return [
-        t('studyPoeaa.service-stub.model.worked.expected', {
-          outcome: outcomeWords(t, expectationOf(operation.id, example)),
-        }),
-        t('studyPoeaa.service-stub.model.worked.holds', { outcome: got }),
-        state === 'passed'
-          ? t('studyPoeaa.service-stub.model.worked.verdictPassed')
-          : t('studyPoeaa.service-stub.model.worked.verdictFailed'),
-      ];
-    default:
-      return [
-        t('studyPoeaa.service-stub.model.worked.live', { answer: answerWords(t, answer) }),
-        t('studyPoeaa.service-stub.model.worked.expected', {
-          outcome: outcomeWords(t, expectationOf(operation.id, example)),
-        }),
-        state === 'passed'
-          ? t('studyPoeaa.service-stub.model.worked.verdictPassed')
-          : t('studyPoeaa.service-stub.model.worked.verdictFailed'),
-      ];
-  }
+  const expected = () =>
+    t('studyPoeaa.service-stub.model.worked.expected', {
+      outcome: outcomeWords(t, expectationOf(operation.id, example)),
+    });
+  const verdict = () =>
+    state === 'passed'
+      ? t('studyPoeaa.service-stub.model.worked.verdictPassed')
+      : t('studyPoeaa.service-stub.model.worked.verdictFailed');
+  return matchKind(operation, {
+    answer: () => answerWorked(t, moment, operation.id),
+    assert: () => [
+      expected(),
+      t('studyPoeaa.service-stub.model.worked.holds', { outcome: outcomeWords(t, outcome) }),
+      verdict(),
+    ],
+    release: () => [
+      t('studyPoeaa.service-stub.model.worked.live', { answer: answerWords(t, answer) }),
+      expected(),
+      verdict(),
+    ],
+  });
 }
 
 /** The worked step of every moment: the case's own lines, then the suite's running count. */
@@ -356,9 +332,9 @@ function workedOf(t: StudyTranslate, moment: ServiceStubMoment): StudyWorkedStep
     return {
       title: t('studyPoeaa.service-stub.model.worked.startTitle'),
       lines: [
-        moment.run.example.dynamicStub === 0
-          ? t('studyPoeaa.service-stub.model.worked.kindStatic')
-          : t('studyPoeaa.service-stub.model.worked.kindDynamic'),
+        moment.run.example.dynamicStub
+          ? t('studyPoeaa.service-stub.model.worked.kindDynamic')
+          : t('studyPoeaa.service-stub.model.worked.kindStatic'),
         tallyLine(t, step),
       ],
     };
@@ -390,10 +366,9 @@ function textOf(t: StudyTranslate, moment: ServiceStubMoment): StatesMomentText 
       failed: String(failed),
       waited: String(waitedMs),
       liveCalls: String(step.liveCalls),
-      stubKind:
-        example.dynamicStub === 0
-          ? t('studyPoeaa.service-stub.model.values.static')
-          : t('studyPoeaa.service-stub.model.values.dynamic'),
+      stubKind: example.dynamicStub
+        ? t('studyPoeaa.service-stub.model.values.dynamic')
+        : t('studyPoeaa.service-stub.model.values.static'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),

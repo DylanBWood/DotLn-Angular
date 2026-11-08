@@ -10,6 +10,7 @@ export {
   boardSources,
   oneByOneCalls,
   readPanel,
+  readParameters,
   remoteFacadeRun,
   walkRounds,
 } from './remote-facade.simulation';

@@ -116,22 +116,20 @@ export const serve = (example: GatewayParameters): RawReply =>
 export const arrive = (answer: RawReply, afterMs: number, limitMs: number): RawReply =>
   answer.kind === 'response' && afterMs > limitMs ? { kind: 'silence', waitedMs: limitMs } : answer;
 
+/** The back's rule for an answer's status: a 2xx status carries the board, any other is a failure. */
+export const isSuccessStatus = (status: number): boolean => status >= 200 && status < 300;
+
 /**
- * The back's whole job on the way in: the transport's terms become the app's. A 2xx status is a
- * board and any other status an HTTP failure; silence and a lost connection are failures of their
- * own kinds. Nothing else is checked, so the board's contract version crosses as it came.
+ * The back's whole job on the way in: the transport's terms become the app's. A successful status
+ * is a board and any other status an HTTP failure; silence and a lost connection are failures of
+ * their own kinds. Nothing else is checked, so the board's contract version crosses as it came.
  */
 export function translate(raw: RawReply): BoardOutcome {
-  switch (raw.kind) {
-    case 'unreachable':
-      return { kind: 'failure', error: 'network', status: null };
-    case 'silence':
-      return { kind: 'failure', error: 'timeout', status: null };
-    default:
-      return raw.status >= 200 && raw.status < 300
-        ? { kind: 'board', version: raw.version }
-        : { kind: 'failure', error: 'http', status: raw.status };
-  }
+  if (raw.kind === 'unreachable') return { kind: 'failure', error: 'network', status: null };
+  if (raw.kind === 'silence') return { kind: 'failure', error: 'timeout', status: null };
+  return isSuccessStatus(raw.status)
+    ? { kind: 'board', version: raw.version }
+    : { kind: 'failure', error: 'http', status: raw.status };
 }
 
 /** How many of the API's own terms crossed untranslated: a board of a version the page cannot draw. */

@@ -1,5 +1,5 @@
 import type { StateMove, StatesModel, StudyTone } from '../../../studies/study-model';
-import { type DrawnText, wrapText } from '../drawn-text';
+import { breakWord, type DrawnText, wrapText } from '../drawn-text';
 import {
   arrivals,
   type DrawnStatesGhost,
@@ -21,6 +21,13 @@ const nameColumn: Readonly<Record<StatesLayout, readonly [number, number]>> = {
   wide: [112, 214],
   narrow: [86, 124],
 };
+// The smallest share of the stylesheet's size a state's name is drawn at; a word that would need to
+// be smaller to fit its column breaks across lines instead.
+const headingFloor = 2 / 3;
+// A state's name wraps at its spaces to its column less the first margin, and is drawn smaller only
+// when its widest line passes the column less the second, so it never meets its neighbour's.
+const headingWrapMargin = 8;
+const headingFitMargin = 6;
 
 /** A state's column, with its name wrapped above it. */
 export interface DrawnStatesColumn {
@@ -31,7 +38,7 @@ export interface DrawnStatesColumn {
   /** True when an object moves into this state at the stepped moment. */
   readonly acting: boolean;
   readonly heading: readonly DrawnText[];
-  /** How much the name shrinks so its longest word fits the column; 1 when it fits. */
+  /** How much the name shrinks so its widest line fits the column; 1 when it fits. */
   readonly scale: number;
 }
 
@@ -72,7 +79,36 @@ interface RegisterGrid {
   readonly layout: StatesLayout;
   readonly nameWidth: number;
   readonly columnWidth: number;
+  /** Each state's heading, in the order of its columns. */
+  readonly headings: readonly Heading[];
   readonly headerHeight: number;
+}
+
+/** A state's name as its column draws it: its lines, and how much they shrink to fit. */
+interface Heading {
+  readonly lines: readonly string[];
+  /** The share of the stylesheet's size the lines are drawn at. */
+  readonly scale: number;
+}
+
+/**
+ * A state's name wrapped at its spaces for its column, drawn at the largest size at which its widest
+ * line fits, up to the stylesheet's size. Where that would fall below two thirds of the size, each
+ * word still too wide at two thirds breaks across lines with a hyphen, and the lines are drawn at the
+ * size at which they then fit. A name with no words draws no line, at the full size.
+ */
+function headingOf(label: string, columnWidth: number): Heading {
+  const room = columnWidth - headingFitMargin;
+  const fit = (lines: readonly string[]) => {
+    const widest = Math.max(0, ...lines.map(({ length }) => length)) * statesText.heading.char;
+    return widest === 0 ? 1 : Math.min(1, room / widest);
+  };
+  const lines = wrapText(label, fitting(columnWidth - headingWrapMargin, 'heading'));
+  const scale = fit(lines);
+  if (scale >= headingFloor) return { lines, scale };
+  const atFloor = fitting(room / headingFloor, 'heading');
+  const broken = lines.flatMap((line) => breakWord(line, atFloor));
+  return { lines: broken, scale: fit(broken) };
 }
 
 /**
@@ -96,28 +132,27 @@ function nameWidthOf(model: StatesModel, layout: StatesLayout): number {
 function gridOf(model: StatesModel, layout: StatesLayout): RegisterGrid {
   const nameWidth = nameWidthOf(model, layout);
   const columnWidth = (statesWidth[layout] - margin - nameWidth) / model.nodes.length;
-  const lines = Math.max(
-    1,
-    ...model.nodes.map(({ label }) => wrapText(label, fitting(columnWidth - 8, 'heading')).length),
-  );
+  const headings = model.nodes.map(({ label }) => headingOf(label, columnWidth));
+  const lines = Math.max(1, ...headings.map(({ lines }) => lines.length));
   return {
     model,
     layout,
     nameWidth,
     columnWidth,
+    headings,
     headerHeight: lines * statesText.heading.line + 14,
   };
 }
 
 /**
- * Each state's column with its name wrapped above it. A single word wider than the column, as a
- * long state name is on a phone, is drawn smaller so it stays inside its column.
+ * Each state's column with its name above it, wrapped and sized by its heading: a single word
+ * wider than the column, as a long state name is on a phone, is drawn smaller, and below two
+ * thirds of the size it breaks across lines, so it stays inside its column at a size that reads.
  */
 function columnsOf(grid: RegisterGrid, acting: ReadonlySet<string>): readonly DrawnStatesColumn[] {
-  return grid.model.nodes.map(({ id, label, tone }, index) => {
+  return grid.model.nodes.map(({ id, tone }, index) => {
     const x = grid.nameWidth + index * grid.columnWidth;
-    const lines = wrapText(label, fitting(grid.columnWidth - 8, 'heading'));
-    const widest = Math.max(...lines.map((line) => line.length)) * statesText.heading.char;
+    const { lines, scale } = grid.headings[index];
     return {
       id,
       x,
@@ -130,7 +165,7 @@ function columnsOf(grid: RegisterGrid, acting: ReadonlySet<string>): readonly Dr
         text,
         anchor: 'middle' as const,
       })),
-      scale: Math.min(1, (grid.columnWidth - 6) / widest),
+      scale,
     };
   });
 }

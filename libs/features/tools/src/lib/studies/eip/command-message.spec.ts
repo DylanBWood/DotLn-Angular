@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { ticksOf } from '../study-model';
@@ -22,7 +22,7 @@ const heldAt = (step: number, node: string) => (frame(step).held[node] ?? []).ma
 const stateAt = (step: number, node: string) => frame(step).states[node];
 
 it('attaches the record to the Command Message row and draws it from this module', async () => {
-  const record = await loadFlowStudy('eip:78');
+  const record = await loadModelStudy('eip:78', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.visual.family).toBe('flow');
   // A command is a kind of message, not a stream to transform, so nothing runs and no RxJS
@@ -119,7 +119,7 @@ it('names only the example’s own order in every note', () => {
 });
 
 it('opens at the start and says so in the text equivalent', async () => {
-  const record = await loadFlowStudy('eip:78');
+  const record = await loadModelStudy('eip:78', 'flow');
   expect(run.initialStep).toBe(0);
   expect(run.moments).toEqual([
     { label: 'Sent', step: 1 },

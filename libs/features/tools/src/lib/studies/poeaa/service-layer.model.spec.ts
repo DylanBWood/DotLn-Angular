@@ -1,11 +1,11 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   announce,
   check,
   model,
   readAndCheck,
+  readParameters,
   saveCalls,
   serviceLayerRun,
   stageOf,
@@ -14,15 +14,16 @@ import {
   writePending,
 } from './service-layer.model';
 
-const record = await loadStatesStudy('poeaa:226');
+const record = await loadModelStudy('poeaa:226', 'states');
 const parameters = record.example.parameters;
-const example = { flankId: 1, ridgeId: 4, importBypasses: 0, importForeign: 0 };
+const example = { flankId: 1, ridgeId: 4, importBypasses: false, importForeign: false };
 const [nightCall, dawnCall, importCall] = saveCalls(example);
 
 const names = (list: readonly { readonly name: string }[]) => list.map(({ name }) => name);
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, importBypasses: 0, importForeign: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -75,7 +76,7 @@ it('announces only after the write, and the other tab hears nothing until its ow
 });
 
 it('loses tab B’s save when the import skips the service and writes the list its tab holds', () => {
-  const steps = serviceLayerRun({ ...example, importBypasses: 1 });
+  const steps = serviceLayerRun({ ...example, importBypasses: true });
   const last = steps[steps.length - 1];
   expect(last.operation).toMatchObject({ kind: 'writeDirect', lost: ['dawn'] });
   expect(names(last.state.stored)).toEqual(['flank', 'ridge', 'night', 'river']);
@@ -92,13 +93,13 @@ it('loses tab B’s save when the import skips the service and writes the list i
 });
 
 it('refuses a foreign export through the service, but writes it when the import skips the service', () => {
-  const refused = serviceLayerRun({ ...example, importForeign: 1 });
+  const refused = serviceLayerRun({ ...example, importForeign: true });
   const last = refused[refused.length - 1];
   expect(last.operation).toMatchObject({ kind: 'check', verdict: { kind: 'refused' } });
   expect(last.state.stored).toEqual(refused[refused.length - 2].state.stored);
   expect(last.state.writes).toBe(2);
   expect(stageOf(last.state, 'river')).toBe('refused');
-  const bypassed = serviceLayerRun({ ...example, importBypasses: 1, importForeign: 1 });
+  const bypassed = serviceLayerRun({ ...example, importBypasses: true, importForeign: true });
   expect(names(bypassed[bypassed.length - 1].state.stored)).toContain('river');
 });
 
@@ -150,9 +151,10 @@ it('draws the bypass skipping Accepted, the overwritten save leaving, and a refu
     { object: 'river', from: 'draft', to: 'stored', transition: 'writeDirect' },
   ]);
   expect(last.note).toContain('Dawn raid is gone from storage while tab B still lists it');
-  const drawing = registerDrawing(bypassed, bypassed.frames.length - 1);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['N', 'R']);
-  expect(drawing.ghosts).toHaveLength(1);
+  // Night march and River crossing stay in storage under their token letters; Dawn raid leaves.
+  const keys = tokensOf(bypassed);
+  expect(last.placements.map(({ object }) => keys[object])).toEqual(['N', 'R']);
+  expect(last.moves.filter(({ to }) => to === null)).toHaveLength(1);
   const refused = model({ ...parameters, importForeign: 1 }, studyTranslate).states;
   expect(refused.frames[refused.frames.length - 1].moves).toEqual([
     { object: 'river', from: 'draft', to: 'refused', transition: 'refuse' },

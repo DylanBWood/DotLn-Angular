@@ -1,6 +1,8 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
@@ -20,11 +22,12 @@ import {
   catalogRows,
   type FollowedKey,
   type ForeignKeyParameters,
-  foreignKeyRun,
   type ForeignKeyStep,
   type Loader,
   placeOf,
+  type Resolution,
   type RowId,
+  type RowPlace,
 } from './foreign-key-mapping.simulation';
 
 /** The whole run as the presentation reads it: the example, its rows, its steps and the inputs. */
@@ -32,6 +35,9 @@ export interface ForeignKeyRun {
   readonly example: ForeignKeyParameters;
   readonly catalog: readonly CatalogRow[];
   readonly steps: readonly ForeignKeyStep[];
+  /** The same opening run through an identity map and without one, which the comparison charts. */
+  readonly through: readonly ForeignKeyStep[];
+  readonly without: readonly ForeignKeyStep[];
   readonly parameters: StudyParameters;
 }
 
@@ -42,29 +48,35 @@ interface ForeignKeyMoment {
 }
 
 const stepAt = ({ run, index }: ForeignKeyMoment) => run.steps[index];
-const usesMap = (run: ForeignKeyRun) => run.example.identityMap > 0;
 
-function nameOf(t: StudyTranslate, id: RowId): string {
-  switch (id) {
-    case 'dataMapper':
-      return t('studyPoeaa.foreign-key-mapping.model.names.dataMapper');
-    case 'identityMap':
-      return t('studyPoeaa.foreign-key-mapping.model.names.identityMap');
-    default:
-      return t('studyPoeaa.foreign-key-mapping.model.names.unitOfWork');
-  }
-}
+// Each row's name and the letter its token shows; the compiler requires an entry for every row the
+// example's catalog has.
+const names = {
+  dataMapper: 'studyPoeaa.foreign-key-mapping.model.names.dataMapper',
+  identityMap: 'studyPoeaa.foreign-key-mapping.model.names.identityMap',
+  unitOfWork: 'studyPoeaa.foreign-key-mapping.model.names.unitOfWork',
+} as const satisfies Record<RowId, string>;
+const tokens = { dataMapper: 'D', identityMap: 'I', unitOfWork: 'U' } as const satisfies Record<
+  RowId,
+  string
+>;
+
+const nameOf = (t: StudyTranslate, id: RowId): string => t(names[id]);
 
 const namesOf = (t: StudyTranslate, ids: readonly RowId[]) =>
-  ids.length
-    ? ids.map((id) => nameOf(t, id)).join(t('studyCommon.states.listSeparator'))
-    : t('studyCommon.states.empty');
+  listOf(
+    t,
+    ids.map((id) => nameOf(t, id)),
+  );
 
 const keyOf = (t: StudyTranslate, line: number) =>
   t('studyPoeaa.foreign-key-mapping.model.key', { line });
 
 const keysOf = (t: StudyTranslate, row: CatalogRow) =>
-  row.keys.map((line) => keyOf(t, line)).join(t('studyCommon.states.listSeparator'));
+  listOf(
+    t,
+    row.keys.map((line) => keyOf(t, line)),
+  );
 
 function rowOf(run: ForeignKeyRun, id: RowId): CatalogRow {
   const row = run.catalog.find((candidate) => candidate.id === id);
@@ -86,11 +98,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
       tone: 'subject',
     },
   ],
-  objects: catalogRows.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: id === 'dataMapper' ? 'D' : id === 'identityMap' ? 'I' : 'U',
-  })),
+  objects: catalogRows.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'load',
@@ -132,22 +140,18 @@ function newlyResolved(moment: ForeignKeyMoment): readonly RowId[] {
   return operation.resolved.filter((row) => placeOf(loader, row) === 'resolved');
 }
 
-/** Which transition each row took at a step; a row that finishes takes resolve whatever else it did. */
+/**
+ * The transitions a step's moves cannot be told by their states alone: a key followed to a row that
+ * stays where it stood, read again or found in the identity map. Loading a stored row and finishing
+ * one each join their two states by a transition of their own.
+ */
 function tookAt(moment: ForeignKeyMoment): Readonly<Record<string, string>> {
-  const { operation } = stepAt(moment);
-  if (operation.kind === 'open') return { [operation.row]: 'load' };
+  const { operation, loader } = stepAt(moment);
   if (operation.kind !== 'follow') return {};
-  const before = moment.run.steps[moment.index - 1].loader;
-  const reached =
-    operation.how === 'found'
-      ? placeOf(before, operation.to) === 'resolved'
-        ? 'findResolved'
-        : 'findResolving'
-      : operation.how;
-  return {
-    [operation.to]: reached,
-    ...Object.fromEntries(newlyResolved(moment).map((row) => [row, 'resolve'])),
-  };
+  const place = placeOf(moment.run.steps[moment.index - 1].loader, operation.to);
+  if (place !== placeOf(loader, operation.to)) return {};
+  if (operation.how === 'reload') return { [operation.to]: 'reload' };
+  return { [operation.to]: place === 'resolved' ? 'findResolved' : 'findResolving' };
 }
 
 const snapshotOf = (moment: ForeignKeyMoment): StatesSnapshot => ({
@@ -160,10 +164,9 @@ function rowNote(t: StudyTranslate, moment: ForeignKeyMoment, id: RowId): string
   const { loader } = stepAt(moment);
   const row = rowOf(moment.run, id);
   const built = loader.objects.filter((object) => object.row === id);
-  switch (placeOf(loader, id)) {
-    case 'stored':
-      return t('studyPoeaa.foreign-key-mapping.model.notes.stored', { keys: keysOf(t, row) });
-    case 'resolving': {
+  const notes: Record<RowPlace, () => string> = {
+    stored: () => t('studyPoeaa.foreign-key-mapping.model.notes.stored', { keys: keysOf(t, row) }),
+    resolving: () => {
       if (built.length > 1)
         return t('studyPoeaa.foreign-key-mapping.model.notes.copies', { copies: built.length });
       const index = loader.objects.indexOf(built[0]);
@@ -172,15 +175,16 @@ function rowNote(t: StudyTranslate, moment: ForeignKeyMoment, id: RowId): string
         followed: pending?.next ?? 0,
         keys: row.keys.length,
       });
-    }
-    default:
-      return t('studyPoeaa.foreign-key-mapping.model.notes.resolved', {
+    },
+    resolved: () =>
+      t('studyPoeaa.foreign-key-mapping.model.notes.resolved', {
         names: namesOf(
           t,
           built[0].references.map((reference) => loader.objects[reference].row),
         ),
-      });
-  }
+      }),
+  };
+  return notes[placeOf(loader, id)]();
 }
 
 /** The sentence for one followed key, by how it became a reference. */
@@ -191,51 +195,73 @@ function followNote(t: StudyTranslate, moment: ForeignKeyMoment, operation: Foll
     key: keyOf(t, operation.key),
     to: nameOf(t, operation.to),
   };
-  if (operation.how === 'load') return t('studyPoeaa.foreign-key-mapping.model.steps.load', words);
-  if (operation.how === 'reload')
-    return t('studyPoeaa.foreign-key-mapping.model.steps.reload', {
-      ...words,
-      copy: loader.objects.filter(({ row }) => row === operation.to).length,
-    });
-  return t('studyPoeaa.foreign-key-mapping.model.steps.found', words);
+  const notes: Record<Resolution, () => string> = {
+    load: () => t('studyPoeaa.foreign-key-mapping.model.steps.load', words),
+    reload: () =>
+      t('studyPoeaa.foreign-key-mapping.model.steps.reload', {
+        ...words,
+        copy: loader.objects.filter(({ row }) => row === operation.to).length,
+      }),
+    found: () => t('studyPoeaa.foreign-key-mapping.model.steps.found', words),
+  };
+  return notes[operation.how]();
 }
 
 /** The sentence under the drawing: what the loader did at this step, in the pattern's terms. */
 function stepNote(t: StudyTranslate, moment: ForeignKeyMoment): string {
   const { operation, loader } = stepAt(moment);
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.foreign-key-mapping.model.steps.start');
-    case 'open':
-      return usesMap(moment.run)
-        ? t('studyPoeaa.foreign-key-mapping.model.steps.open', { name: nameOf(t, operation.row) })
-        : t('studyPoeaa.foreign-key-mapping.model.steps.openNoMap', {
-            name: nameOf(t, operation.row),
-          });
-    case 'stopped':
-      return t('studyPoeaa.foreign-key-mapping.model.steps.stopped', {
-        reads: loader.reads,
-        rows: moment.run.catalog.length,
-        limit: moment.run.example.readLimit,
-      });
-    default: {
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.foreign-key-mapping.model.steps.start'),
+    open: ({ row }) =>
+      moment.run.example.identityMap
+        ? t('studyPoeaa.foreign-key-mapping.model.steps.open', { name: nameOf(t, row) })
+        : t('studyPoeaa.foreign-key-mapping.model.steps.openNoMap', { name: nameOf(t, row) }),
+    follow: (followed) => {
       const resolved = newlyResolved(moment);
       return resolved.length
         ? t('studyPoeaa.foreign-key-mapping.model.steps.withResolved', {
-            followed: followNote(t, moment, operation),
+            followed: followNote(t, moment, followed),
             resolved: namesOf(t, resolved),
           })
-        : followNote(t, moment, operation);
-    }
-  }
+        : followNote(t, moment, followed);
+    },
+    stopped: () =>
+      t('studyPoeaa.foreign-key-mapping.model.steps.stopped', {
+        reads: loader.reads,
+        rows: moment.run.catalog.length,
+        limit: moment.run.example.readLimit,
+      }),
+  });
+}
+
+/** The worked line for one followed key, by how it became a reference. */
+function followLine(t: StudyTranslate, moment: ForeignKeyMoment, operation: FollowedKey): string {
+  const { loader } = stepAt(moment);
+  const target = rowOf(moment.run, operation.to);
+  const words = { key: keyOf(t, operation.key), name: nameOf(t, target.id) };
+  const lines: Record<Resolution, () => string> = {
+    load: () =>
+      t('studyPoeaa.foreign-key-mapping.model.worked.loaded', {
+        ...words,
+        keys: keysOf(t, target),
+      }),
+    reload: () =>
+      t('studyPoeaa.foreign-key-mapping.model.worked.reloaded', {
+        ...words,
+        copy: loader.objects.filter(({ row }) => row === target.id).length,
+      }),
+    found: () => t('studyPoeaa.foreign-key-mapping.model.worked.found', words),
+  };
+  return lines[operation.how]();
 }
 
 /** The line the step's own operation is worth showing: the row read, the key found, or the stop. */
 function operationLines(t: StudyTranslate, moment: ForeignKeyMoment): readonly string[] {
   const { operation, loader } = stepAt(moment);
-  switch (operation.kind) {
-    case 'open': {
-      const row = rowOf(moment.run, operation.row);
+  return matchKind(operation, {
+    start: () => [],
+    open: ({ row: id }) => {
+      const row = rowOf(moment.run, id);
       return [
         t('studyPoeaa.foreign-key-mapping.model.worked.opened', {
           key: keyOf(t, row.line),
@@ -243,22 +269,9 @@ function operationLines(t: StudyTranslate, moment: ForeignKeyMoment): readonly s
           keys: keysOf(t, row),
         }),
       ];
-    }
-    case 'follow': {
-      const target = rowOf(moment.run, operation.to);
-      const words = { key: keyOf(t, operation.key), name: nameOf(t, target.id) };
-      const line =
-        operation.how === 'load'
-          ? t('studyPoeaa.foreign-key-mapping.model.worked.loaded', {
-              ...words,
-              keys: keysOf(t, target),
-            })
-          : operation.how === 'reload'
-            ? t('studyPoeaa.foreign-key-mapping.model.worked.reloaded', {
-                ...words,
-                copy: loader.objects.filter(({ row }) => row === target.id).length,
-              })
-            : t('studyPoeaa.foreign-key-mapping.model.worked.found', words);
+    },
+    follow: (followed) => {
+      const line = followLine(t, moment, followed);
       const resolved = newlyResolved(moment);
       return resolved.length
         ? [
@@ -268,17 +281,14 @@ function operationLines(t: StudyTranslate, moment: ForeignKeyMoment): readonly s
             }),
           ]
         : [line];
-    }
-    case 'stopped':
-      return [
-        t('studyPoeaa.foreign-key-mapping.model.worked.stopped', {
-          reads: loader.reads,
-          limit: moment.run.example.readLimit,
-        }),
-      ];
-    default:
-      return [];
-  }
+    },
+    stopped: () => [
+      t('studyPoeaa.foreign-key-mapping.model.worked.stopped', {
+        reads: loader.reads,
+        limit: moment.run.example.readLimit,
+      }),
+    ],
+  });
 }
 
 const referencesIn = (loader: Loader) =>
@@ -288,10 +298,11 @@ const referencesIn = (loader: Loader) =>
 function workedOf(t: StudyTranslate, moment: ForeignKeyMoment): StudyWorkedStep {
   const { loader } = stepAt(moment);
   const mapped = catalogRows.filter((id) => loader.identityMap[id] !== undefined);
+  const { identityMap } = moment.run.example;
   return {
     title: t('studyPoeaa.foreign-key-mapping.model.worked.title', { step: moment.index }),
     lines: [
-      usesMap(moment.run)
+      identityMap
         ? t('studyPoeaa.foreign-key-mapping.model.worked.identityMap', {
             names: namesOf(t, mapped),
           })
@@ -305,7 +316,7 @@ function workedOf(t: StudyTranslate, moment: ForeignKeyMoment): StudyWorkedStep 
       }),
       ...operationLines(t, moment),
     ],
-    note: usesMap(moment.run)
+    note: identityMap
       ? t('studyPoeaa.foreign-key-mapping.model.worked.noteMap')
       : t('studyPoeaa.foreign-key-mapping.model.worked.noteNoMap'),
   };
@@ -321,7 +332,7 @@ function textOf(t: StudyTranslate, moment: ForeignKeyMoment): StatesMomentText {
       rows: String(moment.run.catalog.length),
       objects: String(loader.objects.length),
       references: String(referencesIn(loader)),
-      resolving: usesMap(moment.run)
+      resolving: moment.run.example.identityMap
         ? t('studyPoeaa.foreign-key-mapping.model.values.throughMap')
         : t('studyPoeaa.foreign-key-mapping.model.values.noMap', {
             limit: moment.run.example.readLimit,
@@ -338,11 +349,11 @@ const readsOver = (steps: readonly ForeignKeyStep[], length: number) =>
   Array.from({ length }, (_, index) => steps[Math.min(index, steps.length - 1)].loader.reads);
 
 /** The same opening run with and without the identity map, charted by the rows each has read. */
-function comparisonOf(t: StudyTranslate, run: ForeignKeyRun): StudyComparison {
-  const through = foreignKeyRun({ ...run.example, identityMap: 1 });
-  const without = foreignKeyRun({ ...run.example, identityMap: 0 });
+function comparisonOf(t: StudyTranslate, run: ForeignKeyRun): StudyComparison<'steps'> {
+  const { through, without } = run;
   const length = Math.max(through.length, without.length);
   const lastWithout = without[without.length - 1].loader;
+  const steps = Array.from({ length }, (_, index) => index);
   return {
     title: t('studyPoeaa.foreign-key-mapping.model.comparison.title'),
     intro: t('studyPoeaa.foreign-key-mapping.model.comparison.intro'),
@@ -350,7 +361,7 @@ function comparisonOf(t: StudyTranslate, run: ForeignKeyRun): StudyComparison {
       title: t('studyPoeaa.foreign-key-mapping.model.comparison.chart'),
       xLabel: t('studyPoeaa.foreign-key-mapping.model.comparison.xLabel'),
       yLabel: t('studyPoeaa.foreign-key-mapping.model.comparison.yLabel'),
-      seconds: Array.from({ length }, (_, index) => index),
+      steps,
       series: [
         {
           id: 'through',
@@ -365,7 +376,7 @@ function comparisonOf(t: StudyTranslate, run: ForeignKeyRun): StudyComparison {
           values: readsOver(without, length),
         },
       ],
-      xTicks: Array.from({ length }, (_, index) => index),
+      xTicks: steps,
     },
     findings: [
       t('studyPoeaa.foreign-key-mapping.model.comparison.reads', {
@@ -393,7 +404,7 @@ const inputsOf = (t: StudyTranslate): readonly StudyInput[] => [
 
 /** The named moments: the opening, the first load, the first find or second read, the first finish, the end. */
 function momentsOf(t: StudyTranslate, run: ForeignKeyRun): readonly StudyMoment[] {
-  const first = (how: string) =>
+  const first = (how: Resolution) =>
     run.steps.findIndex(({ operation }) => operation.kind === 'follow' && operation.how === how);
   const resolved = run.steps.findIndex((_, index) => newlyResolved({ run, index }).length > 0);
   const moments: StudyMoment[] = [

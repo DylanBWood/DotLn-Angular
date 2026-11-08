@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   afterEachReading,
@@ -7,20 +6,22 @@ import {
   lazyLoadRun,
   type LazyLoadStep,
   model,
+  readParameters,
   request,
   settle,
   summaryRead,
 } from './lazy-load.model';
 
-const record = await loadStatesStudy('poeaa:260');
+const record = await loadModelStudy('poeaa:260', 'states');
 const parameters = record.example.parameters;
-const example = { studiesInChunk: 20, failFirst: 0, chunkPerStudy: 0 };
+const example = { studiesInChunk: 20, failFirst: 0, chunkPerStudy: false };
 
 const kindsOf = (steps: readonly LazyLoadStep[]) => steps.map(({ operation }) => operation.kind);
 const lastOf = (steps: readonly LazyLoadStep[]) => steps[steps.length - 1];
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, chunkPerStudy: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
   expect(record.pseudocode.rxjs?.startsWith('// Illustrative: ')).toBe(true);
@@ -72,7 +73,7 @@ it('forgets a failed import, so the retry asks again and the work still loads on
 });
 
 it('makes a request for every study read when each study is its own chunk', () => {
-  const perStudy = { ...example, chunkPerStudy: 1 };
+  const perStudy = { ...example, chunkPerStudy: true };
   expect(chunkOf(perStudy, 'unitOfWork')).toEqual(['unitOfWork']);
   expect(chunkOf(example, 'unitOfWork')).toEqual(['lazyLoad', 'unitOfWork', 'recordSet']);
   const steps = lazyLoadRun(perStudy);
@@ -117,13 +118,9 @@ it('draws each study in its record’s state and names the moves in the text equ
     'comes with the chunk',
     'comes with the chunk',
   ]);
-  const drawing = registerDrawing(run.states, 2);
-  expect(drawing.tokens.map(({ key, state }) => [key, state])).toEqual([
-    ['L', 'moving'],
-    ['U', 'moving'],
-    ['R', 'moving'],
-  ]);
-  expect(drawing.arrows).toHaveLength(3);
+  // The whole chunk moves at the first request: every study, each under its own token letter.
+  const keys = tokensOf(run.states);
+  expect(frames[2].moves.map(({ object }) => keys[object])).toEqual(['L', 'U', 'R']);
 });
 
 it('shows the failed import sending every record back to a marker, then the retry', () => {

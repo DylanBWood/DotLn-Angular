@@ -1,15 +1,23 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
-import { bind, configurationOf, draw, model, pluginRun, totalsOf } from './plugin.model';
+import {
+  bind,
+  configurationOf,
+  draw,
+  model,
+  pluginRun,
+  readParameters,
+  totalsOf,
+} from './plugin.model';
 import { present } from './plugin.presentation';
 
-const record = await loadStatesStudy('poeaa:443');
+const record = await loadModelStudy('poeaa:443', 'states');
 const parameters = record.example.parameters;
-const example = { productionStub: 0 };
+const example = { productionStub: false };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, productionStub: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(record.pseudocode.rxjs).toBeNull();
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
@@ -52,7 +60,7 @@ it('gives each environment the painter its configuration names, with no other ch
 });
 
 it('binds the stub in production without complaint when its configuration names it', () => {
-  const steps = pluginRun(configurationOf({ productionStub: 1 }));
+  const steps = pluginRun(configurationOf({ productionStub: true }));
   const last = steps[steps.length - 1];
   expect(steps[3].operation).toEqual({
     kind: 'bind',
@@ -121,7 +129,7 @@ it('shows the stub in production in the drawing: a frame drawn and never shown',
   expect(last.note).toContain('nothing reports an error');
   expect(last.values['shown']).toBe('1');
   expect(frames[0].values['productionPainter']).toBe('null');
-  const drawing = registerDrawing(run.states, frames.length - 1);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['D', 'T', 'P']);
-  expect(drawing.arrows.map(({ id }) => id)).toEqual(['production']);
+  // Every environment stays bound under its token letter, and only production draws.
+  const keys = tokensOf(run.states);
+  expect(last.placements.map(({ object }) => keys[object])).toEqual(['D', 'T', 'P']);
 });

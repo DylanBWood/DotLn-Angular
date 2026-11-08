@@ -1,15 +1,15 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the ids of the two stored compositions, and how the import box saves. */
 export interface ServiceLayerParameters {
   readonly flankId: number;
   readonly ridgeId: number;
-  /** 1 when the import box writes storage with its own code instead of calling saveComposition. */
-  readonly importBypasses: number;
-  /** 1 when the exported composition the import box takes belongs to another scene. */
-  readonly importForeign: number;
+  /** True when the import box writes storage with its own code instead of calling saveComposition. */
+  readonly importBypasses: boolean;
+  /** True when the exported composition the import box takes belongs to another scene. */
+  readonly importForeign: boolean;
 }
 
 /** The three compositions the clients save, one row each in the drawing. */
@@ -105,8 +105,8 @@ export type SaveStage = 'draft' | 'accepted' | 'stored' | 'announced' | 'refused
 export const readParameters = (parameters: StudyParameters): ServiceLayerParameters => ({
   flankId: numberParameter(parameters, 'flankId'),
   ridgeId: numberParameter(parameters, 'ridgeId'),
-  importBypasses: numberParameter(parameters, 'importBypasses'),
-  importForeign: numberParameter(parameters, 'importForeign'),
+  importBypasses: booleanParameter(parameters, 'importBypasses'),
+  importForeign: booleanParameter(parameters, 'importForeign'),
 });
 
 /** The highest id in a list, or 0 for an empty one. */
@@ -193,7 +193,7 @@ export const saveCalls = (example: ServiceLayerParameters): readonly SaveCall[] 
   {
     tab: 'a',
     client: 'importBox',
-    draft: { name: 'river', ownScene: example.importForeign === 0 },
+    draft: { name: 'river', ownScene: !example.importForeign },
   },
 ];
 
@@ -218,7 +218,7 @@ export function serviceLayerRun(example: ServiceLayerParameters): readonly Servi
     steps.push(step);
   };
   for (const call of saveCalls(example)) {
-    if (call.client === 'importBox' && example.importBypasses > 0) {
+    if (call.client === 'importBox' && example.importBypasses) {
       record(writeDirect(state, call));
       continue;
     }

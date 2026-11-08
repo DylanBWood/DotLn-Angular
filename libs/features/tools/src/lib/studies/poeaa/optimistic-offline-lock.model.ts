@@ -5,7 +5,13 @@ import type { StudyTranslate } from '../study-translate';
 import { present } from './optimistic-offline-lock.presentation';
 import { optimisticRun, readParameters } from './optimistic-offline-lock.simulation';
 
-export { optimisticRun, read, reload, save } from './optimistic-offline-lock.simulation';
+export {
+  optimisticRun,
+  read,
+  readParameters,
+  reload,
+  save,
+} from './optimistic-offline-lock.simulation';
 
 export type {
   OptimisticLockParameters,

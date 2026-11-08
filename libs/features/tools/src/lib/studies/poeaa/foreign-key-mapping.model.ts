@@ -13,6 +13,7 @@ export {
   foreignKeyRun,
   load,
   placeOf,
+  readParameters,
   rowByKey,
 } from './foreign-key-mapping.simulation';
 
@@ -20,6 +21,19 @@ export type { ForeignKeyStep, Loader, RowId } from './foreign-key-mapping.simula
 
 export const model = (parameters: StudyParameters, t: StudyTranslate): StatesStudyModel => {
   const example = readParameters(parameters);
-  const catalog = catalogOf(example);
-  return present({ example, catalog, steps: foreignKeyRun(example), parameters }, t);
+  // The comparison's runs differ from the example only in the identity map, so the example's own
+  // run is whichever of them it chose.
+  const through = foreignKeyRun({ ...example, identityMap: true });
+  const without = foreignKeyRun({ ...example, identityMap: false });
+  return present(
+    {
+      example,
+      catalog: catalogOf(example),
+      steps: example.identityMap ? through : without,
+      through,
+      without,
+      parameters,
+    },
+    t,
+  );
 };

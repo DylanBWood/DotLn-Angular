@@ -1,6 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { matchKind } from '../match-kind';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the stored version, when each tab opens and works, and whether A saves. */
 export interface OptimisticLockParameters {
@@ -12,8 +13,8 @@ export interface OptimisticLockParameters {
   readonly minutesA: number;
   /** The minutes Tab B works on its changes before it saves. */
   readonly minutesB: number;
-  /** 1 when Tab A saves its changes; 0 when its tab is closed without saving. */
-  readonly tabASaves: number;
+  /** True when Tab A saves its changes; false when its tab is closed without saving. */
+  readonly tabASaves: boolean;
 }
 
 /** The two browser tabs of the example, by id. */
@@ -70,7 +71,7 @@ export const readParameters = (parameters: StudyParameters): OptimisticLockParam
   openB: numberParameter(parameters, 'openB'),
   minutesA: numberParameter(parameters, 'minutesA'),
   minutesB: numberParameter(parameters, 'minutesB'),
-  tabASaves: numberParameter(parameters, 'tabASaves'),
+  tabASaves: booleanParameter(parameters, 'tabASaves'),
 });
 
 /** Opening reads the stored version and remembers it. Nothing is written and nothing is held. */
@@ -147,28 +148,26 @@ function sessionOf(state: RunState, tab: TabId): TabSession {
 function perform(state: RunState, next: Planned, work: Readonly<Record<TabId, number>>): Performed {
   const { minute, tab } = next;
   const withSession = (session: TabSession) => ({ ...state.sessions, [tab]: session });
-  switch (next.kind) {
-    case 'read':
-      return {
-        state: { ...state, sessions: withSession(read(state.stored, minute)) },
-        operation: { kind: 'read', tab },
-        follow: [],
-      };
-    case 'reload':
-      return {
-        state: {
-          ...state,
-          sessions: withSession(reload(sessionOf(state, tab), state.stored, minute)),
-        },
-        operation: { kind: 'reload', tab },
-        follow: [],
-      };
-    case 'close': {
+  return matchKind(next, {
+    read: () => ({
+      state: { ...state, sessions: withSession(read(state.stored, minute)) },
+      operation: { kind: 'read', tab },
+      follow: [],
+    }),
+    reload: () => ({
+      state: {
+        ...state,
+        sessions: withSession(reload(sessionOf(state, tab), state.stored, minute)),
+      },
+      operation: { kind: 'reload', tab },
+      follow: [],
+    }),
+    close: () => {
       // A closed tab simply goes: it wrote nothing and holds nothing that needs releasing.
       const { [tab]: _closed, ...sessions } = state.sessions;
       return { state: { ...state, sessions }, operation: { kind: 'close', tab }, follow: [] };
-    }
-    default: {
+    },
+    save: () => {
       const session = sessionOf(state, tab);
       const outcome = save(session, state.stored, minute);
       const refusedMinutes = outcome.session.lost - session.lost;
@@ -194,8 +193,8 @@ function perform(state: RunState, next: Planned, work: Readonly<Record<TabId, nu
               { minute: minute + work[tab], tab, kind: 'save' },
             ],
       };
-    }
-  }
+    },
+  });
 }
 
 /**
@@ -208,7 +207,7 @@ export function optimisticRun(example: OptimisticLockParameters): readonly Optim
   let plan: readonly Planned[] = [
     { minute: 0, tab: 'tabA', kind: 'read' },
     { minute: example.openB, tab: 'tabB', kind: 'read' },
-    { minute: example.minutesA, tab: 'tabA', kind: example.tabASaves > 0 ? 'save' : 'close' },
+    { minute: example.minutesA, tab: 'tabA', kind: example.tabASaves ? 'save' : 'close' },
     { minute: example.openB + example.minutesB, tab: 'tabB', kind: 'save' },
   ];
   let state: RunState = {

@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { ticksOf } from '../study-model';
@@ -31,7 +31,7 @@ const minutesIn = (text: string) => {
 const labelFor = (age: number, threshold: number) => (age >= threshold ? 'stale' : 'fresh');
 
 it('attaches the record to the Event Message row and draws it from this module', async () => {
-  const record = await loadFlowStudy('eip:80');
+  const record = await loadModelStudy('eip:80', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.visual.family).toBe('flow');
   // An event is a kind of message, not a stream to transform: nothing runs, and the RxJS reading
@@ -51,7 +51,7 @@ it('attaches the record to the Event Message row and draws it from this module',
 });
 
 it('names the pattern’s parts in the illustrative RxJS reading, each above the code that carries it', async () => {
-  const record = await loadFlowStudy('eip:80');
+  const record = await loadModelStudy('eip:80', 'flow');
   const lines = (record.pseudocode.rxjs ?? '').split('\n');
   // A comment sits on its own line, so a wrapped line never puts its words among the code.
   const commented = (code: string, words: string) =>
@@ -135,7 +135,7 @@ it('leaves the old announcement standing when the beacon write fails', () => {
 });
 
 it('opens at the start and says so in the text equivalent', async () => {
-  const record = await loadFlowStudy('eip:80');
+  const record = await loadModelStudy('eip:80', 'flow');
   expect(run.initialStep).toBe(0);
   expect(run.moments).toEqual([
     { label: 'Announced', step: 1 },

@@ -10,6 +10,7 @@ export {
   deleteRow,
   fill,
   matches,
+  readParameters,
   recordSetRun,
   rivalSave,
   setValue,

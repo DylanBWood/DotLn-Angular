@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   assembleActor,
@@ -16,7 +15,7 @@ import {
   readUnchecked,
 } from './data-transfer-object.model';
 
-const record = await loadStatesStudy('poeaa:363');
+const record = await loadModelStudy('poeaa:363', 'states');
 const parameters = record.example.parameters;
 const example = { serverVersion: 1, pageVersion: 1, buildSteps: 4 };
 
@@ -148,8 +147,9 @@ it('draws a refused document as every object leaving for Refused, and names the 
     'The page knows uifa-board-v1 but the text names uifa-board-v2, so it refuses the whole document rather than misread it.',
   );
   expect(last.placements[0].note).toBe('not read: uifa-board-v2');
-  const drawing = registerDrawing(refused.states, refused.states.frames.length - 1);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['A', 'B', 'E']);
+  // Every object stays in the example, each shown by its own token letter.
+  const keys = tokensOf(refused.states);
+  expect(last.placements.map(({ object }) => keys[object])).toEqual(['A', 'B', 'E']);
   expect(refused.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Domain objects', 0],
     ['Assembled', 1],

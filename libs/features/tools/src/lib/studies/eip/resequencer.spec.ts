@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
 import type { FlowStudyModel } from '../study-model';
@@ -43,7 +43,7 @@ it('runs the bus example against the marbles both drawings show', () => {
 });
 
 it('attaches the record to the Resequencer row and reads its drawing and code from this module', async () => {
-  const record = await loadFlowStudy('eip:120');
+  const record = await loadModelStudy('eip:120', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable?.module).toBe(path);
   expect(record.example.parameters).toEqual(parameters);

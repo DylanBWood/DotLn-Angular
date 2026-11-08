@@ -17,6 +17,7 @@ import type {
   StudyLegendEntry,
   StudyMoment,
   StudyWorkedStep,
+  TimelineAxis,
   TimelineModel,
 } from './studies/study-model';
 
@@ -116,7 +117,7 @@ export interface StudyView {
   readonly steps: readonly StudyStepView[];
   readonly rxjs: StudyRxjsView | null;
   readonly limits: readonly string[];
-  readonly comparison: StudyComparison | null;
+  readonly comparison: StudyComparison<TimelineAxis> | null;
   readonly implementations: readonly StudyImplementation[];
   readonly references: readonly StudyReference[];
   readonly nearby: readonly {

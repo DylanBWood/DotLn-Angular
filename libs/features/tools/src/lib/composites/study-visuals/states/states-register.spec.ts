@@ -1,5 +1,5 @@
-import { statesFixture } from '../fixtures';
-import { statesWidth } from './states-drawing';
+import { statesFixture, statesOfNames } from '../fixtures';
+import { statesText, statesWidth } from './states-drawing';
 import { registerDrawing } from './states-register';
 
 it('lays the states across as columns and the objects down as rows, each token in its column', () => {
@@ -39,6 +39,49 @@ it('keeps every row the same size from step to step, and draws a ring where an o
   expect(committed.ghosts.map(({ id }) => id)).toEqual(['a']);
   expect(committed.tokens.map(({ key }) => key)).toEqual(['B', 'C']);
   expect(committed.arrows.map(({ label }) => label?.text)).toEqual(['commit', 'commit', 'commit']);
+});
+
+it('keeps a long state name at two thirds of its size or more on a phone, breaking a word that would need less', () => {
+  const names = ['Draft', 'Accepted', 'Stored', 'Announced', 'Refused'];
+  const model = statesOfNames(names);
+  const narrow = registerDrawing(model, 0, 'narrow');
+  expect(narrow.columns.map(({ width }) => width)).toEqual([40, 40, 40, 40, 40]);
+  expect(narrow.columns.map(({ heading }) => heading.map(({ text }) => text))).toEqual([
+    ['Draft'],
+    ['Acce-', 'pted'],
+    ['Stored'],
+    ['Annou-', 'nced'],
+    ['Refu-', 'sed'],
+  ]);
+  for (const { heading, scale, width } of narrow.columns) {
+    expect(scale).toBeGreaterThanOrEqual(2 / 3);
+    for (const { text } of heading)
+      expect(text.length * statesText.heading.char * scale).toBeLessThanOrEqual(width - 6);
+  }
+  // The broken names take a second line, which the header makes room for above every row.
+  expect(narrow.rows[0].y).toBe(2 * statesText.heading.line + 14);
+  // The wide register has room for every name whole, at the stylesheet's size.
+  const wide = registerDrawing(model, 0);
+  expect(wide.columns.map(({ heading }) => heading.map(({ text }) => text).join(' '))).toEqual(
+    names,
+  );
+  expect(wide.columns.every(({ scale }) => scale === 1)).toBe(true);
+});
+
+it('draws no heading for a state whose name has no words, and nothing at size zero', () => {
+  const model = statesOfNames(['Draft', '', '   ', 'Stored', 'Refused']);
+  for (const layout of ['wide', 'narrow'] as const) {
+    const { columns } = registerDrawing(model, 1, layout);
+    expect(columns.map(({ heading }) => heading.length > 0)).toEqual([
+      true,
+      false,
+      false,
+      true,
+      true,
+    ]);
+    expect(columns[1].scale).toBe(1);
+    expect(columns[2].scale).toBe(1);
+  }
 });
 
 it('fits a phone’s width with every name, token and arrow inside the drawing', () => {

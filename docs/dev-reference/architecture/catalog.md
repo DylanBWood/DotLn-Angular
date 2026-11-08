@@ -338,20 +338,37 @@ over marbles, `{frame}`, `{now}` and `{delivered}`. Both builders refuse a flow 
 link, message, moment or step it does not have, and `flowFromMarbles` one that routes a line the
 example does not run, so the spec fails at once. A variant of an example that changes what is
 delivered gives its flow the holdings that variant delivers. The spec loads its record
-through `loadFlowStudy` in the tools test kit, checks that the record names its module and asserts
-each claim the prose makes; one whose example runs also calls `expectMarbleExample`.
+through `loadModelStudy(id, 'flow')` in the tools test kit, checks that the record names its module
+and asserts each claim the prose makes; one whose example runs also calls `expectMarbleExample`.
 
 An enterprise pattern's module, `libs/features/tools/src/lib/studies/poeaa/<slug>.model.ts` with a
 spec beside it, composes `<slug>.simulation.ts`, a small pure or in-memory model of the mechanism (a
 unit of work over an in-memory store, an identity map, a lock table) that knows no language, with
 `<slug>.presentation.ts`, which reads the simulation's run into a `states` drawing through
 `statesModel` in `studies/states.ts`. The presentation names the states, the objects and the
-transitions, and gives one language-free snapshot per moment: where each object stands and which
-transition took it there. The builder derives each step's moves from the snapshot before it,
-supplies `{step}`, `{moves}` and `{placements}` to the prose, and refuses a state, object or
-transition the example does not have, so the drawing and the spec read the same run. The spec
-loads its record through `loadStatesStudy` in the tools test kit and drives the mechanism through
-the study's example.
+transitions, and gives one language-free snapshot per moment: where each object stands, or null
+where the example does not track it, and the transition it took only where its states cannot tell
+it, where two transitions join the same two states or an object takes a transition back into the
+state it was in. The builder derives each step's moves from the snapshot before it, gives a move the
+one transition that joins its two states, supplies `{step}`, `{moves}` and `{placements}` to the
+prose, and refuses a state, object or transition the example does not have and a move two
+transitions could have taken, so the drawing and the spec read the same run. The spec loads its
+record through `loadModelStudy(id, 'states')`, the tools test kit's one loader for a study whose
+drawing a model draws, and drives the mechanism through the study's example; it reads the model's
+frames, never the register drawing, whose own spec judges the geometry.
+
+A presentation reads as the example the next batch copies. A display name or a token letter comes
+from a table keyed by the study's id union and checked with `satisfies Record<CompositionId, string>`,
+as `names` and `tokens` in `unit-of-work.presentation.ts`; a choice by an operation's kind is a
+table of one function per kind through `matchKind` in `studies/match-kind.ts`, and a choice by a
+state is a `Record` of one function per state, so the compiler requires an entry for every id and
+kind and no `default` branch waits for one that cannot occur. Lists join through `listOf` in
+`studies/states.ts`, the builder drops a null placement or note, and an on/off input is a boolean
+read by `booleanParameter` in `studies/parameters.ts`. A comparison's runs travel in the run
+description the entry module builds, and its chart names its x values for what they hold: `steps`
+for the steps of a run, `counts` for a count, and `seconds`, the default `TimelineModel`, for a
+movement example's clock; `xValuesOf` reads them whatever their name, and a chart or comparison
+over one axis is never taken for one over another.
 
 `study-model.ts` discriminates a model by its family, `motion` with a chart beside it, `marbles`,
 `flow` with its marble diagram beside it when its example runs, or `states`, and the mapper,
@@ -409,8 +426,12 @@ the row's name and a few words on what the object holds at its left. A token tha
 selected step is green and glides in from the column it left, with an arrow from that column and
 the operation that moved it above the arrow; the column it enters is tinted, and an object that
 leaves the example leaves a dashed ring. Below 600 pixels the same register is drawn at a phone's
-width, so names, notes and operations keep their size; a state's name whose longest word is wider
-than its column is drawn smaller, so it stays inside the column. The family's first pair of
+width, so names, notes and operations keep their size; a state's name is drawn at the largest size
+at which its widest line fits its column, but never below two thirds of the stylesheet's size: a
+word that would need less breaks across lines with a hyphen, the longer part first, and its lines
+are drawn at the size at which they then fit. The
+[heading decision](../../dotln/evidence/WO-039/decisions.md#wo-039-d011) records the measurements
+at 360 pixels and the alternatives. The family's first pair of
 rendered comparisons, this register
 against a state machine of the same model, waits for a dedicated A/B testing pass; until that pass
 decides, the register is the family's drawing. The last name in `visualFamilies`, `relations`,

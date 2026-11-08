@@ -279,3 +279,22 @@ export const statesStudyModel = statesModel(
 );
 
 export const statesFixture: StatesModel = statesStudyModel.states;
+
+/**
+ * A register of the given state names, with one object whose name widens the name column to its
+ * most, so five names leave a phone the narrow columns Service Layer's register has.
+ */
+export const statesOfNames = (labels: readonly string[]): StatesModel =>
+  statesModel(
+    {
+      shape: {
+        nodes: labels.map((label, index) => ({ id: `state${index}`, label })),
+        objects: [{ id: 'ridge', label: 'Hold the ridge again', key: 'R' }],
+        transitions: [],
+      },
+      snapshots: [{ at: { ridge: 'state0' } }, { at: { ridge: 'state1' } }],
+      text: [],
+    },
+    { moments: [] },
+    fixtureTranslate,
+  ).states;

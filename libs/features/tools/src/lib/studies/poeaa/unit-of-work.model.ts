@@ -8,6 +8,7 @@ import { readParameters, unitOfWorkRun } from './unit-of-work.simulation';
 export {
   commit,
   load,
+  readParameters,
   registerDirty,
   registerNew,
   registerRemoved,

@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
+import { loadModelStudy, withStudyMessages } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
@@ -79,14 +79,14 @@ const unknownShape: MarbleExample = {
 };
 
 it('reads its record from this module and runs the chunk example under the TestScheduler', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   expect(record.visual.model).toBe(modulePath);
   expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: modulePath });
   expectMarbleExample(example);
 });
 
 it('hands each row on in the frame it arrives, rebuilt, in order, holding nothing', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   const run = flowRun(record.example.parameters);
   // One thing a step: each row goes in and its rebuilt copy comes out, then the chunk finishes.
   expect(hopsOf(run)).toEqual([
@@ -171,7 +171,7 @@ it('loses every later row when one row cannot be translated', () => {
 });
 
 it('opens at the start and names its moments by frame', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   const run = flowRun(record.example.parameters);
   expect(run.initialStep).toBe(0);
   expect(run.moments).toEqual([
@@ -186,7 +186,7 @@ it('opens at the start and names its moments by frame', async () => {
 });
 
 it('fills every placeholder the record’s prose reads, at every step', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   const run = flowRun(record.example.parameters);
   const prose = [
     record.visual.textEquivalent,
@@ -205,7 +205,7 @@ it('fills every placeholder the record’s prose reads, at every step', async ()
 });
 
 it('names the translator in its RxJS reading, on the code that runs', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   const reading = record.pseudocode.rxjs ?? '';
   // Each comment sits on its own line, and the code beside it is the pipeline the run executes.
   expect(reading.split('\n').filter((line) => line.trim().startsWith('//'))).toEqual([
@@ -217,7 +217,7 @@ it('names the translator in its RxJS reading, on the code that runs', async () =
 });
 
 it('stays within what the flow drawing reads at a narrow width', async () => {
-  const record = await loadFlowStudy('eip:60');
+  const record = await loadModelStudy('eip:60', 'flow');
   const { nodes, frames } = flowRun(record.example.parameters).flow;
   expect(nodes.length).toBeLessThanOrEqual(8);
   expect(Math.max(...nodes.map(({ stage }) => stage))).toBeLessThan(4);

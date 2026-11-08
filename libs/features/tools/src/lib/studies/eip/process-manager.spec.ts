@@ -1,4 +1,4 @@
-import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
+import { loadModelStudy, withStudyMessages } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
@@ -22,7 +22,7 @@ const studyTranslate = withStudyMessages({
 });
 
 const path = 'libs/features/tools/src/lib/studies/eip/process-manager.ts';
-const record = await loadFlowStudy('eip:131');
+const record = await loadModelStudy('eip:131', 'flow');
 const drawn = model(record.example.parameters, studyTranslate);
 if (drawn.family !== 'flow') throw new Error('The model does not draw a flow.');
 const run = drawn;

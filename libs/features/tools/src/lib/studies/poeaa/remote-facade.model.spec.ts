@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   boardPanels,
@@ -7,11 +6,12 @@ import {
   model,
   oneByOneCalls,
   readPanel,
+  readParameters,
   remoteFacadeRun,
   walkRounds,
 } from './remote-facade.model';
 
-const record = await loadStatesStudy('poeaa:357');
+const record = await loadModelStudy('poeaa:357', 'states');
 const parameters = record.example.parameters;
 const example = {
   rowsActors: 6,
@@ -19,12 +19,13 @@ const example = {
   rowsMechanisms: 10,
   rowsWork: 38,
   rowsBlueprint: 5,
-  buildsDown: 0,
-  reportsFailures: 1,
+  buildsDown: false,
+  reportsFailures: true,
 };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, buildsDown: 0, reportsFailures: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
   expect(record.pseudocode.rxjs?.startsWith('// Illustrative: ')).toBe(true);
@@ -36,7 +37,7 @@ it('reads a panel the fine-grained way: one call for the panel and one for each 
     copy: { id: 'work', status: 'available', rows: 38 },
     calls: 39,
   });
-  const down = boardSources({ ...example, buildsDown: 1 });
+  const down = boardSources({ ...example, buildsDown: true });
   expect(readPanel(down, 'builds')).toEqual({ copy: null, calls: 1 });
   // The list, five panels and 65 rows: the walk a page calling one object at a time makes.
   expect(oneByOneCalls(sources)).toBe(71);
@@ -75,7 +76,7 @@ it('answers one call with the whole board, making every small call inside the fa
 });
 
 it('keeps a failed part a part when the facade reports it in the response', () => {
-  const steps = remoteFacadeRun({ ...example, buildsDown: 1 });
+  const steps = remoteFacadeRun({ ...example, buildsDown: true });
   expect(steps[2].operation).toEqual({ kind: 'reportUnavailable', id: 'builds' });
   const last = steps[steps.length - 1];
   expect(last.operation.kind).toBe('reply');
@@ -90,7 +91,7 @@ it('keeps a failed part a part when the facade reports it in the response', () =
 });
 
 it('loses the whole board when the facade lets one failed read end the call', () => {
-  const failing = { ...example, buildsDown: 1, reportsFailures: 0 };
+  const failing = { ...example, buildsDown: true, reportsFailures: false };
   const steps = remoteFacadeRun(failing);
   expect(steps.map(({ operation }) => operation.kind)).toEqual([
     'call',
@@ -162,8 +163,8 @@ it('draws the failed call as the copied panels leaving and the rest never read',
   expect(last.note).toBe(
     'The call fails after 9 local calls. The panels already copied are thrown away, and the page receives an error and no panel.',
   );
-  const drawing = registerDrawing(failed.states, frames.length - 1);
-  expect(drawing.ghosts).toHaveLength(1);
+  // One panel, the one copied before the failure, leaves the example with the response.
+  expect(last.moves.filter(({ to }) => to === null)).toHaveLength(1);
   expect(failed.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Call', 0],
     ['First read', 1],

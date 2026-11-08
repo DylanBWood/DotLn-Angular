@@ -1,6 +1,8 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
@@ -14,6 +16,7 @@ import {
   compositions,
   type DataMapperParameters,
   type DataMapperStep,
+  type Place,
   placeOf,
 } from './data-mapper.simulation';
 
@@ -32,21 +35,25 @@ interface DataMapperMoment {
 
 const stepAt = ({ run, index }: DataMapperMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: CompositionId): string {
-  switch (id) {
-    case 'flank':
-      return t('studyPoeaa.data-mapper.model.names.flank');
-    case 'ridge':
-      return t('studyPoeaa.data-mapper.model.names.ridge');
-    default:
-      return t('studyPoeaa.data-mapper.model.names.dawn');
-  }
-}
+// Each composition's name and the letter its token shows; the compiler requires an entry for every
+// composition the example has.
+const names = {
+  flank: 'studyPoeaa.data-mapper.model.names.flank',
+  ridge: 'studyPoeaa.data-mapper.model.names.ridge',
+  dawn: 'studyPoeaa.data-mapper.model.names.dawn',
+} as const satisfies Record<CompositionId, string>;
+const tokens = { flank: 'F', ridge: 'R', dawn: 'D' } as const satisfies Record<
+  CompositionId,
+  string
+>;
+
+const nameOf = (t: StudyTranslate, id: CompositionId): string => t(names[id]);
 
 const namesOf = (t: StudyTranslate, ids: readonly CompositionId[]) =>
-  ids.length
-    ? ids.map((id) => nameOf(t, id)).join(t('studyCommon.states.listSeparator'))
-    : t('studyCommon.states.empty');
+  listOf(
+    t,
+    ids.map((id) => nameOf(t, id)),
+  );
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -55,11 +62,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     { id: 'edited', label: t('studyPoeaa.data-mapper.model.places.edited') },
     { id: 'unmapped', label: t('studyPoeaa.data-mapper.model.places.unmapped'), tone: 'subject' },
   ],
-  objects: compositions.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: id === 'flank' ? 'F' : id === 'ridge' ? 'R' : 'D',
-  })),
+  objects: compositions.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'load',
@@ -112,44 +115,31 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition each composition took at a step, by the operation the scene performed. */
+/**
+ * The transitions a step's moves cannot be told by their states alone: a find, or a whole-library
+ * save's rewrite, leaves an object where it stood, and an edited object goes back to Mapped either
+ * by its own update or by the whole-library save.
+ */
 function tookAt(moment: DataMapperMoment): Readonly<Record<string, string>> {
   const { operation } = stepAt(moment);
-  switch (operation.kind) {
-    case 'load':
-      return { [operation.id]: operation.mapped ? 'load' : 'refuse' };
-    case 'find':
-      return { [operation.id]: 'find' };
-    case 'rename':
-      return { [operation.id]: 'rename' };
-    case 'update':
-      return { [operation.id]: 'update' };
-    case 'saveAll': {
-      // A whole-library save writes every object again, the edited one with its change.
-      const before = moment.run.steps[moment.index - 1];
-      const { formatRead } = moment.run.example;
-      return Object.fromEntries([
-        ...operation.written.map((id) => [
-          id,
-          placeOf(before, id, formatRead) === 'edited' ? 'saveAllUpdate' : 'saveAllRewrite',
-        ]),
-        ...operation.dropped.map((id) => [id, 'saveAllDrop']),
-      ]);
-    }
-    default:
-      return {};
-  }
+  if (operation.kind === 'find' || operation.kind === 'update')
+    return { [operation.id]: operation.kind };
+  if (operation.kind !== 'saveAll') return {};
+  const before = moment.run.steps[moment.index - 1];
+  const { formatRead } = moment.run.example;
+  return Object.fromEntries(
+    operation.written.map((id) => [
+      id,
+      placeOf(before, id, formatRead) === 'edited' ? 'saveAllUpdate' : 'saveAllRewrite',
+    ]),
+  );
 }
 
 function snapshotOf(moment: DataMapperMoment): StatesSnapshot {
   const step = stepAt(moment);
+  const { formatRead } = moment.run.example;
   return {
-    at: Object.fromEntries(
-      compositions.flatMap((id) => {
-        const place = placeOf(step, id, moment.run.example.formatRead);
-        return place === null ? [] : [[id, place]];
-      }),
-    ),
+    at: Object.fromEntries(compositions.map((id) => [id, placeOf(step, id, formatRead)])),
     took: tookAt(moment),
   };
 }
@@ -158,95 +148,79 @@ function snapshotOf(moment: DataMapperMoment): StatesSnapshot {
 function objectNote(t: StudyTranslate, moment: DataMapperMoment, id: CompositionId): string | null {
   const step = stepAt(moment);
   const { formatRead } = moment.run.example;
-  const row = step.storage.rows[id];
-  const object = step.mapper.identityMap[id];
-  switch (placeOf(step, id, formatRead)) {
-    case 'stored':
-      return t('studyPoeaa.data-mapper.model.notes.stored', { format: row?.format ?? 0 });
-    case 'unmapped':
-      return t('studyPoeaa.data-mapper.model.notes.unmapped', {
-        format: row?.format ?? 0,
-        formatRead,
-      });
-    case 'edited':
-      return t('studyPoeaa.data-mapper.model.notes.edited');
-    case 'mapped':
-      return step.operation.kind === 'find' && step.operation.id === id
+  const place = placeOf(step, id, formatRead);
+  if (place === null) return null;
+  const format = step.storage.rows[id]?.format ?? 0;
+  const notes: Record<Place, () => string> = {
+    stored: () => t('studyPoeaa.data-mapper.model.notes.stored', { format }),
+    unmapped: () => t('studyPoeaa.data-mapper.model.notes.unmapped', { format, formatRead }),
+    edited: () => t('studyPoeaa.data-mapper.model.notes.edited'),
+    mapped: () =>
+      step.operation.kind === 'find' && step.operation.id === id
         ? t('studyPoeaa.data-mapper.model.notes.foundAgain')
-        : t('studyPoeaa.data-mapper.model.notes.mapped', { steps: object?.steps ?? 0 });
-    default:
-      return null;
-  }
+        : t('studyPoeaa.data-mapper.model.notes.mapped', {
+            steps: step.mapper.identityMap[id]?.steps ?? 0,
+          }),
+  };
+  return notes[place]();
 }
 
 /** The sentence under the drawing: what the scene and the mapper did at this step. */
 function stepNote(t: StudyTranslate, moment: DataMapperMoment): string {
   const { operation, storage } = stepAt(moment);
   const { formatRead } = moment.run.example;
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.data-mapper.model.steps.start');
-    case 'load': {
-      const row = storage.rows[operation.id];
-      const words = { name: nameOf(t, operation.id), format: row?.format ?? 0 };
-      return operation.mapped
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.data-mapper.model.steps.start'),
+    load: ({ id, mapped }) => {
+      const row = storage.rows[id];
+      const words = { name: nameOf(t, id), format: row?.format ?? 0 };
+      return mapped
         ? t('studyPoeaa.data-mapper.model.steps.load', { ...words, steps: row?.steps ?? 0 })
         : t('studyPoeaa.data-mapper.model.steps.refuse', { ...words, formatRead });
-    }
-    case 'find':
-      return t('studyPoeaa.data-mapper.model.steps.find', { name: nameOf(t, operation.id) });
-    case 'rename':
-      return t('studyPoeaa.data-mapper.model.steps.rename', {
-        name: nameOf(t, operation.id),
+    },
+    find: ({ id }) => t('studyPoeaa.data-mapper.model.steps.find', { name: nameOf(t, id) }),
+    rename: ({ id }) =>
+      t('studyPoeaa.data-mapper.model.steps.rename', {
+        name: nameOf(t, id),
         renamed: t('studyPoeaa.data-mapper.model.names.ridgeRenamed'),
-      });
-    case 'update':
-      return t('studyPoeaa.data-mapper.model.steps.update', { name: nameOf(t, operation.id) });
-    default:
-      return operation.dropped.length
+      }),
+    update: ({ id }) => t('studyPoeaa.data-mapper.model.steps.update', { name: nameOf(t, id) }),
+    saveAll: ({ written, dropped }) =>
+      dropped.length
         ? t('studyPoeaa.data-mapper.model.steps.saveAllDropped', {
-            written: namesOf(t, operation.written),
-            dropped: namesOf(t, operation.dropped),
+            written: namesOf(t, written),
+            dropped: namesOf(t, dropped),
           })
-        : t('studyPoeaa.data-mapper.model.steps.saveAll', {
-            written: namesOf(t, operation.written),
-          });
-  }
+        : t('studyPoeaa.data-mapper.model.steps.saveAll', { written: namesOf(t, written) }),
+  });
 }
 
 /** The line of arithmetic or checking the step's own operation is worth showing. */
 function operationLines(t: StudyTranslate, moment: DataMapperMoment): readonly string[] {
   const { operation, storage } = stepAt(moment);
   const { formatRead } = moment.run.example;
-  switch (operation.kind) {
-    case 'load': {
-      const row = storage.rows[operation.id];
-      const words = { name: nameOf(t, operation.id), format: row?.format ?? 0, formatRead };
+  return matchKind(operation, {
+    start: () => [],
+    load: ({ id, mapped }) => {
+      const row = storage.rows[id];
+      const words = { name: nameOf(t, id), format: row?.format ?? 0, formatRead };
       return [
-        operation.mapped
+        mapped
           ? t('studyPoeaa.data-mapper.model.worked.mapped', { ...words, steps: row?.steps ?? 0 })
           : t('studyPoeaa.data-mapper.model.worked.refused', words),
       ];
-    }
-    case 'find':
-      return [t('studyPoeaa.data-mapper.model.worked.found', { name: nameOf(t, operation.id) })];
-    case 'rename':
-      return [t('studyPoeaa.data-mapper.model.worked.renamed', { name: nameOf(t, operation.id) })];
-    case 'update':
-      return [t('studyPoeaa.data-mapper.model.worked.updated', { name: nameOf(t, operation.id) })];
-    case 'saveAll':
-      return [
-        t('studyPoeaa.data-mapper.model.worked.savedAll', {
-          count: operation.written.length,
-          written: namesOf(t, operation.written),
-        }),
-        t('studyPoeaa.data-mapper.model.worked.dropped', {
-          dropped: namesOf(t, operation.dropped),
-        }),
-      ];
-    default:
-      return [];
-  }
+    },
+    find: ({ id }) => [t('studyPoeaa.data-mapper.model.worked.found', { name: nameOf(t, id) })],
+    rename: ({ id }) => [t('studyPoeaa.data-mapper.model.worked.renamed', { name: nameOf(t, id) })],
+    update: ({ id }) => [t('studyPoeaa.data-mapper.model.worked.updated', { name: nameOf(t, id) })],
+    saveAll: ({ written, dropped }) => [
+      t('studyPoeaa.data-mapper.model.worked.savedAll', {
+        count: written.length,
+        written: namesOf(t, written),
+      }),
+      t('studyPoeaa.data-mapper.model.worked.dropped', { dropped: namesOf(t, dropped) }),
+    ],
+  });
 }
 
 /** The mapper's identity map, its unmapped rows and the storage counts, then the step's own line. */
@@ -273,12 +247,6 @@ function workedOf(t: StudyTranslate, moment: DataMapperMoment): StudyWorkedStep 
 function textOf(t: StudyTranslate, moment: DataMapperMoment): StatesMomentText {
   const { mapper, storage } = stepAt(moment);
   const { example } = moment.run;
-  const notes = Object.fromEntries(
-    compositions.flatMap((id) => {
-      const note = objectNote(t, moment, id);
-      return note === null ? [] : [[id, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(moment.run.parameters, t),
@@ -290,14 +258,13 @@ function textOf(t: StudyTranslate, moment: DataMapperMoment): StatesMomentText {
         example.formatDawn === example.formatRead
           ? t('studyPoeaa.data-mapper.model.values.dawnReadable')
           : t('studyPoeaa.data-mapper.model.values.dawnUnreadable'),
-      saving:
-        example.eachRow > 0
-          ? t('studyPoeaa.data-mapper.model.values.eachRow')
-          : t('studyPoeaa.data-mapper.model.values.wholeLibrary'),
+      saving: example.eachRow
+        ? t('studyPoeaa.data-mapper.model.values.eachRow')
+        : t('studyPoeaa.data-mapper.model.values.wholeLibrary'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),
-    notes,
+    notes: Object.fromEntries(compositions.map((id) => [id, objectNote(t, moment, id)])),
   };
 }
 

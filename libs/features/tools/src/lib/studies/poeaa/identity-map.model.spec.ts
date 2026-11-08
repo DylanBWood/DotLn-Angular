@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   checkStudy,
@@ -11,7 +10,7 @@ import {
   type StudyStore,
 } from './identity-map.model';
 
-const record = await loadStatesStudy('poeaa:254');
+const record = await loadModelStudy('poeaa:254', 'states');
 const parameters = record.example.parameters;
 const example = { maps: 1, revisits: 1 };
 
@@ -118,12 +117,13 @@ it('draws the second copy when the nearby list keeps its own map, and the reload
     ['unitOfWork', 'endTwice'],
     ['identityMap', 'endMapped'],
   ]);
-  const drawing = registerDrawing(run.states, 4);
-  expect(drawing.tokens.map(({ key, state }) => [key, state])).toEqual([
-    ['U', 'moving'],
-    ['I', 'resting'],
+  // Both studies stand in the example at the second copy, and only Unit of Work moves.
+  const keys = tokensOf(run.states);
+  const moving = new Set(frames[4].moves.map(({ object }) => object));
+  expect(frames[4].placements.map(({ object }) => [keys[object], moving.has(object)])).toEqual([
+    ['U', true],
+    ['I', false],
   ]);
-  expect(drawing.arrows).toHaveLength(1);
 });
 
 it('compares the map’s reads with a read for every lookup, and names the moments in order', () => {

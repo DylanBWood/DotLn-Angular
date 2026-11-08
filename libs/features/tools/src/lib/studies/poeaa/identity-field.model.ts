@@ -13,6 +13,7 @@ export {
   keyOf,
   nextKey,
   open,
+  readParameters,
   save,
   sharersOf,
 } from './identity-field.simulation';

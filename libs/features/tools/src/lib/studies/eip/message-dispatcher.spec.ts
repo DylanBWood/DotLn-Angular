@@ -2,7 +2,7 @@ import { concatMap, delay } from 'rxjs';
 import type { RunHelpers } from 'rxjs/testing';
 import { TestScheduler } from 'rxjs/testing';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import { studyMessage } from '../study-message';
 import type { FlowStudyModel, StudyModel } from '../study-model';
@@ -57,7 +57,7 @@ it('runs the dispatcher example against the marbles both drawings show', () => {
 });
 
 it('attaches the record to the Message Dispatcher row and reads its code from this module', async () => {
-  const record = await loadFlowStudy('eip:175');
+  const record = await loadModelStudy('eip:175', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable).toEqual({ kind: 'rxjs', module: path });
   expect(record.example.parameters).toEqual(parameters);

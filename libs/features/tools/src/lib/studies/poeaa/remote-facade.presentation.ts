@@ -1,6 +1,7 @@
 import type { PanelId, StudyParameters } from '@dotln-angular/models';
 
 import { countTicks } from '../drawing';
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -19,6 +20,7 @@ import type { StudyTranslate } from '../study-translate';
 import {
   boardPanels,
   type BoardSources,
+  type FacadeOperation,
   oneByOneCalls,
   panelState,
   readPanel,
@@ -43,29 +45,24 @@ interface RemoteFacadeMoment {
 
 const stepAt = ({ run, index }: RemoteFacadeMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: PanelId): string {
-  switch (id) {
-    case 'actors':
-      return t('studyPoeaa.remote-facade.model.names.actors');
-    case 'builds':
-      return t('studyPoeaa.remote-facade.model.names.builds');
-    case 'mechanisms':
-      return t('studyPoeaa.remote-facade.model.names.mechanisms');
-    case 'work':
-      return t('studyPoeaa.remote-facade.model.names.work');
-    default:
-      return t('studyPoeaa.remote-facade.model.names.blueprint');
-  }
-}
-
-/** The number each panel's token shows, in the board's panel order. */
-const tokenKeys: Readonly<Record<PanelId, string>> = {
+// Each panel's name and the number its token shows, in the board's panel order; the compiler
+// requires an entry for every panel the board has.
+const names = {
+  actors: 'studyPoeaa.remote-facade.model.names.actors',
+  builds: 'studyPoeaa.remote-facade.model.names.builds',
+  mechanisms: 'studyPoeaa.remote-facade.model.names.mechanisms',
+  work: 'studyPoeaa.remote-facade.model.names.work',
+  blueprint: 'studyPoeaa.remote-facade.model.names.blueprint',
+} as const satisfies Record<PanelId, string>;
+const tokens = {
   actors: '1',
   builds: '2',
   mechanisms: '3',
   work: '4',
   blueprint: '5',
-};
+} as const satisfies Record<PanelId, string>;
+
+const nameOf = (t: StudyTranslate, id: PanelId): string => t(names[id]);
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -77,7 +74,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     },
     { id: 'page', label: t('studyPoeaa.remote-facade.model.states.page') },
   ],
-  objects: boardPanels.map((id) => ({ id, label: nameOf(t, id), key: tokenKeys[id] })),
+  objects: boardPanels.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'read',
@@ -106,30 +103,18 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition each panel took at a step, by what the facade did. */
-function tookAt(step: RemoteFacadeStep): Readonly<Record<string, string>> {
-  const { operation } = step;
-  switch (operation.kind) {
-    case 'read':
-      return { [operation.id]: 'read' };
-    case 'reportUnavailable':
-      return { [operation.id]: 'reportUnavailable' };
-    case 'reply':
-      return Object.fromEntries(step.page.map(({ id }) => [id, 'reply']));
-    case 'fail':
-      return Object.fromEntries(step.discarded.map((id) => [id, 'discard']));
-    default:
-      return {};
-  }
-}
+/**
+ * The transitions a step's moves cannot be told by their states alone: a panel reaches the response
+ * either read or reported unavailable. Sending the reply and throwing the response away each join
+ * their two states by a transition of their own.
+ */
+const tookAt = ({ operation }: RemoteFacadeStep): Readonly<Record<string, string>> =>
+  operation.kind === 'read' || operation.kind === 'reportUnavailable'
+    ? { [operation.id]: operation.kind }
+    : {};
 
 const snapshotOf = (step: RemoteFacadeStep): StatesSnapshot => ({
-  at: Object.fromEntries(
-    boardPanels.flatMap((id) => {
-      const state = panelState(step, id);
-      return state === null ? [] : [[id, state]];
-    }),
-  ),
+  at: Object.fromEntries(boardPanels.map((id) => [id, panelState(step, id)])),
   took: tookAt(step),
 });
 
@@ -163,63 +148,59 @@ function panelNote(t: StudyTranslate, moment: RemoteFacadeMoment, id: PanelId): 
 /** The sentence under the drawing: what the facade did at this step. */
 function stepNote(t: StudyTranslate, moment: RemoteFacadeMoment): string {
   const { operation, page, calls } = stepAt(moment);
-  switch (operation.kind) {
-    case 'call':
-      return t('studyPoeaa.remote-facade.model.steps.call');
-    case 'read':
-      return t('studyPoeaa.remote-facade.model.steps.read', {
-        panel: nameOf(t, operation.id),
-        rows: moment.run.sources[operation.id].rows,
-      });
-    case 'reportUnavailable':
-      return t('studyPoeaa.remote-facade.model.steps.reportUnavailable', {
-        panel: nameOf(t, operation.id),
-      });
-    case 'readFailed':
-      return t('studyPoeaa.remote-facade.model.steps.readFailed', {
-        panel: nameOf(t, operation.id),
-      });
-    case 'fail':
-      return t('studyPoeaa.remote-facade.model.steps.fail', { local: calls.local });
-    default:
-      return t('studyPoeaa.remote-facade.model.steps.reply', { panels: page.length });
-  }
+  return matchKind(operation, {
+    call: () => t('studyPoeaa.remote-facade.model.steps.call'),
+    read: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.steps.read', {
+        panel: nameOf(t, id),
+        rows: moment.run.sources[id].rows,
+      }),
+    reportUnavailable: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.steps.reportUnavailable', { panel: nameOf(t, id) }),
+    readFailed: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.steps.readFailed', { panel: nameOf(t, id) }),
+    fail: () => t('studyPoeaa.remote-facade.model.steps.fail', { local: calls.local }),
+    reply: () => t('studyPoeaa.remote-facade.model.steps.reply', { panels: page.length }),
+  });
 }
 
 /** The line the worked step adds for what the facade did, or null for a step with nothing to add. */
 function operationLine(t: StudyTranslate, moment: RemoteFacadeMoment): string | null {
   const { operation, page, calls } = stepAt(moment);
-  switch (operation.kind) {
-    case 'read':
-      return t('studyPoeaa.remote-facade.model.worked.read', {
-        panel: nameOf(t, operation.id),
-        rows: moment.run.sources[operation.id].rows,
-        calls: readPanel(moment.run.sources, operation.id).calls,
-      });
-    case 'reportUnavailable':
-      return t('studyPoeaa.remote-facade.model.worked.reported', {
-        panel: nameOf(t, operation.id),
-      });
-    case 'readFailed':
-      return t('studyPoeaa.remote-facade.model.worked.readFailed', {
-        panel: nameOf(t, operation.id),
-      });
-    case 'fail':
-      return t('studyPoeaa.remote-facade.model.worked.fail', { local: calls.local });
-    case 'reply':
-      return t('studyPoeaa.remote-facade.model.worked.reply', {
+  return matchKind<FacadeOperation, string | null>(operation, {
+    call: () => null,
+    read: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.worked.read', {
+        panel: nameOf(t, id),
+        rows: moment.run.sources[id].rows,
+        calls: readPanel(moment.run.sources, id).calls,
+      }),
+    reportUnavailable: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.worked.reported', { panel: nameOf(t, id) }),
+    readFailed: ({ id }) =>
+      t('studyPoeaa.remote-facade.model.worked.readFailed', { panel: nameOf(t, id) }),
+    fail: () => t('studyPoeaa.remote-facade.model.worked.fail', { local: calls.local }),
+    reply: () =>
+      t('studyPoeaa.remote-facade.model.worked.reply', {
         panels: page.length,
         rows: page.reduce((sum, panel) => sum + panel.rows, 0),
         local: calls.local,
-      });
-    default:
-      return null;
-  }
+      }),
+  });
+}
+
+/** The note under the worked lines: after the reply, after the failure, or before either. */
+function workedNote(t: StudyTranslate, { operation }: RemoteFacadeStep): string {
+  if (operation.kind === 'reply') return t('studyPoeaa.remote-facade.model.worked.afterReply');
+  return operation.kind === 'fail'
+    ? t('studyPoeaa.remote-facade.model.worked.afterFailure')
+    : t('studyPoeaa.remote-facade.model.worked.beforeReply');
 }
 
 /** The calls at this moment, counted three ways, and the caller checks, as the worked lines. */
 function workedOf(t: StudyTranslate, moment: RemoteFacadeMoment): StudyWorkedStep {
-  const { operation, calls } = stepAt(moment);
+  const step = stepAt(moment);
+  const { calls } = step;
   const line = operationLine(t, moment);
   return {
     title: t('studyPoeaa.remote-facade.model.worked.title', { step: moment.index }),
@@ -230,19 +211,14 @@ function workedOf(t: StudyTranslate, moment: RemoteFacadeMoment): StudyWorkedSte
       t('studyPoeaa.remote-facade.model.worked.checks', { checks: calls.checks }),
       ...(line === null ? [] : [line]),
     ],
-    note:
-      operation.kind === 'reply'
-        ? t('studyPoeaa.remote-facade.model.worked.afterReply')
-        : operation.kind === 'fail'
-          ? t('studyPoeaa.remote-facade.model.worked.afterFailure')
-          : t('studyPoeaa.remote-facade.model.worked.beforeReply'),
+    note: workedNote(t, step),
   };
 }
 
 /** How the example's Builds source behaves, in the words the example's description reads. */
 function buildsSourceOf(t: StudyTranslate, example: RemoteFacadeParameters): string {
-  if (example.buildsDown === 0) return t('studyPoeaa.remote-facade.model.values.allAnswer');
-  return example.reportsFailures > 0
+  if (!example.buildsDown) return t('studyPoeaa.remote-facade.model.values.allAnswer');
+  return example.reportsFailures
     ? t('studyPoeaa.remote-facade.model.values.reported')
     : t('studyPoeaa.remote-facade.model.values.escapes');
 }
@@ -251,12 +227,7 @@ function buildsSourceOf(t: StudyTranslate, example: RemoteFacadeParameters): str
 function textOf(t: StudyTranslate, moment: RemoteFacadeMoment): StatesMomentText {
   const { run } = moment;
   const { calls } = stepAt(moment);
-  const notes = Object.fromEntries(
-    boardPanels.flatMap((id) => {
-      const note = panelNote(t, moment, id);
-      return note === null ? [] : [[id, note]];
-    }),
-  );
+  const notes = Object.fromEntries(boardPanels.map((id) => [id, panelNote(t, moment, id)]));
   return {
     values: {
       ...studyParameterValues(run.parameters, t),
@@ -275,7 +246,7 @@ function textOf(t: StudyTranslate, moment: RemoteFacadeMoment): StatesMomentText
 }
 
 /** The same board read two ways: one call to the facade, or a call for every object it holds. */
-function comparisonOf(t: StudyTranslate, run: RemoteFacadeRun): StudyComparison {
+function comparisonOf(t: StudyTranslate, run: RemoteFacadeRun): StudyComparison<'steps'> {
   const last = run.steps[run.steps.length - 1];
   const failed = last.operation.kind === 'fail' ? last.operation.id : null;
   return {
@@ -285,7 +256,7 @@ function comparisonOf(t: StudyTranslate, run: RemoteFacadeRun): StudyComparison 
       title: t('studyPoeaa.remote-facade.model.comparison.chart'),
       xLabel: t('studyPoeaa.remote-facade.model.comparison.xLabel'),
       yLabel: t('studyPoeaa.remote-facade.model.comparison.yLabel'),
-      seconds: run.steps.map((_, index) => index),
+      steps: run.steps.map((_, index) => index),
       series: [
         {
           id: 'facade',

@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
@@ -36,7 +36,7 @@ const carriedBy = (frames: readonly FlowFrame[], links: readonly string[]) => [
 ];
 
 it('attaches the record to the Control Bus row and draws its flow from this module', async () => {
-  const record = await loadFlowStudy('eip:184');
+  const record = await loadModelStudy('eip:184', 'flow');
   expect(record.visual.model).toBe(modulePath);
   expect(record.pseudocode.executable).toBeNull();
   expect(record.pseudocode.rxjs).toBeNull();
