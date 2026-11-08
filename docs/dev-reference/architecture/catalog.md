@@ -140,11 +140,9 @@ without changing the reading feature. Presentational components and mappers take
 shared shapes (`CatalogWork`, `CatalogChapter`, `isSceneTool`) from
 `@dotln-angular/models`; lint refuses their imports of `@dotln-angular/catalog`.
 
-The loader accepts tool-v0 for one compatibility release through a private
-reader in `catalog-loader.ts`. A legacy row gets an explicit
-unavailable-definition message, empty relations/hooks/place and a partial note.
-It never invents a definition. New writes and the complete catalog check use v1.
-The next change to the loader removes the reader and its type.
+The loader reads `tool-v1` checkpoints only and refuses any other schema as an unsupported shape,
+so a row without its definition, relations, hooks and place never reaches the reading. The
+complete catalog check uses the same schema.
 
 `CatalogStore`, in `libs/shared/catalog/src/lib/catalog-store.ts`, uses the shared
 event, command, call-state and persistence features.
@@ -475,7 +473,7 @@ content defect the next batch's link check reports.
 ## Evidence
 
 Unit and tooling checks cover all rows and source-join safeguards, summary
-counts, exact relation targets, v0 compatibility, retries, persistence, search,
+counts, exact relation targets, schema refusal, retries, persistence, search,
 paging, recent readings, the study check's rules and every model's claims, across
 each input's range. Browser tests
 exercise the objective reading session, shared links and Back, keyboard/touch controls, loading

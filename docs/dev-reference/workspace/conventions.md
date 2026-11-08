@@ -267,8 +267,8 @@ and [session rules](../../ai-reference/sub-app-rules.md) for the checklist.
 ## 23. Catalog data
 
 The catalog carries full definitions, relations, hooks, verification notes and
-place fields under `tool-v1`. The loader accepts v0 for one compatibility
-release. No quarantine file is opened. Keep map ids and digests stable; join
+place fields under `tool-v1`, the only schema the loader reads. No quarantine
+file is opened. Keep map ids and digests stable; join
 only the declared maps; preserve uncertain candidates as untyped; and grow the
 transform enum only by a recorded decision. Use the complete catalog check and
 injectable lazy-loader seam. Present the data as a reading session and develop

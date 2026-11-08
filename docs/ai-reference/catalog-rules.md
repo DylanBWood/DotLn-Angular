@@ -50,8 +50,7 @@
   opened. Raw maps remain read-only intake.
 - Keep line-based ids stable and record original-byte SHA-256 digests with
   basenames. Pair map provenance with its map object, public-work provenance
-  with null. Write readonly tool-v1 content; accept v0 through the loader for one
-  compatibility release with an explicit unavailable-definition message.
+  with null. Write readonly tool-v1 content, the only schema the loader reads.
 - Join only the declared maps, through `tools/scripts/catalog/join-maps.mjs`; it needs
   the research run's directory, which the
   [catalog architecture](../dev-reference/architecture/catalog.md#reproducible-source-join)
