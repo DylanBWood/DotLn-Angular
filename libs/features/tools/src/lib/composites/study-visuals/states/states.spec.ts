@@ -1,27 +1,45 @@
 import { TestBed } from '@angular/core/testing';
 
 import { provideToolsTestKit } from '../../../../../testing/src';
+import type { StatesModel } from '../../../studies/study-model';
 import { fillValues } from '../../../studies/study-text';
-import { statesFixture } from '../fixtures';
+import { statesFixture, statesOfNames } from '../fixtures';
 import { StudyStates } from './states';
+import { registerDrawing } from './states-register';
 
 const sentence = 'Step {step}: {moves}. {placements}.';
 
-function render(step = 2) {
+function render(step = 2, model: StatesModel = statesFixture) {
   TestBed.configureTestingModule({ providers: [...provideToolsTestKit().providers] });
   const fixture = TestBed.createComponent(StudyStates);
-  fixture.componentRef.setInput('model', statesFixture);
+  fixture.componentRef.setInput('model', model);
   fixture.componentRef.setInput('step', step);
   // The text equivalent is the step's own sentence, as the mapper fills it from the model.
-  fixture.componentRef.setInput(
-    'textEquivalent',
-    fillValues(sentence, statesFixture.frames[step].values),
-  );
+  fixture.componentRef.setInput('textEquivalent', fillValues(sentence, model.frames[step].values));
   fixture.componentRef.setInput('moments', [{ label: 'Committed', step: 4 }]);
-  fixture.componentRef.setInput('note', statesFixture.frames[step].note ?? null);
+  fixture.componentRef.setInput('note', model.frames[step].note ?? null);
   fixture.detectChanges();
   return { fixture, element: fixture.nativeElement as HTMLElement };
 }
+
+it('draws each state heading at the scale its column gives it, in both layouts', () => {
+  const model = statesOfNames(['Draft', 'Accepted', 'Stored', 'Announced', 'Refused']);
+  const { element } = render(0, model);
+  for (const layout of ['wide', 'narrow'] as const) {
+    const expected = registerDrawing(model, 0, layout).columns.flatMap(({ heading, scale }) =>
+      heading.map(({ text }) => [text, scale]),
+    );
+    const drawn = [...element.querySelectorAll<SVGTextElement>(`.${layout} .heading`)].map(
+      (text) => [text.textContent?.trim(), Number(text.style.getPropertyValue('--states-scale'))],
+    );
+    expect(drawn).toEqual(expected);
+  }
+  // The stylesheet sizes a heading from that scale, so a phone's long names are drawn smaller.
+  const narrow = [...element.querySelectorAll<SVGTextElement>('.narrow .heading')];
+  expect(narrow.some((text) => Number(text.style.getPropertyValue('--states-scale')) < 1)).toBe(
+    true,
+  );
+});
 
 it('renders a four-state register to its text equivalent, naming every register', () => {
   const { element } = render();

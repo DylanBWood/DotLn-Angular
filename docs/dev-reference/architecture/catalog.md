@@ -409,8 +409,12 @@ the row's name and a few words on what the object holds at its left. A token tha
 selected step is green and glides in from the column it left, with an arrow from that column and
 the operation that moved it above the arrow; the column it enters is tinted, and an object that
 leaves the example leaves a dashed ring. Below 600 pixels the same register is drawn at a phone's
-width, so names, notes and operations keep their size; a state's name whose longest word is wider
-than its column is drawn smaller, so it stays inside the column. The family's first pair of
+width, so names, notes and operations keep their size; a state's name is drawn at the largest size
+at which its widest line fits its column, but never below two thirds of the stylesheet's size: a
+word that would need less breaks across lines with a hyphen, the longer part first, and its lines
+are drawn at the size at which they then fit. The
+[heading decision](../../dotln/evidence/WO-039/decisions.md#wo-039-d011) records the measurements
+at 360 pixels and the alternatives. The family's first pair of
 rendered comparisons, this register
 against a state machine of the same model, waits for a dedicated A/B testing pass; until that pass
 decides, the register is the family's drawing. The last name in `visualFamilies`, `relations`,

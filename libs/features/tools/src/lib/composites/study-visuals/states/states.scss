@@ -98,7 +98,7 @@ text {
 }
 // A wide reading measure shows the drawing laid out across; a phone shows the narrow layout,
 // drawn for its width so names and notes keep their size; a state's name too wide for its column
-// is drawn smaller.
+// is drawn smaller, down to two thirds of its size, and breaks across lines below that.
 .narrow {
   display: none;
 }
