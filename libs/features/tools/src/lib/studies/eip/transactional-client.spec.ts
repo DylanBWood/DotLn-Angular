@@ -1,10 +1,10 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { studyMessage } from '../study-message';
 import { example, model } from './transactional-client';
 
 const path = 'libs/features/tools/src/lib/studies/eip/transactional-client.ts';
-const record = await loadFlowStudy('eip:170');
+const record = await loadModelStudy('eip:170', 'flow');
 const drawn = model(record.example.parameters, studyTranslate);
 if (drawn.family !== 'flow') throw new Error('The model does not draw a flow.');
 const run = drawn;

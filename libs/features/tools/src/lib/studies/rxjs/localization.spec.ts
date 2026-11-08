@@ -1,6 +1,6 @@
 import type { ToolId } from '@dotln-angular/models';
 
-import { loadFlowStudy, loadStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, loadStudy, studyTranslate } from '../../../../testing/src';
 import * as eipAggregator from '../eip/aggregator';
 import * as eipCanonicalDataModel from '../eip/canonical-data-model';
 import * as eipChannelAdapter from '../eip/channel-adapter';
@@ -153,7 +153,7 @@ it.each(studies)(
   'translates every presentation surface of $work:$slug without changing its run',
   async (study) => {
     const record =
-      study.work === 'rxjs' ? await loadStudy(study.id) : await loadFlowStudy(study.id);
+      study.work === 'rxjs' ? await loadStudy(study.id) : await loadModelStudy(study.id, 'flow');
     const parameters = record.example.parameters;
     const words = Object.entries(parameters).flatMap(([name, value]) =>
       typeof value === 'string' ? [name] : [],

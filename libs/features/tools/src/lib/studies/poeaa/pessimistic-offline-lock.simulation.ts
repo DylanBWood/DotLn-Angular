@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the same two tabs as the optimistic study, and how long a lock lasts. */
 export interface PessimisticLockParameters {
@@ -12,8 +12,8 @@ export interface PessimisticLockParameters {
   readonly minutesA: number;
   /** The minutes Tab B works on its changes, once it holds the lock, before it saves. */
   readonly minutesB: number;
-  /** 1 when Tab A saves its changes; 0 when its tab is closed without saving or releasing. */
-  readonly tabASaves: number;
+  /** True when Tab A saves its changes; false when its tab is closed without saving or releasing. */
+  readonly tabASaves: boolean;
   /** The minutes a lock lasts from when it was taken; after that a waiting tab may take it over. */
   readonly timeout: number;
 }
@@ -83,7 +83,7 @@ export const readParameters = (parameters: StudyParameters): PessimisticLockPara
   openB: numberParameter(parameters, 'openB'),
   minutesA: numberParameter(parameters, 'minutesA'),
   minutesB: numberParameter(parameters, 'minutesB'),
-  tabASaves: numberParameter(parameters, 'tabASaves'),
+  tabASaves: booleanParameter(parameters, 'tabASaves'),
   timeout: numberParameter(parameters, 'timeout'),
 });
 
@@ -246,7 +246,7 @@ function nextOperation(state: RunState, plan: readonly Planned[], now: number): 
 export function pessimisticRun(example: PessimisticLockParameters): readonly PessimisticStep[] {
   const timings: Timings = {
     work: { tabA: example.minutesA, tabB: example.minutesB },
-    ends: { tabA: example.tabASaves > 0 ? 'save' : 'close', tabB: 'save' },
+    ends: { tabA: example.tabASaves ? 'save' : 'close', tabB: 'save' },
     timeout: example.timeout,
   };
   let plan: readonly Planned[] = [

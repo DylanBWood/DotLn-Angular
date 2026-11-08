@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the size of the work's chunk, failed imports, and how studies are chunked. */
 export interface LazyLoadParameters {
@@ -8,8 +8,8 @@ export interface LazyLoadParameters {
   readonly studiesInChunk: number;
   /** How many imports fail before one succeeds, as a dropped connection would make them. */
   readonly failFirst: number;
-  /** 1 when every study is a chunk of its own; 0 when a work's studies share one chunk. */
-  readonly chunkPerStudy: number;
+  /** True when every study is a chunk of its own; false when a work's studies share one chunk. */
+  readonly chunkPerStudy: boolean;
 }
 
 /** The three studies the reader opens, in the order the readings are opened. */
@@ -49,7 +49,7 @@ export interface LazyLoadStep {
 export const readParameters = (parameters: StudyParameters): LazyLoadParameters => ({
   studiesInChunk: numberParameter(parameters, 'studiesInChunk'),
   failFirst: numberParameter(parameters, 'failFirst'),
-  chunkPerStudy: numberParameter(parameters, 'chunkPerStudy'),
+  chunkPerStudy: booleanParameter(parameters, 'chunkPerStudy'),
 });
 
 /** The loader once the studies summary has been read: every study a marker, nothing requested. */
@@ -62,7 +62,7 @@ export const summaryRead: StudyLoader = {
 
 /** The followed studies one import brings in with this one: the whole work's, or this one alone. */
 export const chunkOf = (example: LazyLoadParameters, id: StudyId): readonly StudyId[] =>
-  example.chunkPerStudy > 0 ? [id] : studies;
+  example.chunkPerStudy ? [id] : studies;
 
 const withState = (
   recordStates: StudyLoader['recordStates'],
@@ -109,7 +109,7 @@ export function settle(
       },
       failed: true,
     };
-  const carried = example.chunkPerStudy > 0 ? chunk.length : example.studiesInChunk;
+  const carried = example.chunkPerStudy ? chunk.length : example.studiesInChunk;
   return {
     loader: {
       ...loader,

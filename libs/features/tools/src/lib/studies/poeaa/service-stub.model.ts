@@ -9,6 +9,7 @@ export {
   expectationOf,
   judge,
   liveAnswer,
+  readParameters,
   release,
   runCase,
   stubAnswer,

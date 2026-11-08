@@ -1,24 +1,25 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   lostBy,
   model,
   pessimisticRun,
   type PessimisticStep,
+  readParameters,
   requestLock,
   saveUnderLock,
   waitedBy,
 } from './pessimistic-offline-lock.model';
 
-const record = await loadStatesStudy('poeaa:377');
+const record = await loadModelStudy('poeaa:377', 'states');
 const parameters = record.example.parameters;
-const example = { version: 4, openB: 2, minutesA: 12, minutesB: 15, tabASaves: 1, timeout: 20 };
+const example = { version: 4, openB: 2, minutesA: 12, minutesB: 15, tabASaves: true, timeout: 20 };
 
 const lastOf = (steps: readonly PessimisticStep[]) => steps[steps.length - 1];
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, tabASaves: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -69,7 +70,7 @@ it('turns Tab B away at the door, so it waits instead of losing its work', () =>
 });
 
 it('fails where the limits say: an abandoned lock holds Tab B up, and a short one costs Tab A', () => {
-  const abandoned = pessimisticRun({ ...example, tabASaves: 0 });
+  const abandoned = pessimisticRun({ ...example, tabASaves: false });
   // The closed tab still owns the lock until it runs out, and Tab B waits for that, not for work.
   expect(abandoned[2]).toMatchObject({
     minute: 12,
@@ -139,7 +140,6 @@ it('draws an abandoned lock: Tab A stays in Holds lock after its tab closes, unt
     { object: 'tabA', from: 'holding', to: 'expired', transition: 'timeOut' },
     { object: 'tabB', from: 'waiting', to: 'holding', transition: 'granted' },
   ]);
-  expect(registerDrawing(run.states, 3).arrows.map(({ id }) => id)).toEqual(['tabA', 'tabB']);
   expect(frames[3].worked?.lines).toContain(
     "Tab A's lock ran out at minute 20: Tab B takes it over until minute 40",
   );

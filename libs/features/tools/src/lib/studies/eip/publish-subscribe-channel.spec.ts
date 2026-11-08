@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
 import type { MarbleExample } from '../rxjs/marbles';
@@ -39,7 +39,7 @@ it('runs the topic example against the marbles both drawings show', () => {
 });
 
 it('attaches the record to the Publish-Subscribe Channel row and reads this module', async () => {
-  const record = await loadFlowStudy('eip:65');
+  const record = await loadModelStudy('eip:65', 'flow');
   expect(record.visual.model).toBe(modulePath);
   expect(record.pseudocode.executable).toEqual({
     kind: 'rxjs',

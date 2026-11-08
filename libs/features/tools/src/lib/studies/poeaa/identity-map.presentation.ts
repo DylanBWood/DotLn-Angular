@@ -1,7 +1,9 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
 import { countTicks } from '../drawing';
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
@@ -17,8 +19,10 @@ import type {
 } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
+  type Caller,
   copiesOf,
   type IdentityMap,
+  type IdentityMapOperation,
   type IdentityMapParameters,
   type IdentityMapStep,
   type Session,
@@ -44,15 +48,25 @@ const stepAt = ({ run, index }: IdentityMapMoment) => run.steps[index];
 /** Where a study stands at a moment: no object for it, one in a map, or one in each of two. */
 const standings = ['stored', 'mapped', 'twice'] as const;
 
-const nameOf = (t: StudyTranslate, id: StudyId) =>
-  id === 'unitOfWork'
-    ? t('studyPoeaa.identity-map.model.names.unitOfWork')
-    : t('studyPoeaa.identity-map.model.names.identityMap');
+// Each study's name, the id it is read under in the words the reader sees, and the letter its token
+// shows, and each caller's name; the compiler requires an entry for every study and every caller.
+const names = {
+  unitOfWork: 'studyPoeaa.identity-map.model.names.unitOfWork',
+  identityMap: 'studyPoeaa.identity-map.model.names.identityMap',
+} as const satisfies Record<StudyId, string>;
+const ids = {
+  unitOfWork: 'studyPoeaa.identity-map.model.ids.unitOfWork',
+  identityMap: 'studyPoeaa.identity-map.model.ids.identityMap',
+} as const satisfies Record<StudyId, string>;
+const tokens = { unitOfWork: 'U', identityMap: 'I' } as const satisfies Record<StudyId, string>;
+const callers = {
+  reading: 'studyPoeaa.identity-map.model.callers.reading',
+  nearby: 'studyPoeaa.identity-map.model.callers.nearby',
+} as const satisfies Record<Caller, string>;
 
-const idOf = (t: StudyTranslate, id: StudyId) =>
-  id === 'unitOfWork'
-    ? t('studyPoeaa.identity-map.model.ids.unitOfWork')
-    : t('studyPoeaa.identity-map.model.ids.identityMap');
+const nameOf = (t: StudyTranslate, id: StudyId) => t(names[id]);
+
+const idOf = (t: StudyTranslate, id: StudyId) => t(ids[id]);
 
 const reviewOf = (t: StudyTranslate, checked: boolean) =>
   checked
@@ -69,11 +83,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     },
     { id: 'twice', label: t('studyPoeaa.identity-map.model.standings.twice') },
   ],
-  objects: studies.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: id === 'unitOfWork' ? 'U' : 'I',
-  })),
+  objects: studies.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'miss',
@@ -116,23 +126,15 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
 
 const standingOf = (session: Session, id: StudyId) => standings[copiesOf(session, id)];
 
-/** Which transition each study took at a step, read from where it stood before and after it. */
+/**
+ * The transition a step's moves cannot be told by their standings alone: a hit leaves the study
+ * where it stood. A miss and a new session each join their two standings by a transition of their
+ * own.
+ */
 function tookAt(moment: IdentityMapMoment): Readonly<Record<string, string>> {
   const { operation, session } = stepAt(moment);
-  if (operation.kind === 'find') {
-    const after = standingOf(session, operation.id);
-    if (operation.hit) return { [operation.id]: after === 'twice' ? 'hitTwice' : 'hit' };
-    return { [operation.id]: after === 'twice' ? 'missElsewhere' : 'miss' };
-  }
-  if (operation.kind !== 'newSession') return {};
-  const before = moment.run.steps[moment.index - 1].session;
-  return Object.fromEntries(
-    studies.flatMap((id) => {
-      const standing = standingOf(before, id);
-      if (standing === 'stored') return [];
-      return [[id, standing === 'twice' ? 'endTwice' : 'endMapped']];
-    }),
-  );
+  if (operation.kind !== 'find' || !operation.hit) return {};
+  return { [operation.id]: standingOf(session, operation.id) === 'twice' ? 'hitTwice' : 'hit' };
 }
 
 const snapshotOf = (moment: IdentityMapMoment): StatesSnapshot => ({
@@ -160,17 +162,12 @@ function objectNote(t: StudyTranslate, moment: IdentityMapMoment, id: StudyId): 
       });
 }
 
-const callerOf = (t: StudyTranslate, caller: 'reading' | 'nearby') =>
-  caller === 'reading'
-    ? t('studyPoeaa.identity-map.model.callers.reading')
-    : t('studyPoeaa.identity-map.model.callers.nearby');
-
 /** At a lookup, whether it hit or missed and why; at any other step, that there was none. */
 function lookupOf(t: StudyTranslate, moment: IdentityMapMoment): string {
   const { operation } = stepAt(moment);
   if (operation.kind !== 'find') return t('studyPoeaa.identity-map.model.lookup.none');
   const words = {
-    caller: callerOf(t, operation.caller),
+    caller: t(callers[operation.caller]),
     id: idOf(t, operation.id),
     read: operation.study.read,
   };
@@ -180,47 +177,47 @@ function lookupOf(t: StudyTranslate, moment: IdentityMapMoment): string {
     : t('studyPoeaa.identity-map.model.lookup.miss', words);
 }
 
+type FindOperation = Extract<IdentityMapOperation, { readonly kind: 'find' }>;
+
+/** The sentence for a lookup: what the reader asked for, and what the map it went through held. */
+function findNote(t: StudyTranslate, moment: IdentityMapMoment, operation: FindOperation): string {
+  const read = operation.study.read;
+  if (operation.caller === 'nearby' && operation.hit)
+    return t('studyPoeaa.identity-map.model.steps.nearbyHit');
+  // A miss in the nearby list's own map, while the reading's map holds an object of its own.
+  const reading = stepAt(moment).session.maps[0][operation.id];
+  if (operation.caller === 'nearby' && reading && reading !== operation.study)
+    return t('studyPoeaa.identity-map.model.steps.nearbyMiss', {
+      first: reviewOf(t, reading.checked),
+      second: reviewOf(t, operation.study.checked),
+    });
+  if (operation.id === 'identityMap')
+    return t('studyPoeaa.identity-map.model.steps.followed', { read });
+  if (operation.hit) return t('studyPoeaa.identity-map.model.steps.revisited');
+  const reloaded = moment.run.steps
+    .slice(0, moment.index)
+    .some((step) => step.operation.kind === 'newSession');
+  return reloaded
+    ? t('studyPoeaa.identity-map.model.steps.reopened', { read })
+    : t('studyPoeaa.identity-map.model.steps.opened', { read });
+}
+
 /** The sentence under the drawing: what the reader did at this step, and what the map did. */
 function stepNote(t: StudyTranslate, moment: IdentityMapMoment): string {
-  const { operation, session } = stepAt(moment);
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.identity-map.model.steps.start');
-    case 'check':
-      return t('studyPoeaa.identity-map.model.steps.check');
-    case 'newSession':
-      return t('studyPoeaa.identity-map.model.steps.newSession');
-    default: {
-      const read = operation.study.read;
-      if (operation.caller === 'nearby' && operation.hit)
-        return t('studyPoeaa.identity-map.model.steps.nearbyHit');
-      // A miss in the nearby list's own map, while the reading's map holds an object of its own.
-      const reading = session.maps[0][operation.id];
-      if (operation.caller === 'nearby' && reading && reading !== operation.study)
-        return t('studyPoeaa.identity-map.model.steps.nearbyMiss', {
-          first: reviewOf(t, reading.checked),
-          second: reviewOf(t, operation.study.checked),
-        });
-      if (operation.id === 'identityMap')
-        return t('studyPoeaa.identity-map.model.steps.followed', { read });
-      if (operation.hit) return t('studyPoeaa.identity-map.model.steps.revisited');
-      const reloaded = moment.run.steps
-        .slice(0, moment.index)
-        .some((step) => step.operation.kind === 'newSession');
-      return reloaded
-        ? t('studyPoeaa.identity-map.model.steps.reopened', { read })
-        : t('studyPoeaa.identity-map.model.steps.opened', { read });
-    }
-  }
+  return matchKind(stepAt(moment).operation, {
+    start: () => t('studyPoeaa.identity-map.model.steps.start'),
+    find: (operation) => findNote(t, moment, operation),
+    check: () => t('studyPoeaa.identity-map.model.steps.check'),
+    newSession: () => t('studyPoeaa.identity-map.model.steps.newSession'),
+  });
 }
 
 /** The ids a map holds, in the example's order, or the shared word for none. */
-const idsIn = (t: StudyTranslate, map: IdentityMap) => {
-  const held = studies.filter((id) => map[id] !== undefined);
-  return held.length
-    ? held.map((id) => idOf(t, id)).join(t('studyCommon.states.listSeparator'))
-    : t('studyCommon.states.empty');
-};
+const idsIn = (t: StudyTranslate, map: IdentityMap) =>
+  listOf(
+    t,
+    studies.filter((id) => map[id] !== undefined).map((id) => idOf(t, id)),
+  );
 
 /** What a lookup found, or that the step made none, as the worked line under the maps. */
 function outcomeLine(t: StudyTranslate, moment: IdentityMapMoment): string | null {
@@ -287,7 +284,7 @@ function textOf(t: StudyTranslate, moment: IdentityMapMoment): StatesMomentText 
 }
 
 /** The same lookups made two ways: through the identity map, or with a read for every one. */
-function comparisonOf(t: StudyTranslate, run: IdentityMapRun): StudyComparison {
+function comparisonOf(t: StudyTranslate, run: IdentityMapRun): StudyComparison<'steps'> {
   const last = run.steps[run.steps.length - 1];
   return {
     title: t('studyPoeaa.identity-map.model.comparison.title'),
@@ -296,7 +293,7 @@ function comparisonOf(t: StudyTranslate, run: IdentityMapRun): StudyComparison {
       title: t('studyPoeaa.identity-map.model.comparison.chart'),
       xLabel: t('studyPoeaa.identity-map.model.comparison.xLabel'),
       yLabel: t('studyPoeaa.identity-map.model.comparison.yLabel'),
-      seconds: run.steps.map((_, index) => index),
+      steps: run.steps.map((_, index) => index),
       series: [
         {
           id: 'mapped',

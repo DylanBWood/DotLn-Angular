@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowStudyModel } from '../study-model';
 import { fillValues, placeholdersIn } from '../study-text';
@@ -24,7 +24,7 @@ const heldBy = (run: FlowStudyModel, step: number, node: string) =>
   run.flow.frames[step].held[node] ?? [];
 
 it('reads its record from this module and does not run', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   expect(record.visual.model).toBe(modulePath);
   expect(record.pseudocode.executable).toBeNull();
   expect(record.pseudocode.rxjs).toBeNull();
@@ -32,7 +32,7 @@ it('reads its record from this module and does not run', async () => {
 });
 
 it('joins each view to the others only through the graph, by its own two translators', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const { links } = flowRun(record.example.parameters).flow;
   // Every line touches the graph, so no view reaches another directly.
   expect(links.every(({ from, to }) => from === 'graph' || to === 'graph')).toBe(true);
@@ -48,7 +48,7 @@ it('joins each view to the others only through the graph, by its own two transla
 });
 
 it('decodes an edit once and encodes it once for each other view', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   const hops = hopsOf(run);
   // The graph holds the shared form from the start, and a new one once the edit is decoded.
@@ -80,7 +80,7 @@ it('decodes an edit once and encodes it once for each other view', async () => {
 });
 
 it('drops the row order the shared form has no place for', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   const hops = hopsOf(run);
   expect(hops[4]).toEqual(['decode-table t']);
@@ -95,7 +95,7 @@ it('drops the row order the shared form has no place for', async () => {
 });
 
 it('gives a view that cannot round-trip an encoder and no decoder', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   expect(hopsOf(run)[7]).toEqual(['narrate n']);
   expect(run.flow.frames[7].states['narrative']).toBe('can read, cannot send');
@@ -104,14 +104,14 @@ it('gives a view that cannot round-trip an encoder and no decoder', async () => 
 });
 
 it('moves something at every step after the start', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const hops = hopsOf(flowRun(record.example.parameters));
   expect(hops[0]).toEqual([]);
   expect(hops.slice(1).every((step) => step.length > 0)).toBe(true);
 });
 
 it('works out the translator count where the prose points to it', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   expect(run.flow.frames[0].worked?.lines).toEqual([
     'direct, one for each ordered pair: 3 × 2 = 6',
@@ -125,7 +125,7 @@ it('works out the translator count where the prose points to it', async () => {
 });
 
 it('opens at the start and names its moments', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   expect(run.initialStep).toBe(0);
   expect(run.moments.map(({ label, step }) => `${step} ${label}`)).toEqual([
@@ -142,7 +142,7 @@ it('opens at the start and names its moments', async () => {
 });
 
 it('fills every placeholder the record’s prose reads, at every step', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const run = flowRun(record.example.parameters);
   const prose = [
     record.visual.textEquivalent,
@@ -164,7 +164,7 @@ it('fills every placeholder the record’s prose reads, at every step', async ()
 });
 
 it('stays within what the flow drawing reads at a narrow width', async () => {
-  const record = await loadFlowStudy('eip:146');
+  const record = await loadModelStudy('eip:146', 'flow');
   const { nodes, frames } = flowRun(record.example.parameters).flow;
   expect(nodes.length).toBeLessThanOrEqual(8);
   expect(Math.max(...nodes.map(({ stage }) => stage))).toBeLessThan(4);

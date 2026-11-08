@@ -1,4 +1,10 @@
-import type { StudyPoint, StudyTone, TimelineModel } from '../../../studies/study-model';
+import {
+  type StudyPoint,
+  type StudyTone,
+  type TimelineAxis,
+  type TimelineModel,
+  xValuesOf,
+} from '../../../studies/study-model';
 
 const left = 50;
 const right = 570;
@@ -41,19 +47,20 @@ const extent = (values: readonly number[]): readonly [number, number] => {
 };
 
 /** Turns a timeline into the chart's coordinates, with every label on the scale of its lines. */
-export function timelineDrawing(model: TimelineModel, step: number | null): TimelineDrawing {
-  const [firstSecond, lastSecond] = model.xRange ?? extent(model.seconds);
+export function timelineDrawing(
+  model: TimelineModel<TimelineAxis>,
+  step: number | null,
+): TimelineDrawing {
+  const along = xValuesOf(model);
+  const [first, last] = model.xRange ?? extent(along);
   const [lowest, highest] = model.yRange ?? extent(model.series.flatMap(({ values }) => values));
-  const x = (second: number) =>
-    left + ((second - firstSecond) / (lastSecond - firstSecond)) * (right - left);
+  const x = (value: number) => left + ((value - first) / (last - first)) * (right - left);
   const y = (value: number) => bottom - ((value - lowest) / (highest - lowest)) * (bottom - top);
-  const shown = model.seconds.flatMap((second, index) =>
-    second >= firstSecond && second <= lastSecond ? [index] : [],
-  );
+  const shown = along.flatMap((value, index) => (value >= first && value <= last ? [index] : []));
   const yTicks = model.yTicks ?? evenTicks(lowest, highest);
-  const xTicks = model.xTicks ?? evenTicks(firstSecond, lastSecond);
+  const xTicks = model.xTicks ?? evenTicks(first, last);
   const grid = yTicks.filter((value) => value !== model.reference);
-  const moment = step === null ? null : model.seconds[step];
+  const moment = step === null ? null : along[step];
   return {
     axisPath: `M ${left} ${y(Math.max(...yTicks))} V ${y(Math.min(...yTicks))} H ${right}`,
     gridPath: grid.map((value) => `M ${left} ${y(value)} H ${right}`).join(' '),
@@ -65,7 +72,7 @@ export function timelineDrawing(model: TimelineModel, step: number | null): Time
       id,
       tone,
       points: shown
-        .map((index) => `${x(model.seconds[index]).toFixed(2)},${y(values[index]).toFixed(2)}`)
+        .map((index) => `${x(along[index]).toFixed(2)},${y(values[index]).toFixed(2)}`)
         .join(' '),
       dot: moment === null ? null : { x: rounded(x(moment)), y: rounded(y(values[step ?? 0])) },
     })),

@@ -5,7 +5,14 @@ import type { StudyTranslate } from '../study-translate';
 import { present } from './plugin.presentation';
 import { configurationOf, pluginRun, readParameters } from './plugin.simulation';
 
-export { bind, configurationOf, draw, pluginRun, totalsOf } from './plugin.simulation';
+export {
+  bind,
+  configurationOf,
+  draw,
+  pluginRun,
+  readParameters,
+  totalsOf,
+} from './plugin.simulation';
 
 export type { Configuration, PluginStep } from './plugin.simulation';
 

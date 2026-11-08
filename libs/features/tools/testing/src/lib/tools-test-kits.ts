@@ -14,12 +14,14 @@ import type {
   StudyVisual,
   Tool,
   ToolId,
+  VisualFamily,
 } from '@dotln-angular/models';
 import { provideDotlnStateTestKit } from '@dotln-angular/state/testing';
 import { provideDotlnUi } from '@dotln-angular/ui';
 
 import { ToolsFacade } from '../../../src/lib/facades/tools.facade';
 import { ToolsHomeFacade } from '../../../src/lib/facades/tools-home.facade';
+import type { StatesModel } from '../../../src/lib/studies/study-model';
 import { translateStudy } from '../../../src/lib/studies/study-record';
 import { studyMessages, studyTranslate } from './study-translations';
 import en from './tools-en.json';
@@ -101,28 +103,30 @@ export async function loadStudy(id: ToolId): Promise<DrawnStudy> {
   return translateStudy(study, studyTranslate) as DrawnStudy;
 }
 
-/** A study drawn by the states family, whose drawing names the module of the model that runs it. */
-export type StatesStudy = ConceptStudy & {
-  readonly visual: StudyVisual & { readonly family: 'states'; readonly model: string };
+/**
+ * A study whose drawing a model module produces, drawn by the given family: a flow, whether or not
+ * its example also runs as marbles, or a states register over a simulation that runs.
+ */
+export type ModelStudy<Family extends VisualFamily> = ConceptStudy & {
+  readonly visual: StudyVisual & { readonly family: Family; readonly model: string };
 };
 
-/** A bundled states study, for a spec that drives a model through the record it reads. */
-export async function loadStatesStudy(id: ToolId): Promise<StatesStudy> {
+/**
+ * A bundled study drawn by `family` from the model module its record names, for a spec that
+ * drives that model through the record it runs from. It refuses a study drawn by another family
+ * or by no model, so a spec cannot read the wrong record.
+ */
+export async function loadModelStudy<Family extends VisualFamily>(
+  id: ToolId,
+  family: Family,
+): Promise<ModelStudy<Family>> {
   const study = await createCatalogLoader().study(id);
-  if (study?.visual?.family !== 'states' || !study.visual.model)
-    throw new Error(`No states study of ${id}.`);
-  return translateStudy(study, studyTranslate) as StatesStudy;
+  if (study?.visual?.family !== family || !study.visual.model)
+    throw new Error(`No ${family} study of ${id}.`);
+  return translateStudy(study, studyTranslate) as ModelStudy<Family>;
 }
 
-/** A study drawn as a flow, whether or not its example also runs as marbles. */
-export type FlowStudy = ConceptStudy & {
-  readonly visual: StudyVisual & { readonly family: 'flow'; readonly model: string };
-};
-
-/** A bundled flow study, for a spec that checks a flow module against the record it runs from. */
-export async function loadFlowStudy(id: ToolId): Promise<FlowStudy> {
-  const study = await createCatalogLoader().study(id);
-  if (study?.visual?.family !== 'flow' || !study.visual.model)
-    throw new Error(`No flow study of ${id}.`);
-  return translateStudy(study, studyTranslate) as FlowStudy;
+/** The token letter of each object a states drawing tracks, by object id. */
+export function tokensOf(states: StatesModel): Readonly<Record<string, string>> {
+  return Object.fromEntries(states.objects.map(({ id, key }) => [id, key]));
 }

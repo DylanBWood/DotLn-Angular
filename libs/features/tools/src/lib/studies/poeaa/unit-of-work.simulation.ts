@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the stored versions, how often one title changes, and a rival save. */
 export interface UnitOfWorkParameters {
@@ -8,13 +8,16 @@ export interface UnitOfWorkParameters {
   readonly versionRidge: number;
   /** How many times the session renames Hold the ridge before it saves. */
   readonly renames: number;
-  /** 1 when another tab saves Hold the ridge after this session read it and before this save. */
-  readonly otherTabSaves: number;
+  /** True when another tab saves Hold the ridge after this session read it and before this save. */
+  readonly otherTabSaves: boolean;
 }
 
 /** The three compositions of the example, by id. */
 export const compositions = ['flank', 'ridge', 'night'] as const;
 export type CompositionId = (typeof compositions)[number];
+
+/** The register a held object is in: none of the three, which is clean, or new, dirty or removed. */
+export type Register = 'clean' | 'new' | 'dirty' | 'removed';
 
 /** One stored composition: how many times its title has changed, and the version its last write gave it. */
 export interface StoredComposition {
@@ -72,7 +75,7 @@ export const readParameters = (parameters: StudyParameters): UnitOfWorkParameter
   versionFlank: numberParameter(parameters, 'versionFlank'),
   versionRidge: numberParameter(parameters, 'versionRidge'),
   renames: numberParameter(parameters, 'renames'),
-  otherTabSaves: numberParameter(parameters, 'otherTabSaves'),
+  otherTabSaves: booleanParameter(parameters, 'otherTabSaves'),
 });
 
 const without = (ids: readonly CompositionId[], id: CompositionId) =>
@@ -189,7 +192,7 @@ export function unitOfWorkRun(example: UnitOfWorkParameters): readonly UnitOfWor
   }
   unit = registerRemoved(unit, 'flank');
   record({ kind: 'registerRemoved', id: 'flank' }, 1);
-  if (example.otherTabSaves > 0) {
+  if (example.otherTabSaves) {
     store = otherSave(store, 'ridge');
     record({ kind: 'otherSave', id: 'ridge' }, 0);
   }
@@ -201,7 +204,7 @@ export function unitOfWorkRun(example: UnitOfWorkParameters): readonly UnitOfWor
 }
 
 /** The register each held object is in after a step: `clean` for one in none of the three. */
-export function registerOf(unit: UnitOfWork, id: CompositionId): string | null {
+export function registerOf(unit: UnitOfWork, id: CompositionId): Register | null {
   if (!unit.objects[id]) return null;
   if (unit.newObjects.includes(id)) return 'new';
   if (unit.dirty.includes(id)) return 'dirty';

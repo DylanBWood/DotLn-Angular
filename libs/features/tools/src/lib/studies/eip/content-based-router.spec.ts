@@ -1,4 +1,4 @@
-import { loadFlowStudy, withStudyMessages } from '../../../../testing/src';
+import { loadModelStudy, withStudyMessages } from '../../../../testing/src';
 import { flowDrawing } from '../../composites/study-visuals/flow/flow-drawing';
 import { flowFromMarbles } from '../flow';
 import { expectMarbleExample } from '../rxjs/marble-testing';
@@ -46,7 +46,7 @@ it('runs the findings example against the marbles both drawings show', () => {
 });
 
 it('attaches the record to the Content-Based Router row, reads this module and supplies every value its prose names', async () => {
-  const record = await loadFlowStudy('eip:99');
+  const record = await loadModelStudy('eip:99', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable?.module).toBe(path);
   expect(record.example.parameters).toEqual(parameters);

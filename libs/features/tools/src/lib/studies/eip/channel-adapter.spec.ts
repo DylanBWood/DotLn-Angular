@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowStudyModel, StudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
@@ -23,7 +23,7 @@ const hopsAt = (step: number) => frames[step].hops.map(({ link, key }) => `${lin
 const heldBy = (node: string, step: number) => frames[step].held[node]?.map(({ key }) => key) ?? [];
 
 it('attaches the record to the Channel Adapter row and draws it from this module', async () => {
-  const record = await loadFlowStudy('eip:73');
+  const record = await loadModelStudy('eip:73', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable).toBeNull();
   expect(record.pseudocode.rxjs?.startsWith('// Illustrative: ')).toBe(true);

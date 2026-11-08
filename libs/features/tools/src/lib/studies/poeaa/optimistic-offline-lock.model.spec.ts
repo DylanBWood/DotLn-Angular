@@ -1,19 +1,19 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   model,
   optimisticRun,
   type OptimisticStep,
   read,
+  readParameters,
   reload,
   save,
   type StoredComposition,
 } from './optimistic-offline-lock.model';
 
-const record = await loadStatesStudy('poeaa:370');
+const record = await loadModelStudy('poeaa:370', 'states');
 const parameters = record.example.parameters;
-const example = { version: 4, openB: 2, minutesA: 12, minutesB: 15, tabASaves: 1 };
+const example = { version: 4, openB: 2, minutesA: 12, minutesB: 15, tabASaves: true };
 
 const lastOf = (steps: readonly OptimisticStep[]) => steps[steps.length - 1];
 const refusedTabs = (steps: readonly OptimisticStep[]) =>
@@ -22,7 +22,8 @@ const refusedTabs = (steps: readonly OptimisticStep[]) =>
   );
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, tabASaves: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -81,7 +82,7 @@ it('fails where the limits say: longer work loses more, and the first to save wi
   expect(refusedTabs(early)).toEqual(['tabA']);
   expect(lastOf(early)).toMatchObject({ minute: 24, lost: 12, stored: { version: 6 } });
   // With Tab A closed unsaved nothing collides, and Tab B's first save goes through.
-  const closed = optimisticRun({ ...example, tabASaves: 0 });
+  const closed = optimisticRun({ ...example, tabASaves: false });
   expect(refusedTabs(closed)).toEqual([]);
   expect(lastOf(closed)).toMatchObject({
     minute: 17,
@@ -118,12 +119,13 @@ it('draws each tab in its state at the telling moments, and says so in the text 
   expect(frames[3].worked?.lines).toContain(
     'They differ: nothing is written, and 15 minutes of changes are refused',
   );
-  const drawing = registerDrawing(run.states, 3);
-  expect(drawing.tokens.map(({ key, state }) => [key, state])).toEqual([
-    ['A', 'resting'],
-    ['B', 'moving'],
+  // Both tabs stand in the example at the refusal, and only Tab B moves.
+  const keys = tokensOf(run.states);
+  const moving = new Set(frames[3].moves.map(({ object }) => object));
+  expect(frames[3].placements.map(({ object }) => [keys[object], moving.has(object)])).toEqual([
+    ['A', false],
+    ['B', true],
   ]);
-  expect(drawing.arrows).toHaveLength(1);
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Both open', 1],
     ['Tab A saves', 2],
@@ -140,7 +142,9 @@ it('lets a tab closed unsaved leave without a trace, and the other save first ti
   expect(frames[2].moves).toEqual([
     { object: 'tabA', from: 'editing', to: null, transition: 'close' },
   ]);
-  expect(registerDrawing(run.states, 2).ghosts.map(({ id }) => id)).toEqual(['tabA']);
+  expect(frames[2].moves.filter(({ to }) => to === null).map(({ object }) => object)).toEqual([
+    'tabA',
+  ]);
   expect(frames[3].placements).toEqual([
     { object: 'tabB', node: 'saved', note: 'wrote version 5' },
   ]);

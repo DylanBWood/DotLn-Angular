@@ -1,6 +1,8 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
@@ -45,33 +47,43 @@ type OpenOperation = Extract<IdentityFieldOperation, { readonly kind: 'open' }>;
 
 const stepAt = ({ run, index }: IdentityFieldMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: CompositionId): string {
-  switch (id) {
-    case 'flank':
-      return t('studyPoeaa.identity-field.model.names.flank');
-    case 'ridge':
-      return t('studyPoeaa.identity-field.model.names.ridge');
-    case 'dawn':
-      return t('studyPoeaa.identity-field.model.names.dawn');
-    default:
-      return t('studyPoeaa.identity-field.model.names.night');
-  }
-}
+// Each composition's name and the letter its token shows, and each tab's name as a step names it
+// and as a sentence places it; the compiler requires an entry for every composition and every tab.
+const names = {
+  flank: 'studyPoeaa.identity-field.model.names.flank',
+  ridge: 'studyPoeaa.identity-field.model.names.ridge',
+  dawn: 'studyPoeaa.identity-field.model.names.dawn',
+  night: 'studyPoeaa.identity-field.model.names.night',
+} as const satisfies Record<CompositionId, string>;
+const tokens = { flank: 'F', ridge: 'R', dawn: 'D', night: 'N' } as const satisfies Record<
+  CompositionId,
+  string
+>;
+const tabNames = {
+  here: 'studyPoeaa.identity-field.model.tabs.here',
+  other: 'studyPoeaa.identity-field.model.tabs.other',
+} as const satisfies Record<TabId, string>;
+const tabPlaces = {
+  here: 'studyPoeaa.identity-field.model.where.here',
+  other: 'studyPoeaa.identity-field.model.where.other',
+} as const satisfies Record<TabId, string>;
 
-const tabOf = (t: StudyTranslate, tab: TabId) =>
-  tab === 'here'
-    ? t('studyPoeaa.identity-field.model.tabs.here')
-    : t('studyPoeaa.identity-field.model.tabs.other');
+const nameOf = (t: StudyTranslate, id: CompositionId): string => t(names[id]);
+
+const namesOf = (t: StudyTranslate, ids: readonly CompositionId[]) =>
+  listOf(
+    t,
+    ids.map((id) => nameOf(t, id)),
+  );
+
+const tabOf = (t: StudyTranslate, tab: TabId) => t(tabNames[tab]);
 
 /** A key as the scene writes it, through the message that owns its prefix. */
 const keyText = (t: StudyTranslate, key: number) =>
   t('studyPoeaa.identity-field.model.key', { number: key });
 
-const joined = (t: StudyTranslate, words: readonly string[]) =>
-  words.length ? words.join(t('studyCommon.states.listSeparator')) : t('studyCommon.states.empty');
-
 const keysIn = (t: StudyTranslate, list: readonly KeyedComposition[]) =>
-  joined(
+  listOf(
     t,
     list.map(({ key }) => keyText(t, key)),
   );
@@ -90,11 +102,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
       tone: 'subject',
     },
   ],
-  objects: compositions.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: { flank: 'F', ridge: 'R', dawn: 'D', night: 'N' }[id],
-  })),
+  objects: compositions.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'compose',
@@ -145,48 +153,24 @@ function standingOf(scene: Scene, id: CompositionId): Standing | null {
   return sharersOf(scene, id).length ? 'shared' : 'own';
 }
 
-/** Which transition each composition took at a step, read from the operation and where it ends up. */
+/**
+ * The one transition a step's moves cannot be told by their standings alone: an open leaves the
+ * composition it finds where it stood. Making, saving and losing a key alone each join their two
+ * standings by a transition of their own.
+ */
 function tookAt(moment: IdentityFieldMoment): Readonly<Record<string, string>> {
   const { operation, scene } = stepAt(moment);
-  switch (operation.kind) {
-    case 'compose':
-      return Object.fromEntries(operation.made.map(({ id }) => [id, 'compose']));
-    case 'save': {
-      const before = moment.run.steps[moment.index - 1].scene;
-      const taken = compositions.filter(
-        (id) =>
-          id !== operation.id &&
-          standingOf(before, id) === 'own' &&
-          standingOf(scene, id) === 'shared',
-      );
-      return {
-        [operation.id]: standingOf(scene, operation.id) === 'own' ? 'save' : 'saveShared',
-        ...Object.fromEntries(taken.map((id) => [id, 'keyTaken'])),
-      };
-    }
-    case 'open':
-      if (operation.found === null) return {};
-      return {
-        [operation.found]: standingOf(scene, operation.found) === 'own' ? 'open' : 'openShared',
-      };
-    default:
-      return {};
-  }
+  if (operation.kind !== 'open' || operation.found === null) return {};
+  return {
+    [operation.found]: standingOf(scene, operation.found) === 'own' ? 'open' : 'openShared',
+  };
 }
 
 /** Where every composition made so far stands after a step, and how it got there. */
-function snapshotOf(moment: IdentityFieldMoment): StatesSnapshot {
-  const { scene } = stepAt(moment);
-  return {
-    at: Object.fromEntries(
-      compositions.flatMap((id) => {
-        const standing = standingOf(scene, id);
-        return standing === null ? [] : [[id, standing]];
-      }),
-    ),
-    took: tookAt(moment),
-  };
-}
+const snapshotOf = (moment: IdentityFieldMoment): StatesSnapshot => ({
+  at: Object.fromEntries(compositions.map((id) => [id, standingOf(stepAt(moment).scene, id)])),
+  took: tookAt(moment),
+});
 
 /** The few words beside a composition's name: its key, who else holds it, whether it is stored. */
 function objectNote(t: StudyTranslate, scene: Scene, id: CompositionId): string | null {
@@ -201,13 +185,7 @@ function objectNote(t: StudyTranslate, scene: Scene, id: CompositionId): string 
     return isStored(scene, id)
       ? t('studyPoeaa.identity-field.model.notes.own', { key: number })
       : t('studyPoeaa.identity-field.model.notes.ownUnstored', { key: number });
-  const words = {
-    key: number,
-    other: joined(
-      t,
-      sharers.map((each) => nameOf(t, each)),
-    ),
-  };
+  const words = { key: number, other: namesOf(t, sharers) };
   return isStored(scene, id)
     ? t('studyPoeaa.identity-field.model.notes.shared', words)
     : t('studyPoeaa.identity-field.model.notes.sharedUnstored', words);
@@ -252,38 +230,39 @@ function openSentence(t: StudyTranslate, scene: Scene, operation: OpenOperation)
   return sharers.length
     ? t('studyPoeaa.identity-field.model.keying.openShared', {
         ...found,
-        other: joined(
-          t,
-          sharers.map((id) => nameOf(t, id)),
-        ),
+        other: namesOf(t, sharers),
       })
     : t('studyPoeaa.identity-field.model.keying.openOwn', found);
+}
+
+/** The sentence under the drawing for a save: the key it chose, and whose it was already. */
+function saveNote(
+  t: StudyTranslate,
+  moment: IdentityFieldMoment,
+  operation: SaveOperation,
+): string {
+  const holder = holderBefore(moment, operation);
+  const words = {
+    tab: tabOf(t, operation.tab),
+    name: nameOf(t, operation.id),
+    key: keyText(t, operation.key),
+  };
+  if (holder === null) return t('studyPoeaa.identity-field.model.steps.saved', words);
+  const taken = { ...words, holder: nameOf(t, holder) };
+  return isStored(stepAt(moment).scene, holder)
+    ? t('studyPoeaa.identity-field.model.steps.collided', taken)
+    : t('studyPoeaa.identity-field.model.steps.collidedDropped', taken);
 }
 
 /** The sentence under the drawing: what the operator or a tab did at this step. */
 function stepNote(t: StudyTranslate, moment: IdentityFieldMoment): string {
   const { operation, scene } = stepAt(moment);
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.identity-field.model.steps.start');
-    case 'compose':
-      return t('studyPoeaa.identity-field.model.steps.compose');
-    case 'save': {
-      const holder = holderBefore(moment, operation);
-      const words = {
-        tab: tabOf(t, operation.tab),
-        name: nameOf(t, operation.id),
-        key: keyText(t, operation.key),
-      };
-      if (holder === null) return t('studyPoeaa.identity-field.model.steps.saved', words);
-      const taken = { ...words, holder: nameOf(t, holder) };
-      return isStored(scene, holder)
-        ? t('studyPoeaa.identity-field.model.steps.collided', taken)
-        : t('studyPoeaa.identity-field.model.steps.collidedDropped', taken);
-    }
-    default:
-      return openNote(t, scene, operation);
-  }
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.identity-field.model.steps.start'),
+    compose: () => t('studyPoeaa.identity-field.model.steps.compose'),
+    save: (saved) => saveNote(t, moment, saved),
+    open: (opened) => openNote(t, scene, opened),
+  });
 }
 
 /** What an open found, and what the same key opens in the other tab when it names another. */
@@ -297,10 +276,7 @@ function openNote(t: StudyTranslate, scene: Scene, operation: OpenOperation): st
     return t('studyPoeaa.identity-field.model.steps.opened', found);
   return t('studyPoeaa.identity-field.model.steps.openedShared', {
     ...found,
-    where:
-      elsewhere === 'here'
-        ? t('studyPoeaa.identity-field.model.where.here')
-        : t('studyPoeaa.identity-field.model.where.other'),
+    where: t(tabPlaces[elsewhere]),
     other: nameOf(t, there),
   });
 }
@@ -383,26 +359,19 @@ function keysHeld(t: StudyTranslate, scene: Scene): string {
 /** The values the record's prose reads at a moment, with the example's own inputs among them. */
 function textOf(t: StudyTranslate, moment: IdentityFieldMoment): StatesMomentText {
   const { scene } = stepAt(moment);
-  const notes = Object.fromEntries(
-    compositions.flatMap((id) => {
-      const note = objectNote(t, scene, id);
-      return note === null ? [] : [[id, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(moment.run.parameters, t),
       keying: keyingOf(t, moment),
       keys: keysHeld(t, scene),
       collisions: String(collisionsIn(scene)),
-      rereadSentence:
-        moment.run.example.rereads > 0
-          ? t('studyPoeaa.identity-field.model.values.reread')
-          : t('studyPoeaa.identity-field.model.values.noReread'),
+      rereadSentence: moment.run.example.rereads
+        ? t('studyPoeaa.identity-field.model.values.reread')
+        : t('studyPoeaa.identity-field.model.values.noReread'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),
-    notes,
+    notes: Object.fromEntries(compositions.map((id) => [id, objectNote(t, scene, id)])),
   };
 }
 

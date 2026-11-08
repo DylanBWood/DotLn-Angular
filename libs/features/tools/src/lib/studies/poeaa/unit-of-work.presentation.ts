@@ -1,6 +1,7 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
 import { countTicks } from '../drawing';
+import { matchKind } from '../match-kind';
 import {
   listOf,
   statesModel,
@@ -119,36 +120,18 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition each object took at a step, by the operation the session performed. */
-function tookAt(step: UnitOfWorkStep): Readonly<Record<string, string>> {
-  const { operation } = step;
-  switch (operation.kind) {
-    case 'registerNew':
-      return { [operation.id]: 'registerNew' };
-    case 'registerDirty':
-      return { [operation.id]: operation.already ? 'registerDirtyAgain' : 'registerDirty' };
-    case 'registerRemoved':
-      return { [operation.id]: 'registerRemoved' };
-    case 'commit':
-      return operation.result.conflict !== null
-        ? {}
-        : Object.fromEntries([
-            ...operation.result.inserts.map((id) => [id, 'commitInsert']),
-            ...operation.result.updates.map((id) => [id, 'commitUpdate']),
-            ...operation.result.deletes.map((id) => [id, 'commitDelete']),
-          ]);
-    default:
-      return {};
-  }
-}
+/**
+ * The transition a step's moves cannot be told by their registers alone: renaming an object that is
+ * already dirty leaves it in the dirty register. Registering and committing each join their two
+ * registers by a transition of their own.
+ */
+const tookAt = ({ operation }: UnitOfWorkStep): Readonly<Record<string, string>> =>
+  operation.kind === 'registerDirty' && operation.already
+    ? { [operation.id]: 'registerDirtyAgain' }
+    : {};
 
 const snapshotOf = (step: UnitOfWorkStep): StatesSnapshot => ({
-  at: Object.fromEntries(
-    compositions.flatMap((id) => {
-      const register = registerOf(step.unit, id);
-      return register === null ? [] : [[id, register]];
-    }),
-  ),
+  at: Object.fromEntries(compositions.map((id) => [id, registerOf(step.unit, id)])),
   took: tookAt(step),
 });
 
@@ -189,41 +172,37 @@ function statementsOf(t: StudyTranslate, result: CommitResult): string {
       t('studyPoeaa.unit-of-work.model.statements.delete', { name: nameOf(t, id) }),
     ),
   ];
-  return phrases.length
-    ? phrases.join(t('studyCommon.states.listSeparator'))
-    : t('studyPoeaa.unit-of-work.model.statements.none');
+  // A commit that sends nothing says so in its own word, which is not the register's word for none.
+  return phrases.length ? listOf(t, phrases) : t('studyPoeaa.unit-of-work.model.statements.none');
 }
 
 /** The sentence under the drawing: what the session did at this step, in the pattern's terms. */
 function stepNote(t: StudyTranslate, moment: UnitOfWorkMoment): string {
   const { operation, unit, store } = stepAt(moment);
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.unit-of-work.model.steps.start');
-    case 'registerNew':
-      return t('studyPoeaa.unit-of-work.model.steps.registerNew');
-    case 'registerDirty':
-      return operation.already
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.unit-of-work.model.steps.start'),
+    registerNew: () => t('studyPoeaa.unit-of-work.model.steps.registerNew'),
+    registerDirty: ({ already }) =>
+      already
         ? t('studyPoeaa.unit-of-work.model.steps.registerDirtyAgain')
-        : t('studyPoeaa.unit-of-work.model.steps.registerDirty');
-    case 'registerRemoved':
-      return t('studyPoeaa.unit-of-work.model.steps.registerRemoved');
-    case 'otherSave':
-      return t('studyPoeaa.unit-of-work.model.steps.otherSave', {
+        : t('studyPoeaa.unit-of-work.model.steps.registerDirty'),
+    registerRemoved: () => t('studyPoeaa.unit-of-work.model.steps.registerRemoved'),
+    otherSave: () =>
+      t('studyPoeaa.unit-of-work.model.steps.otherSave', {
         stored: store.rows.ridge?.version ?? 0,
         held: unit.objects.ridge?.version ?? 0,
-      });
-    default:
-      return operation.result.conflict === null
+      }),
+    commit: ({ result }) =>
+      result.conflict === null
         ? t('studyPoeaa.unit-of-work.model.steps.committed', {
-            statements: statementsOf(t, operation.result),
+            statements: statementsOf(t, result),
           })
         : t('studyPoeaa.unit-of-work.model.steps.refused', {
-            name: nameOf(t, operation.result.conflict),
-            stored: store.rows[operation.result.conflict]?.version ?? 0,
-            held: unit.objects[operation.result.conflict]?.version ?? 0,
-          });
-  }
+            name: nameOf(t, result.conflict),
+            stored: store.rows[result.conflict]?.version ?? 0,
+            held: unit.objects[result.conflict]?.version ?? 0,
+          }),
+  });
 }
 
 /** The registers and the store's calls at this moment, as the mechanism's worked lines. */
@@ -265,30 +244,23 @@ function workedOf(t: StudyTranslate, moment: UnitOfWorkMoment): StudyWorkedStep 
 /** The values the record's prose reads at a moment, with the example's own inputs among them. */
 function textOf(t: StudyTranslate, moment: UnitOfWorkMoment): StatesMomentText {
   const { store, immediateCalls } = stepAt(moment);
-  const notes = Object.fromEntries(
-    compositions.flatMap((id) => {
-      const note = objectNote(t, moment, id);
-      return note === null ? [] : [[id, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(moment.run.parameters, t),
       calls: String(store.calls),
       immediateCalls: String(immediateCalls),
-      rival:
-        moment.run.example.otherTabSaves > 0
-          ? t('studyPoeaa.unit-of-work.model.values.rival')
-          : t('studyPoeaa.unit-of-work.model.values.noRival'),
+      rival: moment.run.example.otherTabSaves
+        ? t('studyPoeaa.unit-of-work.model.values.rival')
+        : t('studyPoeaa.unit-of-work.model.values.noRival'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),
-    notes,
+    notes: Object.fromEntries(compositions.map((id) => [id, objectNote(t, moment, id)])),
   };
 }
 
 /** The same session written two ways: one commit, or a store call for every change as it happens. */
-function comparisonOf(t: StudyTranslate, run: UnitOfWorkRun): StudyComparison {
+function comparisonOf(t: StudyTranslate, run: UnitOfWorkRun): StudyComparison<'steps'> {
   const last = run.steps[run.steps.length - 1];
   return {
     title: t('studyPoeaa.unit-of-work.model.comparison.title'),
@@ -297,7 +269,7 @@ function comparisonOf(t: StudyTranslate, run: UnitOfWorkRun): StudyComparison {
       title: t('studyPoeaa.unit-of-work.model.comparison.chart'),
       xLabel: t('studyPoeaa.unit-of-work.model.comparison.xLabel'),
       yLabel: t('studyPoeaa.unit-of-work.model.comparison.yLabel'),
-      seconds: run.steps.map((_, index) => index),
+      steps: run.steps.map((_, index) => index),
       series: [
         {
           id: 'unit',

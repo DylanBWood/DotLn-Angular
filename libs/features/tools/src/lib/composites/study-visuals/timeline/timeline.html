@@ -39,7 +39,7 @@
 @if (moment !== null) {
   <tools-study-scrubber
     [step]="moment"
-    [lastStep]="model().seconds.length - 1"
+    [lastStep]="lastStep()"
     [seconds]="seconds()"
     [moments]="moments()"
     [playing]="playing()"

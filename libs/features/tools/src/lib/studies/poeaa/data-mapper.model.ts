@@ -10,6 +10,7 @@ export {
   emptyMapper,
   find,
   placeOf,
+  readParameters,
   rename,
   saveAll,
   storedLibrary,

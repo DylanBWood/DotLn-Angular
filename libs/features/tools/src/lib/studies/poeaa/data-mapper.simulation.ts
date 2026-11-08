@@ -1,6 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the stored rows, the format this build reads, and how the save writes. */
 export interface DataMapperParameters {
@@ -11,13 +11,16 @@ export interface DataMapperParameters {
   readonly formatRead: number;
   /** The format Dawn patrol's row was written in, by whichever build saved it. */
   readonly formatDawn: number;
-  /** 1 when the save writes each changed object to its own row; 0 when it writes the whole library. */
-  readonly eachRow: number;
+  /** True when the save writes each changed object to its own row; false for the whole library. */
+  readonly eachRow: boolean;
 }
 
 /** The three compositions of the example, by id, in the order the scene lists them. */
 export const compositions = ['flank', 'ridge', 'dawn'] as const;
 export type CompositionId = (typeof compositions)[number];
+
+/** Where a composition can stand: its row alone, mapped to an object, edited since, or unmapped. */
+export type Place = 'stored' | 'mapped' | 'edited' | 'unmapped';
 
 /** One stored row: the format it was written in, the steps it encodes and its title's renames. */
 export interface StoredRow {
@@ -86,7 +89,7 @@ export const readParameters = (parameters: StudyParameters): DataMapperParameter
   stepsDawn: numberParameter(parameters, 'stepsDawn'),
   formatRead: numberParameter(parameters, 'formatRead'),
   formatDawn: numberParameter(parameters, 'formatDawn'),
-  eachRow: numberParameter(parameters, 'eachRow'),
+  eachRow: booleanParameter(parameters, 'eachRow'),
 });
 
 export const emptyMapper: Mapper = { identityMap: {}, unmapped: [], reads: 0 };
@@ -196,7 +199,7 @@ export function dataMapperRun(example: DataMapperParameters): readonly DataMappe
   );
   mapper = rename(mapper, 'ridge');
   record({ kind: 'rename', id: 'ridge' });
-  if (example.eachRow > 0) {
+  if (example.eachRow) {
     storage = update(mapper, storage, 'ridge', example.formatRead);
     record({ kind: 'update', id: 'ridge' });
   } else {
@@ -212,11 +215,7 @@ export function dataMapperRun(example: DataMapperParameters): readonly DataMappe
  * changed since is `edited`, a row the mapper could not read is `unmapped`, and a row it has not yet
  * read is `stored`. A composition with neither row nor object has left the example.
  */
-export function placeOf(
-  step: DataMapperStep,
-  id: CompositionId,
-  formatRead: number,
-): string | null {
+export function placeOf(step: DataMapperStep, id: CompositionId, formatRead: number): Place | null {
   const row = step.storage.rows[id];
   const object = step.mapper.identityMap[id];
   if (object) {

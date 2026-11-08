@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -39,29 +40,24 @@ const stepAt = ({ run, index }: RegistryMoment) => run.steps[index];
 /** The scopes in the order the worked lines list them. */
 const scopeOrder: readonly ScopeId[] = ['tools', 'home', 'catalog', 'scene'];
 
-function pageName(t: StudyTranslate, page: PageId): string {
-  switch (page) {
-    case 'home':
-      return t('studyPoeaa.registry.model.pages.home');
-    case 'catalog':
-      return t('studyPoeaa.registry.model.pages.catalog');
-    default:
-      return t('studyPoeaa.registry.model.pages.scene');
-  }
-}
+// Each page's name and the letter its token shows, and each scope's name; the compiler requires an
+// entry for every page and every scope the example has.
+const pageNames = {
+  home: 'studyPoeaa.registry.model.pages.home',
+  catalog: 'studyPoeaa.registry.model.pages.catalog',
+  scene: 'studyPoeaa.registry.model.pages.scene',
+} as const satisfies Record<PageId, string>;
+const tokens = { home: 'H', catalog: 'C', scene: 'S' } as const satisfies Record<PageId, string>;
+const scopeNames = {
+  tools: 'studyPoeaa.registry.model.scopes.tools',
+  home: 'studyPoeaa.registry.model.scopes.home',
+  catalog: 'studyPoeaa.registry.model.scopes.catalog',
+  scene: 'studyPoeaa.registry.model.scopes.scene',
+} as const satisfies Record<ScopeId, string>;
 
-function scopeName(t: StudyTranslate, scope: ScopeId): string {
-  switch (scope) {
-    case 'tools':
-      return t('studyPoeaa.registry.model.scopes.tools');
-    case 'home':
-      return t('studyPoeaa.registry.model.scopes.home');
-    case 'catalog':
-      return t('studyPoeaa.registry.model.scopes.catalog');
-    default:
-      return t('studyPoeaa.registry.model.scopes.scene');
-  }
-}
+const pageName = (t: StudyTranslate, page: PageId) => t(pageNames[page]);
+
+const scopeName = (t: StudyTranslate, scope: ScopeId) => t(scopeNames[scope]);
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -69,11 +65,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     { id: 'built', label: t('studyPoeaa.registry.model.states.built'), tone: 'subject' },
     { id: 'shared', label: t('studyPoeaa.registry.model.states.shared'), tone: 'subject' },
   ],
-  objects: pages.map((id) => ({
-    id,
-    label: pageName(t, id),
-    key: id === 'home' ? 'H' : id === 'catalog' ? 'C' : 'S',
-  })),
+  objects: pages.map((id) => ({ id, label: pageName(t, id), key: tokens[id] })),
   transitions: [
     { id: 'lookupBuilds', from: 'waiting', to: 'built' },
     { id: 'lookupShares', from: 'waiting', to: 'shared' },
@@ -85,26 +77,25 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   })),
 });
 
+// The transition a page that already holds a loader takes when a lookup hands it one again, back
+// into the state of what it was handed.
+const lookupsAgain = {
+  built: 'lookupBuildsAgain',
+  shared: 'lookupSharesAgain',
+} as const satisfies Record<'built' | 'shared', string>;
+
 /**
- * The moment at a step: where every page stands, and the transition the page that opened took,
- * chosen by where that page stood before and what the registry handed it.
+ * The moment at a step: where every page stands, and the transition the page that opened took
+ * where its state alone cannot tell it, as when a page that already held a loader is handed one
+ * again. A page's first lookup joins Waiting to what it was handed by a transition of its own.
  */
 function snapshotOf(run: RegistryRun, index: number): StatesSnapshot {
   const step = run.steps[index];
   const at = Object.fromEntries(pages.map((page) => [page, stateOf(step, page)]));
   const { operation } = step;
   if (operation.kind === 'start' || operation.answer.kind === 'refused') return { at };
-  const before = stateOf(run.steps[index - 1], operation.page);
-  const built = operation.answer.kind === 'built';
-  const took =
-    before === 'waiting'
-      ? built
-        ? 'lookupBuilds'
-        : 'lookupShares'
-      : built
-        ? 'lookupBuildsAgain'
-        : 'lookupSharesAgain';
-  return { at, took: { [operation.page]: took } };
+  if (stateOf(run.steps[index - 1], operation.page) === 'waiting') return { at };
+  return { at, took: { [operation.page]: lookupsAgain[operation.answer.kind] } };
 }
 
 /** The few words beside a page: the loader it holds, and whether that loader has gone. */
@@ -141,7 +132,7 @@ function stepNote(t: StudyTranslate, moment: RegistryMoment): string {
   const step = stepAt(moment);
   const { operation } = step;
   if (operation.kind === 'start')
-    return moment.run.example.perPage > 0
+    return moment.run.example.perPage
       ? t('studyPoeaa.registry.model.steps.startPerPage')
       : t('studyPoeaa.registry.model.steps.startRoutes');
   const next = openingNote(t, step, operation);
@@ -153,14 +144,11 @@ function stepNote(t: StudyTranslate, moment: RegistryMoment): string {
 /** Why this step's lookup built a loader or did not, beside the worked lines. */
 function answerNote(t: StudyTranslate, operation: RegistryOperation): string {
   if (operation.kind === 'start') return t('studyPoeaa.registry.model.worked.start');
-  switch (operation.answer.kind) {
-    case 'built':
-      return t('studyPoeaa.registry.model.worked.built');
-    case 'shared':
-      return t('studyPoeaa.registry.model.worked.shared');
-    default:
-      return t('studyPoeaa.registry.model.worked.refused');
-  }
+  return matchKind(operation.answer, {
+    built: () => t('studyPoeaa.registry.model.worked.built'),
+    shared: () => t('studyPoeaa.registry.model.worked.shared'),
+    refused: () => t('studyPoeaa.registry.model.worked.refused'),
+  });
 }
 
 /** What every open scope holds at this moment, and the counts the prose reads. */
@@ -192,26 +180,19 @@ function workedOf(t: StudyTranslate, moment: RegistryMoment): StudyWorkedStep {
 /** The values the record's prose reads at a moment, with the example's own inputs among them. */
 function textOf(t: StudyTranslate, moment: RegistryMoment): StatesMomentText {
   const step = stepAt(moment);
-  const notes = Object.fromEntries(
-    pages.flatMap((page) => {
-      const note = pageNote(t, step, page);
-      return note === null ? [] : [[page, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(moment.run.parameters, t),
       lookups: String(step.registry.lookups),
       built: String(step.registry.built),
       reads: String(step.registry.read.length),
-      scoping:
-        moment.run.example.perPage > 0
-          ? t('studyPoeaa.registry.model.values.perPage')
-          : t('studyPoeaa.registry.model.values.perRoute'),
+      scoping: moment.run.example.perPage
+        ? t('studyPoeaa.registry.model.values.perPage')
+        : t('studyPoeaa.registry.model.values.perRoute'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),
-    notes,
+    notes: Object.fromEntries(pages.map((page) => [page, pageNote(t, step, page)])),
   };
 }
 

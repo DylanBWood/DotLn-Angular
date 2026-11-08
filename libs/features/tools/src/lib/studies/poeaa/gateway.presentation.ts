@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -13,8 +14,12 @@ import {
   type BoardOutcome,
   type BoardReply,
   type BoardRequest,
+  type FailureKind,
+  type GatewayOperation,
   type GatewayParameters,
+  type GatewayPart,
   type GatewayStep,
+  type RawReply,
   untranslated,
 } from './gateway.simulation';
 
@@ -100,66 +105,64 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition the request and the reply took at a step, by the operation performed. */
+/**
+ * The transitions a step's moves cannot be told by their states alone: the request leaves the API
+ * answered or abandoned, the reply is translated where it stands, and the store is handed a success
+ * or a failure. Every other move joins its two states by a transition of its own.
+ */
 function tookAt({ operation, reply }: GatewayStep): Readonly<Record<string, string>> {
-  switch (operation) {
-    case 'load':
-    case 'get':
-    case 'send':
-      return { request: operation };
-    case 'answer':
-      return { request: 'answered', reply: 'answer' };
-    case 'abandon':
-      return { request: 'abandon', reply: 'raise' };
-    case 'receive':
-    case 'translate':
-    case 'return':
-      return { reply: operation };
-    case 'deliver':
-      return { reply: reply?.outcome?.kind === 'board' ? 'succeed' : 'fail' };
-    default:
-      return {};
-  }
+  if (operation === 'answer') return { request: 'answered' };
+  if (operation === 'abandon') return { request: 'abandon' };
+  if (operation === 'translate') return { reply: 'translate' };
+  if (operation === 'deliver')
+    return { reply: reply?.outcome?.kind === 'board' ? 'succeed' : 'fail' };
+  return {};
 }
 
 const snapshotOf = (step: GatewayStep): StatesSnapshot => ({
-  at: {
-    ...(step.request ? { request: step.request.at } : {}),
-    ...(step.reply ? { reply: step.reply.at } : {}),
-  },
+  at: { request: step.request?.at ?? null, reply: step.reply?.at ?? null },
   took: tookAt(step),
 });
 
+// What each of the app's failures is called beside the reply, as the store holds it, and as the
+// step that translates it says; each message reads the status only where it names one.
+const failureNotes = {
+  http: 'studyPoeaa.gateway.model.notes.http',
+  network: 'studyPoeaa.gateway.model.notes.network',
+  timeout: 'studyPoeaa.gateway.model.notes.timeout',
+} as const satisfies Record<FailureKind, string>;
+const failureOutcomes = {
+  http: 'studyPoeaa.gateway.model.outcome.http',
+  network: 'studyPoeaa.gateway.model.outcome.network',
+  timeout: 'studyPoeaa.gateway.model.outcome.timeout',
+} as const satisfies Record<FailureKind, string>;
+const failureTranslations = {
+  http: 'studyPoeaa.gateway.model.steps.translateHttp',
+  network: 'studyPoeaa.gateway.model.steps.translateNetwork',
+  timeout: 'studyPoeaa.gateway.model.steps.translateTimeout',
+} as const satisfies Record<FailureKind, string>;
+
 /** The request in the terms of the part that holds it: each part sees only what it has added. */
 function requestNote(t: StudyTranslate, request: BoardRequest): string {
-  switch (request.at) {
-    case 'store':
-      return t('studyPoeaa.gateway.model.notes.needs');
-    case 'front':
-      return t('studyPoeaa.gateway.model.notes.load');
-    case 'back':
-      return t('studyPoeaa.gateway.model.notes.path');
-    default:
-      return t('studyPoeaa.gateway.model.notes.wire', { limit: request.limitMs ?? 0 });
-  }
+  const notes: Record<GatewayPart, () => string> = {
+    store: () => t('studyPoeaa.gateway.model.notes.needs'),
+    front: () => t('studyPoeaa.gateway.model.notes.load'),
+    back: () => t('studyPoeaa.gateway.model.notes.path'),
+    api: () => t('studyPoeaa.gateway.model.notes.wire', { limit: request.limitMs ?? 0 }),
+  };
+  return notes[request.at]();
 }
 
 /** The reply in the API's terms until the back translates it, then in the app's. */
 function replyNote(t: StudyTranslate, reply: BoardReply, example: GatewayParameters): string {
   const { raw, outcome } = reply;
   if (outcome === null)
-    switch (raw.kind) {
-      case 'unreachable':
-        return t('studyPoeaa.gateway.model.notes.lost');
-      case 'silence':
-        return t('studyPoeaa.gateway.model.notes.silence', { limit: raw.waitedMs });
-      default:
-        return t('studyPoeaa.gateway.model.notes.response', {
-          status: raw.status,
-          ms: example.answerMs,
-          version: raw.version,
-        });
-    }
+    return matchKind(raw, {
+      unreachable: () => t('studyPoeaa.gateway.model.notes.lost'),
+      silence: ({ waitedMs }) => t('studyPoeaa.gateway.model.notes.silence', { limit: waitedMs }),
+      response: ({ status, version }) =>
+        t('studyPoeaa.gateway.model.notes.response', { status, ms: example.answerMs, version }),
+    });
   if (outcome.kind === 'board')
     return untranslated(outcome, example.pageVersion)
       ? t('studyPoeaa.gateway.model.notes.unreadable', {
@@ -167,14 +170,7 @@ function replyNote(t: StudyTranslate, reply: BoardReply, example: GatewayParamet
           page: example.pageVersion,
         })
       : t('studyPoeaa.gateway.model.notes.board', { version: outcome.version });
-  switch (outcome.error) {
-    case 'http':
-      return t('studyPoeaa.gateway.model.notes.http', { status: outcome.status ?? 0 });
-    case 'network':
-      return t('studyPoeaa.gateway.model.notes.network');
-    default:
-      return t('studyPoeaa.gateway.model.notes.timeout');
-  }
+  return t(failureNotes[outcome.error], { status: outcome.status ?? 0 });
 }
 
 /** What the store holds, as the prose reads it: nothing until the outcome is delivered. */
@@ -188,14 +184,7 @@ function outcomeWords(
     return untranslated(outcome, example.pageVersion)
       ? t('studyPoeaa.gateway.model.outcome.unreadable', { version: outcome.version })
       : t('studyPoeaa.gateway.model.outcome.board', { version: outcome.version });
-  switch (outcome.error) {
-    case 'http':
-      return t('studyPoeaa.gateway.model.outcome.http', { status: outcome.status ?? 0 });
-    case 'network':
-      return t('studyPoeaa.gateway.model.outcome.network');
-    default:
-      return t('studyPoeaa.gateway.model.outcome.timeout');
-  }
+  return t(failureOutcomes[outcome.error], { status: outcome.status ?? 0 });
 }
 
 /** The sentence under the drawing for a step that translates or delivers what came back. */
@@ -218,60 +207,43 @@ function inboundNote(t: StudyTranslate, step: GatewayStep, example: GatewayParam
       : t('studyPoeaa.gateway.model.steps.deliverFailure');
   if (outcome.kind === 'board')
     return t('studyPoeaa.gateway.model.steps.translateBoard', { status });
-  switch (outcome.error) {
-    case 'http':
-      return t('studyPoeaa.gateway.model.steps.translateHttp', { status });
-    case 'network':
-      return t('studyPoeaa.gateway.model.steps.translateNetwork');
-    default:
-      return t('studyPoeaa.gateway.model.steps.translateTimeout');
-  }
+  return t(failureTranslations[outcome.error], { status });
 }
 
 /** The sentence under the drawing: what the step did, in the pattern's terms. */
 function stepNote(t: StudyTranslate, moment: GatewayMoment): string {
   const step = stepAt(moment);
   const { example } = moment.run;
-  switch (step.operation) {
-    case 'start':
-      return t('studyPoeaa.gateway.model.steps.start');
-    case 'load':
-      return t('studyPoeaa.gateway.model.steps.load');
-    case 'get':
-      return t('studyPoeaa.gateway.model.steps.get');
-    case 'send':
-      return t('studyPoeaa.gateway.model.steps.send', { limit: example.timeoutMs });
-    case 'answer':
-      return t('studyPoeaa.gateway.model.steps.answer', {
-        ms: example.answerMs,
-        status: example.status,
-      });
-    case 'abandon':
-      return step.reply?.raw.kind === 'silence'
+  const notes: Record<GatewayOperation, () => string> = {
+    start: () => t('studyPoeaa.gateway.model.steps.start'),
+    load: () => t('studyPoeaa.gateway.model.steps.load'),
+    get: () => t('studyPoeaa.gateway.model.steps.get'),
+    send: () => t('studyPoeaa.gateway.model.steps.send', { limit: example.timeoutMs }),
+    answer: () =>
+      t('studyPoeaa.gateway.model.steps.answer', { ms: example.answerMs, status: example.status }),
+    abandon: () =>
+      step.reply?.raw.kind === 'silence'
         ? t('studyPoeaa.gateway.model.steps.abandonSilence', { limit: example.timeoutMs })
-        : t('studyPoeaa.gateway.model.steps.abandonLost');
-    case 'receive':
-      return t('studyPoeaa.gateway.model.steps.receive');
-    case 'return':
-      return t('studyPoeaa.gateway.model.steps.return');
-    default:
-      return inboundNote(t, step, example);
-  }
+        : t('studyPoeaa.gateway.model.steps.abandonLost'),
+    receive: () => t('studyPoeaa.gateway.model.steps.receive'),
+    translate: () => inboundNote(t, step, example),
+    return: () => t('studyPoeaa.gateway.model.steps.return'),
+    deliver: () => inboundNote(t, step, example),
+  };
+  return notes[step.operation]();
 }
 
 /** The rule the back applied to what came back, as one line of the translation. */
 function ruleLine(t: StudyTranslate, reply: BoardReply): string {
-  const { raw } = reply;
-  switch (raw.kind) {
-    case 'unreachable':
-      return t('studyPoeaa.gateway.model.worked.ruleNetwork');
-    case 'silence':
-      return t('studyPoeaa.gateway.model.worked.ruleTimeout', { limit: raw.waitedMs });
-    default:
-      return reply.outcome?.kind === 'board'
-        ? t('studyPoeaa.gateway.model.worked.ruleBoard', { status: raw.status })
-        : t('studyPoeaa.gateway.model.worked.ruleHttp', { status: raw.status });
-  }
+  return matchKind(reply.raw, {
+    unreachable: () => t('studyPoeaa.gateway.model.worked.ruleNetwork'),
+    silence: ({ waitedMs }) =>
+      t('studyPoeaa.gateway.model.worked.ruleTimeout', { limit: waitedMs }),
+    response: ({ status }) =>
+      reply.outcome?.kind === 'board'
+        ? t('studyPoeaa.gateway.model.worked.ruleBoard', { status })
+        : t('studyPoeaa.gateway.model.worked.ruleHttp', { status }),
+  });
 }
 
 /** The translation worked through: the rule applied, the version left unchecked, what crossed. */
@@ -298,56 +270,67 @@ function translationWorked(
   ];
 }
 
+/** The back's wait for what came back, against its limit: lost, too late or in time. */
+function waitLine(t: StudyTranslate, raw: RawReply, example: GatewayParameters): string {
+  const words = { answer: example.answerMs, limit: example.timeoutMs };
+  return matchKind(raw, {
+    unreachable: () => t('studyPoeaa.gateway.model.worked.lost'),
+    silence: () => t('studyPoeaa.gateway.model.worked.tooLate', words),
+    response: () => t('studyPoeaa.gateway.model.worked.inTime', words),
+  });
+}
+
 /** The check worth showing at a moment, where there is one: the limit, the wait, the translation. */
 function workedOf(t: StudyTranslate, moment: GatewayMoment): StudyWorkedStep | undefined {
   const { operation, reply } = stepAt(moment);
   const { example } = moment.run;
-  const limit = example.timeoutMs;
-  switch (operation) {
-    case 'send':
-      return {
-        title: t('studyPoeaa.gateway.model.worked.sendTitle', { step: moment.index }),
-        lines: [
-          t('studyPoeaa.gateway.model.worked.address'),
-          t('studyPoeaa.gateway.model.worked.limit', { limit }),
-        ],
-        note: t('studyPoeaa.gateway.model.worked.sendNote'),
-      };
-    case 'answer':
-    case 'abandon':
-      return {
-        title: t('studyPoeaa.gateway.model.worked.waitTitle', { step: moment.index }),
-        lines: [
-          reply?.raw.kind === 'unreachable'
-            ? t('studyPoeaa.gateway.model.worked.lost')
-            : reply?.raw.kind === 'silence'
-              ? t('studyPoeaa.gateway.model.worked.tooLate', { answer: example.answerMs, limit })
-              : t('studyPoeaa.gateway.model.worked.inTime', { answer: example.answerMs, limit }),
-        ],
-      };
-    case 'translate':
-      return reply
+  const step = moment.index;
+  const waited = () =>
+    reply
+      ? {
+          title: t('studyPoeaa.gateway.model.worked.waitTitle', { step }),
+          lines: [waitLine(t, reply.raw, example)],
+        }
+      : undefined;
+  // Every operation has an entry, so a new one must say whether it shows a check.
+  const none = () => undefined;
+  const worked: Record<GatewayOperation, () => StudyWorkedStep | undefined> = {
+    start: none,
+    load: none,
+    get: none,
+    send: () => ({
+      title: t('studyPoeaa.gateway.model.worked.sendTitle', { step }),
+      lines: [
+        t('studyPoeaa.gateway.model.worked.address'),
+        t('studyPoeaa.gateway.model.worked.limit', { limit: example.timeoutMs }),
+      ],
+      note: t('studyPoeaa.gateway.model.worked.sendNote'),
+    }),
+    answer: waited,
+    abandon: waited,
+    receive: none,
+    translate: () =>
+      reply
         ? {
-            title: t('studyPoeaa.gateway.model.worked.translateTitle', { step: moment.index }),
+            title: t('studyPoeaa.gateway.model.worked.translateTitle', { step }),
             lines: translationWorked(t, reply, example),
           }
-        : undefined;
-    case 'deliver':
-      return {
-        title: t('studyPoeaa.gateway.model.worked.deliverTitle', { step: moment.index }),
-        lines: [
-          reply?.outcome?.kind === 'board'
-            ? t('studyPoeaa.gateway.model.worked.eventSuccess')
-            : t('studyPoeaa.gateway.model.worked.eventFailure'),
-          t('studyPoeaa.gateway.model.worked.holds', {
-            outcome: outcomeWords(t, reply?.outcome ?? null, example),
-          }),
-          t('studyPoeaa.gateway.model.worked.never'),
-        ],
-      };
-    default:
-      return undefined;
-  }
+        : undefined,
+    return: none,
+    deliver: () => ({
+      title: t('studyPoeaa.gateway.model.worked.deliverTitle', { step }),
+      lines: [
+        reply?.outcome?.kind === 'board'
+          ? t('studyPoeaa.gateway.model.worked.eventSuccess')
+          : t('studyPoeaa.gateway.model.worked.eventFailure'),
+        t('studyPoeaa.gateway.model.worked.holds', {
+          outcome: outcomeWords(t, reply?.outcome ?? null, example),
+        }),
+        t('studyPoeaa.gateway.model.worked.never'),
+      ],
+    }),
+  };
+  return worked[operation]();
 }
 
 /** The values the record's prose reads at a moment, the example's own inputs among them. */
@@ -366,8 +349,8 @@ function textOf(t: StudyTranslate, moment: GatewayMoment): StatesMomentText {
     note: stepNote(t, moment),
     ...(worked ? { worked } : {}),
     notes: {
-      ...(step.request ? { request: requestNote(t, step.request) } : {}),
-      ...(step.reply ? { reply: replyNote(t, step.reply, example) } : {}),
+      request: step.request ? requestNote(t, step.request) : null,
+      reply: step.reply ? replyNote(t, step.reply, example) : null,
     },
   };
 }
@@ -393,7 +376,7 @@ const inputsOf = (t: StudyTranslate): readonly StudyInput[] => [
 
 /** The named moments: the call made, the request sent, the answer or its absence, the translation, the delivery. */
 function momentsOf(t: StudyTranslate, run: GatewayRun): readonly StudyMoment[] {
-  const at = (operation: GatewayStep['operation']) =>
+  const at = (operation: GatewayOperation) =>
     run.steps.findIndex((step) => step.operation === operation);
   const abandoned = at('abandon') >= 0;
   return [

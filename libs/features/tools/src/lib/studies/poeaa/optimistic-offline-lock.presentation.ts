@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -11,9 +12,11 @@ import type { StatesStudyModel, StudyInput, StudyMoment, StudyWorkedStep } from 
 import type { StudyTranslate } from '../study-translate';
 import {
   type OptimisticLockParameters,
+  type OptimisticOperation,
   type OptimisticStep,
   type TabId,
   tabs,
+  type TabState,
 } from './optimistic-offline-lock.simulation';
 
 /** The whole run as the presentation reads it: the example, its steps and the record's inputs. */
@@ -31,10 +34,14 @@ interface OptimisticLockMoment {
 
 const stepAt = ({ run, index }: OptimisticLockMoment) => run.steps[index];
 
-const nameOf = (t: StudyTranslate, tab: TabId) =>
-  tab === 'tabA'
-    ? t('studyPoeaa.optimistic-offline-lock.model.names.tabA')
-    : t('studyPoeaa.optimistic-offline-lock.model.names.tabB');
+// Each tab's name and the letter its token shows; the compiler requires an entry for every tab.
+const names = {
+  tabA: 'studyPoeaa.optimistic-offline-lock.model.names.tabA',
+  tabB: 'studyPoeaa.optimistic-offline-lock.model.names.tabB',
+} as const satisfies Record<TabId, string>;
+const tokens = { tabA: 'A', tabB: 'B' } as const satisfies Record<TabId, string>;
+
+const nameOf = (t: StudyTranslate, tab: TabId) => t(names[tab]);
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -46,7 +53,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
       tone: 'subject',
     },
   ],
-  objects: tabs.map((tab) => ({ id: tab, label: nameOf(t, tab), key: tab === 'tabA' ? 'A' : 'B' })),
+  objects: tabs.map((tab) => ({ id: tab, label: nameOf(t, tab), key: tokens[tab] })),
   transitions: [
     {
       id: 'read',
@@ -81,47 +88,31 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** The transition the acting tab took, named by the operation it performed. */
-function tookAt({ operation }: OptimisticStep): Readonly<Record<string, string>> {
-  if (operation.kind !== 'save') return { [operation.tab]: operation.kind };
-  return { [operation.tab]: operation.accepted ? 'save' : 'saveRefused' };
-}
-
+// Each of the five transitions joins its own two states, so every move takes its name from them.
 const snapshotOf = (step: OptimisticStep): StatesSnapshot => ({
-  at: Object.fromEntries(
-    tabs.flatMap((tab) => {
-      const session = step.sessions[tab];
-      return session ? [[tab, session.state]] : [];
-    }),
-  ),
-  took: tookAt(step),
+  at: Object.fromEntries(tabs.map((tab) => [tab, step.sessions[tab]?.state ?? null])),
 });
 
 /** The few words beside a tab's name: the version it holds, and what storage holds if newer. */
 function tabNote(t: StudyTranslate, step: OptimisticStep, tab: TabId): string | null {
   const session = step.sessions[tab];
   if (!session) return null;
-  const { version } = session;
-  switch (session.state) {
-    case 'saved':
-      return t('studyPoeaa.optimistic-offline-lock.model.notes.wrote', { version });
-    case 'refused':
-      return t('studyPoeaa.optimistic-offline-lock.model.notes.refused', {
-        minutes: session.lost,
-      });
-    default:
-      if (session.lost > 0)
-        return t('studyPoeaa.optimistic-offline-lock.model.notes.redo', {
-          version,
-          minutes: session.lost,
-        });
+  const { version, lost } = session;
+  const notes: Record<TabState, () => string> = {
+    saved: () => t('studyPoeaa.optimistic-offline-lock.model.notes.wrote', { version }),
+    refused: () => t('studyPoeaa.optimistic-offline-lock.model.notes.refused', { minutes: lost }),
+    editing: () => {
+      if (lost > 0)
+        return t('studyPoeaa.optimistic-offline-lock.model.notes.redo', { version, minutes: lost });
       return step.stored.version === version
         ? t('studyPoeaa.optimistic-offline-lock.model.notes.read', { version })
         : t('studyPoeaa.optimistic-offline-lock.model.notes.stale', {
             version,
             stored: step.stored.version,
           });
-  }
+    },
+  };
+  return notes[session.state]();
 }
 
 /** The sentence under the drawing: what the acting tab did, and what the lock made of it. */
@@ -129,31 +120,25 @@ function stepNote(t: StudyTranslate, step: OptimisticStep): string {
   const { operation } = step;
   const tab = nameOf(t, operation.tab);
   const version = step.sessions[operation.tab]?.version ?? 0;
-  switch (operation.kind) {
-    case 'read':
-      return t('studyPoeaa.optimistic-offline-lock.model.steps.read', { tab, version });
-    case 'reload':
-      return t('studyPoeaa.optimistic-offline-lock.model.steps.reload', {
+  return matchKind(operation, {
+    read: () => t('studyPoeaa.optimistic-offline-lock.model.steps.read', { tab, version }),
+    reload: () =>
+      t('studyPoeaa.optimistic-offline-lock.model.steps.reload', {
         tab,
         version,
         minutes: step.sessions[operation.tab]?.lost ?? 0,
-      });
-    case 'close':
-      return t('studyPoeaa.optimistic-offline-lock.model.steps.close', { tab });
-    default:
-      return operation.accepted
-        ? t('studyPoeaa.optimistic-offline-lock.model.steps.saved', {
-            tab,
-            held: operation.held,
-            version,
-          })
+      }),
+    close: () => t('studyPoeaa.optimistic-offline-lock.model.steps.close', { tab }),
+    save: ({ accepted, held, found, refusedMinutes }) =>
+      accepted
+        ? t('studyPoeaa.optimistic-offline-lock.model.steps.saved', { tab, held, version })
         : t('studyPoeaa.optimistic-offline-lock.model.steps.refused', {
             tab,
-            held: operation.held,
-            found: operation.found,
-            minutes: operation.refusedMinutes,
-          });
-  }
+            held,
+            found,
+            minutes: refusedMinutes,
+          }),
+  });
 }
 
 /** The check a save makes, or what the tab remembers when it reads, as the mechanism's lines. */
@@ -161,23 +146,21 @@ function workedOf(t: StudyTranslate, step: OptimisticStep): StudyWorkedStep {
   const { operation } = step;
   const tab = nameOf(t, operation.tab);
   const version = step.sessions[operation.tab]?.version ?? 0;
-  const lines =
-    operation.kind === 'save'
-      ? [
-          t('studyPoeaa.optimistic-offline-lock.model.worked.condition', {
-            tab,
-            held: operation.held,
-          }),
-          t('studyPoeaa.optimistic-offline-lock.model.worked.found', { found: operation.found }),
-          operation.accepted
-            ? t('studyPoeaa.optimistic-offline-lock.model.worked.match', { version })
-            : t('studyPoeaa.optimistic-offline-lock.model.worked.differ', {
-                minutes: operation.refusedMinutes,
-              }),
-        ]
-      : operation.kind === 'close'
-        ? [t('studyPoeaa.optimistic-offline-lock.model.worked.close', { tab })]
-        : [t('studyPoeaa.optimistic-offline-lock.model.worked.read', { tab, version })];
+  const readLines = () => [
+    t('studyPoeaa.optimistic-offline-lock.model.worked.read', { tab, version }),
+  ];
+  const lines: readonly string[] = matchKind(operation, {
+    read: readLines,
+    reload: readLines,
+    close: () => [t('studyPoeaa.optimistic-offline-lock.model.worked.close', { tab })],
+    save: ({ held, found, accepted, refusedMinutes }) => [
+      t('studyPoeaa.optimistic-offline-lock.model.worked.condition', { tab, held }),
+      t('studyPoeaa.optimistic-offline-lock.model.worked.found', { found }),
+      accepted
+        ? t('studyPoeaa.optimistic-offline-lock.model.worked.match', { version })
+        : t('studyPoeaa.optimistic-offline-lock.model.worked.differ', { minutes: refusedMinutes }),
+    ],
+  });
   return {
     title: t('studyPoeaa.optimistic-offline-lock.model.worked.title', { minute: step.minute }),
     lines: [
@@ -193,12 +176,6 @@ function workedOf(t: StudyTranslate, step: OptimisticStep): StudyWorkedStep {
 /** The values the record's prose reads at a moment, with the example's own inputs among them. */
 function textOf(t: StudyTranslate, moment: OptimisticLockMoment): StatesMomentText {
   const step = stepAt(moment);
-  const notes = Object.fromEntries(
-    tabs.flatMap((tab) => {
-      const note = tabNote(t, step, tab);
-      return note === null ? [] : [[tab, note]];
-    }),
-  );
   return {
     values: {
       ...studyParameterValues(moment.run.parameters, t),
@@ -206,14 +183,13 @@ function textOf(t: StudyTranslate, moment: OptimisticLockMoment): StatesMomentTe
       stored: String(step.stored.version),
       refusals: String(step.refusals),
       lost: String(step.lost),
-      ending:
-        moment.run.example.tabASaves > 0
-          ? t('studyPoeaa.optimistic-offline-lock.model.values.saves')
-          : t('studyPoeaa.optimistic-offline-lock.model.values.closes'),
+      ending: moment.run.example.tabASaves
+        ? t('studyPoeaa.optimistic-offline-lock.model.values.saves')
+        : t('studyPoeaa.optimistic-offline-lock.model.values.closes'),
     },
     note: stepNote(t, step),
     worked: workedOf(t, step),
-    notes,
+    notes: Object.fromEntries(tabs.map((tab) => [tab, tabNote(t, step, tab)])),
   };
 }
 
@@ -221,22 +197,20 @@ function textOf(t: StudyTranslate, moment: OptimisticLockMoment): StatesMomentTe
 function momentLabel(t: StudyTranslate, step: OptimisticStep): string | null {
   const { operation } = step;
   const tab = nameOf(t, operation.tab);
-  switch (operation.kind) {
-    case 'read':
-      return operation.tab === 'tabB'
+  return matchKind<OptimisticOperation, string | null>(operation, {
+    read: () =>
+      operation.tab === 'tabB'
         ? t('studyPoeaa.optimistic-offline-lock.model.moments.bothOpen')
-        : null;
-    case 'close':
-      return t('studyPoeaa.optimistic-offline-lock.model.moments.closed', { tab });
-    case 'reload':
-      return null;
-    default:
-      if (!operation.accepted)
-        return t('studyPoeaa.optimistic-offline-lock.model.moments.refused', { tab });
+        : null,
+    close: () => t('studyPoeaa.optimistic-offline-lock.model.moments.closed', { tab }),
+    reload: () => null,
+    save: ({ accepted }) => {
+      if (!accepted) return t('studyPoeaa.optimistic-offline-lock.model.moments.refused', { tab });
       return (step.sessions[operation.tab]?.lost ?? 0) > 0
         ? t('studyPoeaa.optimistic-offline-lock.model.moments.savedAgain', { tab })
         : t('studyPoeaa.optimistic-offline-lock.model.moments.saved', { tab });
-  }
+    },
+  });
 }
 
 /** The named moments: both tabs open, then every save, refusal and close, in order. */

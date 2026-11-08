@@ -12,6 +12,8 @@ import type { StudyTranslate } from '../study-translate';
 import {
   type EnvironmentId,
   environments,
+  isLinked,
+  type PainterName,
   type PluginParameters,
   type PluginStep,
   totalsOf,
@@ -32,36 +34,36 @@ interface PluginMoment {
 
 const stepAt = ({ run, index }: PluginMoment) => run.steps[index];
 
-/** An environment's name as its row carries it. */
-function environmentName(t: StudyTranslate, environment: EnvironmentId): string {
-  switch (environment) {
-    case 'development':
-      return t('studyPoeaa.plugin.model.environments.development');
-    case 'tests':
-      return t('studyPoeaa.plugin.model.environments.tests');
-    default:
-      return t('studyPoeaa.plugin.model.environments.production');
-  }
-}
+// Each environment's name as its row carries it and as a sentence carries it after its first word,
+// with the letter its token shows, and each linked painter's name; the compiler requires an entry
+// for every environment and every painter the build links.
+const names = {
+  development: 'studyPoeaa.plugin.model.environments.development',
+  tests: 'studyPoeaa.plugin.model.environments.tests',
+  production: 'studyPoeaa.plugin.model.environments.production',
+} as const satisfies Record<EnvironmentId, string>;
+const phrases = {
+  development: 'studyPoeaa.plugin.model.phrases.development',
+  tests: 'studyPoeaa.plugin.model.phrases.tests',
+  production: 'studyPoeaa.plugin.model.phrases.production',
+} as const satisfies Record<EnvironmentId, string>;
+const tokens = { development: 'D', tests: 'T', production: 'P' } as const satisfies Record<
+  EnvironmentId,
+  string
+>;
+const painters = {
+  canvas: 'studyPoeaa.plugin.model.names.canvas',
+  null: 'studyPoeaa.plugin.model.names.null',
+} as const satisfies Record<PainterName, string>;
 
-/** An environment's name as a sentence carries it, after its first word. */
-function environmentPhrase(t: StudyTranslate, environment: EnvironmentId): string {
-  switch (environment) {
-    case 'development':
-      return t('studyPoeaa.plugin.model.phrases.development');
-    case 'tests':
-      return t('studyPoeaa.plugin.model.phrases.tests');
-    default:
-      return t('studyPoeaa.plugin.model.phrases.production');
-  }
-}
+const environmentName = (t: StudyTranslate, environment: EnvironmentId) => t(names[environment]);
+
+const environmentPhrase = (t: StudyTranslate, environment: EnvironmentId) =>
+  t(phrases[environment]);
 
 /** A configured painter's name in words: one of the linked two, or one the build lacks. */
-function painterName(t: StudyTranslate, name: string): string {
-  if (name === 'canvas') return t('studyPoeaa.plugin.model.names.canvas');
-  if (name === 'null') return t('studyPoeaa.plugin.model.names.null');
-  return t('studyPoeaa.plugin.model.names.unlinked');
-}
+const painterName = (t: StudyTranslate, name: string): string =>
+  isLinked(name) ? t(painters[name]) : t('studyPoeaa.plugin.model.names.unlinked');
 
 const shapeOf = (t: StudyTranslate): StatesShape => {
   const bind = t('studyPoeaa.plugin.model.operations.bind');
@@ -72,11 +74,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => {
       { id: 'canvas', label: t('studyPoeaa.plugin.model.states.canvas'), tone: 'subject' },
       { id: 'null', label: t('studyPoeaa.plugin.model.states.null'), tone: 'subject' },
     ],
-    objects: environments.map((id) => ({
-      id,
-      label: environmentName(t, id),
-      key: id === 'development' ? 'D' : id === 'tests' ? 'T' : 'P',
-    })),
+    objects: environments.map((id) => ({ id, label: environmentName(t, id), key: tokens[id] })),
     transitions: [
       { id: 'bindCanvas', from: 'unbound', to: 'canvas', label: bind },
       { id: 'bindNull', from: 'unbound', to: 'null', label: bind },
@@ -86,19 +84,21 @@ const shapeOf = (t: StudyTranslate): StatesShape => {
   };
 };
 
-/** Which transition the environment acting at a step took, by what it bound or drew with. */
+// The transition a frame drawn with each painter takes, back into the state of the painter bound.
+const draws = { canvas: 'drawCanvas', null: 'drawNull' } as const satisfies Record<
+  PainterName,
+  string
+>;
+
+/**
+ * The transition a step's moves cannot be told by their states alone: a frame drawn leaves the
+ * environment bound where it was. Binding a painter joins its two states by a transition of its own.
+ */
 function tookAt(step: PluginStep): Readonly<Record<string, string>> {
   const { operation } = step;
-  if (operation.kind === 'bind' && operation.result.kind === 'bound')
-    return {
-      [operation.environment]: operation.result.painter === 'canvas' ? 'bindCanvas' : 'bindNull',
-    };
-  if (operation.kind === 'draw')
-    return {
-      [operation.environment]:
-        step.bindings[operation.environment]?.painter === 'canvas' ? 'drawCanvas' : 'drawNull',
-    };
-  return {};
+  if (operation.kind !== 'draw') return {};
+  const painter = step.bindings[operation.environment]?.painter;
+  return painter ? { [operation.environment]: draws[painter] } : {};
 }
 
 const snapshotOf = (step: PluginStep): StatesSnapshot => ({
@@ -199,10 +199,9 @@ function textOf(t: StudyTranslate, moment: PluginMoment): StatesMomentText {
       drawn: String(drawn),
       shown: String(shown),
       productionPainter: painterName(t, step.configuration.production),
-      productionConfig:
-        moment.run.example.productionStub > 0
-          ? t('studyPoeaa.plugin.model.values.stub')
-          : t('studyPoeaa.plugin.model.values.canvas'),
+      productionConfig: moment.run.example.productionStub
+        ? t('studyPoeaa.plugin.model.values.stub')
+        : t('studyPoeaa.plugin.model.values.canvas'),
     },
     note: stepNote(t, step),
     worked: workedOf(t, moment),

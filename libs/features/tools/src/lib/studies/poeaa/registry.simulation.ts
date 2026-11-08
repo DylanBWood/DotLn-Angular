@@ -1,11 +1,11 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: where the Tools pages register the catalog, and how often the reader returns. */
 export interface RegistryParameters {
-  /** 1 when each Tools page registers the catalog among its own providers instead of the route's. */
-  readonly perPage: number;
+  /** True when each Tools page registers the catalog among its own providers instead of the route's. */
+  readonly perPage: boolean;
   /** How many times the reader opens the catalog page again, each time coming back from the scene. */
   readonly returns: number;
 }
@@ -78,7 +78,7 @@ export interface RegistryStep {
 }
 
 export const readParameters = (parameters: StudyParameters): RegistryParameters => ({
-  perPage: numberParameter(parameters, 'perPage'),
+  perPage: booleanParameter(parameters, 'perPage'),
   returns: numberParameter(parameters, 'returns'),
 });
 
@@ -128,7 +128,7 @@ export function close(registry: Registry, scope: ScopeId): Registry {
 
 /** The scope a page asks in: the scene always asks in its route's, a Tools page in the route's or its own. */
 export const scopeOf = (example: RegistryParameters, page: PageId): ScopeId =>
-  page === 'scene' ? 'scene' : example.perPage > 0 ? page : 'tools';
+  page === 'scene' ? 'scene' : example.perPage ? page : 'tools';
 
 /**
  * A page's own providers open and close with the page. A route's registration outlives a visit
@@ -151,7 +151,7 @@ const visitsOf = (example: RegistryParameters): readonly PageId[] => [
  * whose facade belongs to its route and so asks nothing new.
  */
 export function registryRun(example: RegistryParameters): readonly RegistryStep[] {
-  const routes: readonly ScopeId[] = example.perPage > 0 ? ['scene'] : ['tools', 'scene'];
+  const routes: readonly ScopeId[] = example.perPage ? ['scene'] : ['tools', 'scene'];
   let registry = routes.reduce((each, scope) => provide(each, scope, catalogKey), emptyRegistry);
   let held: Partial<Record<PageId, PageHolding>> = {};
   let current: PageId | null = null;

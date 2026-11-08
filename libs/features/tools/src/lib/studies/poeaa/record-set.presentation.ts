@@ -1,19 +1,15 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
+  listOf,
   statesModel,
   type StatesMomentText,
   type StatesShape,
   type StatesSnapshot,
 } from '../states';
 import { studyParameterValues } from '../study-message';
-import type {
-  StatesStudyModel,
-  StateTransition,
-  StudyInput,
-  StudyMoment,
-  StudyWorkedStep,
-} from '../study-model';
+import type { StatesStudyModel, StudyInput, StudyMoment, StudyWorkedStep } from '../study-model';
 import type { StudyTranslate } from '../study-translate';
 import {
   type ColumnName,
@@ -21,9 +17,11 @@ import {
   type CompositionId,
   compositions,
   type RecordRow,
+  type RecordSetOperation,
   type RecordSetParameters,
   type RecordSetStep,
   rowOf,
+  type RowState,
   staleColumn,
   type Statement,
   statementFor,
@@ -42,128 +40,117 @@ interface RecordSetMoment {
   readonly index: number;
 }
 
+type WriteOperation = Extract<RecordSetOperation, { readonly kind: 'write' }>;
+
 const stepAt = ({ run, index }: RecordSetMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: CompositionId): string {
-  switch (id) {
-    case 'wood':
-      return t('studyPoeaa.record-set.model.names.wood');
-    case 'bridge':
-      return t('studyPoeaa.record-set.model.names.bridge');
-    case 'ford':
-      return t('studyPoeaa.record-set.model.names.ford');
-    default:
-      return t('studyPoeaa.record-set.model.names.raid');
-  }
-}
+// Each composition's name and the letter its token shows, each column's name and each statement's;
+// the compiler requires an entry for every composition, column and statement the example has.
+const names = {
+  wood: 'studyPoeaa.record-set.model.names.wood',
+  bridge: 'studyPoeaa.record-set.model.names.bridge',
+  ford: 'studyPoeaa.record-set.model.names.ford',
+  raid: 'studyPoeaa.record-set.model.names.raid',
+} as const satisfies Record<CompositionId, string>;
+const tokens = { wood: 'W', bridge: 'B', ford: 'F', raid: 'D' } as const satisfies Record<
+  CompositionId,
+  string
+>;
+const columnNames = {
+  title: 'studyPoeaa.record-set.model.columns.title',
+  note: 'studyPoeaa.record-set.model.columns.note',
+} as const satisfies Record<ColumnName, string>;
+const statements = {
+  insert: 'studyPoeaa.record-set.model.statements.insert',
+  update: 'studyPoeaa.record-set.model.statements.update',
+  delete: 'studyPoeaa.record-set.model.statements.delete',
+} as const satisfies Record<Statement, string>;
+// The sentence for each statement the store accepted.
+const accepted = {
+  insert: 'studyPoeaa.record-set.model.steps.inserted',
+  update: 'studyPoeaa.record-set.model.steps.updated',
+  delete: 'studyPoeaa.record-set.model.steps.deleted',
+} as const satisfies Record<Statement, string>;
 
-const columnOf = (t: StudyTranslate, column: ColumnName) =>
-  column === 'title'
-    ? t('studyPoeaa.record-set.model.columns.title')
-    : t('studyPoeaa.record-set.model.columns.note');
+const nameOf = (t: StudyTranslate, id: CompositionId): string => t(names[id]);
 
-function statementOf(t: StudyTranslate, statement: Statement): string {
-  switch (statement) {
-    case 'insert':
-      return t('studyPoeaa.record-set.model.statements.insert');
-    case 'update':
-      return t('studyPoeaa.record-set.model.statements.update');
-    default:
-      return t('studyPoeaa.record-set.model.statements.delete');
-  }
-}
+const namesOf = (t: StudyTranslate, ids: readonly CompositionId[]) =>
+  listOf(
+    t,
+    ids.map((id) => nameOf(t, id)),
+  );
 
-const listOf = (t: StudyTranslate, words: readonly string[]) =>
-  words.length ? words.join(t('studyCommon.states.listSeparator')) : t('studyCommon.states.empty');
+const columnOf = (t: StudyTranslate, column: ColumnName) => t(columnNames[column]);
 
-const shapeOf = (t: StudyTranslate): StatesShape => {
-  // Each way between row states, named by the operation that takes it.
-  const operation = (
-    id: string,
-    from: string | null,
-    to: string | null,
-    label: string,
-  ): StateTransition => ({ id, from, to, label });
-  return {
-    nodes: [
-      { id: 'unchanged', label: t('studyPoeaa.record-set.model.states.unchanged') },
-      { id: 'modified', label: t('studyPoeaa.record-set.model.states.modified'), tone: 'subject' },
-      { id: 'added', label: t('studyPoeaa.record-set.model.states.added'), tone: 'subject' },
-      { id: 'deleted', label: t('studyPoeaa.record-set.model.states.deleted'), tone: 'subject' },
-    ],
-    objects: compositions.map((id) => ({
-      id,
-      label: nameOf(t, id),
-      key: id === 'wood' ? 'W' : id === 'bridge' ? 'B' : id === 'ford' ? 'F' : 'D',
-    })),
-    transitions: [
-      operation('fill', null, 'unchanged', t('studyPoeaa.record-set.model.operations.fill')),
-      operation(
-        'setValue',
-        'unchanged',
-        'modified',
-        t('studyPoeaa.record-set.model.operations.set'),
-      ),
-      operation('addRow', null, 'added', t('studyPoeaa.record-set.model.operations.add')),
-      operation(
-        'deleteRow',
-        'unchanged',
-        'deleted',
-        t('studyPoeaa.record-set.model.operations.delete'),
-      ),
-      operation(
-        'acceptUpdate',
-        'modified',
-        'unchanged',
-        t('studyPoeaa.record-set.model.operations.writeBack'),
-      ),
-      operation(
-        'acceptInsert',
-        'added',
-        'unchanged',
-        t('studyPoeaa.record-set.model.operations.writeBack'),
-      ),
-      operation(
-        'acceptDelete',
-        'deleted',
-        null,
-        t('studyPoeaa.record-set.model.operations.writeBack'),
-      ),
-      operation(
-        'refuseUpdate',
-        'modified',
-        'modified',
-        t('studyPoeaa.record-set.model.operations.refused'),
-      ),
-    ],
-  };
-};
+const shapeOf = (t: StudyTranslate): StatesShape => ({
+  nodes: [
+    { id: 'unchanged', label: t('studyPoeaa.record-set.model.states.unchanged') },
+    { id: 'modified', label: t('studyPoeaa.record-set.model.states.modified'), tone: 'subject' },
+    { id: 'added', label: t('studyPoeaa.record-set.model.states.added'), tone: 'subject' },
+    { id: 'deleted', label: t('studyPoeaa.record-set.model.states.deleted'), tone: 'subject' },
+  ],
+  objects: compositions.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
+  transitions: [
+    {
+      id: 'fill',
+      from: null,
+      to: 'unchanged',
+      label: t('studyPoeaa.record-set.model.operations.fill'),
+    },
+    {
+      id: 'setValue',
+      from: 'unchanged',
+      to: 'modified',
+      label: t('studyPoeaa.record-set.model.operations.set'),
+    },
+    {
+      id: 'addRow',
+      from: null,
+      to: 'added',
+      label: t('studyPoeaa.record-set.model.operations.add'),
+    },
+    {
+      id: 'deleteRow',
+      from: 'unchanged',
+      to: 'deleted',
+      label: t('studyPoeaa.record-set.model.operations.delete'),
+    },
+    {
+      id: 'acceptUpdate',
+      from: 'modified',
+      to: 'unchanged',
+      label: t('studyPoeaa.record-set.model.operations.writeBack'),
+    },
+    {
+      id: 'acceptInsert',
+      from: 'added',
+      to: 'unchanged',
+      label: t('studyPoeaa.record-set.model.operations.writeBack'),
+    },
+    {
+      id: 'acceptDelete',
+      from: 'deleted',
+      to: null,
+      label: t('studyPoeaa.record-set.model.operations.writeBack'),
+    },
+    {
+      id: 'refuseUpdate',
+      from: 'modified',
+      to: 'modified',
+      label: t('studyPoeaa.record-set.model.operations.refused'),
+    },
+  ],
+});
 
-/** Which transition the row a step acts on took, by the operation performed on it. */
-function tookAt(step: RecordSetStep): Readonly<Record<string, string>> {
-  const { operation } = step;
-  switch (operation.kind) {
-    case 'set':
-      return { [operation.id]: 'setValue' };
-    case 'add':
-      return { [operation.id]: 'addRow' };
-    case 'delete':
-      return { [operation.id]: 'deleteRow' };
-    case 'write':
-      if (!operation.matched)
-        return operation.statement === 'update' ? { [operation.id]: 'refuseUpdate' } : {};
-      return {
-        [operation.id]:
-          operation.statement === 'insert'
-            ? 'acceptInsert'
-            : operation.statement === 'update'
-              ? 'acceptUpdate'
-              : 'acceptDelete',
-      };
-    default:
-      return {};
-  }
-}
+/**
+ * The transition a step's moves cannot be told by their states alone: a refused update leaves its
+ * row modified where it stood. Every other change of a row joins its two states by a transition of
+ * its own.
+ */
+const tookAt = ({ operation }: RecordSetStep): Readonly<Record<string, string>> =>
+  operation.kind === 'write' && !operation.matched && operation.statement === 'update'
+    ? { [operation.id]: 'refuseUpdate' }
+    : {};
 
 const snapshotOf = (step: RecordSetStep): StatesSnapshot => ({
   at: Object.fromEntries(step.set.rows.map(({ id, state }) => [id, state])),
@@ -185,23 +172,22 @@ function rowNote(t: StudyTranslate, moment: RecordSetMoment, row: RecordRow): st
   const stale = staleColumn(row, table);
   if (row.refused && stale !== null)
     return t('studyPoeaa.record-set.model.notes.refused', { column: columnOf(t, stale) });
-  switch (row.state) {
-    case 'added':
-      return t('studyPoeaa.record-set.model.notes.added');
-    case 'deleted':
-      return t('studyPoeaa.record-set.model.notes.deleted');
-    case 'modified':
-      return stale === null
+  const notes: Record<RowState, () => string> = {
+    added: () => t('studyPoeaa.record-set.model.notes.added'),
+    deleted: () => t('studyPoeaa.record-set.model.notes.deleted'),
+    modified: () =>
+      stale === null
         ? t('studyPoeaa.record-set.model.notes.modified', { columns: changedColumns(t, row) })
         : t('studyPoeaa.record-set.model.notes.stale', {
             columns: changedColumns(t, row),
             column: columnOf(t, stale),
-          });
-    default:
-      return columns.every((column) => row.current[column] === 0)
+          }),
+    unchanged: () =>
+      columns.every((column) => row.current[column] === 0)
         ? t('studyPoeaa.record-set.model.notes.asRead')
-        : t('studyPoeaa.record-set.model.notes.written');
-  }
+        : t('studyPoeaa.record-set.model.notes.written'),
+  };
+  return notes[row.state]();
 }
 
 /** The rows after a refused one that still have a change the adapter never sent. */
@@ -215,18 +201,11 @@ function unsentAfter(moment: RecordSetMoment, id: CompositionId): readonly Compo
 }
 
 /** The sentence under the drawing for a step of the write-back. */
-function writeNote(t: StudyTranslate, moment: RecordSetMoment): string {
-  const { operation, set, table, stopped } = stepAt(moment);
-  if (operation.kind !== 'write') throw new Error('Not a step of the write-back.');
+function writeNote(t: StudyTranslate, moment: RecordSetMoment, operation: WriteOperation): string {
+  const { set, table, stopped } = stepAt(moment);
   const name = nameOf(t, operation.id);
   const sent = table.statements;
-  if (operation.matched) {
-    if (operation.statement === 'insert')
-      return t('studyPoeaa.record-set.model.steps.inserted', { sent, name });
-    return operation.statement === 'update'
-      ? t('studyPoeaa.record-set.model.steps.updated', { sent, name })
-      : t('studyPoeaa.record-set.model.steps.deleted', { sent, name });
-  }
+  if (operation.matched) return t(accepted[operation.statement], { sent, name });
   const row = rowOf(set, operation.id);
   const stale = row ? staleColumn(row, table) : null;
   const column = stale === null ? t('studyCommon.states.empty') : columnOf(t, stale);
@@ -235,86 +214,93 @@ function writeNote(t: StudyTranslate, moment: RecordSetMoment): string {
         sent,
         name,
         column,
-        unsent: listOf(
-          t,
-          unsentAfter(moment, operation.id).map((id) => nameOf(t, id)),
-        ),
+        unsent: namesOf(t, unsentAfter(moment, operation.id)),
       })
     : t('studyPoeaa.record-set.model.steps.refusedOn', { sent, name, column });
 }
 
 /** The sentence under the drawing: what the session, the other tab or the adapter did. */
 function stepNote(t: StudyTranslate, moment: RecordSetMoment): string {
-  const { operation } = stepAt(moment);
-  switch (operation.kind) {
-    case 'fill':
-      return t('studyPoeaa.record-set.model.steps.fill');
-    case 'set':
-      return t('studyPoeaa.record-set.model.steps.set', {
-        name: nameOf(t, operation.id),
-        column: columnOf(t, operation.column),
-      });
-    case 'delete':
-      return t('studyPoeaa.record-set.model.steps.delete', { name: nameOf(t, operation.id) });
-    case 'add':
-      return t('studyPoeaa.record-set.model.steps.add', { name: nameOf(t, operation.id) });
-    case 'rival':
-      return t('studyPoeaa.record-set.model.steps.rival', {
-        name: nameOf(t, operation.id),
-        column: columnOf(t, operation.column),
-      });
-    default:
-      return writeNote(t, moment);
-  }
+  return matchKind(stepAt(moment).operation, {
+    fill: () => t('studyPoeaa.record-set.model.steps.fill'),
+    set: ({ id, column }) =>
+      t('studyPoeaa.record-set.model.steps.set', {
+        name: nameOf(t, id),
+        column: columnOf(t, column),
+      }),
+    delete: ({ id }) => t('studyPoeaa.record-set.model.steps.delete', { name: nameOf(t, id) }),
+    add: ({ id }) => t('studyPoeaa.record-set.model.steps.add', { name: nameOf(t, id) }),
+    rival: ({ id, column }) =>
+      t('studyPoeaa.record-set.model.steps.rival', {
+        name: nameOf(t, id),
+        column: columnOf(t, column),
+      }),
+    write: (operation) => writeNote(t, moment, operation),
+  });
+}
+
+/**
+ * What a write found: an insert takes its free key or finds it taken; an update or a delete finds
+ * the row's originals still stored, or finds them changed.
+ */
+function writeOutcome(operation: WriteOperation): string {
+  if (operation.statement === 'insert')
+    return operation.matched
+      ? 'studyPoeaa.record-set.model.worked.inserted'
+      : 'studyPoeaa.record-set.model.worked.taken';
+  return operation.matched
+    ? 'studyPoeaa.record-set.model.worked.matched'
+    : 'studyPoeaa.record-set.model.worked.unmatched';
+}
+
+/** The statement a write sends with the guard it carries, and what that guard found. */
+function writeLines(t: StudyTranslate, operation: WriteOperation, sent: number): readonly string[] {
+  return [
+    t('studyPoeaa.record-set.model.worked.statement', {
+      sent,
+      statement: t(statements[operation.statement]),
+      name: nameOf(t, operation.id),
+      guard:
+        operation.statement === 'insert'
+          ? t('studyPoeaa.record-set.model.worked.guardFree')
+          : t('studyPoeaa.record-set.model.worked.guardOriginals'),
+    }),
+    t(writeOutcome(operation)),
+  ];
+}
+
+/** The note under the worked lines: whether the adapter stopped, wrote, or has yet to write. */
+function workedNote(t: StudyTranslate, step: RecordSetStep): string {
+  if (step.stopped) return t('studyPoeaa.record-set.model.worked.stopped');
+  return step.operation.kind === 'write'
+    ? t('studyPoeaa.record-set.model.worked.ownWrite')
+    : t('studyPoeaa.record-set.model.worked.beforeWrite');
 }
 
 /** The changed rows, the statements so far and, at a write, the statement and its guard. */
 function workedOf(t: StudyTranslate, moment: RecordSetMoment): StudyWorkedStep {
-  const { operation, set, table, stopped } = stepAt(moment);
+  const step = stepAt(moment);
+  const { operation, set, table } = step;
   const changed = set.rows.filter((row) => statementFor(row) !== null);
-  const lines = [
-    t('studyPoeaa.record-set.model.worked.changed', {
-      names: listOf(
-        t,
-        changed.map(({ id }) => nameOf(t, id)),
-      ),
-    }),
-    t('studyPoeaa.record-set.model.worked.sent', { sent: table.statements }),
-    t('studyPoeaa.record-set.model.worked.refused', {
-      names: listOf(
-        t,
-        set.rows.filter(({ refused }) => refused).map(({ id }) => nameOf(t, id)),
-      ),
-    }),
-  ];
-  if (operation.kind === 'write')
-    lines.push(
-      t('studyPoeaa.record-set.model.worked.statement', {
-        sent: table.statements,
-        statement: statementOf(t, operation.statement),
-        name: nameOf(t, operation.id),
-        guard:
-          operation.statement === 'insert'
-            ? t('studyPoeaa.record-set.model.worked.guardFree')
-            : t('studyPoeaa.record-set.model.worked.guardOriginals'),
-      }),
-      operation.statement === 'insert'
-        ? operation.matched
-          ? t('studyPoeaa.record-set.model.worked.inserted')
-          : t('studyPoeaa.record-set.model.worked.taken')
-        : operation.matched
-          ? t('studyPoeaa.record-set.model.worked.matched')
-          : t('studyPoeaa.record-set.model.worked.unmatched'),
-    );
-  const note = stopped
-    ? t('studyPoeaa.record-set.model.worked.stopped')
-    : operation.kind === 'write'
-      ? t('studyPoeaa.record-set.model.worked.ownWrite')
-      : t('studyPoeaa.record-set.model.worked.beforeWrite');
   return {
     title: t('studyPoeaa.record-set.model.worked.title', { step: moment.index }),
-    lines,
-    note,
+    lines: [
+      t('studyPoeaa.record-set.model.worked.changed', {
+        names: namesOf(
+          t,
+          changed.map(({ id }) => id),
+        ),
+      }),
+      t('studyPoeaa.record-set.model.worked.sent', { sent: table.statements }),
+      t('studyPoeaa.record-set.model.worked.refused', {
+        names: namesOf(
+          t,
+          set.rows.filter(({ refused }) => refused).map(({ id }) => id),
+        ),
+      }),
+      ...(operation.kind === 'write' ? writeLines(t, operation, table.statements) : []),
+    ],
+    note: workedNote(t, step),
   };
 }
 
@@ -331,14 +317,12 @@ function textOf(t: StudyTranslate, moment: RecordSetMoment): StatesMomentText {
         example.rivalSaves > 0
           ? t('studyPoeaa.record-set.model.values.rival')
           : t('studyPoeaa.record-set.model.values.noRival'),
-      onError:
-        example.continueOnError > 0
-          ? t('studyPoeaa.record-set.model.values.goOn')
-          : t('studyPoeaa.record-set.model.values.stop'),
-      refusal:
-        example.continueOnError > 0
-          ? t('studyPoeaa.record-set.model.values.refusalGoesOn')
-          : t('studyPoeaa.record-set.model.values.refusalStops'),
+      onError: example.continueOnError
+        ? t('studyPoeaa.record-set.model.values.goOn')
+        : t('studyPoeaa.record-set.model.values.stop'),
+      refusal: example.continueOnError
+        ? t('studyPoeaa.record-set.model.values.refusalGoesOn')
+        : t('studyPoeaa.record-set.model.values.refusalStops'),
     },
     note: stepNote(t, moment),
     worked: workedOf(t, moment),

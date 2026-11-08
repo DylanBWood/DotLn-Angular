@@ -1,18 +1,18 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   dataMapperRun,
   emptyMapper,
   find,
   model,
+  readParameters,
   rename,
   saveAll,
   storedLibrary,
   update,
 } from './data-mapper.model';
 
-const record = await loadStatesStudy('poeaa:240');
+const record = await loadModelStudy('poeaa:240', 'states');
 const parameters = record.example.parameters;
 const example = {
   stepsFlank: 4,
@@ -20,11 +20,12 @@ const example = {
   stepsDawn: 3,
   formatRead: 1,
   formatDawn: 2,
-  eachRow: 1,
+  eachRow: true,
 };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, eachRow: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -79,7 +80,7 @@ it('keeps the unreadable row through a save of each row, and loses it to a save 
   // Nothing is written before the save.
   expect(steps.slice(0, -1).every(({ storage }) => storage.writes === 0)).toBe(true);
 
-  const whole = dataMapperRun({ ...example, eachRow: 0 });
+  const whole = dataMapperRun({ ...example, eachRow: false });
   const saved = whole[whole.length - 1];
   expect(saved.operation).toEqual({
     kind: 'saveAll',
@@ -96,7 +97,7 @@ it('keeps the unreadable row through a save of each row, and loses it to a save 
     dropped: ['dawn'],
   });
   // When every row is readable, the whole-library save has nothing to lose.
-  const allReadable = dataMapperRun({ ...example, eachRow: 0, formatDawn: 1 });
+  const allReadable = dataMapperRun({ ...example, eachRow: false, formatDawn: 1 });
   expect(allReadable[allReadable.length - 1].operation).toMatchObject({ dropped: [] });
   expect(Object.keys(allReadable[allReadable.length - 1].storage.rows)).toHaveLength(3);
 });
@@ -140,8 +141,8 @@ it('draws the whole-library save writing Dawn patrol out of storage', () => {
   expect(last.note).toBe(
     'The save writes the whole library as one value, built from the objects in the identity map: Flank left, Hold the ridge. Dawn patrol has no object, so its row is not in the value, and storage no longer has it.',
   );
-  const drawing = registerDrawing(whole.states, whole.states.frames.length - 1);
-  expect(drawing.ghosts.map(({ id }) => id)).toEqual(['dawn']);
+  // Dawn patrol is the one object that leaves the example at the save.
+  expect(last.moves.filter(({ to }) => to === null).map(({ object }) => object)).toEqual(['dawn']);
 });
 
 it('names the moments in order, and drops the unmapped one when every row is readable', () => {

@@ -12,6 +12,7 @@ export {
   lookup,
   provide,
   readCatalog,
+  readParameters,
   registryRun,
 } from './registry.simulation';
 

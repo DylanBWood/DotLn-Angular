@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import { studyMessage } from '../study-message';
 import type { FlowFrame, FlowModel } from '../study-model';
 import { example, model } from './request-reply';
@@ -7,7 +7,7 @@ const modulePath = 'libs/features/tools/src/lib/studies/eip/request-reply.ts';
 
 /** The record's own run of the example, with the parameters it ships, as the flow it draws. */
 async function recordRun() {
-  const record = await loadFlowStudy('eip:83');
+  const record = await loadModelStudy('eip:83', 'flow');
   const run = model(record.example.parameters, studyTranslate);
   if (run.family !== 'flow') throw new Error('The model does not draw a flow.');
   return { record, run };

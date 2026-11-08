@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   catalogKey,
@@ -9,15 +8,17 @@ import {
   model,
   provide,
   readCatalog,
+  readParameters,
   registryRun,
 } from './registry.model';
 
-const record = await loadStatesStudy('poeaa:421');
+const record = await loadModelStudy('poeaa:421', 'states');
 const parameters = record.example.parameters;
-const example = { perPage: 0, returns: 1 };
+const example = { perPage: false, returns: 1 };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, perPage: 0 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
   expect(record.pseudocode.rxjs?.startsWith('// Illustrative: ')).toBe(true);
@@ -72,7 +73,7 @@ it('lets the two Tools pages share one loader and its read, while the scene buil
 });
 
 it('builds and reads again at every opening when each Tools page registers its own', () => {
-  const steps = registryRun({ ...example, perPage: 1 });
+  const steps = registryRun({ ...example, perPage: true });
   const last = steps[steps.length - 1];
   expect(
     steps.map(({ operation }) => (operation.kind === 'open' ? operation.answer : null)),
@@ -91,7 +92,7 @@ it('builds and reads again at every opening when each Tools page registers its o
   expect(steps[3].operation).toMatchObject({ closed: { scope: 'catalog', loader: 2 } });
   expect(last.held.home?.discarded).toBe(true);
   expect(Object.keys(last.registry.scopes).sort()).toEqual(['catalog', 'scene']);
-  const often = registryRun({ perPage: 1, returns: 3 }).at(-1)?.registry;
+  const often = registryRun({ perPage: true, returns: 3 }).at(-1)?.registry;
   expect([often?.built, often?.read.length]).toEqual([6, 6]);
 });
 
@@ -137,8 +138,8 @@ it('shows the per-page failure in the drawing: new loaders, a loop into New load
   expect(note(4, 'catalog')).toBe('built loader 4');
   expect(frames[2].note).toContain('loader 1 went with them');
   expect(frames[4].values['reads']).toBe('4');
-  const drawing = registerDrawing(run.states, 4);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['H', 'C', 'S']);
-  expect(drawing.arrows.map(({ id }) => id)).toEqual(['catalog']);
-  expect(drawing.tokens.find(({ key }) => key === 'C')?.state).toBe('moving');
+  // Every page stands in the example under its token letter, and only the catalog page moves.
+  const keys = tokensOf(run.states);
+  expect(frames[4].placements.map(({ object }) => keys[object])).toEqual(['H', 'C', 'S']);
+  expect(frames[4].moves.map(({ object }) => keys[object])).toEqual(['C']);
 });

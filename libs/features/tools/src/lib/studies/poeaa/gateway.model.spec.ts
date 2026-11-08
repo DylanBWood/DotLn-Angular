@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import type { StatesStudyModel } from '../study-model';
 import { codeBlocks, fillValues } from '../study-text';
 import {
@@ -15,7 +14,7 @@ import {
   untranslated,
 } from './gateway.model';
 
-const record = await loadStatesStudy('poeaa:408');
+const record = await loadModelStudy('poeaa:408', 'states');
 const parameters = record.example.parameters;
 const example = { timeoutMs: 10000, answerMs: 400, status: 200, servedVersion: 1, pageVersion: 1 };
 
@@ -134,8 +133,10 @@ it('abandons the request at the limit and raises the timeout in the back, never 
     { object: 'request', from: 'api', to: null, transition: 'abandon' },
     { object: 'reply', from: null, to: 'back', transition: 'raise' },
   ]);
-  const drawing = registerDrawing(run.states, 4);
-  expect(drawing.ghosts.map(({ id }) => id)).toEqual(['request']);
+  // The request is the one object that leaves the example at the abandon.
+  expect(
+    run.states.frames[4].moves.filter(({ to }) => to === null).map(({ object }) => object),
+  ).toEqual(['request']);
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Load', 1],
     ['Send', 3],
@@ -194,6 +195,8 @@ it('draws the request and the reply in the column of the part that holds each, a
     'The page draws version 1: it can draw this board',
     'Terms of the API that crossed untranslated: 0',
   ]);
-  const drawing = registerDrawing(run.states, 6);
-  expect(drawing.tokens.map(({ key, state }) => [key, state])).toEqual([['2', 'moving']]);
+  // The reply, token 2, is the one object in the example at the translation, and it is the one that moves.
+  expect(frames[6].placements.map(({ object }) => object)).toEqual(['reply']);
+  expect(frames[6].moves.map(({ object }) => object)).toEqual(['reply']);
+  expect(tokensOf(run.states)['reply']).toBe('2');
 });

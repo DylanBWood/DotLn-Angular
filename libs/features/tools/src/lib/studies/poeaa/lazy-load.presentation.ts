@@ -1,5 +1,6 @@
 import type { StudyParameters } from '@dotln-angular/models';
 
+import { matchKind } from '../match-kind';
 import {
   statesModel,
   type StatesMomentText,
@@ -19,8 +20,8 @@ import {
   afterEachReading,
   chunkOf,
   type LazyLoadParameters,
-  lazyLoadRun,
   type LazyLoadStep,
+  type RecordState,
   studies,
   type StudyId,
 } from './lazy-load.simulation';
@@ -29,6 +30,9 @@ import {
 export interface LazyLoadRun {
   readonly example: LazyLoadParameters;
   readonly steps: readonly LazyLoadStep[];
+  /** The same readings loaded one chunk to the work and one chunk to each study, for the comparison. */
+  readonly perWork: readonly LazyLoadStep[];
+  readonly perStudy: readonly LazyLoadStep[];
   readonly parameters: StudyParameters;
 }
 
@@ -40,28 +44,26 @@ interface LazyLoadMoment {
 
 const stepAt = ({ run, index }: LazyLoadMoment) => run.steps[index];
 
-function nameOf(t: StudyTranslate, id: StudyId): string {
-  switch (id) {
-    case 'lazyLoad':
-      return t('studyPoeaa.lazy-load.model.names.lazyLoad');
-    case 'unitOfWork':
-      return t('studyPoeaa.lazy-load.model.names.unitOfWork');
-    default:
-      return t('studyPoeaa.lazy-load.model.names.recordSet');
-  }
-}
+// Each study's name, the reading it belongs to as the step notes name it, and the letter its token
+// shows; the compiler requires an entry for every study the reader opens.
+const names = {
+  lazyLoad: 'studyPoeaa.lazy-load.model.names.lazyLoad',
+  unitOfWork: 'studyPoeaa.lazy-load.model.names.unitOfWork',
+  recordSet: 'studyPoeaa.lazy-load.model.names.recordSet',
+} as const satisfies Record<StudyId, string>;
+const readings = {
+  lazyLoad: 'studyPoeaa.lazy-load.model.readings.lazyLoad',
+  unitOfWork: 'studyPoeaa.lazy-load.model.readings.unitOfWork',
+  recordSet: 'studyPoeaa.lazy-load.model.readings.recordSet',
+} as const satisfies Record<StudyId, string>;
+const tokens = { lazyLoad: 'L', unitOfWork: 'U', recordSet: 'R' } as const satisfies Record<
+  StudyId,
+  string
+>;
 
-/** The reading a study belongs to, as the step notes name it. */
-function readingOf(t: StudyTranslate, id: StudyId): string {
-  switch (id) {
-    case 'lazyLoad':
-      return t('studyPoeaa.lazy-load.model.readings.lazyLoad');
-    case 'unitOfWork':
-      return t('studyPoeaa.lazy-load.model.readings.unitOfWork');
-    default:
-      return t('studyPoeaa.lazy-load.model.readings.recordSet');
-  }
-}
+const nameOf = (t: StudyTranslate, id: StudyId): string => t(names[id]);
+
+const readingOf = (t: StudyTranslate, id: StudyId): string => t(readings[id]);
 
 const shapeOf = (t: StudyTranslate): StatesShape => ({
   nodes: [
@@ -69,11 +71,7 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
     { id: 'loading', label: t('studyPoeaa.lazy-load.model.states.loading'), tone: 'subject' },
     { id: 'loaded', label: t('studyPoeaa.lazy-load.model.states.loaded') },
   ],
-  objects: studies.map((id) => ({
-    id,
-    label: nameOf(t, id),
-    key: id === 'lazyLoad' ? 'L' : id === 'unitOfWork' ? 'U' : 'R',
-  })),
+  objects: studies.map((id) => ({ id, label: nameOf(t, id), key: tokens[id] })),
   transitions: [
     {
       id: 'firstRead',
@@ -114,26 +112,21 @@ const shapeOf = (t: StudyTranslate): StatesShape => ({
   ],
 });
 
-/** Which transition each study took at a step: the one read asks, the rest of its chunk comes along. */
+/**
+ * The transitions a step's moves cannot be told by their states alone: a request takes its chunk
+ * from marker to loading three ways, as the read itself, as a study the chunk carries along, or as
+ * a retry, and a read from memory leaves its study where it stood. An arrival and a failure each
+ * join their two states by a transition of their own.
+ */
 function tookAt(example: LazyLoadParameters, step: LazyLoadStep): Readonly<Record<string, string>> {
   const { operation } = step;
-  switch (operation.kind) {
-    case 'request':
-      return Object.fromEntries(
-        chunkOf(example, operation.id).map((id) => [
-          id,
-          operation.retry ? 'retry' : id === operation.id ? 'firstRead' : 'carried',
-        ]),
-      );
-    case 'arrive':
-      return Object.fromEntries(chunkOf(example, operation.id).map((id) => [id, 'arrive']));
-    case 'fail':
-      return Object.fromEntries(chunkOf(example, operation.id).map((id) => [id, 'fail']));
-    case 'cached':
-      return { [operation.id]: 'cachedRead' };
-    default:
-      return {};
-  }
+  if (operation.kind === 'cached') return { [operation.id]: 'cachedRead' };
+  if (operation.kind !== 'request') return {};
+  const way = (id: StudyId) => {
+    if (operation.retry) return 'retry';
+    return id === operation.id ? 'firstRead' : 'carried';
+  };
+  return Object.fromEntries(chunkOf(example, operation.id).map((id) => [id, way(id)]));
 }
 
 const snapshotOf = (example: LazyLoadParameters, step: LazyLoadStep): StatesSnapshot => ({
@@ -145,49 +138,56 @@ const snapshotOf = (example: LazyLoadParameters, step: LazyLoadStep): StatesSnap
 function objectNote(t: StudyTranslate, moment: LazyLoadMoment, id: StudyId): string {
   const { operation, loader } = stepAt(moment);
   const asked = 'id' in operation && operation.id === id;
-  switch (loader.recordStates[id]) {
-    case 'marker':
-      return operation.kind === 'fail' && chunkOf(moment.run.example, operation.id).includes(id)
+  const notes: Record<RecordState, () => string> = {
+    marker: () =>
+      operation.kind === 'fail' && chunkOf(moment.run.example, operation.id).includes(id)
         ? t('studyPoeaa.lazy-load.model.notes.failed')
-        : t('studyPoeaa.lazy-load.model.notes.marker');
-    case 'loading':
-      return asked
+        : t('studyPoeaa.lazy-load.model.notes.marker'),
+    loading: () =>
+      asked
         ? t('studyPoeaa.lazy-load.model.notes.asked')
-        : t('studyPoeaa.lazy-load.model.notes.carried');
-    default:
-      return operation.kind === 'cached' && asked
+        : t('studyPoeaa.lazy-load.model.notes.carried'),
+    loaded: () =>
+      operation.kind === 'cached' && asked
         ? t('studyPoeaa.lazy-load.model.notes.fromMemory')
-        : t('studyPoeaa.lazy-load.model.notes.loaded');
-  }
+        : t('studyPoeaa.lazy-load.model.notes.loaded'),
+  };
+  return notes[loader.recordStates[id]]();
 }
 
 /** The sentence under the drawing: what the reader or the loader did at this step. */
 function stepNote(t: StudyTranslate, moment: LazyLoadMoment): string {
   const { operation, loader } = stepAt(moment);
-  const perStudy = moment.run.example.chunkPerStudy > 0;
-  switch (operation.kind) {
-    case 'start':
-      return t('studyPoeaa.lazy-load.model.steps.start');
-    case 'filter':
-      return t('studyPoeaa.lazy-load.model.steps.filter');
-    case 'request':
-      if (operation.retry)
-        return t('studyPoeaa.lazy-load.model.steps.retry', { requests: loader.requests });
-      return perStudy
-        ? t('studyPoeaa.lazy-load.model.steps.requestStudy', { name: readingOf(t, operation.id) })
-        : t('studyPoeaa.lazy-load.model.steps.requestWork', { name: readingOf(t, operation.id) });
-    case 'arrive':
-      return perStudy
+  const { chunkPerStudy } = moment.run.example;
+  return matchKind(operation, {
+    start: () => t('studyPoeaa.lazy-load.model.steps.start'),
+    filter: () => t('studyPoeaa.lazy-load.model.steps.filter'),
+    request: ({ id, retry }) => {
+      if (retry) return t('studyPoeaa.lazy-load.model.steps.retry', { requests: loader.requests });
+      return chunkPerStudy
+        ? t('studyPoeaa.lazy-load.model.steps.requestStudy', { name: readingOf(t, id) })
+        : t('studyPoeaa.lazy-load.model.steps.requestWork', { name: readingOf(t, id) });
+    },
+    arrive: ({ id }) =>
+      chunkPerStudy
         ? t('studyPoeaa.lazy-load.model.steps.arriveStudy', {
-            name: readingOf(t, operation.id),
+            name: readingOf(t, id),
             records: loader.records,
           })
-        : t('studyPoeaa.lazy-load.model.steps.arriveWork', { records: loader.records });
-    case 'fail':
-      return t('studyPoeaa.lazy-load.model.steps.fail');
-    default:
-      return t('studyPoeaa.lazy-load.model.steps.cached', { name: readingOf(t, operation.id) });
-  }
+        : t('studyPoeaa.lazy-load.model.steps.arriveWork', { records: loader.records }),
+    fail: () => t('studyPoeaa.lazy-load.model.steps.fail'),
+    cached: ({ id }) => t('studyPoeaa.lazy-load.model.steps.cached', { name: readingOf(t, id) }),
+  });
+}
+
+/** The note under the worked lines: what a failure forgets, or where each record now comes from. */
+function workedNote(t: StudyTranslate, moment: LazyLoadMoment): string {
+  const { operation, loader } = stepAt(moment);
+  if (operation.kind === 'fail') return t('studyPoeaa.lazy-load.model.worked.forgotten');
+  if (loader.records === 0) return t('studyPoeaa.lazy-load.model.worked.beforeLoad');
+  return moment.run.example.chunkPerStudy
+    ? t('studyPoeaa.lazy-load.model.worked.eachOwn')
+    : t('studyPoeaa.lazy-load.model.worked.fromMemory');
 }
 
 /** The loader's counts at this moment, with what a request carries, as the worked lines. */
@@ -201,22 +201,14 @@ function workedOf(t: StudyTranslate, moment: LazyLoadMoment): StudyWorkedStep {
   ];
   if (operation.kind === 'request')
     lines.push(
-      example.chunkPerStudy > 0
+      example.chunkPerStudy
         ? t('studyPoeaa.lazy-load.model.worked.carriesStudy', { name: readingOf(t, operation.id) })
         : t('studyPoeaa.lazy-load.model.worked.carriesWork', { count: example.studiesInChunk }),
     );
-  const note =
-    operation.kind === 'fail'
-      ? t('studyPoeaa.lazy-load.model.worked.forgotten')
-      : loader.records === 0
-        ? t('studyPoeaa.lazy-load.model.worked.beforeLoad')
-        : example.chunkPerStudy > 0
-          ? t('studyPoeaa.lazy-load.model.worked.eachOwn')
-          : t('studyPoeaa.lazy-load.model.worked.fromMemory');
   return {
     title: t('studyPoeaa.lazy-load.model.worked.title', { step: moment.index }),
     lines,
-    note,
+    note: workedNote(t, moment),
   };
 }
 
@@ -230,12 +222,11 @@ function textOf(t: StudyTranslate, moment: LazyLoadMoment): StatesMomentText {
       requests: String(loader.requests),
       records: String(loader.records),
       opened: String(opened),
-      chunking:
-        example.chunkPerStudy > 0
-          ? t('studyPoeaa.lazy-load.model.values.perStudy')
-          : t('studyPoeaa.lazy-load.model.values.perWork', {
-              studiesInChunk: example.studiesInChunk,
-            }),
+      chunking: example.chunkPerStudy
+        ? t('studyPoeaa.lazy-load.model.values.perStudy')
+        : t('studyPoeaa.lazy-load.model.values.perWork', {
+            studiesInChunk: example.studiesInChunk,
+          }),
       failure:
         example.failFirst > 0
           ? t('studyPoeaa.lazy-load.model.values.fails')
@@ -248,9 +239,9 @@ function textOf(t: StudyTranslate, moment: LazyLoadMoment): StatesMomentText {
 }
 
 /** The same readings loaded both ways, one chunk for the work or one per study, by readings opened. */
-function comparisonOf(t: StudyTranslate, run: LazyLoadRun): StudyComparison {
-  const perWork = afterEachReading(lazyLoadRun({ ...run.example, chunkPerStudy: 0 }));
-  const perStudy = afterEachReading(lazyLoadRun({ ...run.example, chunkPerStudy: 1 }));
+function comparisonOf(t: StudyTranslate, run: LazyLoadRun): StudyComparison<'counts'> {
+  const perWork = afterEachReading(run.perWork);
+  const perStudy = afterEachReading(run.perStudy);
   const work = perWork[perWork.length - 1];
   const study = perStudy[perStudy.length - 1];
   return {
@@ -260,7 +251,7 @@ function comparisonOf(t: StudyTranslate, run: LazyLoadRun): StudyComparison {
       title: t('studyPoeaa.lazy-load.model.comparison.chart'),
       xLabel: t('studyPoeaa.lazy-load.model.comparison.xLabel'),
       yLabel: t('studyPoeaa.lazy-load.model.comparison.yLabel'),
-      seconds: perWork.map((_, opened) => opened),
+      counts: perWork.map((_, opened) => opened),
       series: [
         {
           id: 'perWork',

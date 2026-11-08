@@ -1,4 +1,4 @@
-import { loadFlowStudy, studyTranslate } from '../../../../testing/src';
+import { loadModelStudy, studyTranslate } from '../../../../testing/src';
 import type { FlowFrame, FlowStudyModel } from '../study-model';
 import { placeholdersIn } from '../study-text';
 import { crashStep, model } from './guaranteed-delivery';
@@ -12,13 +12,13 @@ const heldBy = (frame: FlowFrame, node: string) => (frame.held[node] ?? []).map(
 
 /** The example run from the record's own parameters, which this module always draws as a flow. */
 async function run(): Promise<FlowStudyModel> {
-  const drawn = model((await loadFlowStudy('eip:71')).example.parameters, studyTranslate);
+  const drawn = model((await loadModelStudy('eip:71', 'flow')).example.parameters, studyTranslate);
   if (drawn.family !== 'flow') throw new Error('The study is drawn as a flow.');
   return drawn;
 }
 
 it('attaches the record to the Guaranteed Delivery row, drawn by this module and not run', async () => {
-  const record = await loadFlowStudy('eip:71');
+  const record = await loadModelStudy('eip:71', 'flow');
   expect(record.visual.model).toBe(path);
   expect(record.pseudocode.executable).toBeNull();
   expect(record.pseudocode.rxjs).toBeNull();
@@ -109,7 +109,7 @@ it('fits the drawing: a note for every step and short states', async () => {
 });
 
 it('supplies every value the record’s prose reads, at every step', async () => {
-  const record = await loadFlowStudy('eip:71');
+  const record = await loadModelStudy('eip:71', 'flow');
   const { frames } = (await run()).flow;
   const names = [
     ...placeholdersIn(record.visual.textEquivalent),

@@ -1,5 +1,4 @@
-import { loadStatesStudy, studyTranslate } from '../../../../testing/src';
-import { registerDrawing } from '../../composites/study-visuals/states/states-register';
+import { loadModelStudy, studyTranslate, tokensOf } from '../../../../testing/src';
 import { codeBlocks, fillValues } from '../study-text';
 import {
   catalogOf,
@@ -10,22 +9,24 @@ import {
   load,
   model,
   placeOf,
+  readParameters,
   rowByKey,
   type RowId,
 } from './foreign-key-mapping.model';
 
-const record = await loadStatesStudy('poeaa:278');
+const record = await loadModelStudy('poeaa:278', 'states');
 const parameters = record.example.parameters;
 const example = {
   lineDataMapper: 240,
   lineIdentityMap: 254,
   lineUnitOfWork: 246,
-  identityMap: 1,
+  identityMap: true,
   readLimit: 6,
 };
 
 it('runs the example the record names, from the record’s own parameters', () => {
-  expect(parameters).toEqual(example);
+  expect(parameters).toEqual({ ...example, identityMap: 1 });
+  expect(readParameters(parameters)).toEqual(example);
   expect(record.pseudocode.executable?.module).toBe(record.visual.model);
   expect(codeBlocks(record.pseudocode.ordinary)).toHaveLength(record.mechanism.steps.length);
 });
@@ -76,8 +77,30 @@ it('reads each row once through the identity map, and every reference to a row i
   ]);
 });
 
+it('stops at its read limit only when the next key still to resolve needs a read', () => {
+  // Through the identity map the run reads each of its three rows once, and every key left after
+  // the third read finds its object in the map. Whatever the limit, the run is the whole run cut
+  // just before the step that would read past it, the read a following key needs; a key the map
+  // resolves is followed whatever the count, so a limit of three or more leaves the run whole.
+  const whole = foreignKeyRun(example);
+  expect(whole.at(-1)?.loader.reads).toBe(3);
+  for (let readLimit = 1; readLimit <= example.readLimit; readLimit++) {
+    const past = whole.findIndex(({ loader }) => loader.reads > readLimit);
+    if (past !== -1)
+      expect(whole[past].operation, `limit ${readLimit}`).toMatchObject({ how: 'load' });
+    const cut =
+      past === -1
+        ? whole
+        : [
+            ...whole.slice(0, past),
+            { operation: { kind: 'stopped' }, loader: whole[past - 1].loader },
+          ];
+    expect(foreignKeyRun({ ...example, readLimit }), `limit ${readLimit}`).toEqual(cut);
+  }
+});
+
 it('goes round the cycle without an identity map, building copies, until the limit stops it', () => {
-  const steps = foreignKeyRun({ ...example, identityMap: 0 });
+  const steps = foreignKeyRun({ ...example, identityMap: false });
   const last = steps[steps.length - 1];
   expect(last.operation).toEqual({ kind: 'stopped' });
   expect(last.loader.reads).toBe(6);
@@ -97,7 +120,7 @@ it('goes round the cycle without an identity map, building copies, until the lim
     'resolving',
   ]);
   // A larger limit only lets it read more: the cycle never ends on its own.
-  const longer = foreignKeyRun({ ...example, identityMap: 0, readLimit: 20 });
+  const longer = foreignKeyRun({ ...example, identityMap: false, readLimit: 20 });
   expect(longer[longer.length - 1]).toMatchObject({
     operation: { kind: 'stopped' },
     loader: { reads: 20 },
@@ -153,9 +176,12 @@ it('draws the run without an identity map stopping with every row still resolvin
   expect(frames[4].moves).toEqual([
     { object: 'identityMap', from: 'resolving', to: 'resolving', transition: 'reload' },
   ]);
-  const drawing = registerDrawing(run.states, frames.length - 1);
-  expect(drawing.tokens.map(({ key }) => key)).toEqual(['D', 'I', 'U']);
-  expect(drawing.arrows).toEqual([]);
+  // Every row stays in the example under its token letter, and nothing moves at the stop.
+  expect(last.placements.map(({ object }) => tokensOf(run.states)[object])).toEqual([
+    'D',
+    'I',
+    'U',
+  ]);
   expect(run.moments.map(({ label, step }) => [label, step])).toEqual([
     ['Open', 1],
     ['Load', 2],

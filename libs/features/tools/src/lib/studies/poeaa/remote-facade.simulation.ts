@@ -1,6 +1,6 @@
 import type { PanelId, StudyParameters } from '@dotln-angular/models';
 
-import { numberParameter } from '../parameters';
+import { booleanParameter, numberParameter } from '../parameters';
 
 /** The example's inputs: the rows behind each panel, a source that fails, and what the facade does then. */
 export interface RemoteFacadeParameters {
@@ -9,10 +9,10 @@ export interface RemoteFacadeParameters {
   readonly rowsMechanisms: number;
   readonly rowsWork: number;
   readonly rowsBlueprint: number;
-  /** 1 when the source behind the Builds panel cannot be read. */
-  readonly buildsDown: number;
-  /** 1 when the facade writes a panel it could not read into its response; 0 when the failure ends the call. */
-  readonly reportsFailures: number;
+  /** True when the source behind the Builds panel cannot be read. */
+  readonly buildsDown: boolean;
+  /** True when the facade writes a panel it could not read into its response; false when the failure ends the call. */
+  readonly reportsFailures: boolean;
 }
 
 /** The board's panels, the app's own panel ids, in the order the facade reads them. */
@@ -85,14 +85,14 @@ export const readParameters = (parameters: StudyParameters): RemoteFacadeParamet
   rowsMechanisms: numberParameter(parameters, 'rowsMechanisms'),
   rowsWork: numberParameter(parameters, 'rowsWork'),
   rowsBlueprint: numberParameter(parameters, 'rowsBlueprint'),
-  buildsDown: numberParameter(parameters, 'buildsDown'),
-  reportsFailures: numberParameter(parameters, 'reportsFailures'),
+  buildsDown: booleanParameter(parameters, 'buildsDown'),
+  reportsFailures: booleanParameter(parameters, 'reportsFailures'),
 });
 
 /** The sources behind the board, as the example's parameters describe them. */
 export const boardSources = (example: RemoteFacadeParameters): BoardSources => ({
   actors: { rows: example.rowsActors, down: false },
-  builds: { rows: example.rowsBuilds, down: example.buildsDown > 0 },
+  builds: { rows: example.rowsBuilds, down: example.buildsDown },
   mechanisms: { rows: example.rowsMechanisms, down: false },
   work: { rows: example.rowsWork, down: false },
   blueprint: { rows: example.rowsBlueprint, down: false },
@@ -150,7 +150,7 @@ export function remoteFacadeRun(example: RemoteFacadeParameters): readonly Remot
     if (read.copy) {
       response = [...response, read.copy];
       record({ kind: 'read', id });
-    } else if (example.reportsFailures > 0) {
+    } else if (example.reportsFailures) {
       response = [...response, unavailablePanel(id)];
       record({ kind: 'reportUnavailable', id });
     } else {
