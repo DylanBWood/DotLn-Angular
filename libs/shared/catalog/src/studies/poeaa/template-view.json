@@ -1,0 +1,114 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:340",
+  "work": "poeaa",
+  "slug": "template-view",
+  "authored": {
+    "by": "studyPoeaa.template-view.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.template-view.record.authored.reviewedBy.item0",
+      "studyPoeaa.template-view.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.template-view.record.intuition.text",
+    "situation": "studyPoeaa.template-view.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.template-view.record.example.name",
+    "description": "studyPoeaa.template-view.record.example.description",
+    "parameters": {
+      "reading": "poeaa:246"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.template-view.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.template-view.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.template-view.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.template-view.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.template-view.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.template-view.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.template-view.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.template-view.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.template-view.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.template-view.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.template-view.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": null,
+  "implementations": [
+    {
+      "project": "studyPoeaa.template-view.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/tools/src/lib/composites/study/study.html",
+      "relevance": "studyPoeaa.template-view.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.template-view.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.template-view.record.implementations.item1.project",
+      "url": "https://github.com/rails/rails/blob/v8.1.4.1/actionview/lib/action_view/base.rb",
+      "relevance": "studyPoeaa.template-view.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.template-view.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.template-view.record.implementations.item2.project",
+      "url": "https://github.com/thymeleaf/thymeleaf/blob/thymeleaf-3.1.5.RELEASE/lib/thymeleaf/src/main/java/org/thymeleaf/standard/processor/StandardTextTagProcessor.java",
+      "relevance": "studyPoeaa.template-view.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.template-view.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.template-view.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/templateView.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.template-view.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.template-view.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.template-view.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.template-view.record.limits.item0",
+    "studyPoeaa.template-view.record.limits.item1",
+    "studyPoeaa.template-view.record.limits.item2",
+    "studyPoeaa.template-view.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:116",
+      "why": "studyPoeaa.template-view.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:346",
+      "why": "studyPoeaa.template-view.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:348",
+      "why": "studyPoeaa.template-view.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:330",
+      "why": "studyPoeaa.template-view.record.nearby.item3.why"
+    }
+  ]
+}

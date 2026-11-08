@@ -1108,3 +1108,147 @@ for (const width of [360, 768, 1440])
       true,
     );
   });
+
+test('Patterns of Enterprise Application Architecture lists its twenty studies, and Unit of Work steps its registers by name', async ({
+  page,
+}) => {
+  expect(studiedCount('poeaa')).toBe(20);
+  await page.goto('/tools/catalog');
+  const work = page
+    .getByRole('navigation', { name: 'The works' })
+    .getByRole('button', { name: /Patterns of Enterprise Application Architecture/ });
+  await expect(work).toContainText(`${studiedCount('poeaa')} studied`);
+  await work.click();
+  const list = page.locator('.studied-list');
+  await expect(list.getByRole('heading')).toHaveText(`${studiedCount('poeaa')} studied concepts`);
+  await expect(list.getByRole('link')).toHaveCount(studiedCount('poeaa'));
+  await list.getByRole('link', { name: 'Unit of Work', exact: true }).click();
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Unit of Work');
+  await expect(page).toHaveURL(/\/tools\/catalog\/poeaa:246$/);
+  const study = page.locator('tools-study');
+  const states = study.locator('tools-study-states');
+  const drawing = states.locator('.wide svg');
+  // The default context asks for reduced motion: the study opens at its start, nothing runs by
+  // itself and Play is not offered, but every step is reachable by hand.
+  const time = study.getByRole('slider', { name: /^Step 0 of \d+$/ });
+  await expect(time).toHaveValue('0');
+  await page.waitForTimeout(300);
+  await expect(time).toHaveValue('0');
+  await expect(study.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+  await expect(states.locator('.wide .token[data-state="moving"]')).toHaveCount(0);
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(study.getByRole('slider', { name: /^Step 1 of \d+$/ })).toHaveValue('1');
+  await expect(drawing).toHaveAccessibleName(
+    /Night march enters New by registerNew\. Where each composition stands: Clean: Flank left, Hold the ridge; New: Night march; Dirty: none; Removed: none\./,
+  );
+  await expect(states.locator('.wide .token[data-state="moving"]')).toHaveText('N');
+  // Under reduced motion a moving token is simply there: it does not glide in.
+  expect(
+    await states
+      .locator('.wide .token[data-state="moving"]')
+      .evaluate((token) => getComputedStyle(token).animationName),
+  ).toBe('none');
+  await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+  await expect(drawing).toHaveAccessibleName(
+    /Hold the ridge moves from Clean to Dirty by registerDirty\. Where each composition stands: Clean: Flank left; New: Night march; Dirty: Hold the ridge; Removed: none\./,
+  );
+  // Every register is named in the text equivalent, filled or empty, as objects move between them.
+  await study.getByRole('button', { name: 'Removed', exact: true }).click();
+  await expect(drawing).toHaveAccessibleName(
+    /Clean: none; New: Night march; Dirty: Hold the ridge; Removed: Flank left\. Store calls so far: 0\./,
+  );
+  await states.locator('.numbers summary').click();
+  await expect(states.getByTestId('study-reading')).toContainText('Removed: Flank left');
+  await study.getByRole('button', { name: 'Commit', exact: true }).click();
+  await expect(drawing).toHaveAccessibleName(
+    /Clean: Hold the ridge, Night march; New: none; Dirty: none; Removed: none\. Store calls so far: 1\./,
+  );
+  await expect(states.locator('.wide .ghost')).toHaveCount(1);
+  // The pseudocode, the executable model that ran in the test suite and the limits open on command.
+  await summary(page, 'Follow the mechanism').press('Enter');
+  await expect(study.locator('.algorithm-guide > pre')).toBeVisible();
+  await study.locator('.executable-model summary').click();
+  await expect(study.getByTestId('model-spec')).toContainText(
+    'libs/features/tools/src/lib/studies/poeaa/unit-of-work.model.spec.ts',
+  );
+  await summary(page, 'Where this breaks down').press('Enter');
+  await expect(study.locator('.limits')).toContainText('Nothing coordinates two units of work.');
+  await summary(page, 'See it elsewhere').press('Enter');
+  await expect(study.locator('.implementations .implementation').first()).toContainText(
+    'DotLn-Angular',
+  );
+  for (const nearby of ['Identity Map', 'Data Mapper', 'Lazy Load'])
+    await expect(study.locator('.nearby a', { hasText: nearby })).toHaveAttribute(
+      'href',
+      /\/tools\/catalog\/poeaa:\d+$/,
+    );
+});
+
+test('Identity Map steps a lookup that misses and one that hits, and says which in its text equivalent', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog/poeaa:254');
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText('Identity Map');
+  const study = page.locator('tools-study');
+  const drawing = study.locator('tools-study-states .wide svg');
+  await study.getByRole('button', { name: 'Miss', exact: true }).click();
+  await expect(drawing).toHaveAccessibleName(/a miss, because/);
+  await study.getByRole('button', { name: 'Hit', exact: true }).click();
+  await expect(drawing).toHaveAccessibleName(/a hit, because/);
+  await study.locator('tools-study-states .numbers summary').click();
+  await expect(study.getByTestId('study-reading')).toContainText('a hit');
+});
+
+test('the two offline locks open from the contents, each drawn and each saying where it fails', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  await page
+    .getByRole('navigation', { name: 'The works' })
+    .getByRole('button', { name: /Patterns of Enterprise Application Architecture/ })
+    .click();
+  const contents = page.getByRole('navigation', { name: 'Contents', exact: true });
+  const study = page.locator('tools-study');
+  await contents.getByRole('button', { name: /16\. Offline Concurrency Patterns/ }).click();
+  for (const title of ['Optimistic Offline Lock', 'Pessimistic Offline Lock']) {
+    await contents.getByRole('button', { name: new RegExp(`^${title}`) }).click();
+    await contents.getByRole('link', { name: title, exact: true }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(title);
+    await expect(study.locator('tools-study-states .wide svg')).toHaveAccessibleName(/\S/);
+    await study.getByRole('button', { name: 'Step forward', exact: true }).click();
+    await expect(study.getByRole('slider', { name: /^Step 1 of \d+$/ })).toHaveValue('1');
+    await summary(page, 'Where this breaks down').press('Enter');
+    await expect(study.locator('.limits li').first()).toBeVisible();
+  }
+});
+
+for (const width of [360, 768, 1440])
+  test(`Unit of Work's study fits ${width}px at the board accessibility threshold`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const fits = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    const serious = async () =>
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze()
+      ).violations.filter(
+        (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+      );
+    await page.goto('/tools/catalog/poeaa:246');
+    await expect(page.locator('tools-study-states')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+    const study = page.locator('tools-study');
+    await study.getByRole('button', { name: 'Commit', exact: true }).click();
+    await study.locator('tools-study-states .numbers summary').click();
+    await study.locator('.how-to-read summary').filter({ hasText: 'How to read' }).click();
+    await study.locator('tools-study-inputs summary').click();
+    for (const section of ['Follow the mechanism', 'Where this breaks down', 'See it elsewhere'])
+      await summary(page, section).press('Enter');
+    await expect(study.locator('.references a').first()).toBeVisible();
+    expect(await fits()).toBe(true);
+    expect(await serious()).toEqual([]);
+  });

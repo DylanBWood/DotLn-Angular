@@ -11,6 +11,7 @@ import type {
   FlowModel,
   MarblesModel,
   MotionModel,
+  StatesModel,
   StudyComparison,
   StudyInput,
   StudyLegendEntry,
@@ -75,8 +76,15 @@ export interface FlowDrawingView extends StudyDrawingViewBase {
   readonly marbles: MarblesModel | null;
 }
 
+/** Objects between their states at the selected step. */
+export interface StatesDrawingView extends StudyDrawingViewBase {
+  readonly family: 'states';
+  readonly states: StatesModel;
+}
+
 /** The drawing at the selected moment; the family says which composite draws it. */
-export type StudyDrawingView = MotionDrawingView | MarblesDrawingView | FlowDrawingView;
+export type StudyDrawingView =
+  MotionDrawingView | MarblesDrawingView | FlowDrawingView | StatesDrawingView;
 
 /** A mechanism step with the lines of pseudocode it explains. */
 export interface StudyStepView {

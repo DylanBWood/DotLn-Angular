@@ -45,6 +45,8 @@ const examples = [
   ['tools-studymotion--default', 'tools-study-motion'],
   ['tools-studyflow--default', 'tools-study-flow'],
   ['tools-studyflow--from-marbles', 'tools-study-flow'],
+  ['tools-studystates--default', 'tools-study-states'],
+  ['tools-studystates--committed', 'tools-study-states'],
   ['tools-studytimeline--stepped', 'tools-study-timeline'],
   ['tools-catalog-page--layout-side', 'tools-concept-reading'],
   ['board-page--recorded', 'board-page'],

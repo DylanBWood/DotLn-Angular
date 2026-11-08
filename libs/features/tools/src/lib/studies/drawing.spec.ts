@@ -1,4 +1,4 @@
-import { boundsOf, namedBoundsOf, withSpacedLabels } from './drawing';
+import { boundsOf, countTicks, namedBoundsOf, withSpacedLabels } from './drawing';
 import type { MotionFrame } from './study-model';
 
 const frame: MotionFrame = {
@@ -65,4 +65,10 @@ it('places an anchor body before the other bodies', () => {
     undefined,
     'Anchor',
   ]);
+});
+
+it('ticks a count chart in whole numbers from zero past its largest value', () => {
+  expect(countTicks([0, 1, 4])).toEqual([0, 1, 2, 3, 4]);
+  expect(countTicks([0, 71])).toEqual([0, 18, 36, 54, 72]);
+  expect(countTicks([0, 0])).toEqual([0, 1]);
 });

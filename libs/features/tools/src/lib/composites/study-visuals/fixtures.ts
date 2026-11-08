@@ -3,10 +3,12 @@ import { share, switchMap } from 'rxjs';
 import { studyTranslate } from '../../../../testing/src';
 import { flowFromMarbles, flowModel, type MarbleFlow } from '../../studies/flow';
 import { type MarbleExample, marbleModel } from '../../studies/rxjs/marbles';
+import { statesModel } from '../../studies/states';
 import type {
   FlowModel,
   MarblesModel,
   MotionModel,
+  StatesModel,
   StudyMoment,
   TimelineModel,
 } from '../../studies/study-model';
@@ -220,3 +222,60 @@ export const marbleFlowStudyModel = flowFromMarbles(
   {},
   fixtureTranslate,
 );
+
+/**
+ * A four-state register for the states family's stories and specs: three saved scenes, one
+ * registered new, one edited and one removed, then all written out at once.
+ */
+export const statesStudyModel = statesModel(
+  {
+    shape: {
+      nodes: [
+        { id: 'clean', label: 'Clean' },
+        { id: 'new', label: 'New', tone: 'subject' },
+        { id: 'dirty', label: 'Dirty', tone: 'subject' },
+        { id: 'removed', label: 'Removed', tone: 'subject' },
+      ],
+      objects: [
+        { id: 'a', label: 'Scene A', key: 'A' },
+        { id: 'b', label: 'Scene B', key: 'B' },
+        { id: 'c', label: 'Scene C', key: 'C' },
+      ],
+      transitions: [
+        { id: 'edit', from: 'clean', to: 'dirty', label: 'registerDirty' },
+        { id: 'remove', from: 'clean', to: 'removed', label: 'registerRemoved' },
+        { id: 'insert', from: 'new', to: 'clean', label: 'commit' },
+        { id: 'update', from: 'dirty', to: 'clean', label: 'commit' },
+        { id: 'delete', from: 'removed', to: null, label: 'commit' },
+      ],
+    },
+    snapshots: [
+      { at: { a: 'clean', b: 'clean' } },
+      { at: { a: 'clean', b: 'clean', c: 'new' } },
+      { at: { a: 'clean', b: 'dirty', c: 'new' }, took: { b: 'edit' } },
+      { at: { a: 'removed', b: 'dirty', c: 'new' }, took: { a: 'remove' } },
+      { at: { b: 'clean', c: 'clean' }, took: { a: 'delete', b: 'update', c: 'insert' } },
+    ],
+    text: [
+      { notes: { a: 'version 3', b: 'version 5' } },
+      { notes: { a: 'version 3', b: 'version 5', c: 'not stored yet' } },
+      { notes: { a: 'version 3', b: 'title changed', c: 'not stored yet' } },
+      { notes: { a: 'to delete', b: 'title changed', c: 'not stored yet' } },
+      { notes: { b: 'version 6', c: 'version 1' } },
+    ],
+  },
+  {
+    moments: [
+      { label: 'Registered', step: 1 },
+      { label: 'Committed', step: 4 },
+    ],
+    legend: [
+      { tone: 'subject', label: 'A state the pattern adds' },
+      { tone: 'actual', label: 'Moving now' },
+    ],
+    caption: 'Each row is a scene and each column a register.',
+  },
+  fixtureTranslate,
+);
+
+export const statesFixture: StatesModel = statesStudyModel.states;

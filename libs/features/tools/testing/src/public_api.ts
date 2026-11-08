@@ -1,5 +1,6 @@
 export {
   loadFlowStudy,
+  loadStatesStudy,
   loadStudy,
   provideToolsTestKit,
   provideToolsFacadeTestKit,

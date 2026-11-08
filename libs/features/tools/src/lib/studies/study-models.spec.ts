@@ -4,6 +4,8 @@ import type { ConceptStudy } from '@dotln-angular/models';
 import { studyTranslate } from '../../../testing/src';
 import { flowDrawing } from '../composites/study-visuals/flow/flow-drawing';
 import { motionDrawing } from '../composites/study-visuals/motion/motion-drawing';
+import { statesText } from '../composites/study-visuals/states/states-drawing';
+import { registerDrawing } from '../composites/study-visuals/states/states-register';
 import { order as processOrder } from './eip/process-manager';
 import { ticksOf } from './study-model';
 import { studyModels } from './study-models';
@@ -265,4 +267,53 @@ it('routes visible narration through messages across every model and its input b
       inspect(model(parameters, translated), `${record.slug} case ${index}`);
   }
   expect([...problems]).toEqual([]);
+});
+
+it('gives every states object a one-character token, as the drawing families’ symbols are', async () => {
+  for (const record of await records()) {
+    if (record.visual?.family !== 'states' || !record.visual.model) continue;
+    const run = (await studyModels[record.visual.model]()).model(
+      record.example.parameters,
+      studyTranslate,
+    );
+    if (run.family !== 'states') continue;
+    for (const { key } of run.states.objects) expect(key, record.slug).toMatch(/^[A-Za-z0-9]$/);
+  }
+});
+
+it('keeps every states heading inside its column and every transition name inside the drawing', async () => {
+  const problems: string[] = [];
+  for (const record of await records()) {
+    if (record.visual?.family !== 'states' || !record.visual.model) continue;
+    const { model } = await studyModels[record.visual.model]();
+    const initial = model(record.example.parameters, studyTranslate);
+    const cases = [
+      record.example.parameters,
+      ...(initial.inputs ?? []).flatMap((input) =>
+        [input.min, input.max].map((value) => ({
+          ...record.example.parameters,
+          [input.name]: value,
+        })),
+      ),
+    ];
+    for (const parameters of cases) {
+      const run = model(parameters, studyTranslate);
+      if (run.family !== 'states') continue;
+      for (const layout of ['wide', 'narrow'] as const)
+        for (const [step] of run.states.frames.entries()) {
+          const drawing = registerDrawing(run.states, step, layout);
+          for (const column of drawing.columns)
+            for (const line of column.heading)
+              if (line.text.length * statesText.heading.char * column.scale > column.width - 4)
+                problems.push(`${record.slug} ${layout} step ${step}: heading ${line.text}`);
+          for (const { label } of drawing.arrows) {
+            if (!label) continue;
+            const half = (label.text.length * statesText.transition.char) / 2;
+            if (label.x - half < 0 || label.x + half > drawing.width)
+              problems.push(`${record.slug} ${layout} step ${step}: name ${label.text}`);
+          }
+        }
+    }
+  }
+  expect(problems).toEqual([]);
 });

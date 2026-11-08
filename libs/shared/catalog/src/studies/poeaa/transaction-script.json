@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:214",
+  "work": "poeaa",
+  "slug": "transaction-script",
+  "authored": {
+    "by": "studyPoeaa.transaction-script.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.transaction-script.record.authored.reviewedBy.item0",
+      "studyPoeaa.transaction-script.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.transaction-script.record.intuition.text",
+    "situation": "studyPoeaa.transaction-script.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.transaction-script.record.example.name",
+    "description": "studyPoeaa.transaction-script.record.example.description",
+    "parameters": {
+      "sceneId": "the-twenty",
+      "exportSchema": "scene-composition-v0",
+      "lastFrame": 1728000,
+      "largestNumber": 1000000
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.transaction-script.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.transaction-script.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.transaction-script.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.transaction-script.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.transaction-script.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.transaction-script.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.transaction-script.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.transaction-script.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.transaction-script.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.transaction-script.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.transaction-script.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": null,
+  "implementations": [
+    {
+      "project": "studyPoeaa.transaction-script.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "studyPoeaa.transaction-script.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.transaction-script.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.transaction-script.record.implementations.item1.project",
+      "url": "https://github.com/spring-projects/spring-framework/blob/v6.2.12/spring-tx/src/main/java/org/springframework/transaction/support/TransactionTemplate.java",
+      "relevance": "studyPoeaa.transaction-script.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.transaction-script.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.transaction-script.record.implementations.item2.project",
+      "url": "https://github.com/doctrine/dbal/blob/4.3.4/src/Connection.php",
+      "relevance": "studyPoeaa.transaction-script.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.transaction-script.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.transaction-script.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/transactionScript.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.transaction-script.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.transaction-script.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.transaction-script.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.transaction-script.record.limits.item0",
+    "studyPoeaa.transaction-script.record.limits.item1",
+    "studyPoeaa.transaction-script.record.limits.item2",
+    "studyPoeaa.transaction-script.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:218",
+      "why": "studyPoeaa.transaction-script.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:226",
+      "why": "studyPoeaa.transaction-script.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:231",
+      "why": "studyPoeaa.transaction-script.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:234",
+      "why": "studyPoeaa.transaction-script.record.nearby.item3.why"
+    }
+  ]
+}

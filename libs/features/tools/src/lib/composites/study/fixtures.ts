@@ -8,6 +8,8 @@ import {
   marblesStudyModel,
   momentsFixture,
   motionFixture,
+  statesFixture,
+  statesStudyModel,
   timelineFixture,
 } from '../study-visuals/fixtures';
 
@@ -225,5 +227,32 @@ export const marbleFlowStudyViewFixture: StudyView = {
     code: 'events$ = published$.pipe(share());',
     executable: true,
     spec: 'libs/features/tools/src/lib/studies/flow.spec.ts',
+  },
+};
+
+/** A study drawn as a states register: three saved scenes through a unit of work's registers. */
+export const statesStudyViewFixture: StudyView = {
+  ...flowStudyViewFixture,
+  id: 'sample:6',
+  example: {
+    name: 'One save for three changes',
+    description:
+      'Scene C is registered new, Scene B dirty and Scene A removed, then all are written.',
+    parameters: { scenes: 3 },
+  },
+  visual: {
+    family: 'states',
+    states: statesFixture,
+    step: 2,
+    moments: statesStudyModel.moments,
+    legend: statesStudyModel.legend,
+    caption: statesStudyModel.caption,
+    textEquivalent: fillValues(
+      'Step {step}: {moves}. {placements}.',
+      statesFixture.frames[2].values,
+    ),
+    note: statesFixture.frames[2].note ?? null,
+    playing: false,
+    inputs: [],
   },
 };

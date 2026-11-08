@@ -229,7 +229,8 @@ it legible at narrow widths and give motion deliberate controls.
 `ConceptStudy`, in `libs/shared/models/src/lib/concept-study.ts`, is one JSON file per study at
 `libs/shared/catalog/src/studies/<work>/<slug>.json`, validated by the closed
 `concept-study-v1.schema.json`. Reader-visible fields contain message keys, resolved from
-`apps/dotln/public/i18n/studyAifg/en.json`, `studyRxjs/en.json` or `studyEip/en.json`;
+`apps/dotln/public/i18n/studyAifg/en.json`, `studyRxjs/en.json`, `studyEip/en.json` or
+`studyPoeaa/en.json`;
 the corresponding work loads on demand, together with the small shared `studyCommon` catalog.
 IDs, source URLs, module paths, dates and simulation parameters retain their machine meaning. It carries the authored state, the intuition with a situation it
 serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
@@ -237,8 +238,11 @@ RxJS reading and executable module, the visual, implementations, references, lim
 concepts. A stream study's `pseudocode.executable` is `{ kind: 'rxjs', module }`, its RxJS reading
 resolves to the pipeline that module runs, and its visual is the `marbles` family over the same module. A
 messaging study's visual is the `flow` family; when its example runs, its `pseudocode.executable`
-is `{ kind: 'rxjs', module }` as well, and the flow is drawn from that same module. A change to the record's shape after it has shipped is a new schema version, never an
-edit of `concept-study-v0`.
+is `{ kind: 'rxjs', module }` as well, and the flow is drawn from that same module. An enterprise pattern with a mechanism to run draws the `states` family: its `pseudocode.executable`
+is `{ kind: 'typescript', module }`, naming the same model entry the drawing reads. A pattern that
+is a structural choice with nothing to run carries `executable: null` and `visual: null`, with its
+reason in the batch's decisions. A change to the record's shape after
+it has shipped is a new schema version, never an edit of `concept-study-v0`.
 
 A representation an idea does not need is null or an empty list, never filled. The mechanism's
 steps and the blocks of the ordinary pseudocode separated by a blank line match one to one, so the
@@ -337,9 +341,21 @@ delivered gives its flow the holdings that variant delivers. The spec loads its 
 through `loadFlowStudy` in the tools test kit, checks that the record names its module and asserts
 each claim the prose makes; one whose example runs also calls `expectMarbleExample`.
 
+An enterprise pattern's module, `libs/features/tools/src/lib/studies/poeaa/<slug>.model.ts` with a
+spec beside it, composes `<slug>.simulation.ts`, a small pure or in-memory model of the mechanism (a
+unit of work over an in-memory store, an identity map, a lock table) that knows no language, with
+`<slug>.presentation.ts`, which reads the simulation's run into a `states` drawing through
+`statesModel` in `studies/states.ts`. The presentation names the states, the objects and the
+transitions, and gives one language-free snapshot per moment: where each object stands and which
+transition took it there. The builder derives each step's moves from the snapshot before it,
+supplies `{step}`, `{moves}` and `{placements}` to the prose, and refuses a state, object or
+transition the example does not have, so the drawing and the spec read the same run. The spec
+loads its record through `loadStatesStudy` in the tools test kit and drives the mechanism through
+the study's example.
+
 `study-model.ts` discriminates a model by its family, `motion` with a chart beside it, `marbles`,
-or `flow` with its marble diagram beside it when its example runs, and the mapper, playback and the
-study composite read the moments every family shares through `ticksOf`.
+`flow` with its marble diagram beside it when its example runs, or `states`, and the mapper,
+playback and the study composite read the moments every family shares through `ticksOf`.
 
 A model that throws, or a record naming a model the list lacks, fails that study alone: the reading
 stays open and offers the study again, from the record's own inputs.
@@ -348,7 +364,9 @@ stays open and offers the study again, from the record's own inputs.
 
 A visual family, under `libs/features/tools/src/lib/composites/study-visuals/<family>/`, is one
 composite that takes a declarative model and a step index and draws an SVG with a text equivalent.
-Geometry derives from the model in a pure `*-drawing.ts` module with its own spec. `motion` draws the
+Geometry derives from the model in a pure `*-drawing.ts` module with its own spec; the `states`
+register's is `states/states-register.ts`, beside the family's measures in `states-drawing.ts`, and
+the `flow` and `states` families wrap and place their words through the shared `drawn-text.ts`. `motion` draws the
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
 dimensions. Its names are placed independently of the physical points: `motion/motion-labels.ts`
 keeps each above its anchor when there is room, then uses the nearest clear row or horizontal gap,
@@ -385,22 +403,32 @@ names the step out of the last. The design records are in the launchpad reposito
 [`docs/evidence/WO-022/design/`](https://github.com/dylanwoodconsulting/DotLn-Enterprise-Starter/tree/a33191ae54f68ea9d0051f2dc9f54ccd1a1069fa/docs/evidence/WO-022/design).
 A flow whose example runs offers a switch between Flow and Marbles, the marble
 diagram of the same run at the same step, which then shows its own legend and caption. `scrubber`
-and `inputs` are the controls they share. The other names in `visualFamilies`, `states` and
-`relations`, land with the batch that first needs each.
+and `inputs` are the controls they share. `states` draws a register: the example's states across as
+columns and its objects down as rows, each tracked object's token in the column of its state, with
+the row's name and a few words on what the object holds at its left. A token that moves at the
+selected step is green and glides in from the column it left, with an arrow from that column and
+the operation that moved it above the arrow; the column it enters is tinted, and an object that
+leaves the example leaves a dashed ring. Below 600 pixels the same register is drawn at a phone's
+width, so its words keep their size. The family's first pair of rendered comparisons, this register
+against a state machine of the same model, waits for a dedicated A/B testing pass; until that pass
+decides, the register is the family's drawing. The last name in `visualFamilies`, `relations`,
+lands with the batch that first needs it.
 
 Nothing runs by itself. A reader moves through the example by the slider, Step back, Step forward
 and the named moments, or presses Play, which runs from the selected moment at the example's own
 pace and stops on any hand step, on leaving the reading and at the end. A reader who asks for
 reduced motion is not offered Play, and asking while the example runs stops it. The moment's short
 sentence stays on screen; its full text is the drawing's accessible name and sits behind Show the
-numbers (Show the emissions on a marble study, Show the messages on a flow). A slider under Try another value reruns the whole
+numbers (Show the emissions on a marble study, Show the messages on a flow, Show the states on a
+states study). A slider under Try another value reruns the whole
 model with one input changed, and Back to the example restores it. A movement study opens on the
 moment its author chose as the most telling, and its switch's two views are always Movement and
 Chart, with the chart's own title above it. How to read keys the selected view: the movement
 legend explains bodies and vectors, and the chart legend names each time series alongside
 its tone and axis labels. A marble study opens on its last frame and has no
 switch; a messaging study opens at its start, before anything moves, so a reader steps through the
-flow in order, and its switch, when its example runs, is Flow and Marbles.
+flow in order, and its switch, when its example runs, is Flow and Marbles. A states study opens
+where its author chose, usually at the start, and has no switch.
 
 ### The composite
 
@@ -444,11 +472,12 @@ prints each work's studied, checked and total rows, and `npm run studies:links` 
 address once; it reaches the network, so a batch runs it by hand and records the result, and no
 gate does.
 
-| Work                            | Studied | The batch                                                                                                                                                             |
-| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AI for Games                    | forty   | the first movement batch (WO-020) and the next twenty Movement concepts (WO-028), drawn by `motion` and `timeline`                                                    |
-| RxJS                            | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles`                                                                 |
-| Enterprise Integration Patterns | twenty  | the messaging patterns of agents handing records through channels, each a `flow` that steps its messages, the stream patterns drawn from an executable marble example |
+| Work                                            | Studied | The batch                                                                                                                                                                                                                                                    |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| AI for Games                                    | forty   | the first movement batch (WO-020) and the next twenty Movement concepts (WO-028), drawn by `motion` and `timeline`                                                                                                                                           |
+| RxJS                                            | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles`                                                                                                                                                        |
+| Enterprise Integration Patterns                 | twenty  | the messaging patterns of agents handing records through channels, each a `flow` that steps its messages, the stream patterns drawn from an executable marble example                                                                                        |
+| Patterns of Enterprise Application Architecture | twenty  | the patterns behind the app's own data and state layers: sixteen drawn as a `states` register of one example set in the app, four structural choices described without a drawing, each naming first the app's own file where the pattern or its cousin lives |
 
 ### Writing a batch
 
@@ -466,7 +495,10 @@ deliver an executable module and its spec beside each record, and the factual cr
 and records the result beside its findings. A batch whose examples come from the platform or from
 this app states each as an analogy and names the public record it reads, and its factual critic
 checks that every analogy is marked as one and that no study claims the platform implements the
-pattern that way. The batch's decisions dispose of every critic finding,
+pattern that way. A batch whose studies say where the app embodies a pattern names that file,
+pinned to a commit, as the first implementation and marks the sentence as its author's reading of
+the code; its factual critic confirms that each file exists at the integrated base and that the
+reading is accurate and reads as the author's, never as a claim the pattern was designed in. The batch's decisions dispose of every critic finding,
 then the records are set to `checked` with the reviewers named. Link rot after a batch merges is a
 content defect the next batch's link check reports.
 

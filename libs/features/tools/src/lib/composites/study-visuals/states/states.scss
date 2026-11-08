@@ -1,0 +1,112 @@
+@use '../tones';
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+svg {
+  display: block;
+  inline-size: 100%;
+  overflow: visible;
+}
+// The drawing measures its words at these sizes, in its own units.
+text {
+  fill: var(--dotln-ink);
+  font: 14px var(--dotln-font);
+}
+.heading {
+  font-size: calc(14px * var(--states-scale, 1));
+}
+.heading[data-tone='subject'],
+.name.moved {
+  font-weight: 650;
+}
+.detail,
+.transition {
+  fill: var(--dotln-muted);
+  font-size: 12px;
+}
+// A transition's name is outlined in the surface colour, so it reads where it crosses a line.
+.transition {
+  paint-order: stroke;
+  stroke: var(--dotln-surface);
+  stroke-width: 3px;
+}
+.column {
+  fill: transparent;
+  stroke: var(--dotln-border);
+}
+.column.acting {
+  fill: var(--dotln-known-bg);
+}
+.rule {
+  stroke: var(--dotln-border);
+}
+.way {
+  path {
+    fill: none;
+    stroke: var(--dotln-accent);
+    stroke-width: 2.5;
+  }
+  polygon {
+    fill: var(--dotln-accent);
+  }
+  .transition {
+    fill: var(--dotln-accent);
+    font-weight: 650;
+  }
+}
+.ghost {
+  fill: none;
+  stroke: var(--dotln-border-strong);
+  stroke-dasharray: 3 3;
+  stroke-width: 2;
+}
+.token {
+  circle {
+    stroke-width: 2;
+  }
+  text {
+    font: 650 13px var(--dotln-font-mono, ui-monospace, monospace);
+  }
+}
+.token[data-state='moving'] {
+  circle {
+    fill: var(--dotln-accent);
+    stroke: var(--dotln-surface);
+  }
+  text {
+    fill: var(--dotln-surface);
+  }
+  // An object moving at the stepped moment sets out from the state it left.
+  animation: states-move 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.token[data-state='resting'] circle {
+  fill: var(--dotln-surface);
+  stroke: var(--dotln-ink);
+}
+@keyframes states-move {
+  from {
+    transform: translateX(var(--states-from-x, 0));
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .token[data-state='moving'] {
+    animation: none;
+  }
+}
+// A wide reading measure shows the drawing laid out across; a phone shows the narrow layout,
+// drawn for its width so the words keep their size.
+.narrow {
+  display: none;
+}
+@media (max-width: 600px) {
+  .wide {
+    display: none;
+  }
+  .narrow {
+    display: block;
+  }
+}
+@include tones.reading;

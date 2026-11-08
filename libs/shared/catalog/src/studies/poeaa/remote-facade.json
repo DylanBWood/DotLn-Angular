@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:357",
+  "work": "poeaa",
+  "slug": "remote-facade",
+  "authored": {
+    "by": "studyPoeaa.remote-facade.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.remote-facade.record.authored.reviewedBy.item0",
+      "studyPoeaa.remote-facade.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.remote-facade.record.intuition.text",
+    "situation": "studyPoeaa.remote-facade.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.remote-facade.record.example.name",
+    "description": "studyPoeaa.remote-facade.record.example.description",
+    "parameters": {
+      "rowsActors": 6,
+      "rowsBuilds": 6,
+      "rowsMechanisms": 10,
+      "rowsWork": 38,
+      "rowsBlueprint": 5,
+      "buildsDown": 0,
+      "reportsFailures": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.remote-facade.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.remote-facade.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.remote-facade.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.remote-facade.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.remote-facade.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.remote-facade.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.remote-facade.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.remote-facade.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.remote-facade.record.pseudocode.ordinary",
+    "rxjs": "studyPoeaa.remote-facade.record.pseudocode.rxjs",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/remote-facade.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/remote-facade.model.ts",
+    "textEquivalent": "studyPoeaa.remote-facade.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.remote-facade.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/board-data-access/src/lib/board-api.ts",
+      "relevance": "studyPoeaa.remote-facade.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.remote-facade.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.remote-facade.record.implementations.item1.project",
+      "url": "https://github.com/dotnet-architecture/eShopOnContainers/blob/6.0.0/src/ApiGateways/Web.Bff.Shopping/aggregator/Controllers/BasketController.cs",
+      "relevance": "studyPoeaa.remote-facade.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.remote-facade.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.remote-facade.record.implementations.item2.project",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/gateway-aggregation",
+      "relevance": "studyPoeaa.remote-facade.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.remote-facade.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.remote-facade.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/remoteFacade.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.remote-facade.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.remote-facade.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.remote-facade.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.remote-facade.record.limits.item0",
+    "studyPoeaa.remote-facade.record.limits.item1",
+    "studyPoeaa.remote-facade.record.limits.item2",
+    "studyPoeaa.remote-facade.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:363",
+      "why": "studyPoeaa.remote-facade.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:226",
+      "why": "studyPoeaa.remote-facade.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:183",
+      "why": "studyPoeaa.remote-facade.record.nearby.item2.why"
+    }
+  ]
+}

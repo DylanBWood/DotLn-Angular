@@ -1,0 +1,113 @@
+<ng-template #table let-view>
+  <svg [attr.viewBox]="view.viewBox" role="img" [attr.aria-label]="textEquivalent()" translate="no">
+    @for (column of view.columns; track column.id) {
+      <rect
+        class="column"
+        [class.acting]="column.acting"
+        [attr.x]="column.x"
+        [attr.width]="column.width"
+        [attr.height]="view.height"
+        y="0"
+      />
+    }
+    @for (row of view.rows; track row.id) {
+      <line class="rule" x1="0" [attr.x2]="view.width" [attr.y1]="row.y" [attr.y2]="row.y" />
+    }
+    @for (column of view.columns; track column.id) {
+      @for (line of column.heading; track $index) {
+        <text
+          class="heading"
+          [class.acting]="column.acting"
+          [attr.data-tone]="column.tone"
+          [style.--states-scale]="column.scale"
+          [attr.x]="line.x"
+          [attr.y]="line.y"
+          text-anchor="middle"
+        >
+          {{ line.text }}
+        </text>
+      }
+    }
+    @for (row of view.rows; track row.id) {
+      @for (line of row.name; track $index) {
+        <text class="name" [class.moved]="row.moved" [attr.x]="line.x" [attr.y]="line.y">
+          {{ line.text }}
+        </text>
+      }
+      @for (line of row.note; track $index) {
+        <text class="detail" [attr.x]="line.x" [attr.y]="line.y">{{ line.text }}</text>
+      }
+    }
+    @for (arrow of view.arrows; track arrow.id) {
+      <g class="way">
+        <path [attr.d]="arrow.d" />
+        <polygon [attr.points]="arrow.head" />
+        @if (arrow.label; as label) {
+          <text
+            class="transition"
+            [attr.x]="label.x"
+            [attr.y]="label.y"
+            [attr.text-anchor]="label.anchor"
+          >
+            {{ label.text }}
+          </text>
+        }
+      </g>
+    }
+    @for (ghost of view.ghosts; track ghost.id) {
+      <circle class="ghost" [attr.cx]="ghost.x" [attr.cy]="ghost.y" [attr.r]="ghost.r" />
+    }
+    @for (token of view.tokens; track token.id) {
+      <g
+        class="token"
+        [attr.data-state]="token.state"
+        [style.--states-from-x]="token.fromDx + 'px'"
+      >
+        <circle [attr.cx]="token.x" [attr.cy]="token.y" [attr.r]="token.r" />
+        <text text-anchor="middle" [attr.x]="token.x" [attr.y]="token.y + token.r * 0.38">
+          {{ 'tools.study.symbol' | t: { symbol: token.key } }}
+        </text>
+      </g>
+    }
+  </svg>
+</ng-template>
+<div class="wide">
+  <ng-container [ngTemplateOutlet]="table" [ngTemplateOutletContext]="{ $implicit: register() }" />
+</div>
+<div class="narrow">
+  <ng-container
+    [ngTemplateOutlet]="table"
+    [ngTemplateOutletContext]="{ $implicit: narrowRegister() }"
+  />
+</div>
+<tools-study-scrubber
+  [step]="step()"
+  [lastStep]="lastStep()"
+  [frame]="step()"
+  [moments]="moments()"
+  [playing]="playing()"
+  counting="step"
+  (played)="played.emit($event)"
+  (stepped)="stepped.emit($event)"
+/>
+@if (note(); as text) {
+  <p class="note" translate="no">
+    {{ text }}
+  </p>
+  <details
+    #numbers
+    class="numbers"
+    [open]="numbersOpen()"
+    (toggle)="numbersToggled.emit(numbers.open)"
+  >
+    <summary>{{ 'tools.study.states.show' | t }}</summary>
+    <p class="reading" data-testid="study-reading" translate="no">
+      {{ textEquivalent() }}
+    </p>
+  </details>
+} @else {
+  <p class="reading" data-testid="study-reading" translate="no">
+    {{ textEquivalent() }}
+  </p>
+}
+<ng-content />

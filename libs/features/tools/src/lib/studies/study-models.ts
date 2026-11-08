@@ -2,6 +2,7 @@ import type { StudyModelModule } from './study-model';
 
 const eip = 'libs/features/tools/src/lib/studies/eip';
 const movement = 'libs/features/tools/src/lib/studies/movement';
+const poeaa = 'libs/features/tools/src/lib/studies/poeaa';
 const rxjs = 'libs/features/tools/src/lib/studies/rxjs';
 
 // Each drawing's model loads with the study that reads it. The key is the path the record names
@@ -82,6 +83,24 @@ export const studyModels: Readonly<Record<string, () => Promise<StudyModelModule
   [`${movement}/velocity-matching.model.ts`]: () => import('./movement/velocity-matching.model'),
   [`${movement}/wander.model.ts`]: () => import('./movement/wander.model'),
   [`${movement}/weighted-blending.model.ts`]: () => import('./movement/weighted-blending.model'),
+  [`${poeaa}/data-mapper.model.ts`]: () => import('./poeaa/data-mapper.model'),
+  [`${poeaa}/data-transfer-object.model.ts`]: () => import('./poeaa/data-transfer-object.model'),
+  [`${poeaa}/foreign-key-mapping.model.ts`]: () => import('./poeaa/foreign-key-mapping.model'),
+  [`${poeaa}/gateway.model.ts`]: () => import('./poeaa/gateway.model'),
+  [`${poeaa}/identity-field.model.ts`]: () => import('./poeaa/identity-field.model'),
+  [`${poeaa}/identity-map.model.ts`]: () => import('./poeaa/identity-map.model'),
+  [`${poeaa}/lazy-load.model.ts`]: () => import('./poeaa/lazy-load.model'),
+  [`${poeaa}/optimistic-offline-lock.model.ts`]: () =>
+    import('./poeaa/optimistic-offline-lock.model'),
+  [`${poeaa}/pessimistic-offline-lock.model.ts`]: () =>
+    import('./poeaa/pessimistic-offline-lock.model'),
+  [`${poeaa}/plugin.model.ts`]: () => import('./poeaa/plugin.model'),
+  [`${poeaa}/record-set.model.ts`]: () => import('./poeaa/record-set.model'),
+  [`${poeaa}/registry.model.ts`]: () => import('./poeaa/registry.model'),
+  [`${poeaa}/remote-facade.model.ts`]: () => import('./poeaa/remote-facade.model'),
+  [`${poeaa}/service-layer.model.ts`]: () => import('./poeaa/service-layer.model'),
+  [`${poeaa}/service-stub.model.ts`]: () => import('./poeaa/service-stub.model'),
+  [`${poeaa}/unit-of-work.model.ts`]: () => import('./poeaa/unit-of-work.model'),
   [`${rxjs}/behavior-subject.ts`]: () => import('./rxjs/behavior-subject'),
   [`${rxjs}/catch-error.ts`]: () => import('./rxjs/catch-error'),
   [`${rxjs}/combine-latest.ts`]: () => import('./rxjs/combine-latest'),

@@ -649,6 +649,74 @@ test('the messaging batch is exactly the patterns its order names, and the strea
   assert.ok(messaging.every(({ study }) => study.visual?.family === 'flow'));
 });
 
+test('a states drawing of a model that runs reads that same module', () => {
+  const root = mkdtempSync(join(tmpdir(), 'studies-states-'));
+  try {
+    mkdirSync(join(root, 'libs'));
+    for (const name of ['unit-of-work.model', 'other.model'])
+      for (const suffix of ['.ts', '.spec.ts'])
+        writeFileSync(join(root, `libs/${name}${suffix}`), '');
+    const module = 'libs/unit-of-work.model.ts';
+    const study = {
+      ...checked(),
+      pseudocode: { ...checked().pseudocode, executable: { kind: 'typescript', module } },
+      visual: { family: 'states', model: module, textEquivalent: 'Step {step}: {moves}.' },
+    };
+    assert.deepEqual(studyProblems(study, tools, root), []);
+    const elsewhere = { ...study, visual: { ...study.visual, model: 'libs/other.model.ts' } };
+    assert.match(
+      studyProblems(elsewhere, tools, root).join(),
+      /states drawing does not read its executable module/,
+    );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+
+test('the enterprise pattern batch is exactly the patterns its order names, and the mechanisms run', () => {
+  const patterns = readStudies().filter(({ study }) => study.work === 'poeaa');
+  assert.deepEqual(patterns.map(({ study }) => study.id).sort(), [
+    'poeaa:214',
+    'poeaa:218',
+    'poeaa:226',
+    'poeaa:240',
+    'poeaa:246',
+    'poeaa:254',
+    'poeaa:260',
+    'poeaa:268',
+    'poeaa:278',
+    'poeaa:330',
+    'poeaa:340',
+    'poeaa:357',
+    'poeaa:363',
+    'poeaa:370',
+    'poeaa:377',
+    'poeaa:408',
+    'poeaa:421',
+    'poeaa:443',
+    'poeaa:448',
+    'poeaa:452',
+  ]);
+  // The four structural choices carry neither a model nor a drawing; every other pattern runs a
+  // TypeScript model under the batch's folder, and its states drawing reads that same module.
+  const structural = ['poeaa:214', 'poeaa:218', 'poeaa:330', 'poeaa:340'];
+  for (const { study } of patterns) {
+    const { executable } = study.pseudocode;
+    if (structural.includes(study.id)) {
+      assert.equal(executable, null, study.slug);
+      assert.equal(study.visual, null, study.slug);
+      continue;
+    }
+    assert.equal(executable?.kind, 'typescript', `${study.slug} does not run`);
+    assert.match(
+      executable.module,
+      /^libs\/features\/tools\/src\/lib\/studies\/poeaa\/.+\.model\.ts$/,
+    );
+    assert.equal(study.visual?.family, 'states');
+    assert.equal(study.visual.model, executable.module);
+  }
+});
+
 test('the workspace check runs inside check:fixtures and the committed records pass it', () => {
   const { scripts } = JSON.parse(readFileSync('package.json', 'utf8'));
   assert.match(scripts['check:fixtures'], /catalog:check && npm run studies:check$/);

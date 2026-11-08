@@ -1,0 +1,130 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:246",
+  "work": "poeaa",
+  "slug": "unit-of-work",
+  "authored": {
+    "by": "studyPoeaa.unit-of-work.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.unit-of-work.record.authored.reviewedBy.item0",
+      "studyPoeaa.unit-of-work.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.unit-of-work.record.intuition.text",
+    "situation": "studyPoeaa.unit-of-work.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.unit-of-work.record.example.name",
+    "description": "studyPoeaa.unit-of-work.record.example.description",
+    "parameters": {
+      "versionFlank": 3,
+      "versionRidge": 5,
+      "renames": 2,
+      "otherTabSaves": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.unit-of-work.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.unit-of-work.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.unit-of-work.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.unit-of-work.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.unit-of-work.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.unit-of-work.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.unit-of-work.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.unit-of-work.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.unit-of-work.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.unit-of-work.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.unit-of-work.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/unit-of-work.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/unit-of-work.model.ts",
+    "textEquivalent": "studyPoeaa.unit-of-work.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.unit-of-work.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene-data-access/src/lib/scene-store.ts",
+      "relevance": "studyPoeaa.unit-of-work.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.unit-of-work.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.unit-of-work.record.implementations.item1.project",
+      "url": "https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php",
+      "relevance": "studyPoeaa.unit-of-work.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.unit-of-work.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.unit-of-work.record.implementations.item2.project",
+      "url": "https://github.com/mikro-orm/mikro-orm/blob/v7.2.8/packages/core/src/unit-of-work/UnitOfWork.ts",
+      "relevance": "studyPoeaa.unit-of-work.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.unit-of-work.record.implementations.item2.explanation"
+    },
+    {
+      "project": "studyPoeaa.unit-of-work.record.implementations.item3.project",
+      "url": "https://github.com/hibernate/hibernate-orm/blob/7.1.9/hibernate-core/src/main/java/org/hibernate/engine/spi/ActionQueue.java",
+      "relevance": "studyPoeaa.unit-of-work.record.implementations.item3.relevance",
+      "explanation": "studyPoeaa.unit-of-work.record.implementations.item3.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.unit-of-work.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/unitOfWork.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.unit-of-work.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.unit-of-work.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.unit-of-work.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.unit-of-work.record.limits.item0",
+    "studyPoeaa.unit-of-work.record.limits.item1",
+    "studyPoeaa.unit-of-work.record.limits.item2",
+    "studyPoeaa.unit-of-work.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:254",
+      "why": "studyPoeaa.unit-of-work.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:240",
+      "why": "studyPoeaa.unit-of-work.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:260",
+      "why": "studyPoeaa.unit-of-work.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:370",
+      "why": "studyPoeaa.unit-of-work.record.nearby.item3.why"
+    }
+  ]
+}

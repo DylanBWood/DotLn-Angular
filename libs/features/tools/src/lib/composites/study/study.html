@@ -120,6 +120,22 @@
             </tools-study-flow>
           }
         }
+        @case ('states') {
+          <tools-study-states
+            [model]="visual.states"
+            [step]="visual.step"
+            [textEquivalent]="visual.textEquivalent"
+            [moments]="visual.moments"
+            [note]="visual.note"
+            [playing]="visual.playing"
+            [numbersOpen]="vm.expanded.includes('numbers')"
+            (numbersToggled)="intent.emit({ kind: 'expand', section: 'numbers', open: $event })"
+            (stepped)="stepped($event)"
+            (played)="intent.emit({ kind: 'play', playing: $event })"
+          >
+            <ng-container [ngTemplateOutlet]="caption" />
+          </tools-study-states>
+        }
         @case ('marbles') {
           <tools-study-marbles
             [model]="visual.marbles"

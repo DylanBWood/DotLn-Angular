@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:408",
+  "work": "poeaa",
+  "slug": "gateway",
+  "authored": {
+    "by": "studyPoeaa.gateway.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.gateway.record.authored.reviewedBy.item0",
+      "studyPoeaa.gateway.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.gateway.record.intuition.text",
+    "situation": "studyPoeaa.gateway.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.gateway.record.example.name",
+    "description": "studyPoeaa.gateway.record.example.description",
+    "parameters": {
+      "timeoutMs": 10000,
+      "answerMs": 400,
+      "status": 200,
+      "servedVersion": 1,
+      "pageVersion": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.gateway.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.gateway.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.gateway.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.gateway.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.gateway.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.gateway.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.gateway.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.gateway.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.gateway.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.gateway.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.gateway.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/gateway.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/gateway.model.ts",
+    "textEquivalent": "studyPoeaa.gateway.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.gateway.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/board-data-access/src/lib/board-api.ts",
+      "relevance": "studyPoeaa.gateway.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.gateway.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.gateway.record.implementations.item1.project",
+      "url": "https://github.com/angular/angular/blob/v22.2.3/packages/common/http/src/backend.ts",
+      "relevance": "studyPoeaa.gateway.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.gateway.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.gateway.record.implementations.item2.project",
+      "url": "https://github.com/spring-projects/spring-framework/blob/v7.0.10/spring-jdbc/src/main/java/org/springframework/jdbc/core/JdbcTemplate.java",
+      "relevance": "studyPoeaa.gateway.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.gateway.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.gateway.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/gateway.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.gateway.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.gateway.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.gateway.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.gateway.record.limits.item0",
+    "studyPoeaa.gateway.record.limits.item1",
+    "studyPoeaa.gateway.record.limits.item2",
+    "studyPoeaa.gateway.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:448",
+      "why": "studyPoeaa.gateway.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:418",
+      "why": "studyPoeaa.gateway.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:231",
+      "why": "studyPoeaa.gateway.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:234",
+      "why": "studyPoeaa.gateway.record.nearby.item3.why"
+    }
+  ]
+}

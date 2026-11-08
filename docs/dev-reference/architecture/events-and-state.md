@@ -110,3 +110,24 @@ different panel clears an older target fragment so reload restores the new choic
 With the `sourcesFooter` flag off the provenance footer is hidden; an explicit
 source/evidence anchor reveals it while that fragment is active. Copied links react to query-only
 navigation.
+
+## Patterns these stores carry
+
+Read through Patterns of Enterprise Application Architecture, these stores and their data access
+carry several of the book's patterns under other names. The catalog studies each one, and each
+study marks its reading of this code as its author's, never as a claim that the code was designed
+as the pattern. `SceneStore` with `withPersistedState` writes a session's changes in one write per
+save, a coarse [Unit of Work](../../../libs/shared/catalog/src/studies/poeaa/unit-of-work.json) with no registers and no version check, and
+`SceneFacade.save` re-reads the stored list just before it, half of an
+[Optimistic Offline Lock](../../../libs/shared/catalog/src/studies/poeaa/optimistic-offline-lock.json) that compares nothing; `restoreStoredScene`
+and the persisted state's `select` and `restore` map stored JSON to compositions and back, as a
+[Data Mapper](../../../libs/shared/catalog/src/studies/poeaa/data-mapper.json) does, and `nextCompositionId` gives each composition a
+meaningless key, an [Identity Field](../../../libs/shared/catalog/src/studies/poeaa/identity-field.json). The catalog loader keeps one pending or
+settled load per work, an [Identity Map](../../../libs/shared/catalog/src/studies/poeaa/identity-map.json) keyed by work, over chunks it loads on
+first need, a [Lazy Load](../../../libs/shared/catalog/src/studies/poeaa/lazy-load.json), behind `CatalogToken`, the
+[Registry](../../../libs/shared/catalog/src/studies/poeaa/registry.json) key a route binds to its loader. `BoardApi` is a
+[Gateway](../../../libs/shared/catalog/src/studies/poeaa/gateway.json) to the app's own API; its single `uifa-board-v1` response is a
+[Data Transfer Object](../../../libs/shared/catalog/src/studies/poeaa/data-transfer-object.json) of the kind a [Remote Facade](../../../libs/shared/catalog/src/studies/poeaa/remote-facade.json)
+returns, read as a [Record Set](../../../libs/shared/catalog/src/studies/poeaa/record-set.json) the board draws row by row, and answered in
+development and tests by the MSW handlers, a [Service Stub](../../../libs/shared/catalog/src/studies/poeaa/service-stub.json). A study's drawing
+is at `/tools/catalog/<id>` in the running app.

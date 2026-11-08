@@ -8,6 +8,7 @@ import type {
   StudyPoint,
   StudyTone,
 } from '../../../studies/study-model';
+import { type DrawnText, wrapText } from '../drawn-text';
 
 // Text is measured in drawing units at the stylesheet's sizes: the width of one character and the
 // height of one line. A single word too wide for its box is scaled down to fit it.
@@ -77,13 +78,6 @@ export interface DrawnToken {
   readonly fromDy: number;
 }
 
-export interface DrawnText {
-  readonly x: number;
-  readonly y: number;
-  readonly text: string;
-  readonly anchor: 'start' | 'middle' | 'end';
-}
-
 export interface FlowDrawing {
   readonly viewBox: string;
   readonly height: number;
@@ -92,18 +86,6 @@ export interface FlowDrawing {
   readonly tokens: readonly DrawnToken[];
   /** What each node holds or decides at the stepped moment, as prose inside its box. */
   readonly states: readonly DrawnText[];
-}
-
-/** Breaks a text into lines of at most `width` characters at its spaces; a longer word stands alone. */
-export function wrapText(value: string, width: number): readonly string[] {
-  const lines: string[] = [];
-  for (const word of value.split(/\s+/).filter(Boolean)) {
-    const last = lines[lines.length - 1];
-    if (last !== undefined && last.length + 1 + word.length <= width)
-      lines[lines.length - 1] = `${last} ${word}`;
-    else lines.push(word);
-  }
-  return lines;
 }
 
 /** How many characters of a kind of text fit a width. */

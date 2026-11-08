@@ -29,6 +29,7 @@ const chunks: CatalogChunks = {
 const studyChunks: StudyChunks = {
   aifg: () => import('../studies/aifg'),
   eip: () => import('../studies/eip'),
+  poeaa: () => import('../studies/poeaa'),
   rxjs: () => import('../studies/rxjs'),
 };
 
