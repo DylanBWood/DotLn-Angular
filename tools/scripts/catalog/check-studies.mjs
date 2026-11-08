@@ -89,7 +89,7 @@ export function studyProblems(study, tools, root = workspaceRoot, message = engl
     if (!existsSync(resolve(root, path.replace(/\.ts$/, '.spec.ts'))))
       problems.push(`${path} has no spec beside it`);
   }
-  problems.push(...rxjsProblems(study, root));
+  problems.push(...rxjsProblems(study, root), ...statesProblems(study));
   if (study.authored.state !== 'checked') problems.push('it is a draft, which never ships');
   else if (new Set(study.authored.reviewedBy).size < requiredReviewers)
     problems.push(`it names fewer than ${requiredReviewers} reviewers`);
@@ -148,13 +148,20 @@ function rxjsProblems(study, root) {
     problems.push('its marbles drawing does not read its executable module');
   if (study.visual?.family === 'flow' && runs && study.visual.model !== executable.module)
     problems.push('its flow drawing does not read its executable module');
-  // A states drawing of a model that runs reads that same module, so the drawing and its spec
-  // cannot disagree.
-  if (study.visual?.family === 'states' && executable && study.visual.model !== executable.module)
-    problems.push('its states drawing does not read its executable module');
   if (markedWorks.has(study.work) && !runs && !(rxjs === null || illustrativeMark.test(rxjs)))
     problems.push('its RxJS reading neither runs nor is marked illustrative with a reason');
   return problems;
+}
+
+/**
+ * The rule of a states drawing: a study whose model runs draws its register from that same
+ * module, so the drawing and the model's spec read one run and cannot disagree.
+ */
+function statesProblems(study) {
+  const { executable } = study.pseudocode;
+  return study.visual?.family === 'states' && executable && study.visual.model !== executable.module
+    ? ['its states drawing does not read its executable module']
+    : [];
 }
 
 /** A record, or null for a file that does not parse, which the schema then refuses. */
