@@ -6,6 +6,7 @@ import {
   flowStudyViewFixture,
   marbleFlowStudyViewFixture,
   marblesStudyViewFixture,
+  statesStudyViewFixture,
   studyViewFixture,
 } from './fixtures';
 import { Study } from './study';
@@ -219,6 +220,20 @@ it('draws a flow for a messaging study, its steps as its clock, with no switch w
   expect(intents).toEqual([{ kind: 'step', step: 3 }]);
   // Without an RxJS reading there is no streams section to open.
   expect(summaries(element)).not.toContain('Think in streams');
+});
+
+it('draws a states register for an enterprise pattern, its steps as its clock, with no switch', () => {
+  const { fixture, element } = render(statesStudyViewFixture);
+  expect(element.querySelector('tools-study-states')).not.toBeNull();
+  expect(element.querySelector('.view-choice')).toBeNull();
+  expect(element.querySelector('figure svg')?.getAttribute('aria-label')).toBe(
+    'Step 2: Scene B moves from Clean to Dirty by registerDirty. Clean: Scene A; New: Scene C; Dirty: Scene B; Removed: none.',
+  );
+  expect(element.querySelector('label')?.textContent).toContain('Step 2 of 4');
+  const intents: StudyIntent[] = [];
+  fixture.componentInstance.intent.subscribe((intent) => intents.push(intent));
+  element.querySelectorAll<HTMLButtonElement>('tools-study-scrubber button')[2].click();
+  expect(intents).toEqual([{ kind: 'step', step: 3 }]);
 });
 
 it('switches a flow whose example runs to its marble diagram at the same step', () => {

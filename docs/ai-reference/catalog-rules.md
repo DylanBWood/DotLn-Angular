@@ -50,8 +50,7 @@
   opened. Raw maps remain read-only intake.
 - Keep line-based ids stable and record original-byte SHA-256 digests with
   basenames. Pair map provenance with its map object, public-work provenance
-  with null. Write readonly tool-v1 content; accept v0 through the loader for one
-  compatibility release with an explicit unavailable-definition message.
+  with null. Write readonly tool-v1 content, the only schema the loader reads.
 - Join only the declared maps, through `tools/scripts/catalog/join-maps.mjs`; it needs
   the research run's directory, which the
   [catalog architecture](../dev-reference/architecture/catalog.md#reproducible-source-join)
@@ -110,11 +109,24 @@
   names the public record it reads and cites that record for what it says about the platform. It
   never claims that the platform or the app implements the pattern that way, and where the analogy
   breaks belongs in the limits.
+- A study that names where the app embodies a pattern names the file, pinned to a commit, as its
+  first implementation and marks the reading as the author's: the explanation begins with the
+  author's reading of the code and says where the pattern or its cousin shows and where it stops.
+  It never claims the app was designed as the pattern; where the app has no such place, the study
+  says so and names the file where the pattern would go. The factual critic confirms the file
+  exists at the integrated base.
+- An enterprise pattern with a mechanism to run draws a `states` register. Its model composes a language-free
+  simulation of the mechanism with a presentation that builds the drawing through `statesModel`
+  from one snapshot per moment, so the drawing and the spec read the same run. The drawing names the
+  same module as `pseudocode.executable`, and an RxJS reading such a study gives begins with
+  `// Illustrative:` and its reason, since the mechanism runs as TypeScript. A structural choice
+  with no mechanism to run carries `executable: null` and `visual: null`, and the batch's decisions
+  give its reason.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A
   batch's critic findings are disposed in its decisions.
 - Current records use `concept-study-v1`: every authored on-screen text field is a message key.
   Put its English text in the work’s lazy catalog under `apps/dotln/public/i18n/studyAifg/`,
-  `studyRxjs/` or `studyEip/`; shared drawing narration belongs in `studyCommon/`.
+  `studyRxjs/`, `studyEip/` or `studyPoeaa/`; shared drawing narration belongs in `studyCommon/`.
   Preserve IDs, URLs, module paths and machine parameters. A change after shipping is a new
   schema version; keep the published `concept-study-v0` immutable.
 - A model’s labels, notes, worked arithmetic and comparisons use parameterized messages.

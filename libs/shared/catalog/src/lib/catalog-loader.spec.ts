@@ -34,25 +34,11 @@ it('rejects chunks carrying another work or an unsupported schema', async () => 
     aifg: [async () => ({ default: { schema: 'tool-v1', tools: [catalogFixture[1]] } })],
   });
   await expect(loader.load('aifg')).rejects.toThrow('unsupported shape');
-});
-
-it('reads v0 for one release while explicitly marking its missing reading content', async () => {
-  const {
-    definition: _definition,
-    place: _place,
-    related: _related,
-    hooks: _hooks,
-    verified: _verified,
-    ...legacy
-  } = catalogFixture[0];
-  const loader = createCatalogLoader({
-    aifg: [async () => ({ default: { schema: 'tool-v0', tools: [legacy] } })],
+  // The tool-v0 shape is refused like any other schema: no compatibility reader remains.
+  const legacy = createCatalogLoader({
+    aifg: [async () => ({ default: { schema: 'tool-v0', tools: [catalogFixture[0]] } })],
   });
-  const [tool] = await loader.load('aifg');
-  expect(tool.id).toBe(legacy.id);
-  expect(tool.definition).toContain('does not contain a definition');
-  expect(tool.verified.kind).toBe('partial');
-  expect(tool.related).toEqual([]);
+  await expect(legacy.load('aifg')).rejects.toThrow('unsupported shape');
 });
 
 const studiedSummary = {

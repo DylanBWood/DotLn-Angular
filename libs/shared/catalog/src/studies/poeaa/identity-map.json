@@ -1,0 +1,122 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:254",
+  "work": "poeaa",
+  "slug": "identity-map",
+  "authored": {
+    "by": "studyPoeaa.identity-map.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.identity-map.record.authored.reviewedBy.item0",
+      "studyPoeaa.identity-map.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.identity-map.record.intuition.text",
+    "situation": "studyPoeaa.identity-map.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.identity-map.record.example.name",
+    "description": "studyPoeaa.identity-map.record.example.description",
+    "parameters": {
+      "maps": 1,
+      "revisits": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.identity-map.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.identity-map.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.identity-map.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.identity-map.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.identity-map.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.identity-map.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.identity-map.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.identity-map.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.identity-map.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/identity-map.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/identity-map.model.ts",
+    "textEquivalent": "studyPoeaa.identity-map.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.identity-map.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/shared/catalog/src/lib/catalog-loader.ts",
+      "relevance": "studyPoeaa.identity-map.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.identity-map.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.identity-map.record.implementations.item1.project",
+      "url": "https://github.com/mikro-orm/mikro-orm/blob/v7.2.8/packages/core/src/unit-of-work/IdentityMap.ts",
+      "relevance": "studyPoeaa.identity-map.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.identity-map.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.identity-map.record.implementations.item2.project",
+      "url": "https://github.com/hibernate/hibernate-orm/blob/7.1.9/hibernate-core/src/main/java/org/hibernate/engine/internal/StatefulPersistenceContext.java",
+      "relevance": "studyPoeaa.identity-map.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.identity-map.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.identity-map.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/identityMap.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.identity-map.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.identity-map.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.identity-map.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.identity-map.record.limits.item0",
+    "studyPoeaa.identity-map.record.limits.item1",
+    "studyPoeaa.identity-map.record.limits.item2",
+    "studyPoeaa.identity-map.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:246",
+      "why": "studyPoeaa.identity-map.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:268",
+      "why": "studyPoeaa.identity-map.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:421",
+      "why": "studyPoeaa.identity-map.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:240",
+      "why": "studyPoeaa.identity-map.record.nearby.item3.why"
+    },
+    {
+      "id": "poeaa:260",
+      "why": "studyPoeaa.identity-map.record.nearby.item4.why"
+    }
+  ]
+}

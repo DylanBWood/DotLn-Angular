@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:443",
+  "work": "poeaa",
+  "slug": "plugin",
+  "authored": {
+    "by": "studyPoeaa.plugin.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.plugin.record.authored.reviewedBy.item0",
+      "studyPoeaa.plugin.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.plugin.record.intuition.text",
+    "situation": "studyPoeaa.plugin.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.plugin.record.example.name",
+    "description": "studyPoeaa.plugin.record.example.description",
+    "parameters": {
+      "productionStub": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.plugin.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.plugin.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.plugin.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.plugin.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.plugin.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.plugin.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.plugin.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.plugin.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.plugin.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/plugin.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/plugin.model.ts",
+    "textEquivalent": "studyPoeaa.plugin.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.plugin.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene/src/lib/wrappers/scene-canvas/scene-renderer-factory.ts",
+      "relevance": "studyPoeaa.plugin.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.plugin.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.plugin.record.implementations.item1.project",
+      "url": "https://github.com/rails/rails/blob/v8.1.4.1/activejob/lib/active_job/queue_adapter.rb",
+      "relevance": "studyPoeaa.plugin.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.plugin.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.plugin.record.implementations.item2.project",
+      "url": "https://github.com/spring-projects/spring-framework/blob/v7.0.10/spring-core/src/main/java/org/springframework/core/io/support/SpringFactoriesLoader.java",
+      "relevance": "studyPoeaa.plugin.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.plugin.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.plugin.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/plugin.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.plugin.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.plugin.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.plugin.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.plugin.record.limits.item0",
+    "studyPoeaa.plugin.record.limits.item1",
+    "studyPoeaa.plugin.record.limits.item2",
+    "studyPoeaa.plugin.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:418",
+      "why": "studyPoeaa.plugin.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:421",
+      "why": "studyPoeaa.plugin.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:448",
+      "why": "studyPoeaa.plugin.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:337",
+      "why": "studyPoeaa.plugin.record.nearby.item3.why"
+    }
+  ]
+}

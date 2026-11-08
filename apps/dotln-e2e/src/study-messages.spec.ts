@@ -28,7 +28,7 @@ test('study messages load with the selected work and supply the reading text', a
   ).toBeVisible();
   expect(requests.some((url) => url.includes('/studyAifg/'))).toBe(true);
   expect(requests.some((url) => url.includes('/studyCommon/'))).toBe(true);
-  expect(requests.some((url) => /\/study(Rxjs|Eip)\//.test(url))).toBe(false);
+  expect(requests.some((url) => /\/study(Rxjs|Eip|Poeaa)\//.test(url))).toBe(false);
   await expect(page.getByRole('region', { name: 'Authored study' })).not.toContainText(
     'studyAifg.',
   );

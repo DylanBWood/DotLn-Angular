@@ -4,6 +4,7 @@ import {
   fixtureTranslate,
   flowStudyModel,
   marbleFlowStudyModel,
+  statesStudyModel,
 } from '../composites/study-visuals/fixtures';
 import { marbleModel } from '../studies/rxjs/marbles';
 import type { StudyModel } from '../studies/study-model';
@@ -135,6 +136,29 @@ it('draws a marbles model in its own family, with the frame’s sentence in the 
     ).visual?.textEquivalent,
   ).toBe('nothing new happens');
   expect(clampStep(marbles, 99)).toBe(4);
+});
+
+it('draws a states register at the selected step, its sentence filled from that step', () => {
+  const statesRecord = {
+    ...record,
+    visual: {
+      family: 'states' as const,
+      model: 'libs/s.model.ts',
+      textEquivalent: 'Step {step}: {moves}. {placements}.',
+    },
+  };
+  const view = mapStudy(
+    { record: statesRecord, model: statesStudyModel },
+    { ...reader, step: 4 },
+    catalogFixture,
+  );
+  expect(view.visual?.family).toBe('states');
+  expect(view.visual?.family === 'states' && view.visual.states).toBe(statesStudyModel.states);
+  expect(view.visual?.textEquivalent).toBe(
+    'Step 4: Scene A leaves Removed by commit; Scene B moves from Dirty to Clean by commit; Scene C moves from New to Clean by commit. Clean: Scene B, Scene C; New: none; Dirty: none; Removed: none.',
+  );
+  expect(view.visual?.legend).toEqual(statesStudyModel.legend);
+  expect(view.visual?.moments).toEqual(statesStudyModel.moments);
 });
 
 it('draws a flow, and its marble diagram with the diagram’s own legend when a reader switches', () => {

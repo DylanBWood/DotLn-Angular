@@ -1,0 +1,128 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:226",
+  "work": "poeaa",
+  "slug": "service-layer",
+  "authored": {
+    "by": "studyPoeaa.service-layer.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.service-layer.record.authored.reviewedBy.item0",
+      "studyPoeaa.service-layer.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.service-layer.record.intuition.text",
+    "situation": "studyPoeaa.service-layer.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.service-layer.record.example.name",
+    "description": "studyPoeaa.service-layer.record.example.description",
+    "parameters": {
+      "flankId": 1,
+      "ridgeId": 4,
+      "importBypasses": 0,
+      "importForeign": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.service-layer.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.service-layer.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.service-layer.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.service-layer.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.service-layer.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.service-layer.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.service-layer.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.service-layer.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.service-layer.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.service-layer.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.service-layer.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/service-layer.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/service-layer.model.ts",
+    "textEquivalent": "studyPoeaa.service-layer.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.service-layer.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "studyPoeaa.service-layer.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.service-layer.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.service-layer.record.implementations.item1.project",
+      "url": "https://github.com/spring-petclinic/spring-framework-petclinic/blob/v7.0.3/src/main/java/org/springframework/samples/petclinic/service/ClinicServiceImpl.java",
+      "relevance": "studyPoeaa.service-layer.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.service-layer.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.service-layer.record.implementations.item2.project",
+      "url": "https://github.com/dotnet-architecture/eShopOnWeb/blob/4da8212117e87d808d4bbc7da6286fd2147ce606/src/ApplicationCore/Services/OrderService.cs",
+      "relevance": "studyPoeaa.service-layer.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.service-layer.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.service-layer.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/serviceLayer.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.service-layer.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.service-layer.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.service-layer.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.service-layer.record.limits.item0",
+    "studyPoeaa.service-layer.record.limits.item1",
+    "studyPoeaa.service-layer.record.limits.item2",
+    "studyPoeaa.service-layer.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:214",
+      "why": "studyPoeaa.service-layer.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:218",
+      "why": "studyPoeaa.service-layer.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:357",
+      "why": "studyPoeaa.service-layer.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:363",
+      "why": "studyPoeaa.service-layer.record.nearby.item3.why"
+    },
+    {
+      "id": "poeaa:353",
+      "why": "studyPoeaa.service-layer.record.nearby.item4.why"
+    }
+  ]
+}

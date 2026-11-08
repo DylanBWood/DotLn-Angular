@@ -124,3 +124,12 @@ export function withSpacedLabels(
   const bodies = nameBodies();
   return { ...frame, bodies, marks: nameMarks() };
 }
+
+/** Whole-number ticks from 0 to at least the largest count, for a chart that counts things. */
+export function countTicks(values: readonly number[]): readonly number[] {
+  const largest = Math.max(1, ...values);
+  const step = Math.max(1, Math.ceil(largest / 4));
+  const ticks: number[] = [];
+  for (let tick = 0; tick < largest + step; tick += step) ticks.push(tick);
+  return ticks;
+}

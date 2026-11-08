@@ -1,0 +1,126 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:377",
+  "work": "poeaa",
+  "slug": "pessimistic-offline-lock",
+  "authored": {
+    "by": "studyPoeaa.pessimistic-offline-lock.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.pessimistic-offline-lock.record.authored.reviewedBy.item0",
+      "studyPoeaa.pessimistic-offline-lock.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.pessimistic-offline-lock.record.intuition.text",
+    "situation": "studyPoeaa.pessimistic-offline-lock.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.pessimistic-offline-lock.record.example.name",
+    "description": "studyPoeaa.pessimistic-offline-lock.record.example.description",
+    "parameters": {
+      "version": 4,
+      "openB": 2,
+      "minutesA": 12,
+      "minutesB": 15,
+      "tabASaves": 1,
+      "timeout": 20
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.pessimistic-offline-lock.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.pessimistic-offline-lock.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/pessimistic-offline-lock.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/pessimistic-offline-lock.model.ts",
+    "textEquivalent": "studyPoeaa.pessimistic-offline-lock.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.pessimistic-offline-lock.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "studyPoeaa.pessimistic-offline-lock.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.pessimistic-offline-lock.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.pessimistic-offline-lock.record.implementations.item1.project",
+      "url": "https://github.com/WordPress/wordpress-develop/blob/7.1.4/src/wp-admin/includes/post.php",
+      "relevance": "studyPoeaa.pessimistic-offline-lock.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.pessimistic-offline-lock.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.pessimistic-offline-lock.record.implementations.item2.project",
+      "url": "https://github.com/spring-projects/spring-integration/blob/v7.1.2/spring-integration-jdbc/src/main/java/org/springframework/integration/jdbc/lock/DefaultLockRepository.java",
+      "relevance": "studyPoeaa.pessimistic-offline-lock.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.pessimistic-offline-lock.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.pessimistic-offline-lock.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/pessimisticOfflineLock.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.pessimistic-offline-lock.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.pessimistic-offline-lock.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.pessimistic-offline-lock.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.pessimistic-offline-lock.record.limits.item0",
+    "studyPoeaa.pessimistic-offline-lock.record.limits.item1",
+    "studyPoeaa.pessimistic-offline-lock.record.limits.item2",
+    "studyPoeaa.pessimistic-offline-lock.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:370",
+      "why": "studyPoeaa.pessimistic-offline-lock.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:385",
+      "why": "studyPoeaa.pessimistic-offline-lock.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:391",
+      "why": "studyPoeaa.pessimistic-offline-lock.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:140",
+      "why": "studyPoeaa.pessimistic-offline-lock.record.nearby.item3.why"
+    }
+  ]
+}

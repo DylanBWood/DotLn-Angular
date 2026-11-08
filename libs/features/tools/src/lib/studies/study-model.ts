@@ -243,6 +243,73 @@ export interface FlowModel {
   readonly frames: readonly FlowFrame[];
 }
 
+/**
+ * A state an object of the example can be in: a register of a unit of work, the status of a lock,
+ * a stage of a request. The register gives each state a column of its own.
+ */
+export interface StateNode {
+  readonly id: string;
+  /** What the state is called on screen: one or two short words, such as `Dirty` or `Locked`. */
+  readonly label: string;
+  /**
+   * `subject` for a state the pattern adds, whose name the register draws in bold; the register
+   * draws every other tone, and a state without one, plainly.
+   */
+  readonly tone?: StudyTone;
+}
+
+/** A record or object whose state the example follows: one row of the drawing. */
+export interface StateObject {
+  readonly id: string;
+  /** The name its row carries, such as `Scene B`. */
+  readonly label: string;
+  /** A letter or short number the object's token shows, such as `B`. */
+  readonly key: string;
+}
+
+/** A way from one state to another, named by the operation that takes it, such as `registerDirty`. */
+export interface StateTransition {
+  readonly id: string;
+  /** Null for the way into the example from outside it, as an object first registered comes. */
+  readonly from: string | null;
+  /** Null for the way out of the example, as an object deleted when a change is written goes. */
+  readonly to: string | null;
+  readonly label: string;
+}
+
+/** One object changing state at a step; a null end means it enters or leaves the example there. */
+export interface StateMove {
+  readonly object: string;
+  readonly from: string | null;
+  readonly to: string | null;
+  /** The transition taken, when the example names one for this move. */
+  readonly transition?: string;
+}
+
+/** Where one object stands after a step, with a few words on what it holds there. */
+export interface StatePlacement {
+  readonly object: string;
+  readonly node: string;
+  /** A few words beside the object's token, such as `version 4`; none when absent. */
+  readonly note?: string;
+}
+
+/** One step of a states example: what moved, and where every tracked object stands afterwards. */
+export interface StatesFrame extends StudyTick {
+  readonly step: number;
+  readonly moves: readonly StateMove[];
+  /** Every object the example tracks after this step; one not yet tracked, or forgotten, is absent. */
+  readonly placements: readonly StatePlacement[];
+}
+
+/** Objects moving between states, one step at a time. */
+export interface StatesModel {
+  readonly nodes: readonly StateNode[];
+  readonly objects: readonly StateObject[];
+  readonly transitions: readonly StateTransition[];
+  readonly frames: readonly StatesFrame[];
+}
+
 /** A second run with one input changed, shown where the study says when the idea fails. */
 export interface StudyComparison {
   readonly title: string;
@@ -317,16 +384,30 @@ export interface FlowStudyModel extends StudyModelBase {
   readonly diagram: FlowDiagram | null;
 }
 
+/** A states example: records or objects stepping between the states the pattern gives them. */
+export interface StatesStudyModel extends StudyModelBase {
+  readonly family: 'states';
+  readonly states: StatesModel;
+}
+
 /**
  * The example worked through: every part of a study reads this one run. The family names which
  * drawing the payload is for, and `ticksOf` reads the moments every family shares.
  */
-export type StudyModel = MotionStudyModel | MarblesStudyModel | FlowStudyModel;
+export type StudyModel = MotionStudyModel | MarblesStudyModel | FlowStudyModel | StatesStudyModel;
 
 /** The moments of the example, whichever family draws them: one tick per step of the scrubber. */
 export function ticksOf(model: StudyModel): readonly StudyTick[] {
-  if (model.family === 'motion') return model.motion.frames;
-  return model.family === 'flow' ? model.flow.frames : model.marbles.frames;
+  switch (model.family) {
+    case 'motion':
+      return model.motion.frames;
+    case 'flow':
+      return model.flow.frames;
+    case 'states':
+      return model.states.frames;
+    default:
+      return model.marbles.frames;
+  }
 }
 
 /** A model module exports this: the record's parameters in, the example's run out. */

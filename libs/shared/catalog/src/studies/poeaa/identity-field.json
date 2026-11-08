@@ -1,0 +1,123 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:268",
+  "work": "poeaa",
+  "slug": "identity-field",
+  "authored": {
+    "by": "studyPoeaa.identity-field.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.identity-field.record.authored.reviewedBy.item0",
+      "studyPoeaa.identity-field.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.identity-field.record.intuition.text",
+    "situation": "studyPoeaa.identity-field.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.identity-field.record.example.name",
+    "description": "studyPoeaa.identity-field.record.example.description",
+    "parameters": {
+      "keyFlank": 1,
+      "keyRidge": 2,
+      "rereads": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.identity-field.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.identity-field.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.identity-field.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.identity-field.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.identity-field.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.identity-field.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.identity-field.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.identity-field.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.identity-field.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.identity-field.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.identity-field.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/identity-field.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/identity-field.model.ts",
+    "textEquivalent": "studyPoeaa.identity-field.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.identity-field.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene/src/lib/facades/scene.facade.ts",
+      "relevance": "studyPoeaa.identity-field.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.identity-field.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.identity-field.record.implementations.item1.project",
+      "url": "https://github.com/jakartaee/persistence/blob/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/GenerationType.java",
+      "relevance": "studyPoeaa.identity-field.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.identity-field.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.identity-field.record.implementations.item2.project",
+      "url": "https://github.com/typeorm/typeorm/blob/1.1.2/packages/typeorm/src/decorator/columns/PrimaryGeneratedColumn.ts",
+      "relevance": "studyPoeaa.identity-field.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.identity-field.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.identity-field.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/identityField.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.identity-field.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.identity-field.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.identity-field.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.identity-field.record.limits.item0",
+    "studyPoeaa.identity-field.record.limits.item1",
+    "studyPoeaa.identity-field.record.limits.item2",
+    "studyPoeaa.identity-field.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:254",
+      "why": "studyPoeaa.identity-field.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:278",
+      "why": "studyPoeaa.identity-field.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:416",
+      "why": "studyPoeaa.identity-field.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:289",
+      "why": "studyPoeaa.identity-field.record.nearby.item3.why"
+    }
+  ]
+}

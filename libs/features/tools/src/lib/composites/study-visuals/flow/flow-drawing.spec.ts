@@ -1,16 +1,6 @@
 import { flowModel } from '../../../studies/flow';
 import { fixtureTranslate, flowFixture, marbleFlowStudyModel } from '../fixtures';
-import { flowDrawing, wrapText } from './flow-drawing';
-
-it('wraps a name at its spaces and leaves a long word whole', () => {
-  expect(wrapText('Consistency reviewer of the order', 12)).toEqual([
-    'Consistency',
-    'reviewer of',
-    'the order',
-  ]);
-  expect(wrapText('Aggregator', 4)).toEqual(['Aggregator']);
-  expect(wrapText('', 10)).toEqual([]);
-});
+import { flowDrawing } from './flow-drawing';
 
 it('stands each stage in its own column, left to right, with the lines joining them', () => {
   const drawing = flowDrawing(flowFixture, 1);

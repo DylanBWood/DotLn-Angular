@@ -1,0 +1,125 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:278",
+  "work": "poeaa",
+  "slug": "foreign-key-mapping",
+  "authored": {
+    "by": "studyPoeaa.foreign-key-mapping.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.foreign-key-mapping.record.authored.reviewedBy.item0",
+      "studyPoeaa.foreign-key-mapping.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.foreign-key-mapping.record.intuition.text",
+    "situation": "studyPoeaa.foreign-key-mapping.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.foreign-key-mapping.record.example.name",
+    "description": "studyPoeaa.foreign-key-mapping.record.example.description",
+    "parameters": {
+      "lineDataMapper": 240,
+      "lineIdentityMap": 254,
+      "lineUnitOfWork": 246,
+      "identityMap": 1,
+      "readLimit": 6
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.foreign-key-mapping.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.foreign-key-mapping.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/foreign-key-mapping.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/foreign-key-mapping.model.ts",
+    "textEquivalent": "studyPoeaa.foreign-key-mapping.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.foreign-key-mapping.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/tools/scripts/catalog/join-maps.mjs",
+      "relevance": "studyPoeaa.foreign-key-mapping.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.foreign-key-mapping.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.foreign-key-mapping.record.implementations.item1.project",
+      "url": "https://github.com/hibernate/hibernate-orm/blob/6.6.59/documentation/src/main/asciidoc/userguide/chapters/domain/associations.adoc",
+      "relevance": "studyPoeaa.foreign-key-mapping.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.foreign-key-mapping.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.foreign-key-mapping.record.implementations.item2.project",
+      "url": "https://github.com/spring-projects/spring-data-relational/blob/4.1.2/src/main/antora/modules/ROOT/pages/jdbc/mapping.adoc",
+      "relevance": "studyPoeaa.foreign-key-mapping.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.foreign-key-mapping.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.foreign-key-mapping.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/foreignKeyMapping.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.foreign-key-mapping.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.foreign-key-mapping.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.foreign-key-mapping.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.foreign-key-mapping.record.limits.item0",
+    "studyPoeaa.foreign-key-mapping.record.limits.item1",
+    "studyPoeaa.foreign-key-mapping.record.limits.item2",
+    "studyPoeaa.foreign-key-mapping.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:254",
+      "why": "studyPoeaa.foreign-key-mapping.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:260",
+      "why": "studyPoeaa.foreign-key-mapping.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:268",
+      "why": "studyPoeaa.foreign-key-mapping.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:285",
+      "why": "studyPoeaa.foreign-key-mapping.record.nearby.item3.why"
+    },
+    {
+      "id": "poeaa:289",
+      "why": "studyPoeaa.foreign-key-mapping.record.nearby.item4.why"
+    }
+  ]
+}

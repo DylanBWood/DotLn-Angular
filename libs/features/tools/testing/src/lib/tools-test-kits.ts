@@ -101,6 +101,19 @@ export async function loadStudy(id: ToolId): Promise<DrawnStudy> {
   return translateStudy(study, studyTranslate) as DrawnStudy;
 }
 
+/** A study drawn by the states family, whose drawing names the module of the model that runs it. */
+export type StatesStudy = ConceptStudy & {
+  readonly visual: StudyVisual & { readonly family: 'states'; readonly model: string };
+};
+
+/** A bundled states study, for a spec that drives a model through the record it reads. */
+export async function loadStatesStudy(id: ToolId): Promise<StatesStudy> {
+  const study = await createCatalogLoader().study(id);
+  if (study?.visual?.family !== 'states' || !study.visual.model)
+    throw new Error(`No states study of ${id}.`);
+  return translateStudy(study, studyTranslate) as StatesStudy;
+}
+
 /** A study drawn as a flow, whether or not its example also runs as marbles. */
 export type FlowStudy = ConceptStudy & {
   readonly visual: StudyVisual & { readonly family: 'flow'; readonly model: string };

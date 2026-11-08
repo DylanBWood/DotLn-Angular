@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:240",
+  "work": "poeaa",
+  "slug": "data-mapper",
+  "authored": {
+    "by": "studyPoeaa.data-mapper.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.data-mapper.record.authored.reviewedBy.item0",
+      "studyPoeaa.data-mapper.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.data-mapper.record.intuition.text",
+    "situation": "studyPoeaa.data-mapper.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.data-mapper.record.example.name",
+    "description": "studyPoeaa.data-mapper.record.example.description",
+    "parameters": {
+      "stepsFlank": 4,
+      "stepsRidge": 6,
+      "stepsDawn": 3,
+      "formatRead": 1,
+      "formatDawn": 2,
+      "eachRow": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.data-mapper.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.data-mapper.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.data-mapper.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.data-mapper.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.data-mapper.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.data-mapper.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.data-mapper.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.data-mapper.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.data-mapper.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.data-mapper.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.data-mapper.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/data-mapper.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/data-mapper.model.ts",
+    "textEquivalent": "studyPoeaa.data-mapper.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.data-mapper.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/scene-data-access/src/lib/stored-scene.ts",
+      "relevance": "studyPoeaa.data-mapper.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.data-mapper.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.data-mapper.record.implementations.item1.project",
+      "url": "https://github.com/doctrine/orm/blob/3.7.6/src/Persisters/Entity/BasicEntityPersister.php",
+      "relevance": "studyPoeaa.data-mapper.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.data-mapper.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.data-mapper.record.implementations.item2.project",
+      "url": "https://github.com/mikro-orm/mikro-orm/blob/v7.2.8/packages/core/src/entity/EntityFactory.ts",
+      "relevance": "studyPoeaa.data-mapper.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.data-mapper.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.data-mapper.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/dataMapper.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.data-mapper.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.data-mapper.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.data-mapper.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.data-mapper.record.limits.item0",
+    "studyPoeaa.data-mapper.record.limits.item1",
+    "studyPoeaa.data-mapper.record.limits.item2",
+    "studyPoeaa.data-mapper.record.limits.item3",
+    "studyPoeaa.data-mapper.record.limits.item4"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:246",
+      "why": "studyPoeaa.data-mapper.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:254",
+      "why": "studyPoeaa.data-mapper.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:313",
+      "why": "studyPoeaa.data-mapper.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:322",
+      "why": "studyPoeaa.data-mapper.record.nearby.item3.why"
+    }
+  ]
+}

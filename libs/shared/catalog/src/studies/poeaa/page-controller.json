@@ -1,0 +1,110 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:330",
+  "work": "poeaa",
+  "slug": "page-controller",
+  "authored": {
+    "by": "studyPoeaa.page-controller.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.page-controller.record.authored.reviewedBy.item0",
+      "studyPoeaa.page-controller.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.page-controller.record.intuition.text",
+    "situation": "studyPoeaa.page-controller.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.page-controller.record.example.name",
+    "description": "studyPoeaa.page-controller.record.example.description",
+    "parameters": {
+      "toolId": "poeaa:330"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.page-controller.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.page-controller.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.page-controller.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.page-controller.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.page-controller.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.page-controller.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.page-controller.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.page-controller.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.page-controller.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.page-controller.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.page-controller.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": null,
+  "implementations": [
+    {
+      "project": "studyPoeaa.page-controller.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/features/tools/src/lib/containers/catalog-page/catalog-page.ts",
+      "relevance": "studyPoeaa.page-controller.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.page-controller.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.page-controller.record.implementations.item1.project",
+      "url": "https://github.com/dotnet-architecture/eShopOnWeb/blob/4da8212117e87d808d4bbc7da6286fd2147ce606/src/Web/Pages/Basket/Index.cshtml.cs",
+      "relevance": "studyPoeaa.page-controller.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.page-controller.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.page-controller.record.implementations.item2.project",
+      "url": "https://svelte.dev/docs/kit/routing",
+      "relevance": "studyPoeaa.page-controller.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.page-controller.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.page-controller.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/pageController.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.page-controller.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.page-controller.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.page-controller.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.page-controller.record.limits.item0",
+    "studyPoeaa.page-controller.record.limits.item1",
+    "studyPoeaa.page-controller.record.limits.item2",
+    "studyPoeaa.page-controller.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:335",
+      "why": "studyPoeaa.page-controller.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:340",
+      "why": "studyPoeaa.page-controller.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:353",
+      "why": "studyPoeaa.page-controller.record.nearby.item2.why"
+    }
+  ]
+}

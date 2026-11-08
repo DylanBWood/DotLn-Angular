@@ -74,6 +74,7 @@ function drawingOf(
       marbles: model.diagram?.marbles ?? null,
     };
   }
+  if (model.family === 'states') return { ...shared, family: 'states', states: model.states };
   return { ...shared, family: 'marbles', marbles: model.marbles };
 }
 

@@ -183,7 +183,10 @@
       "exampleDetails": "The example in full",
       "nextStudy": "Next study: {{title}}",
       "timelineView": "Chart",
-      "chartGuide": "Each line follows the same example over time. The vertical line marks the selected time; dots mark the series values there. Read each line against the labelled axes."
+      "chartGuide": "Each line follows the same example over time. The vertical line marks the selected time; dots mark the series values there. Read each line against the labelled axes.",
+      "states": {
+        "show": "Show the states"
+      }
     },
     "targets": {
       "unit": "unit",

@@ -60,5 +60,37 @@
     "nothingHeld": "nothing is held",
     "startNote": "Nothing has moved yet.",
     "note": "At step {{step}}, {{moves}}."
+  },
+  "states": {
+    "caption": "Each row is one object and each column a state it can be in; a token sits in the column of its object's state. A token is green while it moves at the selected step, with an arrow from the state it left and the operation that moved it, and the column its move ends in is tinted; it is outlined while it stays where it is. A dashed ring is where an object left the example. The words under a name say what that object holds. Step forward to move the example on.",
+    "legend": {
+      "subject": "Bold name · a state the pattern adds",
+      "other": "Grey · the states around it",
+      "actual": "Green · an object moving at this step, and the way it takes",
+      "muted": "Outlined · an object staying where it is"
+    },
+    "nothingMoves": "nothing moves",
+    "move": "{{object}} moves from {{from}} to {{to}}",
+    "moveBy": "{{object}} moves from {{from}} to {{to}} by {{transition}}",
+    "enters": "{{object}} enters {{to}}",
+    "entersBy": "{{object}} enters {{to}} by {{transition}}",
+    "leaves": "{{object}} leaves {{from}}",
+    "leavesBy": "{{object}} leaves {{from}} by {{transition}}",
+    "stays": "{{object}} stays in {{to}}",
+    "staysBy": "{{object}} stays in {{to}} by {{transition}}",
+    "placement": "{{state}}: {{objects}}",
+    "empty": "none",
+    "sentenceSeparator": "; ",
+    "listSeparator": ", ",
+    "startNote": "Nothing has moved yet.",
+    "note": "At step {{step}}, {{moves}}.",
+    "moveMany": "{{objects}} move from {{from}} to {{to}}",
+    "moveManyBy": "{{objects}} move from {{from}} to {{to}} by {{transition}}",
+    "entersMany": "{{objects}} enter {{to}}",
+    "entersManyBy": "{{objects}} enter {{to}} by {{transition}}",
+    "leavesMany": "{{objects}} leave {{from}}",
+    "leavesManyBy": "{{objects}} leave {{from}} by {{transition}}",
+    "staysMany": "{{objects}} stay in {{to}}",
+    "staysManyBy": "{{objects}} stay in {{to}} by {{transition}}"
   }
 }

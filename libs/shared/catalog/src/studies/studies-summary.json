@@ -252,6 +252,91 @@
       ]
     },
     {
+      "work": "poeaa",
+      "studies": [
+        {
+          "id": "poeaa:214",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:218",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:226",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:240",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:246",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:254",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:260",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:268",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:278",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:330",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:340",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:357",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:363",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:370",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:377",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:408",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:421",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:443",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:448",
+          "state": "checked"
+        },
+        {
+          "id": "poeaa:452",
+          "state": "checked"
+        }
+      ]
+    },
+    {
       "work": "rxjs",
       "studies": [
         {

@@ -1,0 +1,119 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:363",
+  "work": "poeaa",
+  "slug": "data-transfer-object",
+  "authored": {
+    "by": "studyPoeaa.data-transfer-object.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.data-transfer-object.record.authored.reviewedBy.item0",
+      "studyPoeaa.data-transfer-object.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.data-transfer-object.record.intuition.text",
+    "situation": "studyPoeaa.data-transfer-object.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.data-transfer-object.record.example.name",
+    "description": "studyPoeaa.data-transfer-object.record.example.description",
+    "parameters": {
+      "serverVersion": 1,
+      "pageVersion": 1,
+      "buildSteps": 4
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.data-transfer-object.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.data-transfer-object.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.data-transfer-object.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.data-transfer-object.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.data-transfer-object.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.data-transfer-object.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.data-transfer-object.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.data-transfer-object.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.data-transfer-object.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/data-transfer-object.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/data-transfer-object.model.ts",
+    "textEquivalent": "studyPoeaa.data-transfer-object.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.data-transfer-object.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/shared/models/src/lib/board.ts",
+      "relevance": "studyPoeaa.data-transfer-object.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.data-transfer-object.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.data-transfer-object.record.implementations.item1.project",
+      "url": "https://github.com/mikro-orm/mikro-orm/blob/v7.2.8/packages/core/src/serialization/EntitySerializer.ts",
+      "relevance": "studyPoeaa.data-transfer-object.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.data-transfer-object.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.data-transfer-object.record.implementations.item2.project",
+      "url": "https://learn.microsoft.com/en-us/aspnet/web-api/overview/data/using-web-api-with-entity-framework/part-5",
+      "relevance": "studyPoeaa.data-transfer-object.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.data-transfer-object.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.data-transfer-object.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/dataTransferObject.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.data-transfer-object.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.data-transfer-object.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.data-transfer-object.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.data-transfer-object.record.limits.item0",
+    "studyPoeaa.data-transfer-object.record.limits.item1",
+    "studyPoeaa.data-transfer-object.record.limits.item2",
+    "studyPoeaa.data-transfer-object.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:357",
+      "why": "studyPoeaa.data-transfer-object.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:364",
+      "why": "studyPoeaa.data-transfer-object.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:452",
+      "why": "studyPoeaa.data-transfer-object.record.nearby.item2.why"
+    },
+    {
+      "id": "poeaa:428",
+      "why": "studyPoeaa.data-transfer-object.record.nearby.item3.why"
+    }
+  ]
+}

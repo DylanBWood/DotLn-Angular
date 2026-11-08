@@ -1,0 +1,118 @@
+{
+  "schema": "concept-study-v1",
+  "id": "poeaa:452",
+  "work": "poeaa",
+  "slug": "record-set",
+  "authored": {
+    "by": "studyPoeaa.record-set.record.authored.by",
+    "on": "2026-11-07",
+    "reviewedBy": [
+      "studyPoeaa.record-set.record.authored.reviewedBy.item0",
+      "studyPoeaa.record-set.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyPoeaa.record-set.record.intuition.text",
+    "situation": "studyPoeaa.record-set.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyPoeaa.record-set.record.example.name",
+    "description": "studyPoeaa.record-set.record.example.description",
+    "parameters": {
+      "rivalSaves": 0,
+      "continueOnError": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyPoeaa.record-set.record.mechanism.steps.step0.title",
+        "text": "studyPoeaa.record-set.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyPoeaa.record-set.record.mechanism.steps.step1.title",
+        "text": "studyPoeaa.record-set.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyPoeaa.record-set.record.mechanism.steps.step2.title",
+        "text": "studyPoeaa.record-set.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyPoeaa.record-set.record.mechanism.steps.step3.title",
+        "text": "studyPoeaa.record-set.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyPoeaa.record-set.record.mechanism.steps.step4.title",
+        "text": "studyPoeaa.record-set.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyPoeaa.record-set.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/poeaa/record-set.model.ts"
+    }
+  },
+  "visual": {
+    "family": "states",
+    "model": "libs/features/tools/src/lib/studies/poeaa/record-set.model.ts",
+    "textEquivalent": "studyPoeaa.record-set.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyPoeaa.record-set.record.implementations.item0.project",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/9637f73539e387b46f65855db78f3c4b5285e561/libs/shared/models/src/lib/board.ts",
+      "relevance": "studyPoeaa.record-set.record.implementations.item0.relevance",
+      "explanation": "studyPoeaa.record-set.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyPoeaa.record-set.record.implementations.item1.project",
+      "url": "https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/updating-data-sources-with-dataadapters",
+      "relevance": "studyPoeaa.record-set.record.implementations.item1.relevance",
+      "explanation": "studyPoeaa.record-set.record.implementations.item1.explanation"
+    },
+    {
+      "project": "studyPoeaa.record-set.record.implementations.item2.project",
+      "url": "https://github.com/spring-projects/spring-framework/blob/v7.0.10/spring-jdbc/src/main/java/org/springframework/jdbc/support/rowset/SqlRowSet.java",
+      "relevance": "studyPoeaa.record-set.record.implementations.item2.relevance",
+      "explanation": "studyPoeaa.record-set.record.implementations.item2.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyPoeaa.record-set.record.references.item0.title",
+      "url": "https://martinfowler.com/eaaCatalog/recordSet.html",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.record-set.record.references.item0.supports"
+    },
+    {
+      "title": "studyPoeaa.record-set.record.references.item1.title",
+      "url": "https://www.informit.com/store/patterns-of-enterprise-application-architecture-9780321127426",
+      "accessed": "2026-11-07",
+      "supports": "studyPoeaa.record-set.record.references.item1.supports"
+    }
+  ],
+  "limits": [
+    "studyPoeaa.record-set.record.limits.item0",
+    "studyPoeaa.record-set.record.limits.item1",
+    "studyPoeaa.record-set.record.limits.item2",
+    "studyPoeaa.record-set.record.limits.item3"
+  ],
+  "nearby": [
+    {
+      "id": "poeaa:223",
+      "why": "studyPoeaa.record-set.record.nearby.item0.why"
+    },
+    {
+      "id": "poeaa:231",
+      "why": "studyPoeaa.record-set.record.nearby.item1.why"
+    },
+    {
+      "id": "poeaa:363",
+      "why": "studyPoeaa.record-set.record.nearby.item2.why"
+    }
+  ]
+}

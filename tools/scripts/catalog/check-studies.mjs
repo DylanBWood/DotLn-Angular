@@ -107,11 +107,12 @@ export const withoutComments = (source) =>
 const illustrativeMark = /^\/\/ Illustrative: \S/;
 
 /**
- * The works whose RxJS readings either run or say why not: every operator in the RxJS work could
- * run, and in the messaging work a pattern that is a stream runs while one that is not says so,
- * so a reader never takes a sketch for tested code.
+ * The works whose RxJS readings either run or say why not, so a reader never takes a sketch for
+ * tested code: every operator in the RxJS work could run; in the messaging work a pattern that is
+ * a stream runs while one that is not says so; and the enterprise work's mechanisms run as
+ * TypeScript, so an RxJS reading it gives says it is illustrative.
  */
-const markedWorks = new Set(['rxjs', 'eip']);
+const markedWorks = new Set(['rxjs', 'eip', 'poeaa']);
 
 /**
  * The rules of an RxJS reading. An executable reading's code is in the module its spec runs, and
@@ -147,6 +148,10 @@ function rxjsProblems(study, root) {
     problems.push('its marbles drawing does not read its executable module');
   if (study.visual?.family === 'flow' && runs && study.visual.model !== executable.module)
     problems.push('its flow drawing does not read its executable module');
+  // A states drawing of a model that runs reads that same module, so the drawing and its spec
+  // cannot disagree.
+  if (study.visual?.family === 'states' && executable && study.visual.model !== executable.module)
+    problems.push('its states drawing does not read its executable module');
   if (markedWorks.has(study.work) && !runs && !(rxjs === null || illustrativeMark.test(rxjs)))
     problems.push('its RxJS reading neither runs nor is marked illustrative with a reason');
   return problems;
