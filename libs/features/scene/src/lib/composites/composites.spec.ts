@@ -4,11 +4,13 @@ import { provideDotlnI18nTestKit } from '@dotln-angular/i18n/testing';
 
 import en from '../../../testing/src/lib/scene-en.json';
 import type {
+  GeometryRowView,
   InstrumentView,
   LogView,
   TransportView,
   UnitRowView,
 } from '../models/scene-view-model';
+import { GeometryList, type ShapeEdit } from './geometry-list/geometry-list';
 import { InstrumentStrip } from './instrument-strip/instrument-strip';
 import { ToolLog } from './tool-log/tool-log';
 import { ToolboxRail } from './toolbox-rail/toolbox-rail';
@@ -37,6 +39,7 @@ const row: UnitRowView = {
   position: 'north',
   speed: 'still',
   activity: 'idle',
+  route: null,
   selected: false,
 };
 
@@ -186,5 +189,36 @@ describe('the tool log', () => {
     element.querySelector<HTMLButtonElement>('[data-composition-id] button')?.click();
     expect(opened).toEqual(['c1']);
     expect(element.textContent).toContain('kept');
+  });
+});
+
+describe('the list of walls and obstacles', () => {
+  const obstacle: GeometryRowView = {
+    shape: 2,
+    kind: 'obstacle',
+    values: [
+      { name: 'x', value: 30, label: 'x', min: null },
+      { name: 'y', value: 60, label: 'y', min: null },
+      { name: 'radius', value: 3, label: 'radius', min: 0 },
+    ],
+  };
+
+  it('sends a changed number on, and puts back one the engine cannot take', () => {
+    const { element, instance } = render(GeometryList, { shapes: [obstacle] });
+    const edits: ShapeEdit[] = [];
+    instance.edited.subscribe((edit) => edits.push(edit));
+    const radius = element.querySelector<HTMLInputElement>('[data-value="radius"]');
+    if (!radius) throw new Error('The radius field is missing.');
+    expect(radius.min).toBe('0');
+    expect(element.querySelector<HTMLInputElement>('[data-value="x"]')?.hasAttribute('min')).toBe(
+      false,
+    );
+    radius.value = '-0.5';
+    radius.dispatchEvent(new Event('change'));
+    expect(edits).toEqual([]);
+    expect(radius.value).toBe('3');
+    radius.value = '2';
+    radius.dispatchEvent(new Event('change'));
+    expect(edits).toEqual([{ shape: 2, change: { name: 'radius', value: 2 } }]);
   });
 });

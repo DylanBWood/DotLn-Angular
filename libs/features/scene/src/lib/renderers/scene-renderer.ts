@@ -1,4 +1,10 @@
-import type { PreviewArrow, SceneFrame, UnitFrame, UnitId } from '@dotln-angular/scene-engine';
+import type {
+  PreviewArrow,
+  SceneFrame,
+  SearchRecord,
+  UnitFrame,
+  UnitId,
+} from '@dotln-angular/scene-engine';
 
 /** What is drawn faintly over a frame: a preview's arrows and a compared branch's units. */
 export interface SceneGhost {
@@ -19,6 +25,8 @@ export interface SceneRendererOptions {
   readonly styles: () => readonly SceneUnitStyle[];
   /** Whether motion effects draw: trails and ripples. Reduced motion turns them off. */
   readonly motion: () => boolean;
+  /** The search shaded on the field, or none. */
+  readonly search?: () => SearchRecord | null;
 }
 
 /**

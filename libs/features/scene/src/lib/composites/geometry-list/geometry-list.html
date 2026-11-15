@@ -1,0 +1,45 @@
+<details [open]="open() || shapes().length > 0">
+  <summary>{{ 'scene.geometry.title' | t: { count: shapes().length } }}</summary>
+  @if (shapes().length === 0) {
+    <p class="empty">{{ 'scene.geometry.empty' | t }}</p>
+  }
+  <ul>
+    @for (row of shapes(); track row.shape) {
+      <li [attr.data-shape]="row.shape">
+        <fieldset>
+          <legend>
+            @if (row.kind === 'wall') {
+              {{ 'scene.geometry.wall' | t: { shape: row.shape } }}
+            } @else {
+              {{ 'scene.geometry.obstacle' | t: { shape: row.shape } }}
+            }
+          </legend>
+          @for (entry of row.values; track entry.name) {
+            <label>
+              <span translate="no">{{ entry.label }}</span>
+              <input
+                type="number"
+                step="0.5"
+                [attr.min]="entry.min"
+                [attr.data-value]="entry.name"
+                [value]="entry.value"
+                (change)="edit(row.shape, entry, $event)"
+              />
+            </label>
+          }
+          <button type="button" data-remove (click)="removed.emit(row.shape)">
+            {{ 'scene.geometry.remove' | t }}
+          </button>
+        </fieldset>
+      </li>
+    }
+  </ul>
+  <div class="add">
+    <button type="button" data-add="wall" (click)="wallAdded.emit()">
+      {{ 'scene.geometry.addWall' | t }}
+    </button>
+    <button type="button" data-add="obstacle" (click)="obstacleAdded.emit()">
+      {{ 'scene.geometry.addObstacle' | t }}
+    </button>
+  </div>
+</details>

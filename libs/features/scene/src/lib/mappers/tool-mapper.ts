@@ -1,13 +1,16 @@
 import type { ParamSpec, Tool, ToolId, TransformKind, TypedTransform } from '@dotln-angular/models';
 import type { CompositionStep, UnitId } from '@dotln-angular/scene-engine';
-import { isInterpretedKind } from '@dotln-angular/scene-engine';
+import { interpretedKinds, isInterpretedKind } from '@dotln-angular/scene-engine';
 
 import type { RailGroupId } from '../models/scene-view-model';
 
 /** A catalog tool with a typed transform, narrowed so that transform can be read directly. */
 export type SceneTool = Tool & { readonly status: 'typed' };
 
-export const railGroupOrder: readonly RailGroupId[] = ['move', 'group', 'avoid', 'form'];
+export const railGroupOrder: readonly RailGroupId[] = ['move', 'ways', 'group', 'avoid', 'form'];
+
+// The kinds that find, smooth, follow or weigh a route, read from the engine's own list.
+const pathKinds: readonly string[] = interpretedKinds.filter((kind) => kind.startsWith('path.'));
 
 /** The tool whose patterns the rail lists by name: wedge, line and column. */
 export const patternToolId: ToolId = 'aifg-a:177';
@@ -33,11 +36,16 @@ const paramNames = (tool: SceneTool) => tool.faces.transform.params.map(({ name 
 export function railGroupOf(tool: SceneTool): RailGroupId {
   const { kind } = tool.faces.transform;
   if (kind === 'formation.twoLevel' || kind === 'formation.fixed') return 'form';
+  if (pathKinds.includes(kind)) return 'ways';
   if (kind === 'steer.priority') return 'avoid';
   const names = paramNames(tool);
-  if (names.includes('avoidance-weight')) return 'avoid';
+  if (names.includes('avoidance-weight') || names.includes('obstacle-avoidance-weight'))
+    return 'avoid';
   return names.some((name) => groupParams.includes(name)) ? 'group' : 'move';
 }
+
+/** Whether a tool finds, prices or follows a route: the kinds the rail's ways group holds. */
+export const isPathTool = (tool: SceneTool) => pathKinds.includes(tool.faces.transform.kind);
 
 export const defaultParams = (transform: TypedTransform) =>
   Object.fromEntries(transform.params.map(({ name, default: value }) => [name, value]));
@@ -64,8 +72,11 @@ export function patternsOf(tool: SceneTool) {
   return param ? paramChoices(param) : [];
 }
 
+// Ranks, costs and counts of waypoints move in whole steps; everything else in hundredths.
+const wholeUnits = ['rank', 'cost', 'waypoints'];
+
 export const stepSize = (param: ParamSpec) =>
-  param.unit === 'rank' || param.unit === 'cost' ? 1 : (param.max - param.min) / 100;
+  wholeUnits.includes(param.unit) ? 1 : (param.max - param.min) / 100;
 
 /** Whether a tool's steering waits on an objective, so it stays silent without one. */
 export const needsObjective = (tool: SceneTool) =>

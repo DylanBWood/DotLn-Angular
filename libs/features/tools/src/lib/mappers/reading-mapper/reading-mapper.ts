@@ -121,6 +121,9 @@ export class ReadingMapper {
     [TransformKind.GroundInfluence]: translateSignal('tools.transforms.influence'),
     [TransformKind.GroundFrag]: translateSignal('tools.transforms.frag'),
     [TransformKind.PathCost]: translateSignal('tools.transforms.path'),
+    [TransformKind.PathFind]: translateSignal('tools.transforms.find'),
+    [TransformKind.PathSmooth]: translateSignal('tools.transforms.smooth'),
+    [TransformKind.PathFollow]: translateSignal('tools.transforms.follow'),
     [TransformKind.LevelZoom]: translateSignal('tools.transforms.zoom'),
     [TransformKind.LevelRing]: translateSignal('tools.transforms.ring'),
   };

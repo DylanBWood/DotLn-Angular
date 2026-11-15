@@ -13,7 +13,14 @@ export const instrumentIds: readonly InstrumentId[] = [
   'headingVariance',
   'timeToObjective',
   'stalledUnits',
+  'pathLength',
+  'replans',
+  'blockedUnits',
 ];
+
+// Route figures say nothing about a trial in which nobody followed a route, so the compare leaves
+// them out of one.
+const routeIds: readonly InstrumentId[] = ['pathLength', 'replans', 'blockedUnits'];
 
 /** How many frames of history a sparkline shows. */
 export const sparklineFrames = 600;
@@ -29,6 +36,9 @@ const decimals: Readonly<Record<InstrumentId, number>> = {
   headingVariance: 2,
   timeToObjective: 1,
   stalledUnits: 0,
+  pathLength: 1,
+  replans: 0,
+  blockedUnits: 0,
 };
 
 /** A figure in its own precision; null stays null, never a fabricated zero. */
@@ -100,9 +110,14 @@ export function mapTrial(trial: Trial, labels: InstrumentLabels): TrialView {
     trial.firstDivergenceFrame === null
       ? null
       : ((trial.firstDivergenceFrame - trial.from) / Math.max(1, trial.frames)) * chartWidth;
+  const { pathLength, blockedUnits } = trial.metrics;
+  const routed =
+    [...pathLength.a, ...pathLength.b].some((value) => value !== null) ||
+    [...blockedUnits.a, ...blockedUnits.b].some((value) => (value ?? 0) > 0);
   return {
     firstDivergence: trial.firstDivergenceFrame,
     series: instrumentIds.flatMap((id) => {
+      if (!routed && routeIds.includes(id)) return [];
       const { a, b } = trial.metrics[id];
       const known = [...a, ...b].filter((value): value is number => value !== null);
       if (known.length === 0) return [];

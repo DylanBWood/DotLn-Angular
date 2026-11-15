@@ -4,7 +4,10 @@ import { TPipe } from '@dotln-angular/i18n';
 
 import type { CoachStep } from '../../models/scene-view-model';
 
-/** Chooses the coach's sentence, shown quietly over the corner of the field. */
+/**
+ * Chooses the coach's sentence, shown quietly over the corner of the field: the next thing worth
+ * trying, or, while a field tool is chosen, how to draw with it, so choosing one moves nothing.
+ */
 @Component({
   selector: 'scene-coach-mapper',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +32,12 @@ import type { CoachStep } from '../../models/scene-view-model';
         }
         @case ('tune') {
           {{ 'scene.coach.tune' | t }}
+        }
+        @case ('wall') {
+          {{ 'scene.coach.wall' | t }}
+        }
+        @case ('obstacle') {
+          {{ 'scene.coach.obstacle' | t }}
         }
       }
     </p>

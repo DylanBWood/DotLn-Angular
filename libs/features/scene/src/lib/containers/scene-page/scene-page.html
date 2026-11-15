@@ -11,14 +11,24 @@
     [ghostFrames]="model.ghostFrames"
     [units]="model.unitStyles"
     [motion]="!model.reducedMotion"
+    [fieldTool]="model.field.tool"
+    [search]="model.search"
     [label]="
-      'scene.field.label' | t: { units: model.transport.units, selected: model.transport.selected }
+      'scene.field.label'
+        | t
+          : {
+              units: model.transport.units,
+              selected: model.transport.selected,
+              shapes: model.field.shapes.length,
+            }
     "
     (selected)="facade.select($event.id, $event.additive)"
     (marquee)="facade.marquee($event.from, $event.to, $event.additive)"
     (pointAt)="facade.setObjective($event)"
     (sendTo)="facade.sendTo($event)"
     (squad)="facade.selectSquad($event)"
+    (wallDrawn)="facade.drawWall($event.from, $event.to)"
+    (obstaclePlaced)="facade.placeObstacle($event.centre, $event.radius)"
   >
     @if (model.coach; as step) {
       <scene-coach-mapper [step]="step" />
@@ -43,7 +53,10 @@
     [live]="model.live"
     [canNote]="model.transport.canSave"
     [note]="model.note"
+    [noRoute]="model.noRoute"
+    [showSearch]="model.showSearch"
     (noted)="facade.note($event)"
+    (searchToggled)="facade.toggleSearch()"
     (paramChanged)="facade.setParam($event.name, $event.value)"
     (paramCommitted)="facade.commitParam()"
     (applied)="facade.equip()"
@@ -63,6 +76,17 @@
     (feelToggled)="facade.toggleFeel()"
     (labelSetChanged)="facade.setLabelSet($event)"
   >
+    <scene-field-tools
+      transport-tools
+      [field]="model.field"
+      (toolChosen)="facade.setFieldTool($event)"
+      (cleared)="facade.clearField()"
+      (cellSizeChosen)="facade.setCellSize($event)"
+    >
+      <a tile-graph-link class="tile-graph" [routerLink]="tileGraph">
+        {{ 'scene.field.tileGraph' | t }}
+      </a>
+    </scene-field-tools>
     @if (model.trial; as trial) {
       <scene-trial-compare
         [trial]="trial"
@@ -79,13 +103,22 @@
     (exported)="facade.exportJson()"
     (imported)="facade.importJson($event)"
   />
-  <scene-unit-list
-    text-slot
-    [rows]="model.rows"
-    [open]="model.textLayerOpen"
-    [objective]="model.objective"
-    [regions]="model.objectiveRegions"
-    (toggled)="facade.toggle($event)"
-    (objectivePlaced)="facade.setObjective($event)"
-  />
+  <div text-slot class="text-layer">
+    <scene-unit-list
+      [rows]="model.rows"
+      [open]="model.textLayerOpen"
+      [objective]="model.objective"
+      [regions]="model.objectiveRegions"
+      (toggled)="facade.toggle($event)"
+      (objectivePlaced)="facade.setObjective($event)"
+    />
+    <scene-geometry-list
+      [shapes]="model.field.shapes"
+      [open]="model.textLayerOpen"
+      (edited)="facade.editShape($event.shape, $event.change)"
+      (removed)="facade.removeShape($event)"
+      (wallAdded)="facade.addWall()"
+      (obstacleAdded)="facade.addObstacle()"
+    />
+  </div>
 </scene-layout>

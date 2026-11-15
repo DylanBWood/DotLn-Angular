@@ -71,6 +71,7 @@
       {{ 'scene.transport.uifa' | t }}
     </label>
   </div>
+  <ng-content select="[transport-tools]" />
 </section>
 @if (comparing()) {
   <ng-content />

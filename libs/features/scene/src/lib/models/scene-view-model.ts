@@ -1,7 +1,9 @@
 import type { ToolId } from '@dotln-angular/models';
 import type {
+  NoRouteReason,
   PreviewArrow,
   SceneFrame,
+  SearchRecord,
   SlotAssignment,
   StepRefusal,
   UnitActivity,
@@ -11,7 +13,7 @@ import type {
 
 import type { SceneUnitStyle } from '../renderers/scene-renderer';
 
-export type RailGroupId = 'move' | 'group' | 'avoid' | 'form';
+export type RailGroupId = 'move' | 'ways' | 'group' | 'avoid' | 'form';
 export type PositionBucket =
   | 'north-west'
   | 'north'
@@ -25,10 +27,24 @@ export type PositionBucket =
 export type SpeedBucket = 'still' | 'walking' | 'running';
 export type LabelSet = 'lifecycle' | 'uifa';
 export type InstrumentId =
-  'cohesionRadius' | 'collisions' | 'headingVariance' | 'timeToObjective' | 'stalledUnits';
+  | 'cohesionRadius'
+  | 'collisions'
+  | 'headingVariance'
+  | 'timeToObjective'
+  | 'stalledUnits'
+  | 'pathLength'
+  | 'replans'
+  | 'blockedUnits';
 
-/** The next thing the coach line suggests trying. */
-export type CoachStep = 'select' | 'tool' | 'apply' | 'send' | 'form' | 'tune';
+/** What a press on the field does: select units, draw a wall or place an obstacle. */
+export type FieldToolId = 'select' | 'wall' | 'obstacle';
+
+/** Where a unit stands with its route, as its row in the text layer says. */
+export type RouteState = 'on-path' | 'replanning' | 'no-route';
+
+/** The next thing the coach line suggests trying, or how to draw with the chosen field tool. */
+export type CoachStep =
+  'select' | 'tool' | 'apply' | 'send' | 'form' | 'tune' | 'wall' | 'obstacle';
 
 /** One row of the text layer before its words are chosen. */
 export interface UnitRow {
@@ -36,6 +52,7 @@ export interface UnitRow {
   readonly position: PositionBucket;
   readonly speed: SpeedBucket;
   readonly activity: UnitActivity;
+  readonly route: RouteState | null;
   readonly selected: boolean;
 }
 
@@ -46,7 +63,37 @@ export interface UnitRowView {
   readonly position: string;
   readonly speed: string;
   readonly activity: string;
+  /** The unit's route in words, or null for a unit given no path tool. */
+  readonly route: string | null;
   readonly selected: boolean;
+}
+
+/** One number of a wall or an obstacle the geometry list edits, by the field step's name for it. */
+export interface GeometryValue {
+  readonly name: string;
+  readonly value: number;
+}
+
+/** A number as the geometry list shows it, with the words for what it is. */
+export interface GeometryValueView extends GeometryValue {
+  readonly label: string;
+  /** The least the engine takes for it, or null when only the field bounds it. */
+  readonly min: number | null;
+}
+
+/** A wall or an obstacle as a row of the geometry list. */
+export interface GeometryRowView {
+  readonly shape: number;
+  readonly kind: 'wall' | 'obstacle';
+  readonly values: readonly GeometryValueView[];
+}
+
+/** The field's tools, its tile graph's cell size and what stands on it. */
+export interface FieldView {
+  readonly tool: FieldToolId;
+  readonly cellSize: number;
+  readonly cellSizes: readonly number[];
+  readonly shapes: readonly GeometryRowView[];
 }
 
 /** One named value of a parameter: a formation pattern, a falloff. */
@@ -142,6 +189,30 @@ export type SceneNotice =
   | { readonly code: 'save-failed' }
   | { readonly code: 'stored-ignored' };
 
+/** What a path tool found, or would find, for the selected units. */
+export interface InspectorRoutes {
+  /** These are the routes the units follow now, not the ones Apply would plan. */
+  readonly live: boolean;
+  readonly following: number;
+  readonly blocked: number;
+  /** The mean length still to walk, or null when nobody has a route. */
+  readonly length: string | null;
+  /** The first unit with a route or a search: its label, its search and where it heads first. */
+  readonly unit: string | null;
+  readonly expansions: number | null;
+  readonly waypoint: string | null;
+  /** Whether an objective is set; without one there is nothing to route to. */
+  readonly objective: boolean;
+}
+
+/** What a cost function's weights do on this field, said in words. */
+export interface InspectorCost {
+  /** The weight that scales every edge alike, or null when the tool has none. */
+  readonly travelWeight: string | null;
+  /** Whether it weighs cost layers, which are uniform until an influence map lands. */
+  readonly layers: boolean;
+}
+
 export interface InspectorView {
   readonly title: string;
   readonly colour: string;
@@ -151,8 +222,19 @@ export interface InspectorView {
   readonly costs: readonly InspectorParam[];
   readonly preview: InspectorPreview | null;
   readonly slots: SlotTableView | null;
+  /** For a path tool: the routes, and whether the field shows the last search. */
+  readonly routes: InspectorRoutes | null;
+  readonly cost: InspectorCost | null;
   readonly issue: InspectorIssue | null;
   readonly canApply: boolean;
+}
+
+/** Units that have no route to the objective, and why. */
+export interface NoRouteNotice {
+  readonly reason: NoRouteReason;
+  readonly count: number;
+  /** Each unit's label and id, listed. */
+  readonly names: string;
 }
 
 export interface InstrumentView {
@@ -227,6 +309,12 @@ export interface ObjectiveRegion {
 export interface SceneViewModel {
   readonly reducedMotion: boolean;
   readonly rail: RailView;
+  readonly field: FieldView;
+  /** Whether the field shades the last search of the unit the inspector reads. */
+  readonly showSearch: boolean;
+  /** The search the field shades: the one the inspector reads, while a path tool is chosen. */
+  readonly search: SearchRecord | null;
+  readonly noRoute: readonly NoRouteNotice[];
   readonly inspector: InspectorView | null;
   readonly formation: FormationReading | null;
   /** Under reduced motion an applied step waits here for Play or Step. */

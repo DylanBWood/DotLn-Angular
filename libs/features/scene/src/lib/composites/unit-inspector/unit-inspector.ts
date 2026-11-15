@@ -4,14 +4,17 @@ import { TPipe } from '@dotln-angular/i18n';
 import type { StepRefusal } from '@dotln-angular/scene-engine';
 import { DotlnButton } from '@dotln-angular/ui';
 
-import type { FormationReading, InspectorView } from '../../models/scene-view-model';
+import type { FormationReading, InspectorView, NoRouteNotice } from '../../models/scene-view-model';
 
 export interface ParamChange {
   readonly name: string;
   readonly value: number;
 }
 
-/** A tool's definition, faces and parameters, its previewed effect, and Apply. */
+/**
+ * A tool's definition, faces and parameters, its previewed effect, and Apply; for a path tool,
+ * the routes it finds and what its costs do; and, whatever is chosen, which units have no route.
+ */
 @Component({
   selector: 'scene-unit-inspector',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,11 +31,15 @@ export class UnitInspector {
   readonly live = input(false);
   readonly canNote = input(false);
   readonly note = input('');
+  /** Units with no route to the objective, by the reason, whatever tool is chosen. */
+  readonly noRoute = input<readonly NoRouteNotice[]>([]);
+  readonly showSearch = input(false);
 
   readonly paramChanged = output<ParamChange>();
   readonly paramCommitted = output<void>();
   readonly applied = output<void>();
   readonly noted = output<string>();
+  readonly searchToggled = output<void>();
 
   changed(name: string, event: Event) {
     this.paramChanged.emit({ name, value: Number((event.target as HTMLInputElement).value) });

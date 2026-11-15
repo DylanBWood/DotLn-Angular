@@ -1,3 +1,20 @@
+@for (notice of noRoute(); track notice.reason) {
+  <p class="no-route" role="status" [attr.data-no-route]="notice.reason">
+    @switch (notice.reason) {
+      @case ('no-path') {
+        {{ 'scene.inspector.noPath' | t: { count: notice.count } }}
+      }
+      @case ('unreachable-goal') {
+        {{ 'scene.inspector.unreachableGoal' | t: { count: notice.count } }}
+      }
+      @case ('unreachable-start') {
+        {{ 'scene.inspector.unreachableStart' | t: { count: notice.count } }}
+      }
+    }
+    <span class="names" translate="no">{{ notice.names }}</span>
+  </p>
+}
+
 @if (tool(); as view) {
   <div class="inspector-body">
     <div class="about">
@@ -92,6 +109,73 @@
               }}
             </p>
           }
+        </section>
+      }
+
+      @if (view.cost; as cost) {
+        <p class="cost-reading" data-cost-reading>
+          @if (cost.travelWeight !== null) {
+            {{ 'scene.inspector.costTravel' | t: { weight: cost.travelWeight } }}
+            @if (cost.layers) {
+              {{ 'scene.inspector.costLayers' | t }}
+            }
+          } @else {
+            {{ 'scene.inspector.costLayersOnly' | t }}
+          }
+        </p>
+      }
+
+      @if (view.routes; as routes) {
+        <section class="routes" aria-live="polite" data-routes>
+          @if (routes.live) {
+            <h3>{{ 'scene.inspector.routesLive' | t }}</h3>
+          } @else {
+            <h3>{{ 'scene.inspector.routes' | t }}</h3>
+          }
+          @if (!routes.objective) {
+            <p>{{ 'scene.inspector.routeNoObjective' | t }}</p>
+          } @else {
+            @if (routes.length !== null) {
+              <p>
+                {{
+                  'scene.inspector.routeFound'
+                    | t: { count: routes.following, length: routes.length }
+                }}
+              </p>
+            }
+            @if (routes.unit !== null && routes.expansions !== null) {
+              <p>
+                @if (routes.waypoint !== null) {
+                  {{
+                    'scene.inspector.routeSearch'
+                      | t
+                        : {
+                            unit: routes.unit,
+                            expansions: routes.expansions,
+                            waypoint: routes.waypoint,
+                          }
+                  }}
+                } @else {
+                  {{
+                    'scene.inspector.routeSearchEmpty'
+                      | t: { unit: routes.unit, expansions: routes.expansions }
+                  }}
+                }
+              </p>
+            }
+            @if (routes.blocked) {
+              <p>{{ 'scene.inspector.routeBlocked' | t: { count: routes.blocked } }}</p>
+            }
+          }
+          <label class="show-search">
+            <input
+              type="checkbox"
+              data-show-search
+              [checked]="showSearch()"
+              (change)="searchToggled.emit()"
+            />
+            {{ 'scene.inspector.showSearch' | t }}
+          </label>
         </section>
       }
 

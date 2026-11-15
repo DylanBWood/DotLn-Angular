@@ -7,10 +7,12 @@ import type {
   Trial,
   UnitActivity,
 } from '@dotln-angular/scene-engine';
+import { emptyGeometry } from '@dotln-angular/scene-engine';
 
 import { MetricHistory } from '../facades/metric-history';
 import type { InstrumentId } from '../models/scene-view-model';
 import { coachStep } from './coach-step';
+import { mapGeometryRows, shapeParams } from './field-mapper';
 import {
   fieldRegions,
   mapFrameToRows,
@@ -18,7 +20,7 @@ import {
   positionBucket,
   speedBucket,
 } from './frame-mapper';
-import { mapInspector } from './inspector-mapper';
+import { mapInspector, readRoute } from './inspector-mapper';
 import { mapLog } from './log-mapper';
 import {
   mapFormation,
@@ -130,17 +132,61 @@ describe('the frame mapper', () => {
       slots: [],
       collisions: [],
       objective: null,
+      geometry: emptyGeometry,
+      routes: [],
+      rays: [],
     };
-    expect(mapFrameToRows(frame, ['a'])[0]).toMatchObject({ id: 'a', selected: true });
+    expect(mapFrameToRows(frame, ['a'])[0]).toMatchObject({ id: 'a', selected: true, route: null });
     expect(mapFrameToRows(frame, [])[0].selected).toBe(false);
   });
 
+  it('reads each unit’s route as on its path, replanning or with none', () => {
+    const route = (id: string, reason: 'no-path' | null, replanning: boolean) => ({
+      id,
+      ahead: [],
+      reason,
+      search: null,
+      replanning,
+    });
+    const frame: SceneFrame = {
+      frameNo: 0,
+      field,
+      units: [
+        unit(1, 1),
+        { ...unit(2, 2), id: 'b' },
+        { ...unit(3, 3), id: 'c' },
+        { ...unit(4, 4), id: 'd' },
+      ],
+      anchors: [],
+      slots: [],
+      collisions: [],
+      objective: null,
+      geometry: emptyGeometry,
+      routes: [route('a', null, false), route('b', null, true), route('c', 'no-path', false)],
+      rays: [],
+    };
+    expect(mapFrameToRows(frame, []).map((row) => row.route)).toEqual([
+      'on-path',
+      'replanning',
+      'no-route',
+      null,
+    ]);
+  });
+
   it('words a row with its label and role colour, and falls back on its id', () => {
-    const row = { id: 'a', position: 'north', speed: 'still', activity: 'idle', selected: false };
+    const row = {
+      id: 'a',
+      position: 'north',
+      speed: 'still',
+      activity: 'idle',
+      route: null,
+      selected: false,
+    };
     const words = {
       position: (bucket: string) => `at ${bucket}`,
       speed: (bucket: string) => bucket,
       activity: (activity: string) => activity,
+      route: (state: string) => `route ${state}`,
     };
     const styles = [{ id: 'a', label: 'executor', role: 'planner' }];
     expect(mapRowViews([row] as never, styles, words)[0]).toMatchObject({
@@ -151,7 +197,11 @@ describe('the frame mapper', () => {
     expect(mapRowViews([row] as never, [], words)[0]).toMatchObject({
       label: 'a',
       colour: 'var(--dotln-role-executor)',
+      route: null,
     });
+    expect(mapRowViews([{ ...row, route: 'no-route' }] as never, [], words)[0].route).toBe(
+      'route no-route',
+    );
   });
 
   it('gives each ninth of the field its centre, each in its own part', () => {
@@ -276,9 +326,93 @@ describe('the inspector mapper', () => {
     slotsLive: false,
     units: [],
     styles: [{ id: 'a', label: 'executor', role: 'executor' }],
+    routes: [],
     transformLabel: () => 'blends',
     choiceLabel: (name: string) => name,
   };
+
+  it('words a cost function: a travel weight scaling every edge, or only uniform layers', () => {
+    const costed = (params: readonly ReturnType<typeof param>[]) =>
+      mapInspector({
+        ...input,
+        tool: tool({
+          title: 'Costs',
+          selection: { target: 'region', min: 1, max: 20 },
+          transform: { kind: TransformKind.PathCost, params },
+        }),
+        params: {},
+      }).cost;
+    expect(costed([param('terrain-cost-multiplier', 'ratio')])).toEqual({
+      travelWeight: '1',
+      layers: false,
+    });
+    expect(costed([param('danger-weight', 'cost-per-danger'), param('exposure-weight')])).toEqual({
+      travelWeight: null,
+      layers: true,
+    });
+    expect(mapInspector(input).cost).toBeNull();
+  });
+
+  it('reads a path tool’s routes: how many, how long, and the first search', () => {
+    const routed = mapInspector({
+      ...input,
+      tool: tool({
+        title: 'A*',
+        selection: { target: 'unit', min: 1, max: 20 },
+        transform: { kind: TransformKind.PathFind, params: [param('heuristic')] },
+      }),
+      routes: [
+        {
+          id: 'a',
+          length: 12.34,
+          route: {
+            status: 'following',
+            reason: null,
+            waypoints: [
+              { x: 0, y: 0 },
+              { x: 3, y: 4 },
+            ],
+            next: 1,
+            search: {
+              columns: 2,
+              rows: 2,
+              cellSize: 1,
+              expansions: 7,
+              closed: [],
+              open: [],
+              trace: [],
+            },
+            replans: 0,
+            plannedAt: 0,
+          },
+        },
+        {
+          id: 'b',
+          length: null,
+          route: {
+            status: 'blocked',
+            reason: 'no-path',
+            waypoints: [],
+            next: 0,
+            search: null,
+            replans: 1,
+            plannedAt: 0,
+          },
+        },
+      ],
+    });
+    expect(routed.routes).toEqual({
+      live: false,
+      following: 1,
+      blocked: 1,
+      length: '12.3',
+      unit: 'executor a',
+      expansions: 7,
+      waypoint: '(3.0, 4.0)',
+      objective: true,
+    });
+    expect(mapInspector(input).routes).toBeNull();
+  });
 
   it('separates sliders, choices and costs', () => {
     const view = mapInspector(input);
@@ -297,6 +431,7 @@ describe('the inspector mapper', () => {
       preview: {
         arrows: [{ id: 'a', position: { x: 0, y: 0 }, acceleration: { x: 0, y: 0 } }],
         assignment: [],
+        routes: [],
         refusal: null,
       },
       slots: [{ unitId: 'a', slot: 0, slotRole: 'ranged', cost: 2 }],
@@ -383,6 +518,9 @@ describe('the metric mapper', () => {
     anchorToMean: null,
     slotError: null,
     assignmentCost: null,
+    pathLength: null,
+    replans: 0,
+    blockedUnits: 0,
   };
   const labels = {
     name: (id: InstrumentId) => id,
@@ -395,6 +533,9 @@ describe('the metric mapper', () => {
     headingVariance: '',
     timeToObjective: '',
     stalledUnits: '',
+    pathLength: '',
+    replans: '',
+    blockedUnits: '',
   };
 
   it('shows each figure in its own precision', () => {
@@ -460,11 +601,22 @@ describe('the metric mapper', () => {
         anchorToMean: blank,
         slotError: blank,
         assignmentCost: blank,
+        pathLength: blank,
+        replans: { a: [0, 0], b: [0, 0] },
+        blockedUnits: { a: [0, 0], b: [0, 0] },
       },
       firstDivergenceFrame: 250,
     };
     const view = mapTrial(trial, labels);
     expect(view.series.map(({ id }) => id)).not.toContain('timeToObjective');
+    expect(view.series.map(({ id }) => id)).not.toContain('replans');
+    const routed = mapTrial(
+      { ...trial, metrics: { ...trial.metrics, pathLength: { a: [40, 30], b: [40, null] } } },
+      labels,
+    );
+    expect(routed.series.map(({ id }) => id)).toEqual(
+      expect.arrayContaining(['pathLength', 'replans', 'blockedUnits']),
+    );
     expect(view.series[0].marker).toBe(120);
     expect(view.series[0].after).toBe('0.0,56.0 240.0,28.0');
     expect(view.series[0].summaryAfter).toBe('5.0');
@@ -501,5 +653,59 @@ describe('the coach', () => {
 
   it('goes quiet once the operator has compared', () => {
     expect(coachStep({ ...base, steps: [form], compared: true })).toBeNull();
+  });
+});
+
+describe('the field mapper', () => {
+  const geometry = {
+    ...emptyGeometry,
+    walls: [{ shape: 1, from: { x: 60, y: 10.25 }, to: { x: 60, y: 30 }, thickness: 1 }],
+    obstacles: [{ shape: 2, centre: { x: 30.04, y: 60 }, radius: 3 }],
+  };
+
+  it('rows each number to a tenth with the least the engine takes for it', () => {
+    const [wall, obstacle] = mapGeometryRows(geometry);
+    expect(wall.values.map(({ name, value, min }) => [name, value, min])).toEqual([
+      ['x1', 60, null],
+      ['y1', 10.3, null],
+      ['x2', 60, null],
+      ['y2', 30, null],
+      ['thickness', 1, 0],
+    ]);
+    expect(obstacle.values.map(({ name, value, min }) => [name, value, min])).toEqual([
+      ['x', 30, null],
+      ['y', 60, null],
+      ['radius', 3, 0],
+    ]);
+  });
+
+  it('reads a shape’s numbers for an edit as they stand, not as the rows round them', () => {
+    expect(shapeParams(geometry, 1)).toEqual({
+      kind: 'field.wall',
+      params: { x1: 60, y1: 10.25, x2: 60, y2: 30, thickness: 1, shape: 1 },
+    });
+    expect(shapeParams(geometry, 2)?.params).toEqual({ x: 30.04, y: 60, radius: 3, shape: 2 });
+    expect(shapeParams(geometry, 3)).toBeNull();
+  });
+
+  it('reads out the first route with a search, or else the first', () => {
+    const route = (id: string, search: boolean) => ({
+      id,
+      length: null,
+      route: {
+        status: 'blocked' as const,
+        reason: 'no-path' as const,
+        waypoints: [],
+        next: 0,
+        search: search
+          ? { columns: 1, rows: 1, cellSize: 1, expansions: 1, closed: [0], open: [], trace: [] }
+          : null,
+        replans: 0,
+        plannedAt: 0,
+      },
+    });
+    expect(readRoute([route('a', false), route('b', true)])?.id).toBe('b');
+    expect(readRoute([route('a', false)])?.id).toBe('a');
+    expect(readRoute([])).toBeUndefined();
   });
 });
