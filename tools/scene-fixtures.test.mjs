@@ -47,3 +47,17 @@ test('a wrong role count, a repeated id and an overlap are each named', () => {
   crowded.units[1].position = crowded.units[0].position;
   assert.ok(sceneFindings(crowded).some((finding) => finding.includes('overlapping')));
 });
+
+test('a known outcome carrying field steps validates, and one with a malformed step does not', () => {
+  const validate = sceneValidator();
+  const walls = JSON.parse(
+    readFileSync(resolve(sceneFixtureDirectory, 'walls-known-outcome.json'), 'utf8'),
+  );
+  assert.ok(
+    walls.branchA.some((step) => step.kind === 'field.wall' && step.selection.length === 0),
+  );
+  assert.equal(validate(walls), true);
+  const worded = structuredClone(walls);
+  worded.branchA[0].params.thickness = 'thin';
+  assert.equal(validate(worded), false);
+});

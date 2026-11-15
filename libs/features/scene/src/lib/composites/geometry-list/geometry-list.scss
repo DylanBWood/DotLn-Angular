@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--dotln-muted);
+}
+summary {
+  cursor: pointer;
+}
+summary:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 2px;
+}
+.empty {
+  margin: var(--dotln-space-2) 0 0;
+  max-inline-size: 60ch;
+}
+ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--dotln-space-2) var(--dotln-space-4);
+  margin: var(--dotln-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--dotln-space-1) var(--dotln-space-2);
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+legend {
+  margin-block-end: var(--dotln-space-1);
+  padding: 0;
+  color: var(--dotln-ink);
+}
+label {
+  display: grid;
+  gap: 0.15rem;
+}
+span {
+  font-size: 0.7rem;
+}
+input {
+  inline-size: 4.25rem;
+  min-block-size: 1.75rem;
+  border: 1px solid var(--dotln-border);
+  border-radius: 0.3rem;
+  color: var(--dotln-ink);
+  background: var(--dotln-surface);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+button {
+  min-block-size: 1.75rem;
+  border: 1px solid var(--dotln-border);
+  border-radius: 0.3rem;
+  color: var(--dotln-ink);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--dotln-surface-hover);
+}
+.add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dotln-space-2);
+  margin-block-start: var(--dotln-space-3);
+}

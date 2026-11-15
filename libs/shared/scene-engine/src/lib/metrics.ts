@@ -1,4 +1,5 @@
 import { memberMean, slotPosition } from './formation';
+import { remainingLength } from './path-following';
 import { touchingPairs } from './queries';
 import { frameSeconds, stallThreshold } from './simulation';
 import type {
@@ -20,6 +21,9 @@ export const metricNames: readonly MetricName[] = [
   'anchorToMean',
   'slotError',
   'assignmentCost',
+  'pathLength',
+  'replans',
+  'blockedUnits',
 ];
 
 // A focus naming nobody in the scene, as an imported step can, reads as the whole scene.
@@ -72,5 +76,19 @@ export function measure(state: SimulationState, focus: readonly UnitId[] = []): 
     assignmentCost: formation
       ? formation.assignment.reduce((sum, { cost }) => sum + cost, 0)
       : null,
+    pathLength: meanRouteLength(units),
+    replans: units.reduce((sum, unit) => sum + (unit.route?.replans ?? 0), 0),
+    blockedUnits: units.filter((unit) => unit.route?.status === 'blocked').length,
   };
+}
+
+// The mean route still ahead of the units following one; none when nobody follows a route.
+function meanRouteLength(units: readonly UnitState[]) {
+  const lengths = units.flatMap((unit) => {
+    const ahead = remainingLength(unit);
+    return ahead === null ? [] : [ahead];
+  });
+  return lengths.length === 0
+    ? null
+    : lengths.reduce((sum, ahead) => sum + ahead, 0) / lengths.length;
 }

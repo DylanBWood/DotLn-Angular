@@ -3,10 +3,18 @@ import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 
 import type { PreviewArrow, SceneFrame, UnitId, Vec2 } from '@dotln-angular/scene-engine';
+import { emptyGeometry } from '@dotln-angular/scene-engine';
 
 import { provideSceneRendererFactoryTokenTestKit } from '../../../../testing/src';
+import type { FieldToolId } from '../../models/scene-view-model';
 import { fieldView, toField, toScreen, unitAt } from './field-view';
-import { type FieldMarquee, type FieldSelect, SceneCanvas } from './scene-canvas';
+import {
+  type DrawnWall,
+  type FieldMarquee,
+  type FieldSelect,
+  type PlacedObstacle,
+  SceneCanvas,
+} from './scene-canvas';
 
 const frame = (frameNo = 0): SceneFrame => ({
   frameNo,
@@ -25,6 +33,9 @@ const frame = (frameNo = 0): SceneFrame => ({
   slots: [],
   collisions: [],
   objective: null,
+  geometry: emptyGeometry,
+  routes: [],
+  rays: [],
 });
 
 @Component({
@@ -36,11 +47,14 @@ const frame = (frameNo = 0): SceneFrame => ({
       [selection]="selection()"
       [arrows]="arrows()"
       [ghostFrames]="ghostFrames()"
+      [fieldTool]="fieldTool()"
       (selected)="selects.push($event)"
       (marquee)="marquees.push($event)"
       (pointAt)="points.push($event)"
       (sendTo)="sent.push($event)"
       (squad)="squads.push($event)"
+      (wallDrawn)="walls.push($event)"
+      (obstaclePlaced)="obstacles.push($event)"
     >
       <p class="projected"></p>
     </scene-canvas>
@@ -57,6 +71,9 @@ class CanvasHost {
   readonly points: Vec2[] = [];
   readonly sent: Vec2[] = [];
   readonly squads: UnitId[] = [];
+  readonly fieldTool = signal<FieldToolId>('select');
+  readonly walls: DrawnWall[] = [];
+  readonly obstacles: PlacedObstacle[] = [];
 }
 
 function setUp() {
@@ -74,6 +91,51 @@ function setUp() {
 
 const pointer = (type: string, clientX: number, clientY: number, init: PointerEventInit = {}) =>
   new PointerEvent(type, { clientX, clientY, button: 0, bubbles: true, ...init });
+
+describe('the field tools on the surface', () => {
+  const choose = (host: CanvasHost, tool: FieldToolId) => {
+    host.fieldTool.set(tool);
+    TestBed.tick();
+  };
+
+  it('draws a wall from a press to a release, and keeps it straight with Shift', () => {
+    const { host, canvas } = setUp();
+    choose(host, 'wall');
+    canvas.dispatchEvent(pointer('pointerdown', 20, 20));
+    canvas.dispatchEvent(pointer('pointermove', 60, 30));
+    canvas.dispatchEvent(pointer('pointerup', 60, 30));
+    expect(host.walls).toEqual([{ from: { x: 20, y: 20 }, to: { x: 60, y: 30 } }]);
+    canvas.dispatchEvent(pointer('pointerdown', 20, 20));
+    canvas.dispatchEvent(pointer('pointermove', 60, 30, { shiftKey: true }));
+    canvas.dispatchEvent(pointer('pointerup', 60, 30, { shiftKey: true }));
+    expect(host.walls[1]).toEqual({ from: { x: 20, y: 20 }, to: { x: 60, y: 20 } });
+    expect(host.marquees).toEqual([]);
+    expect(host.selects).toEqual([]);
+  });
+
+  it('draws no wall for a click, and selects nothing while drawing', () => {
+    const { host, canvas } = setUp();
+    choose(host, 'wall');
+    canvas.dispatchEvent(pointer('pointerdown', 10, 10));
+    canvas.dispatchEvent(pointer('pointerup', 10, 10));
+    expect(host.walls).toEqual([]);
+    expect(host.selects).toEqual([]);
+  });
+
+  it('places an obstacle at a click, as wide as a drag when there is one', () => {
+    const { host, canvas } = setUp();
+    choose(host, 'obstacle');
+    canvas.dispatchEvent(pointer('pointerdown', 50, 50));
+    canvas.dispatchEvent(pointer('pointerup', 50, 50));
+    canvas.dispatchEvent(pointer('pointerdown', 30, 40));
+    canvas.dispatchEvent(pointer('pointermove', 30, 46));
+    canvas.dispatchEvent(pointer('pointerup', 30, 46));
+    expect(host.obstacles).toEqual([
+      { centre: { x: 50, y: 50 } },
+      { centre: { x: 30, y: 40 }, radius: 6 },
+    ]);
+  });
+});
 
 describe('the field wrapper', () => {
   it('owns the only drawing surface and paints each frame it is sent, directly', () => {

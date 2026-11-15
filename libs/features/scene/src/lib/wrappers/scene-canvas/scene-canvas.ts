@@ -14,8 +14,15 @@ import {
 } from '@angular/core';
 import type { Observable } from 'rxjs';
 
-import type { PreviewArrow, SceneFrame, UnitId, Vec2 } from '@dotln-angular/scene-engine';
+import type {
+  PreviewArrow,
+  SceneFrame,
+  SearchRecord,
+  UnitId,
+  Vec2,
+} from '@dotln-angular/scene-engine';
 
+import type { FieldToolId } from '../../models/scene-view-model';
 import type { SceneGhost, SceneRenderer, SceneUnitStyle } from '../../renderers/scene-renderer';
 import { fieldView, toField, unitAt } from './field-view';
 import { SceneRendererFactoryToken } from './scene-renderer-factory';
@@ -32,6 +39,18 @@ export interface FieldMarquee {
   readonly additive: boolean;
 }
 
+/** A wall drawn by a press, a drag and a release. */
+export interface DrawnWall {
+  readonly from: Vec2;
+  readonly to: Vec2;
+}
+
+/** An obstacle placed by a click, or a press dragged out to its radius. */
+export interface PlacedObstacle {
+  readonly centre: Vec2;
+  readonly radius?: number;
+}
+
 interface Press {
   readonly x: number;
   readonly y: number;
@@ -42,6 +61,16 @@ interface Press {
 const dragThreshold = 5;
 // How far from a unit's centre a press still lands on it, in pixels, for fingers and small units.
 const pressReach = 14;
+// A wall shorter than this, in field units, is a slip of the hand and draws nothing.
+const shortestWall = 0.5;
+
+// With Shift held, a drawn wall keeps to whichever axis it is closer to.
+function snapped(from: Vec2, to: Vec2, snap: boolean): Vec2 {
+  if (!snap) return to;
+  return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y)
+    ? { x: to.x, y: from.y }
+    : { x: from.x, y: to.y };
+}
 
 /** Owns the field's drawing surface and its painter; the frames arrive as a stream. */
 @Component({
@@ -71,6 +100,15 @@ const pressReach = 14;
         [style.height.px]="box.height"
       ></div>
     }
+    @if (draft(); as shape) {
+      <svg class="draft" aria-hidden="true">
+        @if (shape.radius === null) {
+          <line [attr.x1]="shape.from.x" [attr.y1]="shape.from.y" [attr.x2]="shape.to.x" [attr.y2]="shape.to.y" />
+        } @else {
+          <circle [attr.cx]="shape.from.x" [attr.cy]="shape.from.y" [attr.r]="shape.radius" />
+        }
+      </svg>
+    }
   `,
   styles: `
     :host {
@@ -99,6 +137,17 @@ const pressReach = 14;
       background: color-mix(in srgb, var(--dotln-field-accent) 12%, transparent);
       pointer-events: none;
     }
+    .draft {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      pointer-events: none;
+      stroke: var(--dotln-field-wall);
+      stroke-width: 4;
+      stroke-linecap: round;
+      fill: color-mix(in srgb, var(--dotln-field-wall) 35%, transparent);
+    }
   `,
 })
 export class SceneCanvas {
@@ -111,12 +160,18 @@ export class SceneCanvas {
   readonly units = input<readonly SceneUnitStyle[]>([]);
   readonly motion = input(true);
   readonly label = input('');
+  /** What a press on the field does: select units, draw a wall or place an obstacle. */
+  readonly fieldTool = input<FieldToolId>('select');
+  /** The search the field shades, or none. */
+  readonly search = input<SearchRecord | null>(null);
 
   readonly selected = output<FieldSelect>();
   readonly marquee = output<FieldMarquee>();
   readonly pointAt = output<Vec2>();
   readonly sendTo = output<Vec2>();
   readonly squad = output<UnitId>();
+  readonly wallDrawn = output<DrawnWall>();
+  readonly obstaclePlaced = output<PlacedObstacle>();
 
   protected readonly surface = viewChild.required<ElementRef<HTMLCanvasElement>>('surface');
   readonly #document = inject(DOCUMENT);
@@ -125,6 +180,7 @@ export class SceneCanvas {
     readonly from: Press;
     readonly x: number;
     readonly y: number;
+    readonly snap: boolean;
   } | null>(null);
   #press: Press | null = null;
   #renderer: SceneRenderer | null = null;
@@ -132,7 +188,7 @@ export class SceneCanvas {
 
   protected readonly marqueeBox = computed(() => {
     const dragged = this.#dragged();
-    if (!dragged) return null;
+    if (!dragged || this.fieldTool() !== 'select') return null;
     const { from, x, y } = dragged;
     return {
       left: Math.min(from.x, x),
@@ -142,12 +198,27 @@ export class SceneCanvas {
     };
   });
 
+  /** The wall or obstacle being drawn, in the surface's pixels; a wall has no radius. */
+  protected readonly draft = computed(() => {
+    const dragged = this.#dragged();
+    const tool = this.fieldTool();
+    if (!dragged || tool === 'select') return null;
+    const from = { x: dragged.from.x, y: dragged.from.y };
+    const to = snapped(from, { x: dragged.x, y: dragged.y }, dragged.snap);
+    return {
+      from,
+      to,
+      radius: tool === 'wall' ? null : Math.hypot(to.x - from.x, to.y - from.y),
+    };
+  });
+
   constructor() {
     effect((onCleanup) => {
       const canvas = this.surface().nativeElement;
       const renderer = this.#createRenderer(canvas, {
         styles: () => untracked(this.units),
         motion: () => untracked(this.motion),
+        search: () => untracked(this.search),
       });
       this.#renderer = renderer;
       const stopResizing = this.#observeSize(canvas, renderer);
@@ -171,6 +242,7 @@ export class SceneCanvas {
       this.arrows();
       this.ghostFrames();
       this.units();
+      this.search();
       this.#paint();
     });
   }
@@ -242,7 +314,7 @@ export class SceneCanvas {
     }
     const { x, y } = point;
     if (this.#dragged() || Math.hypot(x - press.x, y - press.y) > dragThreshold)
-      this.#dragged.set({ from: press, x, y });
+      this.#dragged.set({ from: press, x, y, snap: event.shiftKey });
   }
 
   release(event: PointerEvent) {
@@ -250,6 +322,11 @@ export class SceneCanvas {
     const dragged = this.#dragged();
     this.cancel();
     if (!press) return;
+    const tool = untracked(this.fieldTool);
+    if (tool !== 'select') {
+      this.#draw(tool, press, dragged ? this.#local(event) : null, event.shiftKey);
+      return;
+    }
     if (dragged) {
       const from = this.#toField(press);
       const to = this.#toField(this.#local(event));
@@ -268,6 +345,22 @@ export class SceneCanvas {
     this.#dragged.set(null);
   }
 
+  // A wall runs from the press to the release; an obstacle stands at the press, as wide as the
+  // drag, or at its usual size when the press was a click.
+  #draw(tool: Exclude<FieldToolId, 'select'>, press: Press, release: Vec2 | null, snap: boolean) {
+    const from = this.#toField(press)?.point;
+    if (!from) return;
+    if (tool === 'obstacle') {
+      const edge = release === null ? null : this.#toField(release)?.point;
+      const radius = edge ? Math.hypot(edge.x - from.x, edge.y - from.y) : undefined;
+      this.obstaclePlaced.emit(radius === undefined ? { centre: from } : { centre: from, radius });
+      return;
+    }
+    const end = release === null ? null : this.#toField(snapped(press, release, snap))?.point;
+    if (end && Math.hypot(end.x - from.x, end.y - from.y) >= shortestWall)
+      this.wallDrawn.emit({ from, to: end });
+  }
+
   /** The strategy game's right-click: an order to go there, in place of the browser's menu. */
   send(event: MouseEvent) {
     event.preventDefault();
@@ -276,6 +369,7 @@ export class SceneCanvas {
   }
 
   doublePress(event: MouseEvent) {
+    if (untracked(this.fieldTool) !== 'select') return;
     const unit = this.#landing(this.#local(event))?.unit ?? null;
     if (unit !== null) this.squad.emit(unit);
   }

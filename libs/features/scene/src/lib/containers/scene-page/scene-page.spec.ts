@@ -35,10 +35,13 @@ describe('the scene page', () => {
     expect(element.querySelectorAll('scene-unit-list li')).toHaveLength(20);
   });
 
-  it('lists the five instruments with an honest unknown', async () => {
+  it('lists the eight instruments with an honest unknown', async () => {
     const { element } = await setUp();
-    expect(element.querySelectorAll('[data-metric]')).toHaveLength(5);
+    expect(element.querySelectorAll('[data-metric]')).toHaveLength(8);
     expect(element.querySelector('[data-metric="timeToObjective"] .figure')?.textContent).toContain(
+      'unknown',
+    );
+    expect(element.querySelector('[data-metric="pathLength"] .figure')?.textContent).toContain(
       'unknown',
     );
   });

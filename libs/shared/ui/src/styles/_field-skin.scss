@@ -14,6 +14,11 @@ html:has([data-skin='field']) {
   --dotln-field-objective: #ffd27a;
   --dotln-field-ghost: rgb(233 240 234 / 32%);
   --dotln-field-alert: #ff8a75;
+  --dotln-field-wall: #8fa3ad;
+  --dotln-field-path: rgb(132 227 180 / 60%);
+  --dotln-field-search-closed: rgb(143 184 255 / 16%);
+  --dotln-field-search-open: rgb(255 210 122 / 30%);
+  --dotln-field-ray: rgb(233 240 234 / 45%);
 
   --dotln-canvas: var(--dotln-field-ground);
   --dotln-surface: var(--dotln-field-surface);

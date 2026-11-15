@@ -117,6 +117,18 @@
     "assignmentCost": {
       "a": [null, null, null, null, null, null, null, null, null, null, null],
       "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "pathLength": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "replans": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "blockedUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     }
   },
   "firstDivergenceFrame": 61

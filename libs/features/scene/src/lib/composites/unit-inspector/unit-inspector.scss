@@ -173,3 +173,39 @@ td {
     gap: 0 var(--dotln-space-5);
   }
 }
+
+.no-route {
+  max-inline-size: 60ch;
+  padding: var(--dotln-space-2) var(--dotln-space-3);
+  border-inline-start: 3px solid var(--dotln-field-objective);
+  color: var(--dotln-ink);
+  background: var(--dotln-field-raised);
+}
+.no-route .names {
+  display: block;
+  margin-block-start: var(--dotln-space-1);
+  color: var(--dotln-muted);
+  font-size: 0.78rem;
+}
+.cost-reading,
+.routes p {
+  max-inline-size: 60ch;
+}
+.cost-reading {
+  color: var(--dotln-muted);
+}
+.routes {
+  margin-block-end: var(--dotln-space-3);
+}
+.show-search {
+  display: flex;
+  align-items: center;
+  gap: var(--dotln-space-2);
+}
+.show-search input {
+  accent-color: var(--dotln-accent);
+}
+.show-search input:focus-visible {
+  outline: var(--dotln-focus);
+  outline-offset: 2px;
+}

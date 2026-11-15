@@ -22,6 +22,18 @@ const composition: Composition = {
   trials: [],
 };
 
+// The eight series a kept trial carried before the route metrics were added.
+const firstSeries = {
+  cohesionRadius: { a: [1, 1.5], b: [2, 1] },
+  collisions: { a: [0, 0], b: [0, 0] },
+  headingVariance: { a: [0, 0], b: [0, 0] },
+  timeToObjective: { a: [null, null], b: [null, null] },
+  stalledUnits: { a: [0, 0], b: [0, 0] },
+  anchorToMean: { a: [null, null], b: [null, null] },
+  slotError: { a: [null, null], b: [null, null] },
+  assignmentCost: { a: [null, null], b: [null, null] },
+};
+
 const trial: Trial = {
   id: 'trial-1',
   sceneId: 'the-twenty',
@@ -33,17 +45,16 @@ const trial: Trial = {
   branchA: { label: 'before', steps: [] },
   branchB: { label: 'after', steps: [step] },
   metrics: {
-    cohesionRadius: { a: [1], b: [2] },
-    collisions: { a: [0], b: [0] },
-    headingVariance: { a: [0], b: [0] },
-    timeToObjective: { a: [null], b: [null] },
-    stalledUnits: { a: [0], b: [0] },
-    anchorToMean: { a: [null], b: [null] },
-    slotError: { a: [null], b: [null] },
-    assignmentCost: { a: [null], b: [null] },
+    ...firstSeries,
+    pathLength: { a: [12, 10], b: [null, null] },
+    replans: { a: [0, 1], b: [0, 0] },
+    blockedUnits: { a: [0, 0], b: [0, 0] },
   },
   firstDivergenceFrame: 4,
 };
+
+// A trial kept before a metric existed, as browser storage and an export still hold it.
+const olderTrial = { ...trial, metrics: firstSeries };
 
 function setUp(stored?: string) {
   const kit = provideSceneStoreTestKit();
@@ -231,6 +242,26 @@ describe('composition validation', () => {
     expect(isComposition({ ...composition, steps: [{ ...step, params }] })).toBe(false);
   });
 
+  it('reads a kept trial saved before the route metrics with each of them as a series of nulls', () => {
+    const older = { ...composition, trials: [olderTrial] };
+    const restored = restoreStoredScene({ version: 1, compositions: [older] });
+    expect(restored?.complete).toBe(true);
+    const { metrics } = restored?.compositions[0].trials[0] ?? trial;
+    expect(metrics.pathLength).toEqual({ a: [null, null], b: [null, null] });
+    expect(metrics.replans).toEqual({ a: [null, null], b: [null, null] });
+    expect(metrics.blockedUnits).toEqual({ a: [null, null], b: [null, null] });
+    expect(metrics.cohesionRadius).toEqual(firstSeries.cohesionRadius);
+  });
+
+  it('still refuses a trial missing one of the first eight, or holding a series that is not one', () => {
+    const { slotError: _missing, ...seven } = firstSeries;
+    expect(isComposition({ ...composition, trials: [{ ...olderTrial, metrics: seven }] })).toBe(
+      false,
+    );
+    const worded = { ...trial.metrics, pathLength: { a: ['far'], b: [null] } };
+    expect(isComposition({ ...composition, trials: [{ ...trial, metrics: worded }] })).toBe(false);
+  });
+
   it('refuses a step past the last frame a comparison will run to, not one an hour in', () => {
     expect(isComposition({ ...composition, steps: [{ ...step, at: 1_000_000_000 }] })).toBe(false);
     expect(isComposition({ ...composition, steps: [{ ...step, at: 216_001 }] })).toBe(true);
@@ -256,5 +287,23 @@ describe('export and import', () => {
 
   it('refuses a composition of another scene', () => {
     expect(parseExport(encodeExport(composition), 'another-scene')).toBeNull();
+  });
+
+  it('imports a composition whose kept trial was saved before the route metrics', () => {
+    const older = { ...composition, trials: [olderTrial] } as unknown as Composition;
+    const imported = parseExport(encodeExport(older), composition.sceneId);
+    expect(imported?.trials[0].metrics.replans).toEqual({ a: [null, null], b: [null, null] });
+  });
+
+  it('imports a composition carrying field steps and replays them as written', () => {
+    const wall = {
+      at: 12,
+      toolId: 'field.wall',
+      kind: 'field.wall',
+      selection: [],
+      params: { x1: 40, y1: 0, x2: 40, y2: 50, thickness: 1, shape: 1 },
+    };
+    const walled = { ...composition, steps: [wall, step] };
+    expect(parseExport(encodeExport(walled), composition.sceneId)?.steps).toEqual([wall, step]);
   });
 });

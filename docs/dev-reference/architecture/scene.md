@@ -1,10 +1,11 @@
 # The soldier scene
 
-`/scene` is the app's root and its first toy: twenty units on a dark field, a rail of
-the steering and formation tools the engine runs, and instruments that show what each
-idea does to a group. The operator selects units the way a real-time strategy game
-does, gives them a tool, and watches. Everything here is built for trying things: a
-tool's parameters act on the units as they change, and any two moments can be compared.
+`/scene` is the app's root and its first toy: twenty units on a dark field the operator can
+put walls and obstacles on, a rail of the steering, path and formation tools the engine
+runs, and instruments that show what each idea does to a group. The operator selects units
+the way a real-time strategy game does, gives them a tool, and watches. Everything here is
+built for trying things: a tool's parameters act on the units as they change, and any two
+moments can be compared.
 
 ## The engine
 
@@ -20,26 +21,90 @@ which is a rule to keep rather than a check: nothing refuses an `@angular/core` 
 next state, and a unit reads the frame before, so the order units are visited in cannot
 matter.
 
-| Module                               | Holds                                                                                                                                                        |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vectors.ts`, `random.ts`            | 2D arithmetic, a mulberry32 generator whose state is the seed it returns                                                                                     |
-| `steering.ts`, `blending.ts`         | Seek, arrive, flee, separation, velocity matching, collision avoidance, wander; weighted blending clipped to the maximum acceleration; first-active priority |
-| `formation.ts`, `slot-assignment.ts` | Wedge, line and column; the two-level anchor; greedy assignment, most constrained first                                                                      |
-| `interpreter.ts`                     | A `CompositionStep` becoming a behaviour on units                                                                                                            |
-| `simulation.ts`                      | One fixed step of 1/60 s, the `SceneFrame` a painter draws, and whether a scene is at rest                                                                   |
-| `queries.ts`                         | What a feature may ask of a scene: a unit's squad, the slot table, who is free to take an order, which units touch                                           |
-| `run.ts`                             | A run in progress: the steps still to come, what falls due on a frame, and the latest refusal                                                                |
-| `metrics.ts`                         | Cohesion radius, collisions, heading variance, time to objective, stalled units, anchor to mean, slot error, assignment cost                                 |
-| `hash.ts`, `trial.ts`                | Frame fingerprints, first divergence, two branches compared over one window                                                                                  |
+| Module                               | Holds                                                                                                                                                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vectors.ts`, `random.ts`            | 2D arithmetic, a mulberry32 generator whose state is the seed it returns                                                                                                                                                                                                 |
+| `steering.ts`, `blending.ts`         | Seek, arrive, flee, separation, velocity matching, collision avoidance and the head-on policy beside it, obstacle and wall avoidance, wander, what its neighbours add to a unit in a crowd; weighted blending clipped to the maximum acceleration; first-active priority |
+| `geometry.ts`                        | Walls and obstacles as one shape model, its three clearance queries (standing, moving, a ray), and the stop at a shape                                                                                                                                                   |
+| `graph.ts`, `pathfinding.ts`         | The tile graph over the field at its cell size, or from a plain grid; A* with its heuristics, Dijkstra as the zero heuristic, every expansion kept; line-of-sight smoothing; planning a route                                                                            |
+| `path-following.ts`                  | Where a following unit aims, passing its waypoints, planning and planning again                                                                                                                                                                                          |
+| `formation.ts`, `slot-assignment.ts` | Wedge, line and column; the two-level anchor; greedy assignment, most constrained first                                                                                                                                                                                  |
+| `interpreter.ts`                     | A `CompositionStep` becoming a behaviour on units, or a change to the field                                                                                                                                                                                              |
+| `simulation.ts`                      | One fixed step of 1/60 s, the `SceneFrame` a painter draws, and whether a scene is at rest                                                                                                                                                                               |
+| `queries.ts`                         | What a feature may ask of a scene: a unit's squad, the slot table, who is free to take an order, which units touch                                                                                                                                                       |
+| `run.ts`                             | A run in progress: the steps still to come, what falls due on a frame, and the latest refusal                                                                                                                                                                            |
+| `metrics.ts`                         | Cohesion radius, collisions, heading variance, time to objective, stalled units, anchor to mean, slot error, assignment cost, path length, replans, blocked units                                                                                                        |
+| `hash.ts`, `trial.ts`                | Frame fingerprints, first divergence, two branches compared over one window                                                                                                                                                                                              |
 
 **How a tool becomes a behaviour.** `applyStep` reads a step's parameters by name:
 `separation-weight` sets a blend term, `slow-radius` tunes one, `avoidance-priority`
-ranks a group, `pattern` picks a formation. No tool has code of its own, so a catalog
-row with a known kind and known parameter names simply runs. A later step on the same
-units overrides the terms it names and keeps the rest; a blending tool takes a unit out
-of its formation, while priority steering wraps whatever the unit already does, its
-formation included. `readsParam` says which names are read, and a spec runs every rail
-tool at its defaults to prove none is silently ignored.
+ranks a group, `pattern` picks a formation, `heuristic` chooses a search's guess. No tool
+has code of its own, so a catalog row with a known kind and known parameter names simply
+runs. A later step on the same units overrides the terms it names and keeps the rest; a
+blending or path tool takes a unit out of its formation, while priority steering wraps
+whatever the unit already does, its formation included. A path step (`path.find`,
+`path.smooth`, `path.follow`, `path.cost`) sets its own part of a unit's route whole, so a
+parameter it does not carry reads as its default: Dijkstra's algorithm is A* with no
+heuristic, and Path following is Predictive path following looking no time ahead; the cost
+functions keep the weights a step does not name. `readsParam` says which names are read,
+and a spec runs every rail tool at its defaults to prove none is silently ignored.
+
+**The field is changed by steps too.** A wall, an obstacle, clearing shapes and the tile
+graph's cell size are the steps `field.wall` (`x1`, `y1`, `x2`, `y2`, `thickness`,
+`shape`), `field.obstacle` (`x`, `y`, `radius`, `shape`), `field.clear` (`shape`, or every
+shape when it is absent) and `field.grid` (`cell-size`), each with its true tick and an
+empty selection, written as the objective is. A step naming an existing `shape` replaces
+it, so an edited coordinate is a step as well. They are not catalog transforms, since
+geometry is the field's and not a concept's, so `fieldKinds` lists them apart from
+`interpretedKinds`, and `refusalOf` exempts them from the no-units refusal as it exempts
+the objective. A composition therefore replays its walls where and when they were drawn,
+and a trial compares one seed with and without a wall. `hashFrame` still fingerprints the
+units alone: geometry does not move, so the first divergence of such a trial is the first
+frame a unit moves differently.
+
+**Routes.** A wall is a segment with a thickness and an obstacle a disc, both held as a
+segment and how far the shape reaches from it, and three queries measure clearance against
+that one model alike: `touches` for a body standing, `clearMove` for a body moved in a
+straight line, `castRay` for a ray. A cell is free when a unit standing at its centre
+touches no shape; an edge between two cells is traversable only when the unit moved along
+it clears every shape, so a thin wall between two centres cuts the edge, and a corner step
+needs both of its side steps open; smoothing keeps a shortcut only when it passes the same
+test, and so do a search's two ends, a follower's sight of its next waypoint and the stop
+at geometry; the avoidance rays cast against the same shapes. A body a shape was drawn over
+may move only in a direction that does not deepen the contact. The tile graph is eight-connected over the field at its cell size (2.5 by
+default, so the field is 48 by 32 cells), with octile edge costs scaled by the cost
+weights; it is built once for each geometry, field and radius. A search starts from the
+nearest free cell the unit can walk to in a straight line and ends at the nearest one from
+which it can walk to the objective, or there is no route, for one of three reasons: the
+unit is hemmed in (`unreachable-start`), the objective stands too close to a shape for a
+unit to stand there (`unreachable-goal`, decided at once, without trying every cell), or no
+way round the walls reaches it (`no-path`). The end nearest a point is tried first, and the
+rest are sorted once only when it fails. A* orders cells by
+cost so far plus its heuristic's guess (`zero`, `manhattan`, `euclidean`, `octile`), and
+the guess stays the unweighted distance whatever the weights, so a travel weight above one
+makes the search expand more cells for the same route. Equally cheap routes are told apart
+by a cost far below any real difference in length, favouring cells nearer the straight
+line, so a weight or a better heuristic never changes which route comes back. The cost
+layers that danger, visibility, exposure and cover weigh are uniform until an influence map
+lands one. Every expansion is kept, the cell closed and the cells it put on the frontier,
+for the painter's search layer and for stepping through a search.
+
+**Following and planning again.** A unit given any path tool finds and follows a route to
+the objective; with no seek or arrive of its own it reads arrive at one. It aims
+`path-offset` along its current leg beyond where it judges itself to be (its position, or
+`predict-time` ahead along its velocity), comes at each turn no faster than it can carry
+round it, and arrives at the last waypoint; an aim that falls under its own body, as a
+`path-offset` of zero gives a unit standing on its route, sends it to the waypoint the leg
+ends at instead. It makes for the next waypoint once it is
+within `waypoint-radius` of this one, or past it, and only when it can see the next one.
+It plans again when a field step lands, when the objective moves, or when the geometry
+stops it and it can no longer see the waypoint it makes for; each of those counts in
+`replans`, the first plan does not. A unit with no route is blocked: its activity says so,
+it is not counted stalled, and it leaves the objective's drivers. Nothing steers it, so it
+brakes where it stands whatever else it carries, a blend with wandering in it or a
+priority order; it keeps all of that, and goes on as it was composed once a step gives it
+a way again. `pathLength` is the focus units' mean route
+still to walk, unknown when none follows one.
 
 A formation's assignment is the only record of who stands where. A two-level formation
 that loses members moves its anchor to the centre of the slots still held, so nobody
@@ -47,7 +112,11 @@ moves and the anchor and the members' mean keep agreeing. A fixed formation's le
 follows nothing: given steering of its own it leaves the slots and still leads them. A
 leader that nothing is steering for the objective heads there, whenever one is set, for
 as long as it leads. Leaders and members keep the formation's own spacing, closer than a
-crowd's.
+crowd's. A unit a formation step places steers for its slot and nothing else, so it leaves
+its route, as a path tool takes a unit out of its formation; a fixed formation's leader
+steers for itself and keeps a route it has, and its followers go where it goes. A
+two-level formation's anchor takes no route: it heads straight for the objective, so a
+formation sent beyond a wall stalls at it and says so.
 
 These rules are not in the catalog and are the scene's own:
 
@@ -56,15 +125,47 @@ These rules are not in the catalog and are the scene's own:
   would pull together and stop, and the book's "group motion" would never appear.
 - **Free-moving units turn back from the field's edge.** Everything is kept on the
   field; only cruising and wandering units, by blending or by priority, steer away from
-  it. A wall stops a unit dead in that direction, so a pinned unit reads as stopped.
+  it. The edge, a wall or an obstacle stops a unit dead in the direction that would meet
+  it and leaves it what slides along it, so a pinned unit reads as stopped.
 - **Forces fade; they do not switch.** Arrive's wanted speed reaches nothing halfway
   inside the target radius, and separation, flee and the anchor's speed all fade to
   nothing at their edges. A force that switches at a line sets a settled group shivering
   across it for ever, and the run never rests.
-- **Nothing coasts.** A unit nothing is steering brakes to a stop. Priority gives the
-  separation group a unit to itself, so round the objective the unit is heading for that
-  group sheds its speed as well as parting it; without this a crowd boils there.
-  Anywhere else it keeps its speed, so a group under priority still travels.
+- **Nothing coasts.** A unit nothing is steering brakes to a stop.
+- **Separation under priority claims a unit on its push and adds only what cancels
+  across the crowd.** The group fires when its push clears epsilon. Under it the unit's
+  own steering keeps its whole pull, and each neighbour inside the separation threshold
+  adds two things (`neighbourForces`): a push, divided by the share of the maximum
+  acceleration it leaves free, so that it outgrows any pull before the two touch; and
+  friction, which matches the pair's velocities faster the harder they press. Both are
+  equal and opposite between the two of a pair, so a crowd's centre goes where its units'
+  own steering takes it while no unit's sum passes its maximum acceleration, and at
+  Arrive's defaults a settled crowd sent somewhere new, however near, starts as the same
+  units would with no neighbours. One thing is taken from the unit's own steering: it is
+  not asked about the speed the push gives it (`withoutCarriedSpeed`), wholly once the
+  push reaches half the unit's maximum acceleration and in proportion below that, so the
+  units a crowd carries along do not brake against it. At Arrive's defaults a settled
+  crowd then reaches a near objective no later than the same units under Arrive alone,
+  and a crowd packed round its objective keeps its spacing and comes to rest; the specs
+  hold that for crowds of 3, 6, 7, 12 and 20 by the centre and for twelve units by the
+  stopwatch. What the neighbours add fades in over the first epsilon past the claim, so
+  nothing switches at a line. The rule does not reach every tuning of Arrive: at a slow
+  radius of 3 or less such a crowd reaches a near objective a few frames after the same
+  units under Arrive alone, and the case is boarded in `steering.spec.ts`. There the
+  acceleration limit takes part of what the crowd asks for on its first frame; whether
+  that is the whole cause, and whether another rule would close it, is not established.
+- **Two units on a collision course always part.** Collision avoidance steers from the
+  neighbour it predicts the soonest collision with; where that neighbour stands on the
+  unit's centre, or will at their closest approach, there is no direction to steer, and
+  the head-on policy beside it gives one: the perpendicular of the offset from the earlier
+  unit in the scene's list to the later, or the world's x-axis when they stand on one spot,
+  the earlier steering along it and the later against it. `avoid` itself is unchanged.
+- **Obstacle and wall avoidance feels ahead and never runs at what it feels.** It casts a
+  ray of `look-ahead` and, above a `whisker-angle` of nothing, two whiskers half as long,
+  and steers for a point `avoid-distance` off the nearest hit along the surface's normal,
+  fading as the hit nears the end of its ray. Unlike the book's seek of that point, it
+  drops any part of the steering along the ray toward the hit, so a wall dead ahead is
+  braked for and one met at a slant is turned from.
 - **The objective is one point for the whole group.** Arrive sends each unit there, so
   units with no separation pile onto it, collisions and all. That is worth seeing.
 - **A group arrives, not a unit.** A group has arrived when its centre is inside the
@@ -91,7 +192,8 @@ to the next frame, which is why the first divergence between a branch before and
 an equip is the equip frame plus one. A step made on a frame with one already due goes
 after it, which is the order a replay applies them in.
 `libs/features/scene/src/testing/fixtures/trial-known-outcome.json` pins the frame hashes
-and metric series. Native `sin` and `cos` are kept out of the engine because the host's
+and metric series of a flock, and `walls-known-outcome.json` those of a squad given A* round
+a wall, with a branch in which the gap is sealed. Native `sin` and `cos` are kept out of the engine because the host's
 C++ library rounds them differently by architecture, and a committed hash must
 reproduce on every machine. `feel` reseeds every run and says so in the transport.
 
@@ -109,9 +211,11 @@ chooses a sentence.
 emits a frame; a renderer shows it.
 
 - `CanvasSceneRenderer` paints one pass per frame on a 2D context, with no element per
-  unit: arrowheads in the role colours, fading trails, selection rings, sparks where
-  units overlap, slots, the anchor, the objective and its ripple. It reads its tokens
-  when the surface is sized, never per frame.
+  unit: walls as bars and obstacles as discs, the last search's closed cells and frontier
+  when the inspector shows it, the selected units' routes as faint dashed lines, the
+  objective and its ripple, slots and the anchor, fading trails, the avoidance rays and
+  where they hit, arrowheads in the role colours with selection rings, and sparks where
+  units overlap. It reads its tokens when the surface is sized, never per frame.
 - `TextSceneRenderer` turns a frame into rows. It holds plain rows, not a signal, so the
   facade can publish a whole sample in one write.
 - `NullSceneRenderer` draws nothing and remembers what it was given. jsdom has no 2D
@@ -132,8 +236,8 @@ detection. A sample of it goes to the page: every sixth driver frame while runni
 every change when still, in one signal write, so zoneless change detection runs at most
 once per frame and usually ten times a second. The run pauses itself once nothing moves
 or would move, so nothing animates at rest. Some runs never get there: a seeker overshoots
-for ever, a wanderer wanders, a crowd under priority steering keeps a faint shimmer, and a
-wedge of twenty at the widest spacing, too big for the field, keeps turning.
+for ever, a wanderer wanders, and a wedge of twenty at the widest spacing, too big for the
+field, keeps turning.
 
 The facade is provided on the route, so the scene survives a visit to the catalog; the
 page pauses it on leaving, so it never runs unwatched.
@@ -145,6 +249,21 @@ page pauses it on leaving, so it never runs unwatched.
 - **Sending:** a right-click sets the objective and gives the selected units Arrive, as a
   strategy game's move order does. Units in a formation need no order: their anchor
   follows the objective.
+- **Building the field:** the field tools in the transport draw a wall (press, drag,
+  release; Shift keeps it straight across or down), place an obstacle (a click places one,
+  a drag sets its radius) and clear the walls and obstacles, and set the tile graph's cell
+  size, whose name links the Tile graph's reading. Every shape is also a row of the
+  walls-and-obstacles list under the unit list, its numbers editable and the shape
+  removable from the keyboard, with a wall or an obstacle addable there too; a size below
+  what the engine takes is put back, and an edit keeps the shape's other numbers as they
+  are, not as the list rounds them. The log tells taking one shape away from clearing the
+  field.
+- **Routing:** a tool from the rail's ways group sends the selected units round whatever
+  stands in the way. The inspector says how many have a route, how long, what the first
+  one's search expanded and where it heads next, words a cost function's weights, and
+  names every unit with no route and why; Show search shades the cells that unit's last
+  search closed and the frontier it left, while a path tool is chosen, before Apply as
+  after it.
 - **Live tuning:** once a tool is applied, changing it reaches the same units at once. A
   slider acts on release, a pattern on the click. Each change is a step, so a replay
   does exactly what the operator did; the log folds a run of them into one line.
@@ -158,15 +277,19 @@ page pauses it on leaving, so it never runs unwatched.
   is the formation's own, live while the units sort, with a running count beside Apply
   because the table can sit below the fold.
 - **The coach line** names the next thing worth trying and goes quiet after a comparison.
+  While a field tool is chosen it says how to draw with it instead, over the field, so
+  choosing a tool moves nothing on the page.
 
 Metrics read the selected units, or every unit when nothing is selected, and each
 sparkline restarts when that changes. Time to objective stays unknown until the group
-has arrived: a stopwatch still running is not the time to anything.
+has arrived: a stopwatch still running is not the time to anything. Path length stays
+unknown until a unit follows a route, and a comparison leaves the route figures out when
+no unit in either branch had a route.
 
 ## The list of tools
 
 The rail, the inspector and the `?tool=` reader share one list: `sceneTools('aifg')` from
-the catalog, filtered by `isRunnable`. A `?tool=` naming anything else arrives with
+the catalog, filtered by `isRunnable`, grouped as move, ways, group, avoid and form. A `?tool=` naming anything else arrives with
 nothing chosen and a notice saying why, reading the wider catalog only to name the
 reason. Cohesion has no catalog row of its own; it is a weight of Flocking and Making
 the creatures, and no rail entry is invented for it.
@@ -188,9 +311,16 @@ the last save failed and this tab holds the only copy.
 
 `stored-scene.ts` is the only door in: storage and an imported text pass the same
 validation. The shape is its own, and what the engine can run is the engine's, through
-`isSafeStep`: numbers it can square, a time to target that is a real stretch of time,
-and a last step inside eight hours of play. `encodeExport` and `parseExport` own the export
-format, and an import of another scene's composition is refused.
+`isSafeStep`: numbers it can square, a time to target that is a real stretch of time, a
+shape no smaller than nothing, a cell at least one unit across, and a last step inside
+eight hours of play. `encodeExport` and `parseExport` own the export format, and an import
+of another scene's composition is refused. Geometry is carried by field steps, so neither
+storage (`version: 1`) nor the export (`scene-composition-v0`) changed version for it.
+
+One rule covers a kept trial saved before a metric existed: it must hold a valid series
+for each of the eight metrics the export carried first (`cohesionRadius` to
+`assignmentCost`), any later series it holds is checked, and a later one it lacks reads as
+a series of nothing as long as the trial's own, which is unknown wherever it is shown.
 
 ## The field skin
 

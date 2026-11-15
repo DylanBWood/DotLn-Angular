@@ -109,6 +109,9 @@
       "influence": "change how influence spreads across the terrain",
       "frag": "change the terrain’s fragmentation",
       "path": "change the cost of a route",
+      "find": "find a route across the field’s tile graph",
+      "smooth": "cut a route down to the waypoints in sight of each other",
+      "follow": "follow a route from waypoint to waypoint",
       "zoom": "change the level of detail",
       "ring": "connect the levels in a ring"
     },

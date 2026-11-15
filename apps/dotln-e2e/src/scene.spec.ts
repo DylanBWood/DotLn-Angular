@@ -3,6 +3,9 @@ import { expect, type Page, test } from '@playwright/test';
 
 const flock = 'aifg-a:145';
 const arrive = 'aifg-a:112';
+const aStar = 'aifg-a:222';
+const wander = 'aifg-a:125';
+const collisionAvoidance = 'aifg-a:134';
 
 const figure = (page: Page, id: string) => page.locator(`[data-metric="${id}"] .figure`);
 const units = (page: Page) => page.locator('scene-unit-list li');
@@ -15,6 +18,66 @@ async function arrived(page: Page, path = '/scene') {
   await page.goto(path);
   await expect(tool(page, flock)).toBeVisible();
   await expect(units(page)).toHaveCount(20);
+}
+
+// Where a point of the 120 by 80 field is on the page, measured afresh as the page may have moved.
+async function fieldPoint(page: Page, x: number, y: number) {
+  const canvas = page.locator('scene-canvas canvas');
+  await canvas.scrollIntoViewIfNeeded();
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('The field has no box.');
+  const scale = Math.min(box.width / 120, box.height / 80);
+  return {
+    x: box.x + (box.width - 120 * scale) / 2 + x * scale,
+    y: box.y + (box.height - 80 * scale) / 2 + y * scale,
+  };
+}
+
+// Choosing the chosen field tool again puts it down, so a tool already chosen is left as it is.
+async function fieldTool(page: Page, name: 'select' | 'wall' | 'obstacle') {
+  const button = page.locator(`[data-field-tool="${name}"]`);
+  if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+}
+
+async function dragOnField(page: Page, from: [number, number], to: [number, number]) {
+  const start = await fieldPoint(page, ...from);
+  const end = await fieldPoint(page, ...to);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 6 });
+  await page.mouse.up();
+}
+
+async function drawWall(page: Page, from: [number, number], to: [number, number]) {
+  await fieldTool(page, 'wall');
+  await dragOnField(page, from, to);
+}
+
+async function clickField(page: Page, x: number, y: number, options = {}) {
+  const point = await fieldPoint(page, x, y);
+  await page.mouse.click(point.x, point.y, options);
+}
+
+const shapes = (page: Page) => page.locator('scene-geometry-list li');
+
+// The order's field: a wall standing down from the top edge at x = 70 with a gap at its foot, two
+// obstacles by the gap, the units west of it given A* and the objective beyond it.
+async function routeRoundTheWall(page: Page) {
+  await drawWall(page, [70, 0.5], [70, 64]);
+  await fieldTool(page, 'obstacle');
+  await clickField(page, 62, 74);
+  await clickField(page, 82, 72);
+  await expect(shapes(page)).toHaveCount(3);
+  await fieldTool(page, 'select');
+  await dragOnField(page, [2, 2], [68, 68]);
+  await expect.poll(() => selected(page).count()).toBeGreaterThanOrEqual(8);
+  await tool(page, aStar).click();
+  await expect(page.locator('scene-unit-inspector h2')).toHaveText('A*');
+  await clickField(page, 100, 40);
+  await expect(page.locator('scene-unit-list legend')).toContainText('Objective: east');
+  await apply(page).click();
+  await expect(page.locator('[data-routes]')).toContainText('With a route');
 }
 
 // A marquee over most of the field; the fixture spreads the twenty across it.
@@ -79,6 +142,11 @@ test('the rail lists the floor of tools and nothing the engine refuses', async (
     'Column',
     'Fixed formations',
     'Slot assignment',
+    'A*',
+    "Dijkstra's algorithm",
+    'Path following',
+    'Obstacle and wall avoidance',
+    'Collision avoidance',
   ])
     await expect(rail.getByRole('button', { name, exact: true })).toBeVisible();
   const ids = await rail
@@ -288,6 +356,129 @@ test('the scene survives a visit to another page', async ({ page }) => {
   await expect(page.locator('scene-tool-log ol li')).toHaveCount(1);
 });
 
+test('a wall drawn on the field sends a squad given A* round it to the objective', async ({
+  page,
+}) => {
+  await arrived(page);
+  await routeRoundTheWall(page);
+  await expect(figure(page, 'pathLength')).toHaveText(/^\d+\.\d$/);
+  await transport(page, 'play').click();
+  await expect(figure(page, 'timeToObjective')).toHaveText(/^\d+\.\d$/, { timeout: 45_000 });
+  await expect(page.locator('scene-unit-list li', { hasText: 'arrived' }).first()).toBeVisible();
+});
+
+test('a second wall across the way makes the squad plan again, a sealed gap leaves it no route, and clearing frees it', async ({
+  page,
+}) => {
+  await arrived(page);
+  await routeRoundTheWall(page);
+  for (let step = 0; step < 3; step += 1) await transport(page, 'step').click();
+  await drawWall(page, [76, 58], [92, 44]);
+  await expect(figure(page, 'replans')).not.toHaveText('0');
+  await expect(page.locator('scene-unit-list li', { hasText: 'replanning' }).first()).toBeVisible();
+  await drawWall(page, [70, 60], [70, 79.5]);
+  await expect(page.locator('[data-no-route="no-path"]')).toContainText('No route (');
+  await expect(page.locator('scene-unit-list li', { hasText: 'no route' }).first()).toBeVisible();
+  await expect(figure(page, 'blockedUnits')).not.toHaveText('0');
+  await page.locator('[data-field-clear]').click();
+  await expect(shapes(page)).toHaveCount(0);
+  await expect(page.locator('[data-no-route]')).toHaveCount(0);
+  await expect(figure(page, 'blockedUnits')).toHaveText('0');
+  // Clearing plans every route again, so each row reads replanning until the run moves on.
+  await expect(page.locator('scene-unit-list li', { hasText: 'replanning' }).first()).toBeVisible();
+  await expect(page.locator('scene-unit-list li', { hasText: 'no route' })).toHaveCount(0);
+});
+
+test('a unit given Wander and then A* stays still once a wall seals it off, as its notice says', async ({
+  page,
+}) => {
+  await arrived(page);
+  await page.locator('[data-unit-id="unit-01"] input').click();
+  await tool(page, wander).click();
+  await expect(page.locator('scene-unit-inspector h2')).toHaveText('Wander');
+  await apply(page).click();
+  await drawWall(page, [60, 0.5], [60, 79.5]);
+  await fieldTool(page, 'select');
+  await tool(page, aStar).click();
+  await expect(page.locator('scene-unit-inspector h2')).toHaveText('A*');
+  await clickField(page, 100, 40);
+  await expect(page.locator('scene-unit-list legend')).toContainText('Objective: east');
+  await apply(page).click();
+  await expect(page.locator('[data-no-route="no-path"]')).toContainText('No route (1)');
+  for (let step = 0; step < 20; step += 1) await transport(page, 'step').click();
+  // The notice says the unit stops where it stands; its row has to agree, twenty frames on.
+  await expect(page.locator('[data-unit-id="unit-01"]')).toContainText(
+    'still · blocked · no route',
+  );
+});
+
+test('a wall is edited from the keyboard by its numbers, and removed', async ({ page }) => {
+  await arrived(page);
+  await page.locator('[data-add="wall"]').click();
+  await expect(shapes(page)).toHaveCount(1);
+  const toY = shapes(page).locator('[data-value="y2"]');
+  await toY.fill('70');
+  await toY.press('Enter');
+  await expect(page.locator('scene-tool-log ol li').first()).toContainText('Wall drawn');
+  await expect(toY).toHaveValue('70');
+  await shapes(page).locator('[data-remove]').click();
+  await expect(shapes(page)).toHaveCount(0);
+});
+
+test('a saved composition keeps its walls through a reload and replays them', async ({ page }) => {
+  await arrived(page);
+  await drawWall(page, [60, 10], [60, 70]);
+  await fieldTool(page, 'select');
+  await dragOnField(page, [2, 2], [50, 60]);
+  await tool(page, aStar).click();
+  await apply(page).click();
+  await transport(page, 'save').click();
+  await expect(page.locator('[data-composition-id]')).toHaveCount(1);
+  await page.reload();
+  await expect(tool(page, flock)).toBeVisible();
+  await page.locator('[data-composition-id] button').first().click();
+  await transport(page, 'step').click();
+  await expect(shapes(page)).toHaveCount(1);
+  await expect(shapes(page).locator('[data-value="x1"]')).toHaveValue('60');
+});
+
+test('two units sent head on with collision avoidance part, and part alike on a replay', async ({
+  page,
+}) => {
+  await arrived(page);
+  await page.locator('[data-unit-id="unit-02"] input').click();
+  await page.locator('[data-unit-id="unit-04"] input').click();
+  await tool(page, collisionAvoidance).click();
+  await expect(page.locator('scene-unit-inspector h2')).toHaveText('Collision avoidance');
+  await apply(page).click();
+  await clickField(page, 61.05, 16.65, { button: 'right' });
+  await transport(page, 'play').click();
+  const time = figure(page, 'timeToObjective');
+  await expect(time).toHaveText(/^\d+\.\d$/, { timeout: 30_000 });
+  await expect(figure(page, 'collisions')).toHaveText('0');
+  const first = await time.textContent();
+  await transport(page, 'restart').click();
+  await transport(page, 'play').click();
+  await expect(time).toHaveText(first ?? '', { timeout: 30_000 });
+  await expect(figure(page, 'collisions')).toHaveText('0');
+});
+
+test('the scene with walls and a route meets the serious/critical WCAG threshold', async ({
+  page,
+}) => {
+  await arrived(page);
+  await routeRoundTheWall(page);
+  await page.locator('[data-show-search]').check();
+  const result = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(
+    result.violations.filter(
+      (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+    ),
+  ).toEqual([]);
+});
+
 test('the scene meets the board’s serious/critical WCAG threshold', async ({ page }) => {
   await arrived(page);
   await marquee(page);
@@ -302,10 +493,19 @@ test('the scene meets the board’s serious/critical WCAG threshold', async ({ p
   ).toEqual([]);
 });
 
-for (const width of [360, 768, 1440]) {
+for (const [width, height] of [
+  [360, 900],
+  [768, 900],
+  [1440, 900],
+  [2080, 1460],
+  [3840, 1620],
+]) {
   test(`the scene fits a ${width}px viewport without horizontal overflow`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
+    await page.setViewportSize({ width, height });
     await arrived(page);
+    await page.locator('[data-add="wall"]').click();
+    await tool(page, aStar).click();
+    await expect(page.locator('[data-routes]')).toBeVisible();
     await tool(page, flock).click();
     await page.evaluate(() => document.fonts.ready);
     expect(

@@ -51,9 +51,10 @@ p {
   padding: 0;
   list-style: none;
 }
+// A figure's unit sits beside it, or wraps beneath it in a narrow column, never over its neighbour.
 .instrument {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--dotln-space-1);
   min-inline-size: 0;
@@ -76,12 +77,12 @@ p {
   color: var(--dotln-muted);
 }
 .name {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   font-size: 0.72rem;
   color: var(--dotln-muted);
 }
 .spark {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   inline-size: 100%;
   block-size: 1.75rem;
   margin-block-start: var(--dotln-space-1);

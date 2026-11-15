@@ -1,16 +1,19 @@
 import type { ParamSpec, TransformKind } from '@dotln-angular/models';
 import type {
+  RouteReading,
   SlotAssignment,
   StepPreview,
   StepRefusal,
   UnitFrame,
 } from '@dotln-angular/scene-engine';
-import { length } from '@dotln-angular/scene-engine';
+import { length, travelWeightParams } from '@dotln-angular/scene-engine';
 
 import type {
+  InspectorCost,
   InspectorIssue,
   InspectorParam,
   InspectorPreview,
+  InspectorRoutes,
   InspectorView,
   SlotTableView,
 } from '../models/scene-view-model';
@@ -18,6 +21,7 @@ import type { SceneUnitStyle } from '../renderers/scene-renderer';
 import { workColour } from './rail-mapper';
 import {
   isCostParam,
+  isPathTool,
   needsObjective,
   paramChoices,
   type SceneTool,
@@ -42,6 +46,8 @@ export interface InspectorInput {
   readonly slotsLive: boolean;
   readonly units: readonly UnitFrame[];
   readonly styles: readonly SceneUnitStyle[];
+  /** The selected units' routes: the ones they follow when the tool is on them, else Apply's. */
+  readonly routes: readonly RouteReading[];
   readonly transformLabel: (kind: TransformKind) => string;
   readonly choiceLabel: (name: string) => string;
 }
@@ -99,6 +105,48 @@ function mapSlots({ slots, slotsLive, units, styles }: InspectorInput): SlotTabl
   };
 }
 
+const tenths = (value: number) => value.toFixed(1);
+
+/** The route the inspector reads out: the first with a search to show, else the first. */
+export const readRoute = (routes: readonly RouteReading[]): RouteReading | undefined =>
+  routes.find(({ route }) => route.search !== null) ?? routes[0];
+
+function mapRoutes(input: InspectorInput): InspectorRoutes | null {
+  const { tool, routes, slotsLive, objectiveSet, styles } = input;
+  if (!isPathTool(tool)) return null;
+  const following = routes.filter(({ route }) => route.status === 'following');
+  const lengths = following.flatMap(({ length }) => (length === null ? [] : [length]));
+  const first = readRoute(routes);
+  const label = styles.find(({ id }) => id === first?.id)?.label;
+  const ahead =
+    first?.route.status === 'following' ? first.route.waypoints[first.route.next] : null;
+  return {
+    live: slotsLive,
+    following: following.length,
+    blocked: routes.length - following.length,
+    length:
+      lengths.length === 0
+        ? null
+        : tenths(lengths.reduce((sum, length) => sum + length, 0) / lengths.length),
+    unit: first === undefined ? null : `${label ?? first.id} ${first.id}`,
+    expansions: first?.route.search?.expansions ?? null,
+    waypoint: ahead ? `(${tenths(ahead.x)}, ${tenths(ahead.y)})` : null,
+    objective: objectiveSet,
+  };
+}
+
+// The engine's weights that scale every edge's length alike; the rest weigh cost layers.
+function mapCost({ tool, params }: InspectorInput): InspectorCost | null {
+  const { kind, params: specs } = tool.faces.transform;
+  if (kind !== 'path.cost') return null;
+  const travel = specs.filter(({ name }) => travelWeightParams.includes(name));
+  const weight = travel.reduce((product, spec) => product * (params[spec.name] ?? spec.default), 1);
+  return {
+    travelWeight: travel.length === 0 ? null : String(Math.round(weight * 100) / 100),
+    layers: specs.some(({ name }) => !travelWeightParams.includes(name)),
+  };
+}
+
 function mapParam(spec: ParamSpec, input: InspectorInput): InspectorParam {
   const value = input.params[spec.name] ?? spec.default;
   return {
@@ -130,6 +178,8 @@ export function mapInspector(input: InspectorInput): InspectorView {
     costs: specs.filter(isCostParam).map((spec) => mapParam(spec, input)),
     preview: mapPreview(input),
     slots: mapSlots(input),
+    routes: mapRoutes(input),
+    cost: mapCost(input),
     issue,
     canApply: issue === null && refusal === null,
   };

@@ -1,6 +1,7 @@
 import type {
   PreviewArrow,
   SceneFrame,
+  SearchRecord,
   UnitFrame,
   UnitId,
   Vec2,
@@ -28,6 +29,10 @@ const rippleFrames = 45;
 const rippleGrowth = 1.6;
 // A frame number that leaps was a rewind or a replay, and a trail across it would be false.
 const trailBreak = 8;
+// A wall is never drawn thinner than this, in pixels, so a thin one still reads as a wall.
+const thinnestWall = 3;
+const routeDash = [5, 5];
+const hitMark = 3;
 
 /** The tokens the painter draws with, read when the surface is sized rather than every frame. */
 interface PaintTokens {
@@ -40,6 +45,11 @@ interface PaintTokens {
   readonly objective: string;
   readonly ghost: string;
   readonly alert: string;
+  readonly wall: string;
+  readonly path: string;
+  readonly searchOpen: string;
+  readonly searchClosed: string;
+  readonly ray: string;
   readonly font: string;
 }
 
@@ -56,6 +66,11 @@ function readTokens(element: Element): PaintTokens {
     objective: read('--dotln-field-objective'),
     ghost: read('--dotln-field-ghost'),
     alert: read('--dotln-field-alert'),
+    wall: read('--dotln-field-wall'),
+    path: read('--dotln-field-path'),
+    searchOpen: read('--dotln-field-search-open'),
+    searchClosed: read('--dotln-field-search-closed'),
+    ray: read('--dotln-field-ray'),
     font: read('--dotln-font'),
   };
 }
@@ -119,10 +134,14 @@ export class CanvasSceneRenderer implements SceneRenderer {
     const view = fieldView(this.#width, this.#height, frame.field);
     this.#context.setTransform(this.#ratio, 0, 0, this.#ratio, 0, 0);
     this.#paintGround(frame, view);
+    this.#paintSearch(view);
+    this.#paintGeometry(frame, view);
     this.#paintObjective(frame, view);
+    this.#paintRoutes(frame, selection, view);
     this.#paintFormation(frame, view);
     if (ghost) this.#paintGhostUnits(ghost.units, view);
     this.#paintTrails(frame, view);
+    this.#paintRays(frame, view);
     this.#paintUnits(frame, selection, view);
     this.#paintCollisions(frame, view);
     if (ghost) this.#paintArrows(ghost.arrows, view);
@@ -150,6 +169,92 @@ export class CanvasSceneRenderer implements SceneRenderer {
       width * view.scale - 1,
       height * view.scale - 1,
     );
+  }
+
+  /** The cells the shown search closed, and the frontier it left, shaded. */
+  #paintSearch(view: FieldView) {
+    const search = this.#options.search?.() ?? null;
+    if (search === null) return;
+    this.#shadeCells(search, search.closed, this.#tokens.searchClosed, view);
+    this.#shadeCells(search, search.open, this.#tokens.searchOpen, view);
+  }
+
+  #shadeCells(search: SearchRecord, cells: readonly number[], colour: string, view: FieldView) {
+    const context = this.#context;
+    const size = search.cellSize * view.scale;
+    context.fillStyle = colour;
+    for (const cell of cells) {
+      const corner = toScreen(view, {
+        x: (cell % search.columns) * search.cellSize,
+        y: Math.floor(cell / search.columns) * search.cellSize,
+      });
+      context.fillRect(corner.x + 0.5, corner.y + 0.5, size - 1, size - 1);
+    }
+  }
+
+  /** Walls as bars as thick as they are, obstacles as discs. */
+  #paintGeometry(frame: SceneFrame, view: FieldView) {
+    const context = this.#context;
+    const { walls, obstacles } = frame.geometry;
+    context.strokeStyle = this.#tokens.wall;
+    context.fillStyle = this.#tokens.wall;
+    context.lineCap = 'round';
+    for (const { from, to, thickness } of walls) {
+      const start = toScreen(view, from);
+      const end = toScreen(view, to);
+      context.lineWidth = Math.max(thinnestWall, thickness * view.scale);
+      context.beginPath();
+      context.moveTo(start.x, start.y);
+      context.lineTo(end.x, end.y);
+      context.stroke();
+    }
+    for (const { centre, radius } of obstacles) {
+      const { x, y } = toScreen(view, centre);
+      context.beginPath();
+      context.arc(x, y, Math.max(thinnestWall / 2, radius * view.scale), 0, 2 * Math.PI);
+      context.fill();
+    }
+    context.lineCap = 'butt';
+  }
+
+  /** The route still ahead of each selected unit, as a faint dashed line. */
+  #paintRoutes(frame: SceneFrame, selection: readonly UnitId[], view: FieldView) {
+    const selected = new Set(selection);
+    const context = this.#context;
+    context.strokeStyle = this.#tokens.path;
+    context.lineWidth = 1.5;
+    context.setLineDash(routeDash);
+    for (const { id, ahead } of frame.routes) {
+      if (!selected.has(id) || ahead.length < 2) continue;
+      context.beginPath();
+      ahead.forEach((point, index) => {
+        const { x, y } = toScreen(view, point);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.stroke();
+    }
+    context.setLineDash([]);
+  }
+
+  /** Obstacle and wall avoidance's rays, each marked where it met something. */
+  #paintRays(frame: SceneFrame, view: FieldView) {
+    const context = this.#context;
+    context.lineWidth = 1;
+    for (const { from, to, hit } of frame.rays) {
+      const start = toScreen(view, from);
+      const end = toScreen(view, to);
+      context.strokeStyle = this.#tokens.ray;
+      context.beginPath();
+      context.moveTo(start.x, start.y);
+      context.lineTo(end.x, end.y);
+      context.stroke();
+      if (!hit) continue;
+      context.fillStyle = this.#tokens.alert;
+      context.beginPath();
+      context.arc(end.x, end.y, hitMark, 0, 2 * Math.PI);
+      context.fill();
+    }
   }
 
   #paintObjective(frame: SceneFrame, view: FieldView) {

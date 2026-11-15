@@ -8,7 +8,12 @@ export const sceneFixtureDirectory = resolve(
   'libs/features/scene/src/testing/fixtures',
 );
 
-const fixtureNames = ['scene-twenty.json', 'cost-table.json', 'trial-known-outcome.json'];
+const fixtureNames = [
+  'scene-twenty.json',
+  'cost-table.json',
+  'trial-known-outcome.json',
+  'walls-known-outcome.json',
+];
 
 // The order's fixture default: labels are only labels, but the counts are the contract.
 const lifecycleCounts = {

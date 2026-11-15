@@ -1,4 +1,5 @@
 import type { SceneFrame } from '@dotln-angular/scene-engine';
+import { emptyGeometry } from '@dotln-angular/scene-engine';
 
 import { NullSceneRenderer } from './null-scene-renderer';
 import { TextSceneRenderer } from './text-scene-renderer';
@@ -20,13 +21,23 @@ const frame: SceneFrame = {
   slots: [],
   collisions: [],
   objective: null,
+  geometry: emptyGeometry,
+  routes: [],
+  rays: [],
 };
 
 it('the text renderer turns a frame into one row per unit, and lets go on dispose', () => {
   const renderer = new TextSceneRenderer();
   renderer.draw(frame, ['a']);
   expect(renderer.rows).toEqual([
-    { id: 'a', position: 'north-west', speed: 'still', activity: 'idle', selected: true },
+    {
+      id: 'a',
+      position: 'north-west',
+      speed: 'still',
+      activity: 'idle',
+      route: null,
+      selected: true,
+    },
   ]);
   renderer.resize();
   renderer.dispose();

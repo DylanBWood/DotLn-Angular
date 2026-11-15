@@ -1,0 +1,446 @@
+{
+  "schema": "scene-known-outcome-v0",
+  "sceneId": "the-twenty",
+  "seed": 20261030,
+  "frames": 900,
+  "sampleEvery": 60,
+  "focus": [
+    "unit-01",
+    "unit-02",
+    "unit-03",
+    "unit-06",
+    "unit-07",
+    "unit-08",
+    "unit-11",
+    "unit-12",
+    "unit-13",
+    "unit-16",
+    "unit-17",
+    "unit-18"
+  ],
+  "branchA": [
+    {
+      "at": 0,
+      "toolId": "field.wall",
+      "kind": "field.wall",
+      "selection": [],
+      "params": {
+        "x1": 70,
+        "y1": 0,
+        "x2": 70,
+        "y2": 64,
+        "thickness": 1,
+        "shape": 1
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "field.obstacle",
+      "kind": "field.obstacle",
+      "selection": [],
+      "params": {
+        "x": 62,
+        "y": 74,
+        "radius": 2.5,
+        "shape": 2
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "field.obstacle",
+      "kind": "field.obstacle",
+      "selection": [],
+      "params": {
+        "x": 82,
+        "y": 72,
+        "radius": 3,
+        "shape": 3
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "objective.set",
+      "kind": "objective.set",
+      "selection": [],
+      "params": {
+        "x": 100,
+        "y": 40
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "aifg-a:222",
+      "kind": "path.find",
+      "selection": [
+        "unit-01",
+        "unit-02",
+        "unit-03",
+        "unit-06",
+        "unit-07",
+        "unit-08",
+        "unit-11",
+        "unit-12",
+        "unit-13",
+        "unit-16",
+        "unit-17",
+        "unit-18"
+      ],
+      "params": {
+        "heuristic": 3
+      }
+    }
+  ],
+  "branchB": [
+    {
+      "at": 0,
+      "toolId": "field.wall",
+      "kind": "field.wall",
+      "selection": [],
+      "params": {
+        "x1": 70,
+        "y1": 0,
+        "x2": 70,
+        "y2": 64,
+        "thickness": 1,
+        "shape": 1
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "field.obstacle",
+      "kind": "field.obstacle",
+      "selection": [],
+      "params": {
+        "x": 62,
+        "y": 74,
+        "radius": 2.5,
+        "shape": 2
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "field.obstacle",
+      "kind": "field.obstacle",
+      "selection": [],
+      "params": {
+        "x": 82,
+        "y": 72,
+        "radius": 3,
+        "shape": 3
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "objective.set",
+      "kind": "objective.set",
+      "selection": [],
+      "params": {
+        "x": 100,
+        "y": 40
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "aifg-a:222",
+      "kind": "path.find",
+      "selection": [
+        "unit-01",
+        "unit-02",
+        "unit-03",
+        "unit-06",
+        "unit-07",
+        "unit-08",
+        "unit-11",
+        "unit-12",
+        "unit-13",
+        "unit-16",
+        "unit-17",
+        "unit-18"
+      ],
+      "params": {
+        "heuristic": 3
+      }
+    },
+    {
+      "at": 30,
+      "toolId": "field.wall",
+      "kind": "field.wall",
+      "selection": [],
+      "params": {
+        "x1": 70,
+        "y1": 60,
+        "x2": 70,
+        "y2": 80,
+        "thickness": 1,
+        "shape": 4
+      }
+    }
+  ],
+  "hashes": {
+    "a": [
+      "c2d110851618325f",
+      "1008dee9b48c8adb",
+      "e3003cc341df57e5",
+      "66492a27bf8352cd",
+      "0c7130732458d385",
+      "d22885f443f214de",
+      "d05c845216d44e24",
+      "a977186b56ab7201",
+      "079d6ef08215612e",
+      "fa97755066fdccce",
+      "1aec1f71df8b33d3",
+      "de2efb2353441ff9",
+      "de2efb2353441ff9",
+      "de2efb2353441ff9",
+      "de2efb2353441ff9",
+      "de2efb2353441ff9"
+    ],
+    "b": [
+      "c2d110851618325f",
+      "2931e7a785a21ac5",
+      "d551d9aa4a75b528",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3",
+      "a12b4209524703e3"
+    ]
+  },
+  "metrics": {
+    "cohesionRadius": {
+      "a": [
+        37.776995, 32.470372, 25.369714, 23.123052, 30.79993, 23.12438, 17.977189, 11.058686,
+        1.055454, 0.420437, 0.011887, 0.00308, 0.00308, 0.00308, 0.00308, 0.00308
+      ],
+      "b": [
+        37.776995, 35.186445, 34.974658, 34.972967, 34.972967, 34.972967, 34.972967, 34.972967,
+        34.972967, 34.972967, 34.972967, 34.972967, 34.972967, 34.972967, 34.972967, 34.972967
+      ]
+    },
+    "collisions": {
+      "a": [0, 0, 1, 1, 1, 3, 7, 16, 37, 66, 66, 66, 66, 66, 66, 66],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "headingVariance": {
+      "a": [
+        0.707658, 0.094366, 0.316136, 0.341755, 0.276925, 0.295358, 0.452101, 0.659367, 0.298166,
+        0.000918, 0.000008, 0.000008, 0.000008, 0.000008, 0.000008, 0.000008
+      ],
+      "b": [
+        0.707658, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112,
+        0.154112, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112, 0.154112
+      ]
+    },
+    "timeToObjective": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        9.466667,
+        9.466667,
+        9.466667,
+        9.466667,
+        9.466667,
+        9.466667
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "stalledUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "anchorToMean": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "slotError": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "assignmentCost": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "pathLength": {
+      "a": [
+        null,
+        78.751074,
+        64.003724,
+        49.122496,
+        34.933389,
+        23.44768,
+        12.85141,
+        4.436969,
+        1.000147,
+        0.569902,
+        0.465179,
+        0.462885,
+        0.462885,
+        0.462885,
+        0.462885,
+        0.462885
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "replans": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+    },
+    "blockedUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12]
+    }
+  },
+  "firstDivergenceFrame": 31
+}

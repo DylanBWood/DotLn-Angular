@@ -1,7 +1,13 @@
-import type { SceneFrame, UnitFrame, UnitId, Vec2 } from '@dotln-angular/scene-engine';
+import type { RouteFrame, SceneFrame, UnitFrame, UnitId, Vec2 } from '@dotln-angular/scene-engine';
 import { length, stillSpeed } from '@dotln-angular/scene-engine';
 
-import type { PositionBucket, SpeedBucket, UnitRow, UnitRowView } from '../models/scene-view-model';
+import type {
+  PositionBucket,
+  RouteState,
+  SpeedBucket,
+  UnitRow,
+  UnitRowView,
+} from '../models/scene-view-model';
 import type { SceneUnitStyle } from '../renderers/scene-renderer';
 
 const walkingSpeed = 5;
@@ -40,16 +46,24 @@ export function speedBucket(unit: UnitFrame): SpeedBucket {
   return speed < walkingSpeed ? 'walking' : 'running';
 }
 
+export function routeState(route: RouteFrame | undefined): RouteState | null {
+  if (route === undefined) return null;
+  if (route.reason !== null) return 'no-route';
+  return route.replanning ? 'replanning' : 'on-path';
+}
+
 export function mapFrameToRows(
   frame: SceneFrame,
   selection: readonly UnitId[],
 ): readonly UnitRow[] {
   const selected = new Set(selection);
+  const routes = new Map(frame.routes.map((route) => [route.id, route]));
   return frame.units.map((unit) => ({
     id: unit.id,
     position: positionBucket(unit.position, frame.field),
     speed: speedBucket(unit),
     activity: unit.activity,
+    route: routeState(routes.get(unit.id)),
     selected: selected.has(unit.id),
   }));
 }
@@ -58,6 +72,7 @@ export interface RowWords {
   readonly position: (bucket: PositionBucket) => string;
   readonly speed: (bucket: SpeedBucket) => string;
   readonly activity: (activity: UnitRow['activity']) => string;
+  readonly route: (state: RouteState) => string;
 }
 
 /** Each unit's label, colour and readings, as the text layer shows them. */
@@ -74,6 +89,7 @@ export function mapRowViews(
     position: words.position(row.position),
     speed: words.speed(row.speed),
     activity: words.activity(row.activity),
+    route: row.route === null ? null : words.route(row.route),
     selected: row.selected,
   }));
 }

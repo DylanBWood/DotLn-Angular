@@ -20,6 +20,7 @@ import { encodeExport, parseExport, SceneStore } from '@dotln-angular/scene-data
 import type {
   Composition,
   CompositionStep,
+  FieldKind,
   PreviewArrow,
   SceneFrame,
   SceneMetrics,
@@ -34,12 +35,17 @@ import {
   advanceRun,
   applyToRun,
   assignmentOf,
+  fieldDefaults,
   frameOf,
   isAtRest,
+  isFieldKind,
+  isSafeStep,
   measure,
+  nextShapeNumber,
   objectiveKind,
   previewStep,
   refusalOf,
+  routesOf,
   runTrial,
   squadOf,
   startRun,
@@ -48,8 +54,9 @@ import {
 
 import { SceneClock } from '../clock/scene-clock';
 import { coachStep } from '../mappers/coach-step';
+import { mapField, mapNoRoute, shapeParams } from '../mappers/field-mapper';
 import { fieldRegions, mapRowViews, positionBucket } from '../mappers/frame-mapper';
-import { mapInspector } from '../mappers/inspector-mapper';
+import { mapInspector, readRoute } from '../mappers/inspector-mapper';
 import { mapLog } from '../mappers/log-mapper';
 import {
   type InstrumentLabels,
@@ -61,6 +68,7 @@ import { mapRailGroups } from '../mappers/rail-mapper';
 import {
   arriveToolId,
   defaultParams,
+  isPathTool,
   isRunnable,
   isTypedTool,
   mapToolToStep,
@@ -73,6 +81,8 @@ import {
   SceneSeedSourceToken,
 } from '../models/scene-tokens';
 import type {
+  FieldToolId,
+  GeometryValue,
   InstrumentId,
   LabelSet,
   SceneNotice,
@@ -158,6 +168,8 @@ export class SceneFacade {
   readonly #keyboard = signal(false);
   readonly #exported = signal<string | null>(null);
   readonly #ghostFrames = signal<readonly SceneFrame[]>([]);
+  readonly #fieldTool = signal<FieldToolId>('select');
+  readonly #showSearch = signal(false);
   readonly #sample = signal<SceneSample>(this.#capture());
 
   // The URL this page was reached by: `?tool=` chooses a tool. Read from the router because this
@@ -232,6 +244,22 @@ export class SceneFacade {
     }),
   );
 
+  // The routes the inspector reads: the ones the selected units follow once the tool is on them,
+  // otherwise the ones Apply would plan.
+  readonly #routes = computed(() =>
+    this.#live()
+      ? routesOf(this.#sample().simulation, this.#selection())
+      : (this.#shownPreview()?.routes ?? []),
+  );
+
+  // The search the field shades is the one the inspector reads out, and only while a path tool,
+  // whose inspector holds the switch, is chosen.
+  readonly #search = computed(() => {
+    const tool = this.#chosenTool();
+    if (tool === null || !isPathTool(tool)) return null;
+    return readRoute(this.#routes())?.route.search ?? null;
+  });
+
   readonly #inspector = computed(() => {
     const tool = this.#chosenTool();
     if (tool === null) return null;
@@ -247,6 +275,7 @@ export class SceneFacade {
       slotsLive: this.#live(),
       units: this.#sample().frame.units,
       styles: this.#unitStyles(),
+      routes: this.#routes(),
       transformLabel: (kind) => transforms[kind]?.() ?? kind,
       choiceLabel: (name) => this.#choiceLabel(name),
     });
@@ -269,6 +298,7 @@ export class SceneFacade {
     position: (bucket: UnitRow['position']) => this.#labels.positions[bucket](),
     speed: (bucket: UnitRow['speed']) => this.#labels.speeds[bucket](),
     activity: (activity: UnitRow['activity']) => this.#labels.activities[activity](),
+    route: (state: NonNullable<UnitRow['route']>) => this.#labels.routes[state](),
   };
 
   readonly #instrumentLabels = computed<InstrumentLabels>(() => {
@@ -288,9 +318,16 @@ export class SceneFacade {
     const { frameNo, objective, field, units } = sample.frame;
     const instrumentLabels = this.#instrumentLabels();
     const trial = this.#store.trial();
+    const showSearch = this.#showSearch();
     return {
       reducedMotion: this.#reducedMotion,
       rail: { status: this.#catalogStatus(), groups: this.#rail() },
+      field: mapField(sample.frame.geometry, this.#fieldTool(), (name) =>
+        this.#labels.shapeValues[name](),
+      ),
+      showSearch,
+      search: showSearch ? this.#search() : null,
+      noRoute: mapNoRoute(sample.frame, this.#unitStyles()),
       inspector: this.#inspector(),
       formation: mapFormation(sample.metrics, instrumentLabels.unknown),
       awaitingRun: this.#reducedMotion && !playing && steps.some((step) => step.at === frameNo),
@@ -319,13 +356,16 @@ export class SceneFacade {
         point,
       })),
       note: this.#store.note(),
-      coach: coachStep({
-        selected: selection.length,
-        toolChosen: this.#chosenId() !== null,
-        steps,
-        objectiveSet: objective !== null,
-        compared: trial !== null || this.#store.keptTrials().length > 0,
-      }),
+      coach:
+        this.#fieldTool() === 'select'
+          ? coachStep({
+              selected: selection.length,
+              toolChosen: this.#chosenId() !== null,
+              steps,
+              objectiveSet: objective !== null,
+              compared: trial !== null || this.#store.keptTrials().length > 0,
+            })
+          : this.#fieldTool(),
       selection,
       arrows: this.#shownPreview()?.arrows ?? noArrows,
       ghostFrames: this.#ghost(),
@@ -450,12 +490,15 @@ export class SceneFacade {
 
   // A named value the labels do not cover is the catalog's own word, shown as it stands.
   #choiceLabel(name: string) {
-    const { patterns } = this.#labels;
-    return name in patterns ? patterns[name as keyof typeof patterns]() : name;
+    const { choices } = this.#labels;
+    return name in choices ? choices[name as keyof typeof choices]() : name;
   }
 
   #titleOf(step: CompositionStep) {
     if (step.kind === objectiveKind) return this.#labels.objectiveStep();
+    if (step.kind === 'field.clear' && step.params['shape'] !== undefined)
+      return this.#labels.shapeRemoved();
+    if (isFieldKind(step.kind)) return this.#labels.fieldSteps[step.kind]();
     return this.#tools().find((tool) => tool.id === step.toolId)?.title ?? step.toolId;
   }
 
@@ -606,6 +649,92 @@ export class SceneFacade {
       this.#apply(
         mapToolToStep(arrive, defaultParams(arrive.faces.transform), loose, this.#currentFrame()),
       );
+  }
+
+  // The field
+
+  /** Chooses what a press on the field does; choosing the chosen tool again goes back to select. */
+  setFieldTool(tool: FieldToolId) {
+    this.#fieldTool.update((current) => (current === tool ? 'select' : tool));
+  }
+
+  /** Shows or hides the last search of the first selected unit with a route. */
+  toggleSearch() {
+    this.#showSearch.update((shown) => !shown);
+  }
+
+  // A field edit is a step like any other: it records its true frame and replays there. One the
+  // store could not read back, such as a negative size, is never made.
+  #fieldStep(kind: FieldKind, params: Readonly<Record<string, number>>) {
+    const step = { at: this.#currentFrame(), toolId: kind, kind, selection: [], params };
+    if (isSafeStep(step)) this.#apply(step);
+  }
+
+  #geometry() {
+    return this.#run.value.simulation.geometry;
+  }
+
+  // A new shape is numbered past every shape a step of the composition names, the steps still to
+  // come included, so none of them lands on it later.
+  #nextShape() {
+    return nextShapeNumber(this.#geometry(), [
+      ...this.#store.steps(),
+      ...this.#run.value.scheduled,
+    ]);
+  }
+
+  drawWall(from: Vec2, to: Vec2, thickness: number = fieldDefaults.thickness) {
+    this.#fieldStep('field.wall', {
+      x1: round(from.x),
+      y1: round(from.y),
+      x2: round(to.x),
+      y2: round(to.y),
+      thickness,
+      shape: this.#nextShape(),
+    });
+  }
+
+  placeObstacle(centre: Vec2, radius: number = fieldDefaults.radius) {
+    this.#fieldStep('field.obstacle', {
+      x: round(centre.x),
+      y: round(centre.y),
+      radius: round(radius),
+      shape: this.#nextShape(),
+    });
+  }
+
+  /** A wall across the field's centre, for the keyboard, to be moved by its numbers. */
+  addWall() {
+    const { width, height } = this.#baseDefinition.field;
+    this.drawWall({ x: width / 2, y: height / 4 }, { x: width / 2, y: (3 * height) / 4 });
+  }
+
+  /** An obstacle at the field's centre, for the keyboard, to be moved by its numbers. */
+  addObstacle() {
+    const { width, height } = this.#baseDefinition.field;
+    this.placeObstacle({ x: width / 2, y: height / 2 });
+  }
+
+  /**
+   * Replaces a shape with one of its numbers changed: an edited coordinate is a step too. The
+   * rest keep the values the shape has, not the rounded ones the list shows.
+   */
+  editShape(shape: number, change: GeometryValue) {
+    const edited = shapeParams(this.#geometry(), shape);
+    if (edited) this.#fieldStep(edited.kind, { ...edited.params, [change.name]: change.value });
+  }
+
+  removeShape(shape: number) {
+    this.#fieldStep('field.clear', { shape });
+  }
+
+  /** Takes every wall and obstacle off the field. */
+  clearField() {
+    this.#fieldStep('field.clear', {});
+  }
+
+  setCellSize(size: number) {
+    this.#fieldStep('field.grid', { 'cell-size': size });
   }
 
   // Transport

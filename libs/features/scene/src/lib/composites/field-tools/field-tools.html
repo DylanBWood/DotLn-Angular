@@ -1,0 +1,42 @@
+@let view = field();
+<div class="tools" role="toolbar" [attr.aria-label]="'scene.field.tools' | t">
+  @for (tool of tools; track tool) {
+    <button
+      type="button"
+      [attr.aria-pressed]="view.tool === tool"
+      [attr.data-field-tool]="tool"
+      (click)="toolChosen.emit(tool)"
+    >
+      @switch (tool) {
+        @case ('select') {
+          {{ 'scene.field.select' | t }}
+        }
+        @case ('wall') {
+          {{ 'scene.field.wall' | t }}
+        }
+        @case ('obstacle') {
+          {{ 'scene.field.obstacle' | t }}
+        }
+      }
+    </button>
+  }
+  <button
+    type="button"
+    data-field-clear
+    [disabled]="view.shapes.length === 0"
+    (click)="cleared.emit()"
+  >
+    {{ 'scene.field.clear' | t }}
+  </button>
+</div>
+<label class="cells">
+  <span>
+    <ng-content select="[tile-graph-link]" />
+    {{ 'scene.field.cellSize' | t }}
+  </span>
+  <select data-cell-size (change)="chooseSize($event)">
+    @for (size of view.cellSizes; track size) {
+      <option translate="no" [value]="size" [selected]="size === view.cellSize">{{ size }}</option>
+    }
+  </select>
+</label>

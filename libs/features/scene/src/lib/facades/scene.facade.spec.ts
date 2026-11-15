@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
-import { createCatalogLoader } from '@dotln-angular/catalog';
+import { createCatalogLoader, sceneTools } from '@dotln-angular/catalog';
 import type { Tool } from '@dotln-angular/models';
 import { sceneTransformKinds } from '@dotln-angular/models';
 import { encodeExport, SceneStore } from '@dotln-angular/scene-data-access';
@@ -112,6 +112,7 @@ describe('the rail', () => {
     );
     expect(facade.vm().rail.groups.map((group) => group.id)).toEqual([
       'move',
+      'ways',
       'group',
       'avoid',
       'form',
@@ -141,10 +142,33 @@ describe('the rail', () => {
     expect([...interpretedKinds].sort()).toEqual([...sceneTransformKinds].sort());
   });
 
+  it('offers exactly the AI for Games rows typed with a kind the engine runs', async () => {
+    const { facade } = await setUp();
+    const offered = facade.vm().rail.groups.flatMap((group) => group.tools.map(({ id }) => id));
+    const runnable = sceneTools('aifg')(bundled)
+      .filter(isRunnable)
+      .map(({ id }) => id);
+    expect([...offered].sort()).toEqual([...runnable].sort());
+    expect(offered).toHaveLength(runnable.length);
+  });
+
+  it('puts the path tools in ways and both avoidance rows in avoid', async () => {
+    const { facade } = await setUp();
+    const group = (id: string) =>
+      facade.vm().rail.groups.find((candidate) => candidate.tools.some((tool) => tool.id === id))
+        ?.id;
+    for (const id of ['aifg-a:222', 'aifg-a:212', 'aifg-a:254', 'aifg-a:127', 'aifg-a:129'])
+      expect(group(id)).toBe('ways');
+    for (const id of ['aifg-a:253', 'aifg-b:30', 'aifg-b:48', 'aifg-b:49', 'aifg-b:50'])
+      expect(group(id)).toBe('ways');
+    expect(group('aifg-a:137')).toBe('avoid');
+    expect(group('aifg-a:134')).toBe('avoid');
+  });
+
   it('every offered tool runs at its defaults, with every parameter read', async () => {
     const { facade } = await setUp();
     const offered = facade.vm().rail.groups.flatMap((group) => group.tools);
-    expect(offered).toHaveLength(16);
+    expect(offered).toHaveLength(sceneTools('aifg')(bundled).filter(isRunnable).length);
     const objective = {
       at: 0,
       toolId: objectiveKind,
@@ -1104,5 +1128,90 @@ describe('labels', () => {
     expect(facade.vm().objectiveRegions[0].id).toBe('north-west');
     facade.setObjective(facade.vm().objectiveRegions[8].point);
     expect(facade.vm().objective).toBe('south-east');
+  });
+});
+
+describe('the field', () => {
+  const aStarId = 'aifg-a:222';
+  const wallStep = (at: number, params: Record<string, number>) => ({
+    at,
+    toolId: 'field.wall',
+    kind: 'field.wall',
+    selection: [],
+    params: { x1: 60, y1: 10, x2: 60, y2: 30, thickness: 1, ...params },
+  });
+
+  it('never makes a field edit the store could not read back', async () => {
+    const { facade } = await setUp();
+    facade.placeObstacle({ x: 40, y: 40 });
+    facade.editShape(1, { name: 'radius', value: -0.5 });
+    const radius = facade.vm().field.shapes[0].values.find(({ name }) => name === 'radius');
+    expect(radius?.value).toBe(3);
+    const exported = facade.exportJson();
+    facade.clear();
+    facade.importJson(exported);
+    expect(facade.vm().notice).toBeNull();
+    expect(facade.vm().field.shapes).toHaveLength(0);
+    facade.step(1);
+    expect(facade.vm().field.shapes).toHaveLength(1);
+  });
+
+  it('numbers a new shape past every shape the composition draws, later steps included', async () => {
+    const { facade } = await setUp();
+    facade.importJson(encodeExport(importedComposition([wallStep(100, { shape: 1 })])));
+    facade.step(5);
+    facade.placeObstacle({ x: 30, y: 60 });
+    facade.step(100);
+    expect(facade.vm().field.shapes.map(({ shape, kind }) => [shape, kind])).toEqual([
+      [1, 'wall'],
+      [2, 'obstacle'],
+    ]);
+  });
+
+  it('edits a shape from the numbers it has, not the rounded ones the list shows', async () => {
+    const { facade } = await setUp();
+    facade.importJson(encodeExport(importedComposition([wallStep(0, { y1: 10.25, shape: 1 })])));
+    facade.step(1);
+    facade.editShape(1, { name: 'x2', value: 62 });
+    const [wall] = lastFrame(facade).geometry.walls;
+    expect([wall.from.y, wall.to.x]).toEqual([10.25, 62]);
+  });
+
+  it('logs taking one shape away apart from clearing the field', async () => {
+    const { facade } = await setUp();
+    facade.placeObstacle({ x: 30, y: 60 });
+    facade.removeShape(1);
+    facade.clearField();
+    expect(facade.vm().log.steps.map(({ title }) => title)).toEqual([
+      'Obstacle placed',
+      'Wall or obstacle removed',
+      'Walls and obstacles cleared',
+    ]);
+  });
+
+  it('shades the search the inspector reads, and only while a path tool is chosen', async () => {
+    const { facade } = await setUp();
+    selectTwelve(facade);
+    facade.setObjective({ x: 100, y: 40 });
+    facade.chooseTool(aStarId);
+    expect(facade.vm().search).toBeNull();
+    facade.toggleSearch();
+    expect(facade.vm().search?.expansions).toBeGreaterThan(0);
+    facade.equip();
+    expect(facade.vm().search?.expansions).toBe(facade.vm().inspector?.routes?.expansions);
+    facade.chooseTool(flockId);
+    expect(facade.vm().search).toBeNull();
+  });
+
+  it('reads A*’s heuristics in words', async () => {
+    const { facade } = await setUp();
+    facade.chooseTool(aStarId);
+    const heuristic = facade.vm().inspector?.params.find(({ name }) => name === 'heuristic');
+    expect(heuristic?.choices.map(({ label }) => label)).toEqual([
+      'zero',
+      'Manhattan',
+      'Euclidean',
+      'octile',
+    ]);
   });
 });
