@@ -269,6 +269,10 @@ export const sceneTransformKinds = [
   'formation.twoLevel',
   'formation.fixed',
   'objective.set',
+  'path.find',
+  'path.smooth',
+  'path.follow',
+  'path.cost',
 ];
 
 export function summarizeWork(tools, work, sceneType, typedShortfall) {

@@ -89,14 +89,17 @@
       "level.ring": 6,
       "level.zoom": 3,
       "path.cost": 5,
+      "path.find": 2,
+      "path.follow": 2,
+      "path.smooth": 1,
       "squad.form": 1,
-      "steer.blend": 8,
+      "steer.blend": 10,
       "steer.priority": 2
     },
     "status": {
       "background": 1427,
-      "typed": 129,
-      "untyped": 1907
+      "typed": 136,
+      "untyped": 1900
     }
   },
   "works": [
@@ -191,7 +194,11 @@
         "aifg-a:112",
         "aifg-a:118",
         "aifg-a:125",
+        "aifg-a:127",
+        "aifg-a:129",
         "aifg-a:131",
+        "aifg-a:134",
+        "aifg-a:137",
         "aifg-a:144",
         "aifg-a:145",
         "aifg-a:149",
@@ -201,8 +208,16 @@
         "aifg-a:177",
         "aifg-a:181",
         "aifg-a:186",
+        "aifg-a:212",
+        "aifg-a:222",
+        "aifg-a:253",
+        "aifg-a:254",
+        "aifg-b:30",
         "aifg-b:354",
-        "aifg-b:373"
+        "aifg-b:373",
+        "aifg-b:48",
+        "aifg-b:49",
+        "aifg-b:50"
       ]
     },
     {

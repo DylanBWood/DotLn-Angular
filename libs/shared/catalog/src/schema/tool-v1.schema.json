@@ -47,6 +47,9 @@
             "ground.influence",
             "ground.frag",
             "path.cost",
+            "path.find",
+            "path.smooth",
+            "path.follow",
             "level.zoom",
             "level.ring"
           ]

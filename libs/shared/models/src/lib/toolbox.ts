@@ -56,6 +56,9 @@ export enum TransformKind {
   GroundInfluence = 'ground.influence',
   GroundFrag = 'ground.frag',
   PathCost = 'path.cost',
+  PathFind = 'path.find',
+  PathSmooth = 'path.smooth',
+  PathFollow = 'path.follow',
   LevelZoom = 'level.zoom',
   LevelRing = 'level.ring',
 }
@@ -67,6 +70,10 @@ export const sceneTransformKinds: readonly TransformKind[] = [
   TransformKind.FormationTwoLevel,
   TransformKind.FormationFixed,
   TransformKind.ObjectiveSet,
+  TransformKind.PathFind,
+  TransformKind.PathSmooth,
+  TransformKind.PathFollow,
+  TransformKind.PathCost,
 ];
 
 export type SelectionTarget = 'unit' | 'squad' | 'commander' | 'channel' | 'region' | 'scene';

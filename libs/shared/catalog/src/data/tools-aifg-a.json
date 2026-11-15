@@ -1524,7 +1524,7 @@
         "line": 127,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -1534,8 +1534,23 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs nearest-path queries, look-ahead targets and path-tracking steering."
+          "kind": "path.follow",
+          "params": [
+            {
+              "name": "waypoint-radius",
+              "unit": "distance",
+              "default": 1.5,
+              "min": 0.25,
+              "max": 6
+            },
+            {
+              "name": "path-offset",
+              "unit": "distance",
+              "default": 1,
+              "min": 0,
+              "max": 6
+            }
+          ]
         },
         "observable": ["path-parameter", "unit-trajectories"],
         "toyMetric": ["path-tracking-error"]
@@ -1612,7 +1627,7 @@
         "line": 129,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -1622,8 +1637,30 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs future-position prediction and nearest-path queries."
+          "kind": "path.follow",
+          "params": [
+            {
+              "name": "waypoint-radius",
+              "unit": "distance",
+              "default": 1.5,
+              "min": 0.25,
+              "max": 6
+            },
+            {
+              "name": "path-offset",
+              "unit": "distance",
+              "default": 1,
+              "min": 0,
+              "max": 6
+            },
+            {
+              "name": "predict-time",
+              "unit": "seconds",
+              "default": 0.3,
+              "min": 0,
+              "max": 2
+            }
+          ]
         },
         "observable": ["predicted-position", "path-parameter"],
         "toyMetric": ["path-tracking-error", "corner-cut-distance"]
@@ -1900,7 +1937,7 @@
         "line": 134,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -1910,8 +1947,16 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs closest-approach prediction and evasive acceleration calculation."
+          "kind": "steer.blend",
+          "params": [
+            {
+              "name": "avoidance-weight",
+              "unit": "weight",
+              "default": 2,
+              "min": 0,
+              "max": 5
+            }
+          ]
         },
         "observable": ["predicted-collisions", "unit-trajectories"],
         "toyMetric": ["collision-count", "near-miss-count"]
@@ -2031,7 +2076,7 @@
         "line": 137,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -2041,8 +2086,37 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs ray casting, surface normals and avoidance-target construction."
+          "kind": "steer.blend",
+          "params": [
+            {
+              "name": "obstacle-avoidance-weight",
+              "unit": "weight",
+              "default": 2,
+              "min": 0,
+              "max": 5
+            },
+            {
+              "name": "look-ahead",
+              "unit": "distance",
+              "default": 6,
+              "min": 1,
+              "max": 20
+            },
+            {
+              "name": "whisker-angle",
+              "unit": "degrees",
+              "default": 30,
+              "min": 0,
+              "max": 80
+            },
+            {
+              "name": "avoid-distance",
+              "unit": "distance",
+              "default": 2,
+              "min": 0.5,
+              "max": 10
+            }
+          ]
         },
         "observable": ["ray-hits", "avoidance-targets"],
         "toyMetric": ["wall-hit-count", "minimum-wall-clearance"]
@@ -6156,7 +6230,7 @@
         "line": 212,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -6166,8 +6240,8 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs minimum-cost frontier expansion and graph-search state."
+          "kind": "path.find",
+          "params": []
         },
         "observable": ["search-frontier", "returned-route"],
         "toyMetric": ["node-expansions", "route-cost"]
@@ -6636,7 +6710,7 @@
         "line": 222,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -6646,8 +6720,16 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs heuristic-guided frontier expansion and graph-search state."
+          "kind": "path.find",
+          "params": [
+            {
+              "name": "heuristic",
+              "unit": "0 zero; 1 manhattan; 2 euclidean; 3 octile",
+              "default": 3,
+              "min": 0,
+              "max": 3
+            }
+          ]
         },
         "observable": ["search-frontier", "returned-route"],
         "toyMetric": ["node-expansions", "route-cost"]
@@ -8177,7 +8259,7 @@
         "line": 254,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -8187,8 +8269,16 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs line-of-sight queries and waypoint-removal semantics."
+          "kind": "path.smooth",
+          "params": [
+            {
+              "name": "max-skip",
+              "unit": "waypoints",
+              "default": 8,
+              "min": 1,
+              "max": 32
+            }
+          ]
         },
         "observable": ["retained-waypoints", "smoothed-route"],
         "toyMetric": ["waypoint-count", "route-length"]
