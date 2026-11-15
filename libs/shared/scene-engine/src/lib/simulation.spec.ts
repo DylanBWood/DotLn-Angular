@@ -5,7 +5,17 @@ import {
   createTestUnit,
 } from '../../testing/src';
 import { hashFrame } from './hash';
-import { applyStep, interpretedKinds, objectiveKind, previewStep, readsParam } from './interpreter';
+import {
+  applyStep,
+  fieldKinds,
+  interpretedKinds,
+  isSafeStep,
+  leastValueOf,
+  nextShapeNumber,
+  objectiveKind,
+  previewStep,
+  readsParam,
+} from './interpreter';
 import { measure } from './metrics';
 import { assignmentOf } from './queries';
 import { advance, createSimulation, frameOf, frameSeconds, isAtRest } from './simulation';
@@ -383,6 +393,10 @@ describe('the interpreter', () => {
       'formation.twoLevel': { pattern: 0 },
       'formation.fixed': {},
       'objective.set': { x: 10, y: 10 },
+      'path.find': { heuristic: 3 },
+      'path.smooth': { 'max-skip': 4 },
+      'path.follow': { 'waypoint-radius': 1, 'path-offset': 1, 'predict-time': 0.3 },
+      'path.cost': { 'travel-cost': 2 },
     };
     for (const kind of interpretedKinds) {
       const result = applyStep(createSimulation(scene), createTestStep(kind, ids, params[kind]));
@@ -401,6 +415,17 @@ describe('the interpreter', () => {
       'wander-priority',
       'anchor-lag-limit',
       'cost.close-combat.ranged',
+      'heuristic',
+      'max-skip',
+      'waypoint-radius',
+      'path-offset',
+      'predict-time',
+      'obstacle-avoidance-weight',
+      'look-ahead',
+      'whisker-angle',
+      'avoid-distance',
+      'terrain-cost-multiplier',
+      'cover-shortfall-weight',
     ])
       expect(readsParam(name)).toBe(true);
     expect(readsParam('unheard-of')).toBe(false);
@@ -456,6 +481,95 @@ describe('the interpreter', () => {
     const preview = previewStep(createSimulation(scene), createTestStep('level.ring', ids));
     expect(preview.arrows).toEqual([]);
     expect(preview.refusal?.kind).toBe('level.ring');
+  });
+
+  it('reads Dijkstra, a path search with no heuristic, as the zero heuristic', () => {
+    const star = applyStep(
+      createSimulation(scene),
+      createTestStep('path.find', ids, { heuristic: 3 }),
+    );
+    const { state } = applyStep(star.state, createTestStep('path.find', ids, {}));
+    expect(star.state.units[0].behaviour.path?.heuristic).toBe('octile');
+    expect(state.units[0].behaviour.path?.heuristic).toBe('zero');
+  });
+});
+
+describe('field steps', () => {
+  const wall = (shape: number, x: number) =>
+    createTestStep('field.wall', [], { x1: x, y1: 0, x2: x, y2: 40, thickness: 1, shape });
+
+  it('applies a field step with no units, while a unit transform with none is still refused', () => {
+    const start = createSimulation(scene);
+    const walled = applyStep(start, wall(1, 50));
+    expect(walled.refusal).toBeNull();
+    expect(walled.state.geometry.walls).toEqual([
+      { shape: 1, from: { x: 50, y: 0 }, to: { x: 50, y: 40 }, thickness: 1 },
+    ]);
+    expect(applyStep(start, createTestStep('steer.blend', [], flock)).refusal?.code).toBe(
+      'no-units',
+    );
+    for (const kind of fieldKinds)
+      expect(applyStep(start, createTestStep(kind, [])).refusal).toBeNull();
+  });
+
+  it('replaces the shape a step names, adds one it does not, and clears one or all', () => {
+    let state = applyStep(createSimulation(scene), wall(1, 50)).state;
+    state = applyStep(state, wall(1, 60)).state;
+    expect(state.geometry.walls.map(({ from }) => from.x)).toEqual([60]);
+    state = applyStep(
+      state,
+      createTestStep('field.obstacle', [], { x: 10, y: 10, radius: 2 }),
+    ).state;
+    expect(state.geometry.obstacles).toEqual([{ shape: 2, centre: { x: 10, y: 10 }, radius: 2 }]);
+    state = applyStep(
+      state,
+      createTestStep('field.obstacle', [], { x: 5, y: 5, radius: 1, shape: 1 }),
+    ).state;
+    expect(state.geometry.walls).toEqual([]);
+    expect(state.geometry.obstacles.map(({ shape }) => shape)).toEqual([2, 1]);
+    expect(
+      applyStep(state, createTestStep('field.clear', [], { shape: 2 })).state.geometry.obstacles,
+    ).toHaveLength(1);
+    const cleared = applyStep(state, createTestStep('field.clear', [], {})).state.geometry;
+    expect([cleared.walls, cleared.obstacles]).toEqual([[], []]);
+  });
+
+  it('sets the tile graph’s cell size and keeps the shapes', () => {
+    let state = applyStep(createSimulation(scene), wall(1, 50)).state;
+    expect(state.geometry.cellSize).toBe(2.5);
+    state = applyStep(state, createTestStep('field.grid', [], { 'cell-size': 5 })).state;
+    expect(state.geometry.cellSize).toBe(5);
+    expect(state.geometry.walls).toHaveLength(1);
+  });
+
+  it('refuses a shape smaller than zero, a cell under one unit across and a ray reaching nowhere', () => {
+    expect(isSafeStep({ at: 0, params: { thickness: -1 } })).toBe(false);
+    expect(isSafeStep({ at: 0, params: { radius: -0.5 } })).toBe(false);
+    expect(isSafeStep({ at: 0, params: { 'cell-size': 0.5 } })).toBe(false);
+    expect(isSafeStep({ at: 0, params: { 'look-ahead': 0 } })).toBe(false);
+    expect(isSafeStep({ at: 0, params: { thickness: 0, radius: 0, 'cell-size': 1 } })).toBe(true);
+    expect([leastValueOf('radius'), leastValueOf('x1')]).toEqual([0, null]);
+  });
+
+  it('numbers a new shape past every shape on the field and every one a step names', () => {
+    const state = applyStep(createSimulation(scene), wall(2, 50)).state;
+    expect(nextShapeNumber(state.geometry)).toBe(3);
+    const later = [{ ...wall(7, 60), at: 300 }, createTestStep(objectiveKind, [], { x: 1, y: 1 })];
+    expect(nextShapeNumber(state.geometry, later)).toBe(8);
+    expect(nextShapeNumber(createSimulation(scene).geometry)).toBe(1);
+  });
+
+  it('replays a wall at the tick it was drawn, so one seed parts with and without it', () => {
+    const steps = [
+      createTestStep(objectiveKind, [], { x: 100, y: 20 }),
+      createTestStep('path.find', ids, { heuristic: 3 }),
+    ];
+    const walled = [...steps, { ...wall(1, 80), at: 30 }];
+    expect(hashes(walled, 60)).toEqual(hashes(walled, 60));
+    const without = hashes(steps, 60);
+    const withWall = hashes(walled, 60);
+    expect(withWall.slice(0, 31)).toEqual(without.slice(0, 31));
+    expect(withWall[60]).not.toBe(without[60]);
   });
 });
 

@@ -1,14 +1,26 @@
-import { blend, firstActive, type WeightedSteering } from './blending';
+import { blend, type WeightedSteering } from './blending';
 import { advanceFormation, type FormationPlace, placeOf, slotPosition } from './formation';
+import { emptyGeometry, hasShapes, stopAtGeometry } from './geometry';
+import {
+  followTarget,
+  lostWay,
+  passWaypoints,
+  planUnit,
+  routeAhead,
+  towardAim,
+} from './path-following';
 import { touchingPairs } from './queries';
 import { nextBinomial } from './random';
 import {
   type ArrivalTuning,
   arrive,
-  avoid,
+  avoidCollisions,
+  avoidWalls,
+  castAvoidanceRays,
   flee,
   keepOnField,
   matchVelocity,
+  neighbourForces,
   seek,
   separate,
   wander,
@@ -16,6 +28,8 @@ import {
 import type {
   ObjectiveState,
   PriorityGroup,
+  RayFrame,
+  RouteFrame,
   SceneDefinition,
   SceneFrame,
   SimulationState,
@@ -32,10 +46,12 @@ import {
   centroid,
   clipLength,
   distance,
+  dot,
   length,
   midpoint,
   normalize,
   scale,
+  subtract,
   wrapAngle,
   zero,
 } from './vectors';
@@ -67,8 +83,11 @@ const reachedSlack = 0.05;
 // A crowd of units this share of a spacing apart, times the root of their number, is about as far
 // as one spreads round a point: packed tight they fill 0.53 of that, and a crowd is looser.
 const crowdShare = 0.8;
-// How near the objective priority's separation group sheds speed: as far as a crowd spreads.
-const settlingRadius = 10;
+// How long a unit that has planned again reads as replanning, so the text layer can say so.
+const replanningFrames = 30;
+// A push of this share of a unit's maximum acceleration is taken to carry the unit wholly. Measured
+// over 144 crowd tunings: at a half every crowd comes to rest, and at a quarter one does not.
+const carryingPush = 0.5;
 
 export const defaultTuning: SteeringTuning = {
   slowRadius: 10,
@@ -79,6 +98,9 @@ export const defaultTuning: SteeringTuning = {
   wanderRadius: 4,
   wanderOffset: 6,
   wanderScale: 0.3,
+  lookAhead: 6,
+  whiskerAngle: 30,
+  avoidDistance: 2,
 };
 
 const idleBehaviour: UnitBehaviour = {
@@ -86,6 +108,7 @@ const idleBehaviour: UnitBehaviour = {
   tuning: defaultTuning,
   group: [],
   priority: null,
+  path: null,
 };
 
 export function createSimulation(definition: SceneDefinition): SimulationState {
@@ -94,6 +117,7 @@ export function createSimulation(definition: SceneDefinition): SimulationState {
     tick: 0,
     objective: null,
     formations: [],
+    geometry: emptyGeometry,
     units: definition.units.map((unit, index) => ({
       id: unit.id,
       unitClass: unit.unitClass,
@@ -107,6 +131,7 @@ export function createSimulation(definition: SceneDefinition): SimulationState {
       wanderAngle: 0,
       wanderSeed: (definition.seed + Math.imul(index + 1, 0x9e3779b1)) | 0,
       stallFrames: 0,
+      route: null,
     })),
   };
 }
@@ -143,13 +168,15 @@ const leads = (unit: UnitState, state: SimulationState) =>
 
 // A formation's leader that nothing is steering for the objective heads there, whenever one is
 // set, so the formation has a lead. It lasts only as long as the unit leads, so nothing is left
-// behind, and a weight set to nothing is an order to stay.
+// behind, and a weight set to nothing is an order to stay. A unit given a path tool heads there
+// too, along its route.
 function weightsOf(unit: UnitState, state: SimulationState) {
-  const { weights } = unit.behaviour;
-  return leads(unit, state) && weights.seek === undefined && weights.arrive === undefined
-    ? { ...weights, arrive: 1 }
-    : weights;
+  const { weights, path } = unit.behaviour;
+  const unordered = weights.seek === undefined && weights.arrive === undefined;
+  return unordered && (path !== null || leads(unit, state)) ? { ...weights, arrive: 1 } : weights;
 }
+
+const isBlocked = (unit: UnitState) => unit.route?.status === 'blocked';
 
 // Priority steering's seek group falls back on the objective when the unit has no steering of
 // its own, so such a unit is heading for the objective too.
@@ -164,6 +191,24 @@ const wandering = (unit: UnitState) =>
   (unit.behaviour.weights.wander ?? 0) > 0 ||
   (unit.behaviour.priority?.order.includes('wander') ?? false);
 
+// A formation stands closer than a crowd does, so its leader and members keep its spacing.
+const separationOf = (unit: UnitState, state: SimulationState) =>
+  placeOf(state.formations, unit.id) !== null || leads(unit, state)
+    ? formationSeparation
+    : unit.behaviour.tuning;
+
+// Seek and arrive head for the objective, or, for a unit following a route, for its aim along
+// the route: on the way they come at it as fast as the next turn allows, and at the route's end
+// each does what it does.
+function towardObjective(term: 'seek' | 'arrive', unit: UnitState, objective: Vec2 | null) {
+  if (objective === null) return zero;
+  const { path, tuning } = unit.behaviour;
+  const target = path === null || unit.route === null ? null : followTarget(unit, unit.route, path);
+  if (target !== null && !target.last) return towardAim(unit, target, tuning.timeToTarget);
+  const point = target?.point ?? objective;
+  return term === 'seek' ? seek(unit, point) : arrive(unit, point, tuning);
+}
+
 function termOutput(
   term: SteeringTerm,
   unit: UnitState,
@@ -175,21 +220,12 @@ function termOutput(
   const objective = state.objective?.position ?? null;
   switch (term) {
     case 'seek':
-      return objective === null ? zero : seek(unit, objective);
     case 'arrive':
-      return objective === null ? zero : arrive(unit, objective, tuning);
+      return towardObjective(term, unit, objective);
     case 'flee':
       return objective === null ? zero : flee(unit, objective);
     case 'separation':
-      // A formation stands closer than a crowd does, so its leader and members keep its spacing.
-      return separate(
-        unit,
-        index,
-        state.units,
-        placeOf(state.formations, unit.id) !== null || leads(unit, state)
-          ? formationSeparation
-          : tuning,
-      );
+      return separate(unit, index, state.units, separationOf(unit, state));
     case 'cohesion':
       return group.length === 0
         ? zero
@@ -201,7 +237,9 @@ function termOutput(
     case 'wander':
       return wander(unit, tuning);
     case 'avoidance':
-      return avoid(unit, index, state.units);
+      return avoidCollisions(unit, index, state.units);
+    case 'obstacleAvoidance':
+      return avoidWalls(unit, state.geometry, tuning);
   }
 }
 
@@ -246,55 +284,112 @@ function ownSteering(unit: UnitState, index: number, context: FrameContext): Vec
   return blend(terms, unit.maxAcceleration);
 }
 
+/** What one priority group asks of a unit, and whether it claims the unit. */
+interface GroupOutput {
+  readonly acceleration: Vec2;
+  readonly active: boolean;
+}
+
+function seekGroupOutput(unit: UnitState, index: number, context: FrameContext): Vec2 {
+  const { state } = context;
+  const own = ownSteering(unit, index, context);
+  if (length(own) > 0 || state.objective === null) return own;
+  return arrive(unit, state.objective.position, unit.behaviour.tuning);
+}
+
+/**
+ * The unit as its own steering is asked about it under separation's claim. The speed a push
+ * gives a unit along itself is its neighbours' doing, so the unit's own steering is asked what it
+ * would do without that speed, as far as the push presses: a unit a crowd carries past its own
+ * pace does not brake against the crowd, while its pull toward where it is going stays whole. A
+ * unit standing still, or moving against the push, is asked as it is.
+ */
+function withoutCarriedSpeed(unit: UnitState, push: Vec2): UnitState {
+  const way = normalize(push);
+  const pressed = Math.min(1, length(push) / (carryingPush * unit.maxAcceleration));
+  const carried = Math.max(0, dot(unit.velocity, way)) * pressed;
+  return carried === 0 ? unit : { ...unit, velocity: subtract(unit.velocity, scale(way, carried)) };
+}
+
+/**
+ * Priority's separation group, which claims a unit on its push alone. Under the claim the unit's
+ * own steering keeps its whole pull, and each neighbour in range adds a stiffened push and
+ * friction, equal and opposite between the two of a pair. What a crowd adds to its units
+ * therefore cancels across it, and its centre goes where their own steering takes it: sent
+ * somewhere new, a settled crowd starts as the same units would with no neighbours, however near
+ * the new place is. One thing is taken from the unit's own steering, the speed the push gives it,
+ * so the units a crowd carries along do not brake against it, and the crowd keeps ahead of units
+ * that close on the objective one by one. The stiffened push keeps a crowd packed round its
+ * objective apart and the friction stops it churning, so it comes to rest. What the neighbours
+ * add fades in over the first epsilon past the claim, so the unit's steering does not jump as
+ * separation takes it.
+ */
+function underSeparation(
+  unit: UnitState,
+  index: number,
+  push: Vec2,
+  context: FrameContext,
+  epsilon: number,
+) {
+  const { state } = context;
+  const own = unit.behaviour.priority?.order.includes('seek')
+    ? seekGroupOutput(withoutCarriedSpeed(unit, push), index, context)
+    : zero;
+  const crowd = neighbourForces(unit, index, state.units, separationOf(unit, state));
+  const claimed = epsilon > 0 ? Math.min(1, length(push) / epsilon - 1) : 1;
+  return add(own, scale(crowd, claimed));
+}
+
 function priorityOutput(
   group: PriorityGroup,
   unit: UnitState,
   index: number,
   context: FrameContext,
-): Vec2 {
+  epsilon: number,
+): GroupOutput {
   const { state } = context;
+  const claims = (acceleration: Vec2): GroupOutput => ({
+    acceleration,
+    active: length(acceleration) > epsilon,
+  });
   switch (group) {
     case 'avoidance':
-      return termOutput(group, unit, index, context);
+      return claims(termOutput(group, unit, index, context));
     case 'separation': {
+      // Only a push that claims the unit needs the steering it eases.
       const push = termOutput(group, unit, index, context);
-      if (length(push) === 0) return zero;
-      // Round the objective it is heading for, this group has the unit to itself, so it must shed
-      // the unit's speed as well as part it: nothing else will, and the crowd would boil there for
-      // ever. Anywhere else it keeps its speed, so a group under priority steering still travels.
-      const { objective } = state;
-      return objective !== null &&
-        isDriven(unit, state) &&
-        distance(unit.position, objective.position) <= settlingRadius
-        ? add(push, matchVelocity(unit, zero, unit.behaviour.tuning.timeToTarget))
-        : push;
+      return length(push) > epsilon
+        ? { acceleration: underSeparation(unit, index, push, context, epsilon), active: true }
+        : { acceleration: push, active: false };
     }
     case 'wander':
-      return blend(
-        [
-          { weight: 1, acceleration: termOutput('wander', unit, index, context) },
-          edgeTerm(unit, state),
-        ],
-        unit.maxAcceleration,
+      return claims(
+        blend(
+          [
+            { weight: 1, acceleration: termOutput('wander', unit, index, context) },
+            edgeTerm(unit, state),
+          ],
+          unit.maxAcceleration,
+        ),
       );
-    case 'seek': {
-      const own = ownSteering(unit, index, context);
-      if (length(own) > 0 || state.objective === null) return own;
-      return arrive(unit, state.objective.position, unit.behaviour.tuning);
-    }
+    case 'seek':
+      return claims(seekGroupOutput(unit, index, context));
   }
 }
 
+// A unit with no route has nowhere to go, so nothing steers it and it brakes where it stands,
+// whatever it carries: a blend, wandering included, or a priority order. It keeps all of that,
+// so it goes on as it was composed once the field gives it a way. For any other unit, the first
+// group in the order that claims it steers it; the groups after are not asked.
 function steeringOf(unit: UnitState, index: number, context: FrameContext): Vec2 {
+  if (isBlocked(unit)) return zero;
   const { priority } = unit.behaviour;
   if (priority === null) return ownSteering(unit, index, context);
-  return clipLength(
-    firstActive(
-      priority.order.map((group) => priorityOutput(group, unit, index, context)),
-      priority.epsilon,
-    ),
-    unit.maxAcceleration,
-  );
+  for (const group of priority.order) {
+    const output = priorityOutput(group, unit, index, context, priority.epsilon);
+    if (output.active) return clipLength(output.acceleration, unit.maxAcceleration);
+  }
+  return zero;
 }
 
 // A unit nothing is steering brakes to a stop: left alone it would coast into the field's edge.
@@ -317,6 +412,7 @@ interface Goal {
 }
 
 function goalOf(unit: UnitState, state: SimulationState): Goal | null {
+  if (isBlocked(unit)) return null;
   const place = placeOf(state.formations, unit.id);
   if (place)
     return { position: slotPosition(place.formation, place.slot), radius: slotReachedRadius };
@@ -348,23 +444,37 @@ function insideField(position: Vec2, margin: number, field: SceneDefinition['fie
   };
 }
 
-function integrate(
-  unit: UnitState,
-  acceleration: Vec2,
-  field: SceneDefinition['field'],
-): UnitState {
+interface Moved {
+  readonly unit: UnitState;
+  /** A wall or an obstacle took some of the unit's step. */
+  readonly stopped: boolean;
+}
+
+function integrate(unit: UnitState, acceleration: Vec2, state: SimulationState): Moved {
+  const { field } = state.definition;
   const moved = clipLength(add(unit.velocity, scale(acceleration, frameSeconds)), unit.maxSpeed);
   const wanted = add(unit.position, scale(moved, frameSeconds));
   const allowed = insideField(wanted, unit.radius, field);
-  // A wall stops a unit dead in that direction, so a pinned unit reads as stopped, not running.
+  // The field's edge stops a unit dead in that direction, so a pinned unit reads as stopped, not
+  // running; walls and obstacles do the same in the direction that would meet them.
   const clear = {
     x: allowed.x === wanted.x ? moved.x : 0,
     y: allowed.y === wanted.y ? moved.y : 0,
   };
-  const velocity = length(clear) < restSpeed ? zero : clear;
+  const met = hasShapes(state.geometry)
+    ? stopAtGeometry(state.geometry, unit.position, clear, unit.radius, frameSeconds)
+    : { velocity: clear, stopped: false };
+  const velocity = length(met.velocity) < restSpeed ? zero : met.velocity;
   const position = add(unit.position, scale(velocity, frameSeconds));
   const heading = length(velocity) > stillSpeed ? normalize(velocity) : unit.heading;
-  return { ...unit, position, velocity, heading };
+  return { unit: { ...unit, position, velocity, heading }, stopped: met.stopped };
+}
+
+// A following unit moves its aim on along its route, and one the geometry has stopped off its way
+// plans again from where it stands.
+function followOn(moved: Moved, state: SimulationState): UnitState {
+  const unit = passWaypoints(moved.unit, state);
+  return moved.stopped && lostWay(unit, state) ? planUnit(unit, state, true) : unit;
 }
 
 function turnWander(unit: UnitState): UnitState {
@@ -384,6 +494,7 @@ function turnWander(unit: UnitState): UnitState {
  */
 export function objectiveDrivers(state: SimulationState): readonly UnitState[] {
   return state.units.filter((unit) => {
+    if (isBlocked(unit)) return false;
     const place = placeOf(state.formations, unit.id);
     return place === null ? isDriven(unit, state) : place.formation.kind === 'two-level';
   });
@@ -459,12 +570,13 @@ export function advance(state: SimulationState): SimulationState {
   const turned = state.units.map(turnWander);
   const steering = { ...state, units: turned };
   const accelerations = accelerationsOf(steering);
-  const { field } = state.definition;
-  const units = turned.map((unit, index) => integrate(unit, accelerations[index], field));
+  const moved = turned.map((unit, index) => integrate(unit, accelerations[index], state));
+  const placed = { ...state, tick: state.tick + 1, units: moved.map((step) => step.unit) };
+  const units = moved.map((step) => followOn(step, placed));
   const formations = state.formations.map((formation) =>
     advanceFormation(formation, units, state.objective?.position ?? null, frameSeconds),
   );
-  const next: SimulationState = { ...state, tick: state.tick + 1, units, formations };
+  const next: SimulationState = { ...placed, units, formations };
   const objective = settleObjective(next);
   const settled = { ...next, objective };
   return {
@@ -490,11 +602,38 @@ export function isAtRest(state: SimulationState) {
 }
 
 function activityOf(unit: UnitState, state: SimulationState): UnitActivity {
+  if (isBlocked(unit)) return 'blocked';
   if (unit.stallFrames >= stallThreshold) return 'stalled';
   const moving = length(unit.velocity) > stillSpeed;
   if (goalOf(unit, state) === null) return moving ? 'moving' : 'idle';
   if (!goalReached(unit, state)) return 'moving';
   return placeOf(state.formations, unit.id) === null ? 'arrived' : 'formed';
+}
+
+function routeFrame(unit: UnitState, state: SimulationState): RouteFrame[] {
+  const { route } = unit;
+  if (route === null) return [];
+  return [
+    {
+      id: unit.id,
+      ahead: routeAhead(unit),
+      reason: route.reason,
+      search: route.search,
+      replanning: route.replans > 0 && state.tick - route.plannedAt < replanningFrames,
+    },
+  ];
+}
+
+function rayFrames(unit: UnitState, state: SimulationState): RayFrame[] {
+  if ((unit.behaviour.weights.obstacleAvoidance ?? 0) <= 0) return [];
+  return castAvoidanceRays(unit, state.geometry, unit.behaviour.tuning).map(
+    ({ direction, reach, hit }) => ({
+      id: unit.id,
+      from: unit.position,
+      to: hit?.point ?? add(unit.position, scale(direction, reach)),
+      hit: hit !== null,
+    }),
+  );
 }
 
 export function frameOf(state: SimulationState): SceneFrame {
@@ -518,5 +657,8 @@ export function frameOf(state: SimulationState): SceneFrame {
     ),
     collisions: touchingPairs(state.units).map(([a, b]) => midpoint(a.position, b.position)),
     objective: state.objective?.position ?? null,
+    geometry: state.geometry,
+    routes: state.units.flatMap((unit) => routeFrame(unit, state)),
+    rays: state.units.flatMap((unit) => rayFrames(unit, state)),
   };
 }

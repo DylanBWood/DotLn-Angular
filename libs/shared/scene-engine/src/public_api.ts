@@ -6,18 +6,34 @@ export {
   patternSlots,
   slotPosition,
 } from './lib/formation';
+export { emptyGeometry } from './lib/geometry';
+export { gridGraph, type PlainGrid, type TileGraph, tileGraph } from './lib/graph';
 export { firstDivergence, hashFrame } from './lib/hash';
 export {
   applyStep,
+  type FieldKind,
+  fieldDefaults,
   interpretedKinds,
+  isFieldKind,
   isInterpretedKind,
   isSafeStep,
+  leastValueOf,
+  nextShapeNumber,
   objectiveKind,
   previewStep,
   readsParam,
   refusalOf,
 } from './lib/interpreter';
 export { measure, metricNames } from './lib/metrics';
+export { routesOf } from './lib/path-following';
+export {
+  findPath,
+  heuristics,
+  type PathSearch,
+  type SearchOptions,
+  searchAt,
+  travelWeightParams,
+} from './lib/pathfinding';
 export { assignmentOf, squadOf, unitsFollowingNothing } from './lib/queries';
 export { advanceRun, applyToRun, type SceneRun, startRun } from './lib/run';
 export {
@@ -33,6 +49,7 @@ export {
   type ArrivalTuning,
   arrive,
   avoid,
+  avoidCollisions,
   flee,
   keepOnField,
   matchVelocity,
@@ -49,21 +66,34 @@ export type {
   CompositionStep,
   FormationPattern,
   FormationState,
+  Heuristic,
   MetricName,
+  NoRouteReason,
+  Obstacle,
+  PathSettings,
   PreviewArrow,
+  RayFrame,
+  RouteFrame,
+  RouteReading,
   SceneDefinition,
   SceneFrame,
+  SceneGeometry,
   SceneMetrics,
+  SearchRecord,
+  SearchStep,
   SimulationState,
   SlotAssignment,
   StepPreview,
   StepRefusal,
   Trial,
+  TrialSeries,
   Unit,
   UnitActivity,
   UnitFrame,
   UnitId,
+  UnitRoute,
   Vec2,
+  Wall,
 } from './lib/types';
 export {
   add,
