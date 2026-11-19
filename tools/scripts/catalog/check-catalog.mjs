@@ -273,6 +273,9 @@ export const sceneTransformKinds = [
   'path.smooth',
   'path.follow',
   'path.cost',
+  'combat.fire',
+  'combat.aim',
+  'combat.projectile',
 ];
 
 export function summarizeWork(tools, work, sceneType, typedShortfall) {
