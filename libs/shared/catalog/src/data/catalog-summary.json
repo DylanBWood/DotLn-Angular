@@ -82,6 +82,9 @@
     },
     "transformKind": {
       "channel.policy": 90,
+      "combat.aim": 3,
+      "combat.fire": 1,
+      "combat.projectile": 1,
       "formation.fixed": 1,
       "formation.twoLevel": 5,
       "ground.frag": 2,
@@ -98,8 +101,8 @@
     },
     "status": {
       "background": 1427,
-      "typed": 136,
-      "untyped": 1900
+      "typed": 141,
+      "untyped": 1895
     }
   },
   "works": [
@@ -203,6 +206,11 @@
         "aifg-a:145",
         "aifg-a:149",
         "aifg-a:151",
+        "aifg-a:161",
+        "aifg-a:162",
+        "aifg-a:163",
+        "aifg-a:166",
+        "aifg-a:167",
         "aifg-a:174",
         "aifg-a:175",
         "aifg-a:177",

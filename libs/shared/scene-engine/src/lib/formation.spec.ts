@@ -25,6 +25,82 @@ function runFor(state: SimulationState, frames: number) {
 
 const near = (slots: readonly Vec2[]) => slots.map(({ x, y }) => ({ x, y }));
 
+function knockOut(state: SimulationState, id: string) {
+  const unit = state.units.find((member) => member.id === id);
+  if (!unit) throw new Error(`Missing formation member ${id}`);
+  return advance({
+    ...state,
+    bullets: [
+      {
+        owner: 'marker',
+        position: unit.position,
+        velocity: { x: 1, y: 0 },
+        rangeLeft: 2,
+        radius: 0.2,
+        drag: 0,
+        knockoutHits: 1,
+        framesLeft: null,
+      },
+    ],
+  });
+}
+
+describe('vacant slots after a knockout', () => {
+  it('rebuilds a smaller pattern with its original spacing and costs', () => {
+    const start = applyStep(
+      createSimulation(scene),
+      createTestStep('formation.twoLevel', ids, {
+        pattern: 1,
+        'slot-spacing': 3,
+        'cost.close-combat.close-combat': 4,
+      }),
+    ).state;
+    const next = knockOut(start, ids[3]);
+    const formed = next.formations[0];
+    const standing = next.units.filter((unit) => !unit.down);
+    expect(formed.slots).toEqual(patternSlots('line', standing.length, 3));
+    expect(formed.assignment).toEqual(
+      assignSlots(standing, patternSlotRoles(standing.length), start.formations[0].slotCosts),
+    );
+    expect(measure(runFor(next, 1200)).slotError).toBeLessThan(1);
+  });
+
+  it('keeps the next fixed slot at the head, closes a follower’s gap, and removes the last slot', () => {
+    const group = ids.slice(0, 3);
+    const start = applyStep(
+      createSimulation(scene),
+      createTestStep('formation.fixed', group),
+    ).state;
+    const next = knockOut(start, group[0]);
+    expect(next.formations[0].leader).toBe(group[1]);
+    expect(next.formations[0].anchor).toEqual(next.units[1].position);
+    const alone = knockOut(next, group[2]);
+    expect(alone.formations[0].assignment.map(({ unitId, slot }) => [unitId, slot])).toEqual([
+      [group[1], 0],
+    ]);
+    expect(knockOut(alone, group[1]).formations).toEqual([]);
+  });
+
+  it('keeps a detached leader as the anchor only while assigned followers survive', () => {
+    const [leader, first, last] = ids;
+    const formed = applyStep(
+      createSimulation(scene),
+      createTestStep('formation.fixed', [leader, first, last]),
+    ).state;
+    const detached = applyStep(
+      formed,
+      createTestStep('steer.blend', [leader], { 'arrive-weight': 1 }),
+    ).state;
+    const oneFollower = knockOut(detached, first);
+    expect(oneFollower.formations[0]).toMatchObject({
+      leader,
+      anchor: oneFollower.units[0].position,
+      assignment: [{ unitId: last, slot: 1 }],
+    });
+    expect(knockOut(oneFollower, last).formations).toEqual([]);
+  });
+});
+
 describe('patterns', () => {
   it('centres every pattern on the anchor', () => {
     for (const pattern of ['wedge', 'line', 'column'] as const) {

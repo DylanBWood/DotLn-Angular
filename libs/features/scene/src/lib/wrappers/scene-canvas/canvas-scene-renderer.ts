@@ -13,6 +13,7 @@ import type {
   SceneRendererOptions,
 } from '../../renderers/scene-renderer';
 import { type FieldView, fieldView, toScreen } from './field-view';
+import { paintGhostShots, paintShots } from './shot-painter';
 
 const trailLength = 30;
 // A trail is stroked in a few bands of fading strength, not one stroke per segment.
@@ -139,10 +140,15 @@ export class CanvasSceneRenderer implements SceneRenderer {
     this.#paintObjective(frame, view);
     this.#paintRoutes(frame, selection, view);
     this.#paintFormation(frame, view);
-    if (ghost) this.#paintGhostUnits(ghost.units, view);
+    if (ghost) {
+      this.#paintGhostUnits(ghost.units, view);
+      paintGhostShots(this.#context, ghost.bullets, view, this.#tokens.ghost);
+    }
     this.#paintTrails(frame, view);
     this.#paintRays(frame, view);
-    this.#paintUnits(frame, selection, view);
+    const colours = this.#unitColours();
+    this.#paintUnits(frame, selection, view, colours);
+    paintShots(this.#context, frame, view, colours, this.#tokens, this.#options.motion());
     this.#paintCollisions(frame, view);
     if (ghost) this.#paintArrows(ghost.arrows, view);
     this.#lastFrame = frame.frameNo;
@@ -404,11 +410,15 @@ export class CanvasSceneRenderer implements SceneRenderer {
     );
   }
 
-  #paintUnits(frame: SceneFrame, selection: readonly UnitId[], view: FieldView) {
+  #paintUnits(
+    frame: SceneFrame,
+    selection: readonly UnitId[],
+    view: FieldView,
+    colours: ReadonlyMap<UnitId, string>,
+  ) {
     const context = this.#context;
     const selected = new Set(selection);
     const { accent, ink, objective, font } = this.#tokens;
-    const colours = this.#unitColours();
     const labels = new Map(this.#options.styles().map(({ id, label }) => [id, label]));
     const placed: LabelBox[] = [];
     const centres = frame.units.map((unit) => toScreen(view, unit.position));
@@ -437,8 +447,10 @@ export class CanvasSceneRenderer implements SceneRenderer {
         context.setLineDash([]);
       }
       context.fillStyle = colour;
+      context.globalAlpha = unit.activity === 'down' ? 0.35 : 1;
       this.#traceGlyph(unit, view);
       context.fill();
+      context.globalAlpha = 1;
       // A crowded label yields to other labels and units; the text layer still has them all.
       const label = labels.get(unit.id);
       if (!label) continue;

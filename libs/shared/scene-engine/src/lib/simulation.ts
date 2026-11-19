@@ -9,6 +9,7 @@ import {
   routeAhead,
   towardAim,
 } from './path-following';
+import { advanceProjectiles, inReach, launcherDefaults } from './projectiles';
 import { touchingPairs } from './queries';
 import { nextBinomial } from './random';
 import {
@@ -118,6 +119,8 @@ export function createSimulation(definition: SceneDefinition): SimulationState {
     objective: null,
     formations: [],
     geometry: emptyGeometry,
+    bullets: [],
+    impacts: [],
     units: definition.units.map((unit, index) => ({
       id: unit.id,
       unitClass: unit.unitClass,
@@ -132,6 +135,12 @@ export function createSimulation(definition: SceneDefinition): SimulationState {
       wanderSeed: (definition.seed + Math.imul(index + 1, 0x9e3779b1)) | 0,
       stallFrames: 0,
       route: null,
+      launcher: launcherDefaults,
+      nextShot: 0,
+      shots: 0,
+      scored: 0,
+      hits: 0,
+      down: false,
     })),
   };
 }
@@ -382,7 +391,7 @@ function priorityOutput(
 // so it goes on as it was composed once the field gives it a way. For any other unit, the first
 // group in the order that claims it steers it; the groups after are not asked.
 function steeringOf(unit: UnitState, index: number, context: FrameContext): Vec2 {
-  if (isBlocked(unit)) return zero;
+  if (unit.down || isBlocked(unit)) return zero;
   const { priority } = unit.behaviour;
   if (priority === null) return ownSteering(unit, index, context);
   for (const group of priority.order) {
@@ -402,8 +411,16 @@ function accelerationOf(unit: UnitState, index: number, context: FrameContext): 
 
 /** The acceleration each unit would apply in this state, in unit order. */
 export function accelerationsOf(state: SimulationState): readonly Vec2[] {
-  const context: FrameContext = { state, groups: new Map() };
-  return state.units.map((unit, index) => accelerationOf(unit, index, context));
+  // A retired glyph still occupies a roster number for replay, but its neighbours have left it behind.
+  const standing = state.units.some((unit) => unit.down)
+    ? state.units.filter((unit) => !unit.down)
+    : state.units;
+  const context: FrameContext = {
+    state: standing === state.units ? state : { ...state, units: standing },
+    groups: new Map(),
+  };
+  let index = 0;
+  return state.units.map((unit) => (unit.down ? zero : accelerationOf(unit, index++, context)));
 }
 
 interface Goal {
@@ -412,7 +429,7 @@ interface Goal {
 }
 
 function goalOf(unit: UnitState, state: SimulationState): Goal | null {
-  if (isBlocked(unit)) return null;
+  if (unit.down || isBlocked(unit)) return null;
   const place = placeOf(state.formations, unit.id);
   if (place)
     return { position: slotPosition(place.formation, place.slot), radius: slotReachedRadius };
@@ -478,7 +495,7 @@ function followOn(moved: Moved, state: SimulationState): UnitState {
 }
 
 function turnWander(unit: UnitState): UnitState {
-  if (!wandering(unit)) return unit;
+  if (unit.down || !wandering(unit)) return unit;
   const draw = nextBinomial(unit.wanderSeed);
   return {
     ...unit,
@@ -494,7 +511,7 @@ function turnWander(unit: UnitState): UnitState {
  */
 export function objectiveDrivers(state: SimulationState): readonly UnitState[] {
   return state.units.filter((unit) => {
-    if (isBlocked(unit)) return false;
+    if (unit.down || isBlocked(unit)) return false;
     const place = placeOf(state.formations, unit.id);
     return place === null ? isDriven(unit, state) : place.formation.kind === 'two-level';
   });
@@ -566,7 +583,12 @@ function settleObjective(state: SimulationState): ObjectiveState | null {
 }
 
 /** Moves the scene one fixed step. A unit reads the frame before, so unit order cannot matter. */
-export function advance(state: SimulationState): SimulationState {
+export function advance(previous: SimulationState): SimulationState {
+  return advanceMovement(advanceProjectiles(previous, frameSeconds, advanceMovement));
+}
+
+/** One frame of board choreography, also used to record the poses for a shot animation. */
+export function advanceMovement(state: SimulationState): SimulationState {
   const turned = state.units.map(turnWander);
   const steering = { ...state, units: turned };
   const accelerations = accelerationsOf(steering);
@@ -590,6 +612,12 @@ export function advance(state: SimulationState): SimulationState {
 
 /** True when no unit is moving and nothing would start one moving, a marching anchor included. */
 export function isAtRest(state: SimulationState) {
+  if (
+    state.bullets.length ||
+    state.impacts.length ||
+    state.units.some((unit) => inReach(unit, state))
+  )
+    return false;
   if (state.units.some((unit) => length(unit.velocity) > 0)) return false;
   const next = advance(state);
   return (
@@ -602,6 +630,7 @@ export function isAtRest(state: SimulationState) {
 }
 
 function activityOf(unit: UnitState, state: SimulationState): UnitActivity {
+  if (unit.down) return 'down';
   if (isBlocked(unit)) return 'blocked';
   if (unit.stallFrames >= stallThreshold) return 'stalled';
   const moving = length(unit.velocity) > stillSpeed;
@@ -625,7 +654,7 @@ function routeFrame(unit: UnitState, state: SimulationState): RouteFrame[] {
 }
 
 function rayFrames(unit: UnitState, state: SimulationState): RayFrame[] {
-  if ((unit.behaviour.weights.obstacleAvoidance ?? 0) <= 0) return [];
+  if (unit.down || (unit.behaviour.weights.obstacleAvoidance ?? 0) <= 0) return [];
   return castAvoidanceRays(unit, state.geometry, unit.behaviour.tuning).map(
     ({ direction, reach, hit }) => ({
       id: unit.id,
@@ -648,6 +677,7 @@ export function frameOf(state: SimulationState): SceneFrame {
       heading: unit.heading,
       radius: unit.radius,
       activity: activityOf(unit, state),
+      hits: unit.hits,
     })),
     anchors: formations
       .filter((formation) => formation.kind === 'two-level')
@@ -660,5 +690,7 @@ export function frameOf(state: SimulationState): SceneFrame {
     geometry: state.geometry,
     routes: state.units.flatMap((unit) => routeFrame(unit, state)),
     rays: state.units.flatMap((unit) => rayFrames(unit, state)),
+    bullets: state.bullets,
+    impacts: state.impacts,
   };
 }

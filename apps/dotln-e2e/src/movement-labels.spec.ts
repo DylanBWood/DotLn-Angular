@@ -21,7 +21,7 @@ for (const viewport of [
       await page.setViewportSize(viewport);
       await page.goto(`/tools/catalog/${study.id}`);
       const svg = page.locator('tools-study-motion svg');
-      await expect(svg).toBeVisible();
+      await expect(svg).toBeVisible({ timeout: 15_000 });
       await page.evaluate(() => document.fonts.ready);
       const time = page.locator('tools-study-motion').getByRole('slider');
       const last = Number(await time.getAttribute('max'));

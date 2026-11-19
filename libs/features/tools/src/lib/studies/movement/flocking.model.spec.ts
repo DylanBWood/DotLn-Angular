@@ -255,9 +255,11 @@ it('uses live controls to expose piling up and a crossing that fades before the 
   expect(noDrive.motion.frames[0].values['cruiseWeight']).toBe('0.00');
 });
 
-it('keeps notes, prose, labels and all geometry sound at input endpoints and combined extremes', () => {
+describe('keeps notes, prose, labels and all geometry sound at input endpoints and combined extremes', () => {
   const inputs = model(parameters, studyTranslate).inputs ?? [];
-  expect(inputs).toHaveLength(2);
+  it('offers 2 input controls', () => {
+    expect(inputs).toHaveLength(2);
+  });
   const variants = [
     parameters,
     ...inputs.flatMap((input) =>
@@ -277,7 +279,7 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
     ...record.limits,
     ...record.mechanism.steps.map(({ text }) => text),
   ];
-  for (const variant of variants) {
+  it.each(variants)('setting %# · %j', (variant) => {
     const run = model(variant, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
@@ -346,5 +348,5 @@ it('keeps notes, prose, labels and all geometry sound at input endpoints and com
           ),
         ).toBe(true);
       }
-  }
+  });
 });

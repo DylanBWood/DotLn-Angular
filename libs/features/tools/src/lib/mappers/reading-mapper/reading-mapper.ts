@@ -16,6 +16,7 @@ export const mapReading = (
   domains: Readonly<Record<HookDomain, string>>,
   study: StudyView | null = null,
   studyStatus: StudyStatus = 'none',
+  faceLabel: (token: string) => string = readable,
 ): ReadingView => ({
   tool,
   place: [tool.place.part, tool.place.chapter, tool.place.section, tool.place.subsection]
@@ -26,17 +27,17 @@ export const mapReading = (
   faces:
     tool.status === 'typed'
       ? {
-          scenes: tool.faces.scene.map(readable).join(', '),
+          scenes: tool.faces.scene.map(faceLabel).join(', '),
           target,
           minimum: tool.faces.selection.min,
           maximum: tool.faces.selection.max,
           transform,
-          observable: tool.faces.observable.map(readable).join(', '),
-          metrics: tool.faces.toyMetric.map(readable).join(', '),
+          observable: tool.faces.observable.map(faceLabel).join(', '),
+          metrics: tool.faces.toyMetric.map(faceLabel).join(', '),
           params: tool.faces.transform.params.map((param) => ({
             ...param,
-            name: readable(param.name),
-            unit: readable(param.unit),
+            name: faceLabel(param.name),
+            unit: faceLabel(param.unit),
           })),
         }
       : null,
@@ -69,6 +70,29 @@ export class ReadingMapper {
   readonly followed = output<ToolId>();
   readonly studyIntent = output<StudyIntent>();
   readonly studyRetried = output<void>();
+  readonly #boardWords: Partial<Record<string, () => string>> = {
+    'units-on-terrain': translateSignal('tools.boardWords.terrain'),
+    'shot-streaks': translateSignal('tools.boardWords.streaks'),
+    'hit-sparks': translateSignal('tools.boardWords.sparks'),
+    'streak-speed': translateSignal('tools.boardWords.speed'),
+    'wall-marks': translateSignal('tools.boardWords.marks'),
+    'recorded-pose': translateSignal('tools.boardWords.pose'),
+    shots: translateSignal('tools.boardWords.shots'),
+    hits: translateSignal('tools.boardWords.hits'),
+    accuracy: translateSignal('tools.boardWords.accuracy'),
+    range: translateSignal('tools.boardWords.range'),
+    'bullet-speed': translateSignal('tools.boardWords.shotSpeed'),
+    rate: translateSignal('tools.boardWords.rate'),
+    'hit-radius': translateSignal('tools.boardWords.radius'),
+    'knockout-hits': translateSignal('tools.boardWords.knockout'),
+    drag: translateSignal('tools.boardWords.drag'),
+    iterations: translateSignal('tools.boardWords.iterations'),
+    'field units per second': translateSignal('tools.boardWords.unitsPerSecond'),
+    'field units': translateSignal('tools.boardWords.units'),
+    'shots per second': translateSignal('tools.boardWords.shotsPerSecond'),
+    'per second': translateSignal('tools.boardWords.perSecond'),
+    cues: translateSignal('tools.boardWords.cues'),
+  };
   readonly #targets = {
     unit: {
       one: translateSignal('tools.targets.unit'),
@@ -124,6 +148,9 @@ export class ReadingMapper {
     [TransformKind.PathFind]: translateSignal('tools.transforms.find'),
     [TransformKind.PathSmooth]: translateSignal('tools.transforms.smooth'),
     [TransformKind.PathFollow]: translateSignal('tools.transforms.follow'),
+    [TransformKind.CombatFire]: translateSignal('tools.transforms.fire'),
+    [TransformKind.CombatAim]: translateSignal('tools.transforms.aim'),
+    [TransformKind.CombatProjectile]: translateSignal('tools.transforms.projectile'),
     [TransformKind.LevelZoom]: translateSignal('tools.transforms.zoom'),
     [TransformKind.LevelRing]: translateSignal('tools.transforms.ring'),
   };
@@ -143,6 +170,9 @@ export class ReadingMapper {
       domains,
       this.study(),
       this.studyStatus(),
+      tool.status === 'typed' && tool.faces.transform.kind.startsWith('combat.')
+        ? (token) => this.#boardWords[token]?.() ?? readable(token)
+        : readable,
     );
   });
 }

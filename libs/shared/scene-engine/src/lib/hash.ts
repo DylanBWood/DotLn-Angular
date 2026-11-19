@@ -11,7 +11,7 @@ const hex = (hash: number) => hash.toString(16).padStart(8, '0');
 
 /** A fingerprint of everything that moves in a frame. Equal hashes mean equal frames. */
 export function hashFrame(frame: SceneFrame): string {
-  const values = frame.units.flatMap(({ position, velocity }) => [
+  const values = [...frame.units, ...frame.bullets].flatMap(({ position, velocity }) => [
     position.x,
     position.y,
     velocity.x,

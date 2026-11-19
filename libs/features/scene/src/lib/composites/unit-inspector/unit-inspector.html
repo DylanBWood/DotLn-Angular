@@ -43,6 +43,26 @@
     </div>
 
     <div class="controls">
+      @if (view.targets; as targets) {
+        <label class="target">
+          {{ 'scene.inspector.target' | t }}
+          <select (change)="changed('target', $event); paramCommitted.emit()">
+            <option value="0" [selected]="targets.selected === 0">
+              {{ 'scene.inspector.pointTarget' | t }}
+            </option>
+            @for (option of targets.options; track option.value) {
+              <option
+                [value]="option.value"
+                [selected]="option.value === targets.selected"
+                [disabled]="option.down"
+              >
+                {{ 'scene.inspector.targetUnit' | t: { role: option.label, id: option.id } }}
+              </option>
+            }
+          </select>
+        </label>
+        <p class="hint">{{ 'scene.inspector.targetHint' | t }}</p>
+      }
       @for (param of view.params; track param.name) {
         @if (param.choices.length) {
           <fieldset class="choices">
@@ -69,11 +89,21 @@
               [max]="param.max"
               [step]="param.step"
               [value]="param.value"
+              [attr.aria-valuetext]="param.mixed ? ('scene.inspector.mixedSpeed' | t) : null"
               (input)="changed(param.name, $event)"
               (change)="paramCommitted.emit()"
             />
-            <output translate="no">{{ param.value }} {{ param.unit }}</output>
+            <output translate="no">
+              @if (param.mixed) {
+                {{ 'scene.inspector.mixedSpeed' | t }}
+              } @else {
+                {{ param.value }} {{ param.unit }}
+              }
+            </output>
           </label>
+          @if (param.name === 'bullet-speed' && view.cueTempo) {
+            <p class="hint">{{ 'scene.inspector.tempoBands' | t }}</p>
+          }
         }
       }
 
@@ -96,7 +126,39 @@
         </details>
       }
 
-      @if (view.preview; as preview) {
+      @if (view.shot; as shot) {
+        <section class="preview" data-shot-preview>
+          <h3>{{ 'scene.inspector.preview' | t }}</h3>
+          @if (!shot.hasTarget) {
+            <p>{{ 'scene.inspector.shotNoTarget' | t }}</p>
+          } @else if (shot.seconds === null) {
+            <p>{{ 'scene.inspector.shotOut' | t }}</p>
+          } @else if (shot.cue; as cue) {
+            @if (cue.poseFrame !== null) {
+              <p>{{ 'scene.inspector.cueRead' | t: { frame: cue.poseFrame } }}</p>
+            } @else {
+              <p>{{ 'scene.inspector.pointTarget' | t }}</p>
+            }
+            <p>
+              {{
+                'scene.inspector.clipLength'
+                  | t: { time: shot.seconds.toFixed(2), end: cue.endFrame }
+              }}
+            </p>
+            @if (cue.beyondRange) {
+              <p>{{ 'scene.inspector.poseBeyondRange' | t }}</p>
+            }
+          } @else {
+            <p>{{ 'scene.inspector.straight' | t }}</p>
+            <p>{{ 'scene.inspector.shotTrip' | t: { time: shot.seconds.toFixed(2) } }}</p>
+          }
+          @if (shot.cue) {
+            <p>{{ 'scene.inspector.rangeLimit' | t: { range: shot.reach.toFixed(1) } }}</p>
+          } @else {
+            <p>{{ 'scene.inspector.shotReach' | t: { range: shot.reach.toFixed(1) } }}</p>
+          }
+        </section>
+      } @else if (view.preview; as preview) {
         <section class="preview" aria-live="polite">
           <h3>{{ 'scene.inspector.preview' | t }}</h3>
           @if (preview.quiet) {

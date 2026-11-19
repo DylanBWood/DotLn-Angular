@@ -2,6 +2,28 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
+test('the scene and catalog read combat labels from their message catalogs', async ({
+  page,
+  context,
+}) => {
+  const messages = JSON.parse(
+    readFileSync(resolve(__dirname, '../../dotln/public/i18n/en.json'), 'utf8'),
+  );
+  messages.scene.boardWords.pose = 'a translated scene pose';
+  messages.scene.boardWords.accuracy = 'a translated scene score';
+  messages.tools.boardWords.pose = 'a translated catalog pose';
+  messages.tools.boardWords.iterations = 'a translated cue control';
+  await context.route('**/i18n/en.json', (route) => route.fulfill({ json: messages }));
+  await page.goto('/scene?tool=aifg-a:166');
+  const scene = page.locator('scene-unit-inspector .faces');
+  await expect(scene).toContainText('a translated scene pose');
+  await expect(scene).toContainText('a translated scene score');
+  await page.goto('/tools/catalog/aifg-a:166');
+  const reading = page.locator('tools-concept-reading .application');
+  await expect(reading).toContainText('a translated catalog pose');
+  await expect(reading.locator('.parameter-name')).toHaveText('a translated cue control');
+});
+
 test('study messages load with the selected work and supply the reading text', async ({
   page,
   context,

@@ -27,6 +27,7 @@ const frame = (frameNo = 0): SceneFrame => ({
       heading: { x: 1, y: 0 },
       radius: 0.5,
       activity: 'idle',
+      hits: 0,
     },
   ],
   anchors: [],
@@ -36,6 +37,8 @@ const frame = (frameNo = 0): SceneFrame => ({
   geometry: emptyGeometry,
   routes: [],
   rays: [],
+  bullets: [],
+  impacts: [],
 });
 
 @Component({
@@ -155,15 +158,27 @@ describe('the field wrapper', () => {
     expect(kit.renderer.last?.selection).toEqual(['a']);
   });
 
-  it('hands the painter the other branch’s units, frame for frame', () => {
+  it('hands the painter the other branch’s units and active streaks, frame for frame', () => {
     const { kit, host } = setUp();
     const moved = { ...frame(1).units[0], id: 'moved' };
-    host.ghostFrames.set([frame(0), { ...frame(1), units: [moved] }]);
+    const shot = {
+      owner: 'a',
+      position: { x: 1, y: 1 },
+      velocity: { x: 1, y: 0 },
+      rangeLeft: 2,
+      radius: 0.4,
+      drag: 0,
+      knockoutHits: 0,
+      framesLeft: null,
+    };
+    host.ghostFrames.set([frame(0), { ...frame(1), units: [moved], bullets: [shot] }]);
     TestBed.tick();
     expect(kit.renderer.last?.ghost?.units[0].id).toBe('a');
     host.frames.next(frame(1));
     expect(kit.renderer.last?.ghost?.units[0].id).toBe('moved');
+    expect(kit.renderer.last?.ghost?.bullets).toEqual([shot]);
     host.frames.next(frame(50));
+    expect(kit.renderer.last?.ghost?.bullets).toEqual([]);
     expect(kit.renderer.last?.ghost?.units[0].id).toBe('moved');
   });
 

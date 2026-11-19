@@ -30,6 +30,15 @@
   shape arithmetic outside it. Walls and obstacles stop a unit dead in the direction that
   would meet them, as the field's edge does, and a body a shape was drawn over may only
   move away from it.
+- Advance bullets before moving units. End a streak on its earliest piece or
+  geometry contact, count the hit on its owner and recipient, and send the same
+  event to the field painter and the text layer. A downed unit stays in the roster.
+- The arcade aims read recorded board poses in `aiming.ts`. Keep the animation
+  clock, clip length and later-cue limit together so the preview and the replay
+  identify the same beat. Hash active streaks after the units.
+- A knockout lays the remaining formation out again with its recorded spacing,
+  pattern and costs. A manual change of tool keeps the existing lost-member
+  rule. Fixed formations pass leadership to the next occupied slot on knockout.
 - A live field edit passes `isSafeStep` before it is made, the gate the store reads a
   composition back through, so the page never records a step the store would refuse. A
   new shape is numbered past every shape a step of the composition names, the steps
@@ -70,9 +79,9 @@
 - Regenerate the known outcomes only when a change to the simulation is intended:
   `WRITE_SCENE_FIXTURES=1 npx nx test scene-engine --skip-nx-cache`, then format what it
   wrote with
-  `npx prettier --write libs/features/scene/src/testing/fixtures/trial-known-outcome.json libs/features/scene/src/testing/fixtures/walls-known-outcome.json`
-  and say why in the pull request. An unchanged simulation leaves both files
-  byte-identical after both. Read the result before committing it.
+  `npx prettier --write libs/features/scene/src/testing/fixtures/trial-known-outcome.json libs/features/scene/src/testing/fixtures/walls-known-outcome.json libs/features/scene/src/testing/fixtures/range-known-outcome.json`
+  and say why in the pull request. An unchanged simulation leaves all three files
+  byte-identical after regeneration and formatting. Read the result before committing it.
 - `<canvas>`, `getContext(` and `OffscreenCanvas` belong to `wrappers/scene-canvas/`
   and nowhere else in the feature.
 - Put appearance in `--dotln-field-*` tokens and the role and work palettes. The

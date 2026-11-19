@@ -3504,7 +3504,7 @@
         "line": 161,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "analysis",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -3514,11 +3514,47 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs a trajectory model and inverse launch solver."
+          "kind": "combat.fire",
+          "params": [
+            {
+              "name": "bullet-speed",
+              "unit": "field units per second",
+              "default": 36,
+              "min": 4,
+              "max": 120
+            },
+            {
+              "name": "range",
+              "unit": "field units",
+              "default": 100,
+              "min": 1,
+              "max": 150
+            },
+            {
+              "name": "rate",
+              "unit": "shots per second",
+              "default": 2,
+              "min": 1,
+              "max": 12
+            },
+            {
+              "name": "hit-radius",
+              "unit": "field units",
+              "default": 0.4,
+              "min": 0,
+              "max": 2
+            },
+            {
+              "name": "knockout-hits",
+              "unit": "hits",
+              "default": 0,
+              "min": 0,
+              "max": 20
+            }
+          ]
         },
-        "observable": ["predicted-landing", "aim-directions"],
-        "toyMetric": ["landing-error"]
+        "observable": ["shot-streaks", "hit-sparks"],
+        "toyMetric": ["shots", "hits", "accuracy"]
       },
       "definition": "The two prediction problems: where a launched object will land, and how to launch one so it lands where intended.",
       "place": {
@@ -3555,7 +3591,7 @@
         "line": 162,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -3565,11 +3601,26 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs ballistic equations and collision/landing evaluation."
+          "kind": "combat.projectile",
+          "params": [
+            {
+              "name": "bullet-speed",
+              "unit": "field units per second",
+              "default": 36,
+              "min": 4,
+              "max": 120
+            },
+            {
+              "name": "drag",
+              "unit": "per second",
+              "default": 0,
+              "min": 0,
+              "max": 2
+            }
+          ]
         },
-        "observable": ["projectile-positions", "predicted-landing"],
-        "toyMetric": ["trajectory-error", "landing-error"]
+        "observable": ["streak-speed", "wall-marks"],
+        "toyMetric": ["range", "hits"]
       },
       "definition": "Under gravity alone the path is a parabola; solving the vertical quadratic for the time the object reaches a given height yields the landing point from the start position and velocity.",
       "place": {
@@ -3606,7 +3657,7 @@
         "line": 163,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "analysis",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -3616,11 +3667,11 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs a launch-angle solver with range and trajectory checks."
+          "kind": "combat.aim",
+          "params": []
         },
-        "observable": ["launch-directions", "impact-points"],
-        "toyMetric": ["miss-distance", "feasible-shot-count"]
+        "observable": ["recorded-pose", "shot-streaks"],
+        "toyMetric": ["accuracy"]
       },
       "definition": "Given a fixed launch speed and a target position, solve for the launch direction; the equations give two arcs (short and long flight time) or none if out of range, and the shorter is usually chosen.",
       "place": {
@@ -3741,7 +3792,7 @@
         "line": 166,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -3751,11 +3802,19 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs repeated flight simulation and a launch-direction search rule."
+          "kind": "combat.aim",
+          "params": [
+            {
+              "name": "iterations",
+              "unit": "cues",
+              "default": 4,
+              "min": 0,
+              "max": 8
+            }
+          ]
         },
-        "observable": ["aim-iterations", "impact-errors"],
-        "toyMetric": ["aim-iteration-count", "miss-distance"]
+        "observable": ["recorded-pose", "shot-streaks"],
+        "toyMetric": ["accuracy"]
       },
       "definition": "Guess a firing direction, simulate or approximate the flight, measure the miss distance, and refine the guess (bisection or similar) until within tolerance or out of iterations.",
       "place": {
@@ -3797,7 +3856,7 @@
         "line": 167,
         "sha256": "5252167b924021b26a4ed2d9e9df5beee78b374dbd60089565ff2cde34f7d870"
       },
-      "status": "untyped",
+      "status": "typed",
       "kind": "behaviour",
       "faces": {
         "scene": ["units-on-terrain"],
@@ -3807,11 +3866,11 @@
           "max": 20
         },
         "transform": {
-          "kind": "untyped",
-          "reason": "Needs coupled impact-time and target-motion prediction."
+          "kind": "combat.aim",
+          "params": []
         },
-        "observable": ["predicted-intercept", "impact-events"],
-        "toyMetric": ["intercept-error"]
+        "observable": ["recorded-pose", "shot-streaks"],
+        "toyMetric": ["accuracy"]
       },
       "definition": "Combine prediction of the target's position at impact time with the firing solution, iterating because flight time depends on the aim point.",
       "place": {

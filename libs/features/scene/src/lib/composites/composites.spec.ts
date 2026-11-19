@@ -39,6 +39,7 @@ const row: UnitRowView = {
   position: 'north',
   speed: 'still',
   activity: 'idle',
+  hits: 0,
   route: null,
   selected: false,
 };

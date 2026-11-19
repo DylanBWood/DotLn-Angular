@@ -20,6 +20,9 @@ import type { ObjectiveRegion, UnitRowView } from '../../models/scene-view-model
 })
 export class UnitList {
   readonly rows = input.required<readonly UnitRowView[]>();
+  readonly inFlight = input(0);
+  readonly sparks = input(0);
+  readonly marks = input(0);
   readonly open = input(false);
   readonly objective = input<string | null>(null);
   readonly regions = input<readonly ObjectiveRegion[]>([]);

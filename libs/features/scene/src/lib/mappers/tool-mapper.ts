@@ -7,7 +7,14 @@ import type { RailGroupId } from '../models/scene-view-model';
 /** A catalog tool with a typed transform, narrowed so that transform can be read directly. */
 export type SceneTool = Tool & { readonly status: 'typed' };
 
-export const railGroupOrder: readonly RailGroupId[] = ['move', 'ways', 'group', 'avoid', 'form'];
+export const railGroupOrder: readonly RailGroupId[] = [
+  'move',
+  'ways',
+  'group',
+  'avoid',
+  'form',
+  'fight',
+];
 
 // The kinds that find, smooth, follow or weigh a route, read from the engine's own list.
 const pathKinds: readonly string[] = interpretedKinds.filter((kind) => kind.startsWith('path.'));
@@ -35,6 +42,7 @@ const paramNames = (tool: SceneTool) => tool.faces.transform.params.map(({ name 
 
 export function railGroupOf(tool: SceneTool): RailGroupId {
   const { kind } = tool.faces.transform;
+  if (kind.startsWith('combat.')) return 'fight';
   if (kind === 'formation.twoLevel' || kind === 'formation.fixed') return 'form';
   if (pathKinds.includes(kind)) return 'ways';
   if (kind === 'steer.priority') return 'avoid';
@@ -73,7 +81,7 @@ export function patternsOf(tool: SceneTool) {
 }
 
 // Ranks, costs and counts of waypoints move in whole steps; everything else in hundredths.
-const wholeUnits = ['rank', 'cost', 'waypoints'];
+const wholeUnits = ['rank', 'cost', 'waypoints', 'hits', 'shots per second'];
 
 export const stepSize = (param: ParamSpec) =>
   wholeUnits.includes(param.unit) ? 1 : (param.max - param.min) / 100;

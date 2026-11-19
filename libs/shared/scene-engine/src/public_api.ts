@@ -25,6 +25,7 @@ export {
   refusalOf,
 } from './lib/interpreter';
 export { measure, metricNames } from './lib/metrics';
+export { impactFrames } from './lib/projectiles';
 export { routesOf } from './lib/path-following';
 export {
   findPath,
@@ -62,11 +63,13 @@ export {
 } from './lib/steering';
 export { runBranch, runTrial, type TrialOutcome } from './lib/trial';
 export type {
+  BulletState,
   Composition,
   CompositionStep,
   FormationPattern,
   FormationState,
   Heuristic,
+  Impact,
   MetricName,
   NoRouteReason,
   Obstacle,
@@ -79,6 +82,7 @@ export type {
   SceneFrame,
   SceneGeometry,
   SceneMetrics,
+  ShotPreview,
   SearchRecord,
   SearchStep,
   SimulationState,

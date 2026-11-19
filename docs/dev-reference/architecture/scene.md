@@ -184,6 +184,41 @@ These rules are not in the catalog and are the scene's own:
   distance per step; the engine reads that step as a quarter of a second, not a
   simulation tick.
 
+## Shooting on the board
+
+Select the pieces that will shoot, choose **Aiming and shooting** in **Fight**, then
+click another glyph. Its roster number becomes the target of the recorded step.
+The inspector also offers the same choice by keyboard. Choose **Objective point**
+to use the current objective. Shots in the instruments belong to the pieces in
+focus. Hits in those instruments count the contacts they made. Each unit's own
+text row counts the contacts it received alongside its activity. Accuracy shows the percentage of shots
+that made contact and stays unknown until the first shot.
+
+The engine advances existing bullets before the units move. A straight streak
+spends its remaining range, slows under drag and stops at the first standing
+piece other than its owner or at field geometry. A unit contact produces a
+brief radial spark. A wall or obstacle gets a chipped mark. The text layer counts
+streaks in flight and both kinds of mark on the current frame.
+
+The two assisted modes play the board animation in beats. **The firing solution**
+and **Moving targets** choose one pose from the marked piece's clip. Drag
+lengthens the streak's clip. **Iterative targeting** can choose a later pose
+up to the **Later cues** setting. The inspector shows the planned clip duration,
+the sampled frame for a marked piece, and whether range cuts the clip short.
+Contact can end any streak early. Fire and Projectile trajectory share each
+piece's speed setting. In an assisted clip the setting chooses two, three or four
+beats. Selecting pieces with different speeds preserves each until the player
+edits that control. A trial can replay the earlier branch's
+dotted streaks behind the live branch and plot both accuracy series.
+
+**Hits to knock out** defaults to zero. A positive setting retires a piece
+on the hit that reaches that count. It stays on the board as a dim glyph,
+stops moving and leaves its squad. A two-level squad lays out its pattern
+again with its existing spacing and role costs. A fixed squad promotes the
+next occupied slot if its leader went down. Moving a member by applying another
+tool still follows the manual departure rule. Restart restores the original
+roster and replays these changes at their recorded ticks.
+
 ## Determinism
 
 A run is a seed and a list of steps. Each step records the true tick it was applied at,
@@ -193,7 +228,7 @@ an equip is the equip frame plus one. A step made on a frame with one already du
 after it, which is the order a replay applies them in.
 `libs/features/scene/src/testing/fixtures/trial-known-outcome.json` pins the frame hashes
 and metric series of a flock, and `walls-known-outcome.json` those of a squad given A* round
-a wall, with a branch in which the gap is sealed. Native `sin` and `cos` are kept out of the engine because the host's
+a wall, with a branch in which the gap is sealed. `range-known-outcome.json` pins a three-piece volley across clear ground and against a wall. Bullet positions and velocities follow the units in the frame hash. Native `sin` and `cos` are kept out of the engine because the host's
 C++ library rounds them differently by architecture, and a committed hash must
 reproduce on every machine. `feel` reseeds every run and says so in the transport.
 
@@ -261,9 +296,11 @@ page pauses it on leaving, so it never runs unwatched.
 - **Routing:** a tool from the rail's ways group sends the selected units round whatever
   stands in the way. The inspector says how many have a route, how long, what the first
   one's search expanded and where it heads next, words a cost function's weights, and
-  names every unit with no route and why; Show search shades the cells that unit's last
-  search closed and the frontier it left, while a path tool is chosen, before Apply as
-  after it.
+  names every unit with no route and why. Show search shades the cells and frontier for
+  the search named in the inspector. After Restart, both follow the selected units' recorded
+  routes through playback and pause. While paused, they preview Apply before a route exists
+  or when the operator edits a path parameter. The units keep following their recorded routes
+  until another step reaches them.
 - **Live tuning:** once a tool is applied, changing it reaches the same units at once. A
   slider acts on release, a pattern on the click. Each change is a step, so a replay
   does exactly what the operator did; the log folds a run of them into one line.
@@ -289,7 +326,7 @@ no unit in either branch had a route.
 ## The list of tools
 
 The rail, the inspector and the `?tool=` reader share one list: `sceneTools('aifg')` from
-the catalog, filtered by `isRunnable`, grouped as move, ways, group, avoid and form. A `?tool=` naming anything else arrives with
+the catalog, filtered by `isRunnable`, grouped as move, ways, group, avoid, form and fight. A `?tool=` naming anything else arrives with
 nothing chosen and a notice saying why, reading the wider catalog only to name the
 reason. Cohesion has no catalog row of its own; it is a weight of Flocking and Making
 the creatures, and no rail entry is invented for it.

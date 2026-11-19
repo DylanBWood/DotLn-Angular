@@ -59,6 +59,9 @@ export enum TransformKind {
   PathFind = 'path.find',
   PathSmooth = 'path.smooth',
   PathFollow = 'path.follow',
+  CombatFire = 'combat.fire',
+  CombatAim = 'combat.aim',
+  CombatProjectile = 'combat.projectile',
   LevelZoom = 'level.zoom',
   LevelRing = 'level.ring',
 }
@@ -74,6 +77,9 @@ export const sceneTransformKinds: readonly TransformKind[] = [
   TransformKind.PathSmooth,
   TransformKind.PathFollow,
   TransformKind.PathCost,
+  TransformKind.CombatFire,
+  TransformKind.CombatAim,
+  TransformKind.CombatProjectile,
 ];
 
 export type SelectionTarget = 'unit' | 'squad' | 'commander' | 'channel' | 'region' | 'scene';

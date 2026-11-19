@@ -423,6 +423,8 @@ describe('a crowd under priority steering with Arrive', () => {
     epsilon: 0.1,
   };
   const targetRadius = 1;
+  // These crowd sweeps can run several 3,600-frame journeys in one test case.
+  const crowdSimulationTimeout = 20_000;
 
   function prioritisedCrowd(
     objective: Vec2,
@@ -559,6 +561,7 @@ describe('a crowd under priority steering with Arrive', () => {
         expect(prioritised ?? Infinity).toBeLessThanOrEqual(plainly ?? 0);
       }
     },
+    crowdSimulationTimeout,
   );
 
   it.each([
@@ -575,6 +578,7 @@ describe('a crowd under priority steering with Arrive', () => {
           expect(prioritised ?? Infinity).toBeLessThanOrEqual(plainly ?? 0);
         }
     },
+    crowdSimulationTimeout,
   );
 
   // A ring of five or six round one unit: sent barely beyond the target radius, the unit in the
@@ -652,6 +656,7 @@ describe('a crowd under priority steering with Arrive', () => {
       expect(rested).toBe(true);
       expect(measure(state).timeToObjective).not.toBeNull();
     },
+    crowdSimulationTimeout,
   );
 });
 

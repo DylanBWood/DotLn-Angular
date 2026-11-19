@@ -9,6 +9,7 @@ export const sceneFixtureDirectory = resolve(
 );
 
 const fixtureNames = [
+  'range-known-outcome.json',
   'scene-twenty.json',
   'cost-table.json',
   'trial-known-outcome.json',

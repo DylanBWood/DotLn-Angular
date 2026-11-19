@@ -2,15 +2,20 @@ import { placeOf } from './formation';
 import type { SimulationState, UnitId, UnitState } from './types';
 import { distance } from './vectors';
 
-/** Every pair of units touching, each pair once. */
-export function touchingPairs<Body extends Pick<UnitState, 'position' | 'radius'>>(
-  units: readonly Body[],
-): readonly (readonly [Body, Body])[] {
+/** Every pair of standing units touching, each pair once. */
+export function touchingPairs<
+  Body extends Pick<UnitState, 'position' | 'radius'> & { readonly down?: boolean },
+>(units: readonly Body[]): readonly (readonly [Body, Body])[] {
   return units.flatMap((unit, index) =>
-    units
-      .slice(index + 1)
-      .filter((other) => distance(unit.position, other.position) < unit.radius + other.radius)
-      .map((other) => [unit, other] as const),
+    unit.down
+      ? []
+      : units
+          .slice(index + 1)
+          .filter(
+            (other) =>
+              !other.down && distance(unit.position, other.position) < unit.radius + other.radius,
+          )
+          .map((other) => [unit, other] as const),
   );
 }
 

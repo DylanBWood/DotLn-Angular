@@ -4,6 +4,7 @@ import type {
   PreviewArrow,
   SceneFrame,
   SearchRecord,
+  ShotPreview,
   SlotAssignment,
   StepRefusal,
   UnitActivity,
@@ -13,7 +14,7 @@ import type {
 
 import type { SceneUnitStyle } from '../renderers/scene-renderer';
 
-export type RailGroupId = 'move' | 'ways' | 'group' | 'avoid' | 'form';
+export type RailGroupId = 'move' | 'ways' | 'group' | 'avoid' | 'form' | 'fight';
 export type PositionBucket =
   | 'north-west'
   | 'north'
@@ -34,7 +35,11 @@ export type InstrumentId =
   | 'stalledUnits'
   | 'pathLength'
   | 'replans'
-  | 'blockedUnits';
+  | 'blockedUnits'
+  | 'shots'
+  | 'hits'
+  | 'accuracy'
+  | 'downUnits';
 
 /** What a press on the field does: select units, draw a wall or place an obstacle. */
 export type FieldToolId = 'select' | 'wall' | 'obstacle';
@@ -49,6 +54,7 @@ export type CoachStep =
 /** One row of the text layer before its words are chosen. */
 export interface UnitRow {
   readonly id: UnitId;
+  readonly hits: number;
   readonly position: PositionBucket;
   readonly speed: SpeedBucket;
   readonly activity: UnitActivity;
@@ -58,6 +64,7 @@ export interface UnitRow {
 
 export interface UnitRowView {
   readonly id: UnitId;
+  readonly hits: number;
   readonly label: string;
   readonly colour: string;
   readonly position: string;
@@ -123,6 +130,7 @@ export interface RailView {
 }
 
 export interface InspectorParam {
+  readonly mixed?: boolean;
   readonly name: string;
   readonly label: string;
   readonly value: number;
@@ -214,6 +222,17 @@ export interface InspectorCost {
 }
 
 export interface InspectorView {
+  readonly targets?: {
+    readonly selected: number;
+    readonly options: readonly {
+      readonly value: number;
+      readonly id: string;
+      readonly label: string;
+      readonly down: boolean;
+    }[];
+  };
+  readonly shot?: ShotPreview;
+  readonly cueTempo?: boolean;
   readonly title: string;
   readonly colour: string;
   readonly definition: string;
@@ -307,6 +326,9 @@ export interface ObjectiveRegion {
 }
 
 export interface SceneViewModel {
+  readonly inFlight: number;
+  readonly sparks: number;
+  readonly marks: number;
   readonly reducedMotion: boolean;
   readonly rail: RailView;
   readonly field: FieldView;

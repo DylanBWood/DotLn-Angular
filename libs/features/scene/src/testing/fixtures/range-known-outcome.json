@@ -1,0 +1,365 @@
+{
+  "schema": "scene-known-outcome-v0",
+  "sceneId": "the-twenty",
+  "seed": 20261030,
+  "frames": 150,
+  "sampleEvery": 10,
+  "focus": ["unit-03", "unit-08", "unit-13"],
+  "branchA": [
+    {
+      "at": 0,
+      "toolId": "aifg-a:161",
+      "kind": "combat.fire",
+      "selection": ["unit-03", "unit-08", "unit-13"],
+      "params": {
+        "target": 9,
+        "bullet-speed": 36,
+        "rate": 3,
+        "range": 100,
+        "hit-radius": 0.4,
+        "knockout-hits": 0
+      }
+    },
+    {
+      "at": 60,
+      "toolId": "aifg-a:161",
+      "kind": "combat.fire",
+      "selection": ["unit-03", "unit-08", "unit-13"],
+      "params": {
+        "target": 0,
+        "bullet-speed": 36,
+        "rate": 3,
+        "range": 100,
+        "hit-radius": 0.4,
+        "knockout-hits": 0
+      }
+    }
+  ],
+  "branchB": [
+    {
+      "at": 0,
+      "toolId": "field.wall",
+      "kind": "field.wall",
+      "selection": [],
+      "params": {
+        "x1": 72,
+        "y1": 10,
+        "x2": 72,
+        "y2": 66,
+        "thickness": 1,
+        "shape": 1
+      }
+    },
+    {
+      "at": 0,
+      "toolId": "aifg-a:161",
+      "kind": "combat.fire",
+      "selection": ["unit-03", "unit-08", "unit-13"],
+      "params": {
+        "target": 9,
+        "bullet-speed": 36,
+        "rate": 3,
+        "range": 100,
+        "hit-radius": 0.4,
+        "knockout-hits": 0
+      }
+    },
+    {
+      "at": 60,
+      "toolId": "aifg-a:161",
+      "kind": "combat.fire",
+      "selection": ["unit-03", "unit-08", "unit-13"],
+      "params": {
+        "target": 0,
+        "bullet-speed": 36,
+        "rate": 3,
+        "range": 100,
+        "hit-radius": 0.4,
+        "knockout-hits": 0
+      }
+    }
+  ],
+  "hashes": {
+    "a": [
+      "c2d110851618325f",
+      "ae61b5c0a518fdc6",
+      "1fcb8d1afd6423b4",
+      "9de27c428708c7a8",
+      "ee006c743033a37e",
+      "734364309d432516",
+      "ee006c743033a37e",
+      "fc63e8b58491c92f",
+      "8b76c51f42011069",
+      "ddfd2537e73074d1",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f"
+    ],
+    "b": [
+      "c2d110851618325f",
+      "ae61b5c0a518fdc6",
+      "1fcb8d1afd6423b4",
+      "ae61b5c0a518fdc6",
+      "1fcb8d1afd6423b4",
+      "ae61b5c0a518fdc6",
+      "1fcb8d1afd6423b4",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f",
+      "c2d110851618325f"
+    ]
+  },
+  "metrics": {
+    "cohesionRadius": {
+      "a": [
+        19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344,
+        19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344
+      ],
+      "b": [
+        19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344,
+        19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344, 19.178344
+      ]
+    },
+    "collisions": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "headingVariance": {
+      "a": [
+        0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764,
+        0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764
+      ],
+      "b": [
+        0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764,
+        0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764, 0.638764
+      ]
+    },
+    "timeToObjective": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "stalledUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "anchorToMean": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "slotError": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "assignmentCost": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "pathLength": {
+      "a": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "b": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "replans": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "blockedUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "shots": {
+      "a": [0, 3, 3, 6, 6, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9],
+      "b": [0, 3, 3, 6, 6, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+    },
+    "hits": {
+      "a": [0, 0, 0, 0, 0, 2, 3, 5, 6, 8, 9, 9, 9, 9, 9, 9],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "accuracy": {
+      "a": [null, 0, 0, 0, 0, 0.222222, 0.333333, 0.555556, 0.666667, 0.888889, 1, 1, 1, 1, 1, 1],
+      "b": [null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "downUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  },
+  "firstDivergenceFrame": 21
+}

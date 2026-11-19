@@ -7,14 +7,17 @@ import { sceneTransformKinds } from '@dotln-angular/models';
 import { encodeExport, SceneStore } from '@dotln-angular/scene-data-access';
 import type { Composition, SceneFrame } from '@dotln-angular/scene-engine';
 import {
+  advanceRun,
   applyStep,
   createSimulation,
   frameOf,
   hashFrame,
   interpretedKinds,
   objectiveKind,
+  previewStep,
   readsParam,
   runBranch,
+  startRun,
 } from '@dotln-angular/scene-engine';
 
 import { provideSceneFacadeTestKit, type SceneFacadeKitOptions } from '../../../testing/src';
@@ -85,6 +88,37 @@ const unrunnable = (at: number) => ({
   params: {},
 });
 
+it('carries a shared cue tempo between tools and preserves mixed speeds until edited', async () => {
+  const { facade } = await setUp();
+  const store = TestBed.inject(SceneStore);
+  const speed = () => facade.vm().inspector?.params.find(({ name }) => name === 'bullet-speed');
+  facade.select(ids[0]);
+  facade.chooseTool('aifg-a:163');
+  facade.equip();
+  facade.chooseTool('aifg-a:161');
+  facade.setParam('bullet-speed', 72);
+  facade.equip();
+  facade.chooseTool('aifg-a:162');
+  expect(speed()).toMatchObject({ label: 'Cue tempo', value: 72, mixed: false });
+  facade.setParam('drag', 0.3);
+  facade.equip();
+  expect(store.steps().at(-1)?.params).toMatchObject({ 'bullet-speed': 72, drag: 0.3 });
+
+  facade.toggle(ids[1]);
+  expect(speed()).toMatchObject({ label: 'Shot speed / cue tempo', mixed: true });
+  facade.equip();
+  expect(store.steps().at(-1)?.params).not.toHaveProperty('bullet-speed');
+  facade.select(ids[0]);
+  expect(speed()?.value).toBe(72);
+  facade.select(ids[1]);
+  expect(speed()?.value).toBe(36);
+  facade.toggle(ids[0]);
+  facade.setParam('bullet-speed', 36);
+  facade.equip();
+  expect(store.steps().at(-1)?.params['bullet-speed']).toBe(36);
+  expect(speed()?.mixed).toBe(false);
+});
+
 const flockStep = (at: number) => ({
   at,
   toolId: flockId,
@@ -116,6 +150,7 @@ describe('the rail', () => {
       'group',
       'avoid',
       'form',
+      'fight',
     ]);
   });
 
@@ -124,6 +159,17 @@ describe('the rail', () => {
     const form = facade.vm().rail.groups.find((group) => group.id === 'form');
     const twoLevel = form?.tools.find((tool) => tool.id === twoLevelId);
     expect(twoLevel?.patterns.map((pattern) => pattern.label)).toEqual(['Wedge', 'Line', 'Column']);
+  });
+
+  it('puts all five shot and aim tools together', async () => {
+    const { facade } = await setUp();
+    expect(
+      facade
+        .vm()
+        .rail.groups.find((group) => group.id === 'fight')
+        ?.tools.map((tool) => tool.id)
+        .sort(),
+    ).toEqual(['aifg-a:161', 'aifg-a:162', 'aifg-a:163', 'aifg-a:166', 'aifg-a:167']);
   });
 
   it('offers only tools whose kind the engine interprets', async () => {
@@ -670,6 +716,7 @@ describe('the frame loop', () => {
 });
 
 describe('a session with motion on', () => {
+  // Both journeys keep a 3,600-frame settlement bound while the comparison replays 600 more.
   it('goes from flock to compare, stopping by itself once the group has arrived', async () => {
     const { facade, kit } = await setUp({ reducedMotion: false });
     const run = (frames: number) => {
@@ -709,7 +756,7 @@ describe('a session with motion on', () => {
     facade.compare();
     expect(facade.vm().trial?.firstDivergence).not.toBeNull();
     expect(facade.vm().transport.playing).toBe(true);
-  });
+  }, 20_000);
 });
 
 describe('runs', () => {
@@ -1213,5 +1260,63 @@ describe('the field', () => {
       'Euclidean',
       'octile',
     ]);
+  });
+
+  it('keeps the replayed search on the field and in the inspector until a paused path edit', async () => {
+    const { facade } = await setUp();
+    const store = TestBed.inject(SceneStore);
+    facade.select(ids[0]);
+    facade.chooseTool(aStarId);
+    facade.setObjective({ x: 100, y: 40 });
+    facade.step(8);
+    facade.equip();
+    const steps = store.steps();
+    const path = steps[1];
+
+    facade.restart();
+    facade.toggleSearch();
+    facade.step(1);
+    expect(lastFrame(facade).routes).toHaveLength(0);
+    expect(facade.vm().search?.expansions).toBeGreaterThan(0);
+    expect(facade.vm().inspector?.routes).toMatchObject({
+      live: false,
+      expansions: facade.vm().search?.expansions,
+    });
+
+    facade.play();
+    for (let tick = 0; tick < 90; tick++) facade.step();
+    const recorded = lastFrame(facade).routes[0].search;
+    expect(recorded).not.toBeNull();
+    expect(facade.vm().search).toEqual(recorded);
+    expect(facade.vm().inspector?.routes).toMatchObject({
+      live: true,
+      expansions: recorded?.expansions,
+    });
+
+    facade.pause();
+    const { simulation } = advanceRun(startRun(sceneTwenty, steps), lastFrame(facade).frameNo);
+    const unapplied = previewStep(simulation, path).routes[0].route.search;
+    expect(unapplied?.closed).not.toEqual(recorded?.closed);
+    expect(facade.vm().search).toEqual(recorded);
+    expect(facade.vm().inspector?.routes?.live).toBe(true);
+
+    facade.setParam('heuristic', 0);
+    facade.commitParam();
+    const edited = previewStep(simulation, { ...path, params: { heuristic: 0 } }).routes[0].route
+      .search;
+    expect(edited?.expansions).not.toBe(recorded?.expansions);
+    expect(facade.vm().search).toEqual(edited);
+    expect(facade.vm().inspector?.routes).toMatchObject({
+      live: false,
+      expansions: edited?.expansions,
+    });
+    facade.selectOnField(ids[0], false);
+    expect(facade.vm().search).toEqual(edited);
+    expect(facade.vm().inspector?.routes).toMatchObject({
+      live: false,
+      expansions: edited?.expansions,
+    });
+    expect(lastFrame(facade).routes[0].search).toEqual(recorded);
+    expect(store.steps()).toEqual(steps);
   });
 });

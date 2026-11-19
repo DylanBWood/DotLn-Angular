@@ -1,14 +1,9 @@
-import {
-  formationPatterns,
-  patternSlotRoles,
-  patternSlots,
-  recentred,
-  slotRoles,
-} from './formation';
+import { formationPatterns, recentred, rosterSlots, slotRoles } from './formation';
 import { defaultPathSettings, planUnit, replanAll, routesOf } from './path-following';
 import { heuristics, layerWeightParams, travelWeightParams } from './pathfinding';
-import { accelerationsOf, objectiveDrivers } from './simulation';
-import { assignSlots, slotCostKey, type SlotCosts } from './slot-assignment';
+import { previewShot } from './projectiles';
+import { accelerationsOf, advanceMovement, frameSeconds, objectiveDrivers } from './simulation';
+import { slotCostKey, type SlotCosts } from './slot-assignment';
 import type {
   CompositionStep,
   Obstacle,
@@ -16,7 +11,6 @@ import type {
   PriorityGroup,
   SceneGeometry,
   SimulationState,
-  SlotAssignment,
   SteeringTerm,
   SteeringTuning,
   StepPreview,
@@ -44,6 +38,9 @@ export const interpretedKinds = [
   'path.smooth',
   'path.follow',
   'path.cost',
+  'combat.fire',
+  'combat.aim',
+  'combat.projectile',
 ] as const;
 
 export type InterpretedKind = (typeof interpretedKinds)[number];
@@ -100,6 +97,16 @@ const priorityParams: Readonly<Record<string, PriorityGroup>> = {
 const formationParams = ['pattern', 'slot-spacing', 'anchor-speed', 'anchor-lag-limit'];
 
 const pathParams = ['heuristic', 'max-skip', 'waypoint-radius', 'path-offset', 'predict-time'];
+const fireParams = [
+  'target',
+  'bullet-speed',
+  'range',
+  'rate',
+  'hit-radius',
+  'knockout-hits',
+  'drag',
+  'iterations',
+];
 
 // The cost functions' weights, read from the one list the search weighs them by.
 const pathCostParams = [...travelWeightParams, ...layerWeightParams];
@@ -115,6 +122,7 @@ export const readsParam = (name: string) =>
   formationParams.includes(name) ||
   pathParams.includes(name) ||
   pathCostParams.includes(name) ||
+  fireParams.includes(name) ||
   isCostParam(name);
 
 // Eight hours of play: a replay or a comparison has to run every frame up to the last step.
@@ -131,6 +139,14 @@ const leastValues: Readonly<Record<string, number>> = {
   thickness: 0,
   radius: 0,
   'cell-size': 1,
+  'bullet-speed': 0.01,
+  rate: 0.01,
+  range: 0,
+  drag: 0,
+  'hit-radius': 0,
+  'knockout-hits': 0,
+  target: 0,
+  iterations: 0,
 };
 
 /** The least value a step may give a parameter, or null when only the finite range bounds it. */
@@ -221,7 +237,7 @@ function restartForNewDrivers(before: SimulationState, after: SimulationState) {
 
 const selectedUnits = (state: SimulationState, selection: readonly UnitId[]) => {
   const selected = new Set(selection);
-  return state.units.filter((unit) => selected.has(unit.id));
+  return state.units.filter((unit) => !unit.down && selected.has(unit.id));
 };
 
 function applyBlend(state: SimulationState, step: CompositionStep): SimulationState {
@@ -258,9 +274,14 @@ function startingHeading(state: SimulationState, members: readonly UnitState[], 
 function applyTwoLevel(state: SimulationState, step: CompositionStep): SimulationState {
   const { params } = step;
   const members = selectedUnits(state, step.selection);
-  const count = members.length;
   const pattern = formationPatterns[Math.round(params['pattern'] ?? 0)] ?? 'wedge';
   const costs = Object.fromEntries(Object.entries(params).filter(([name]) => isCostParam(name)));
+  const layout = {
+    kind: 'two-level' as const,
+    pattern,
+    spacing: params['slot-spacing'] ?? defaultSpacing,
+    slotCosts: { ...defaultSlotCosts, ...costs },
+  };
   const ids = members.map((unit) => unit.id);
   const released = offRoutes(leaveFormations(state, ids), ids);
   const centre = centroid(members.map((unit) => unit.position));
@@ -269,12 +290,8 @@ function applyTwoLevel(state: SimulationState, step: CompositionStep): Simulatio
     formations: [
       ...released.formations,
       {
-        kind: 'two-level',
-        slots: patternSlots(pattern, count, params['slot-spacing'] ?? defaultSpacing),
-        assignment: assignSlots(members, patternSlotRoles(count), {
-          ...defaultSlotCosts,
-          ...costs,
-        }),
+        ...layout,
+        ...rosterSlots(layout, members),
         anchor: centre,
         anchorVelocity: { x: 0, y: 0 },
         heading: startingHeading(state, members, centre),
@@ -289,20 +306,12 @@ function applyTwoLevel(state: SimulationState, step: CompositionStep): Simulatio
 function applyFixed(state: SimulationState, step: CompositionStep): SimulationState {
   const members = selectedUnits(state, step.selection);
   const [leader] = members;
-  const centred = patternSlots(
-    'wedge',
-    members.length,
-    step.params['slot-spacing'] ?? defaultSpacing,
-  );
-  // A fixed formation is measured from its leader, who stands at the tip.
-  const slots = centred.map((slot) => subtract(slot, centred[0]));
-  const roles = patternSlotRoles(members.length);
-  const assignment: readonly SlotAssignment[] = members.map((unit, slot) => ({
-    unitId: unit.id,
-    slot,
-    slotRole: roles[slot],
-    cost: 0,
-  }));
+  const layout = {
+    kind: 'fixed' as const,
+    pattern: 'wedge' as const,
+    spacing: step.params['slot-spacing'] ?? defaultSpacing,
+    slotCosts: {},
+  };
   // The leader steers for itself, so it keeps a route it has; its followers leave theirs.
   const ids = members.map((unit) => unit.id);
   const released = offRoutes(leaveFormations(state, ids), ids.slice(1));
@@ -311,9 +320,8 @@ function applyFixed(state: SimulationState, step: CompositionStep): SimulationSt
     formations: [
       ...released.formations,
       {
-        kind: 'fixed',
-        slots,
-        assignment,
+        ...layout,
+        ...rosterSlots(layout, members),
         anchor: leader.position,
         anchorVelocity: { x: 0, y: 0 },
         heading: leader.heading,
@@ -394,6 +402,37 @@ function applyPath(state: SimulationState, step: CompositionStep): SimulationSta
   };
 }
 
+function applyLauncher(state: SimulationState, step: CompositionStep): SimulationState {
+  const chosen = new Set(step.selection);
+  return {
+    ...state,
+    units: state.units.map((unit) => {
+      if (unit.down || !chosen.has(unit.id)) return unit;
+      const previous = unit.launcher;
+      const params = step.params;
+      if (step.kind === 'combat.aim') {
+        const iterations = params['iterations'];
+        const aim = iterations === undefined ? ('cue' as const) : ('repeat' as const);
+        return { ...unit, launcher: { ...previous, aim, iterations: Math.round(iterations ?? 0) } };
+      }
+      const speed = params['bullet-speed'] ?? previous.speed;
+      const launcher =
+        step.kind === 'combat.projectile'
+          ? { ...previous, speed, drag: params['drag'] ?? previous.drag }
+          : {
+              ...previous,
+              speed,
+              target: Math.round(params['target'] ?? 0),
+              rate: params['rate'] ?? previous.rate,
+              range: params['range'] ?? previous.range,
+              radius: params['hit-radius'] ?? previous.radius,
+              knockoutHits: Math.round(params['knockout-hits'] ?? previous.knockoutHits),
+            };
+      return { ...unit, launcher };
+    }),
+  };
+}
+
 const interpreters: Readonly<
   Record<InterpretedKind, (state: SimulationState, step: CompositionStep) => SimulationState>
 > = {
@@ -406,6 +445,9 @@ const interpreters: Readonly<
   'path.smooth': applyPath,
   'path.follow': applyPath,
   'path.cost': applyPath,
+  'combat.fire': applyLauncher,
+  'combat.aim': applyLauncher,
+  'combat.projectile': applyLauncher,
 };
 
 /** What a field step gives a shape it names no size for: a wall one unit thick, an obstacle of three. */
@@ -535,5 +577,14 @@ export function previewStep(state: SimulationState, step: CompositionStep): Step
   );
   const forms = step.kind === 'formation.twoLevel' || step.kind === 'formation.fixed';
   const assignment = forms ? (result.state.formations.at(-1)?.assignment ?? []) : [];
-  return { arrows, assignment, routes: routesOf(result.state, step.selection), refusal: null };
+  const shooter = step.kind.startsWith('combat.')
+    ? selectedUnits(result.state, step.selection)[0]
+    : undefined;
+  return {
+    arrows,
+    assignment,
+    routes: routesOf(result.state, step.selection),
+    refusal: null,
+    ...(shooter ? { shot: previewShot(result.state, shooter, frameSeconds, advanceMovement) } : {}),
+  };
 }

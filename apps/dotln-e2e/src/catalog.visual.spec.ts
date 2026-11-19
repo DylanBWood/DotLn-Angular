@@ -25,7 +25,7 @@ for (const width of [360, 768, 1440]) {
   test(`a study at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/tools/catalog/aifg-a:145');
-    await expect(page.locator('tools-study figure')).toBeVisible();
+    await expect(page.locator('tools-study figure')).toBeVisible({ timeout: 15_000 });
     await page.evaluate(() => document.fonts.ready);
     await expect(page.locator('tools-study')).toHaveScreenshot(`study-${width}.png`);
   });

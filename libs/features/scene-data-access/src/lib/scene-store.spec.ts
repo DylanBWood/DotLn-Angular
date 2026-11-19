@@ -3,6 +3,8 @@ import { Dispatcher } from '@ngrx/signals/events';
 
 import { scenePageEvents } from '@dotln-angular/events';
 import type { Composition, Trial } from '@dotln-angular/scene-engine';
+import { runBranch } from '@dotln-angular/scene-engine';
+import { createTestScene, createTestUnit } from '@dotln-angular/scene-engine/testing';
 
 import { provideSceneStoreTestKit } from '../../testing/src';
 import { SceneStore } from './scene-store';
@@ -49,6 +51,10 @@ const trial: Trial = {
     pathLength: { a: [12, 10], b: [null, null] },
     replans: { a: [0, 1], b: [0, 0] },
     blockedUnits: { a: [0, 0], b: [0, 0] },
+    shots: { a: [0, 2], b: [0, 2] },
+    hits: { a: [0, 0], b: [0, 1] },
+    accuracy: { a: [null, 0], b: [null, 0.5] },
+    downUnits: { a: [0, 0], b: [0, 0] },
   },
   firstDivergenceFrame: 4,
 };
@@ -269,6 +275,49 @@ describe('composition validation', () => {
 });
 
 describe('export and import', () => {
+  it('restores and imports a routed trial from before the shot series existed', () => {
+    const {
+      shots: _shots,
+      hits: _hits,
+      accuracy: _accuracy,
+      downUnits: _down,
+      ...previous
+    } = trial.metrics;
+    const saved = { ...composition, trials: [{ ...trial, metrics: previous }] };
+    const restored = restoreStoredScene({ version: 1, compositions: [saved] })?.compositions[0];
+    const imported = parseExport(
+      JSON.stringify({ schema: 'scene-composition-v0', composition: saved }),
+      composition.sceneId,
+    );
+    for (const value of [restored, imported]) {
+      const series = value?.trials[0].metrics;
+      for (const name of ['shots', 'hits', 'accuracy', 'downUnits'] as const)
+        expect(series?.[name]).toEqual({ a: [null, null], b: [null, null] });
+      expect(series?.pathLength).toEqual(previous.pathLength);
+    }
+  });
+
+  it('keeps the marked roster entry and plays a fire step at its recorded tick', () => {
+    const fire = {
+      at: 4,
+      toolId: 'aifg-a:161',
+      kind: 'combat.fire',
+      selection: ['a'],
+      params: { target: 2 },
+    };
+    const reopened = parseExport(
+      encodeExport({ ...composition, steps: [fire] }),
+      composition.sceneId,
+    );
+    expect(reopened?.steps).toEqual([fire]);
+    const board = createTestScene([
+      createTestUnit('a', { position: { x: 10, y: 10 } }),
+      createTestUnit('b', { position: { x: 20, y: 10 } }),
+    ]);
+    const frames = runBranch(board, reopened?.steps ?? [], 5);
+    expect(frames[4].bullets).toHaveLength(0);
+    expect(frames[5].bullets[0].owner).toBe('a');
+  });
   it('reads back what it wrote', () => {
     expect(parseExport(encodeExport(composition), composition.sceneId)).toEqual(composition);
   });
