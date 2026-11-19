@@ -215,9 +215,11 @@ it('shows an absent nudge and changes handover time when the offered inputs chan
   );
 });
 
-it('keeps every slider setting and corner finite, labelled, in bounds and true to its prose', () => {
+describe('keeps every slider setting and corner finite, labelled, in bounds and true to its prose', () => {
   const inputs = model(parameters, studyTranslate).inputs ?? [];
-  expect(inputs).toHaveLength(2);
+  it('offers 2 input controls', () => {
+    expect(inputs).toHaveLength(2);
+  });
   const variants: StudyParameters[] = [];
   for (const input of inputs)
     for (let tick = 0; tick <= Math.round((input.max - input.min) / input.step); tick++)
@@ -233,7 +235,7 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
       ),
     });
   const names = [...JSON.stringify(record).matchAll(/\{([A-Za-z]\w*)\}/g)].map((match) => match[1]);
-  for (const variant of variants) {
+  it.each(variants)('setting %# · %j', (variant) => {
     const run = model(variant, studyTranslate);
     const bounds = run.motion.bounds;
     expect(run.initialStep).toBeGreaterThanOrEqual(0);
@@ -291,8 +293,11 @@ it('keeps every slider setting and corner finite, labelled, in bounds and true t
     expect(
       [run.caption, run.comparison?.intro, ...(run.comparison?.findings ?? [])].join(' '),
     ).not.toMatch(/\d+\.\d{3,}/);
-  }
-  expect(record.visual.textEquivalent).not.toMatch(
-    /\{position\}|\{velocity\}|\{leftRequest\}|\{rightRequest\}|\b[xy]\s*=/,
-  );
+  });
+
+  it('describes motion without printed coordinates', () => {
+    expect(record.visual.textEquivalent).not.toMatch(
+      /\{position\}|\{velocity\}|\{leftRequest\}|\{rightRequest\}|\b[xy]\s*=/,
+    );
+  });
 });

@@ -232,7 +232,7 @@ it('changes straight overshoot into an orbit when the sideways start is raised',
   expect(straight.comparison?.findings.join(' ')).not.toContain('circles the beacon');
 });
 
-it('keeps every offered sideways start readable, labelled and inside the drawing', () => {
+describe('keeps every offered sideways start readable, labelled and inside the drawing', () => {
   const input = model(parameters, studyTranslate).inputs?.[0];
   if (!input) throw new Error('Seek must offer a live input.');
   const texts = [
@@ -241,7 +241,10 @@ it('keeps every offered sideways start readable, labelled and inside the drawing
     ...record.limits,
     ...record.mechanism.steps.map(({ text }) => text),
   ];
-  for (let value = input.min; value <= input.max; value += input.step) {
+  const values: number[] = [];
+  for (let value = input.min; value <= input.max; value += input.step) values.push(value);
+
+  it.each(values)('sideways start %s', (value) => {
     const run = model({ ...parameters, [input.name]: value }, studyTranslate);
     const { minX, maxX, minY, maxY } = run.motion.bounds;
     expect(Number.isFinite(minX + maxX + minY + maxY)).toBe(true);
@@ -302,5 +305,5 @@ it('keeps every offered sideways start readable, labelled and inside the drawing
     expect(
       [run.caption, run.comparison?.intro, ...(run.comparison?.findings ?? [])].join(' '),
     ).not.toMatch(/\d+\.\d{3,}/);
-  }
+  });
 });
