@@ -160,6 +160,7 @@ export class SceneFacade {
   readonly #tools = signal<readonly SceneTool[]>([]);
   readonly #chosenId = signal<ToolId | null>(null);
   readonly #params = signal<Readonly<Record<string, number>>>({});
+  readonly #pathEdited = signal(false);
   readonly #lastApplied = signal<LiveTool | null>(null);
   readonly #requestNotice = signal<SceneNotice | null>(null);
   readonly #importFailed = signal(false);
@@ -192,6 +193,32 @@ export class SceneFacade {
     () => this.#tools().find((tool) => tool.id === this.#chosenId()) ?? null,
   );
 
+  // Fire and Projectile share this setting on each piece. A mixed selection keeps
+  // its individual values until the player moves the speed control.
+  readonly #shotSpeed = computed(() => {
+    const kind = this.#chosenTool()?.faces.transform.kind;
+    if (kind !== 'combat.fire' && kind !== 'combat.projectile') return null;
+    const selected = new Set(this.#selection());
+    const pieces = this.#sample().simulation.units.filter(
+      (unit) => !unit.down && selected.has(unit.id),
+    );
+    const speeds = new Set(pieces.map(({ launcher }) => launcher.speed));
+    const assisted = pieces.filter(({ launcher }) => launcher.aim !== 'plain').length;
+    return {
+      common: speeds.size === 1 ? pieces[0].launcher.speed : undefined,
+      mixed: speeds.size > 1 && this.#params()['bullet-speed'] === undefined,
+      mode: assisted === 0 ? 'plain' : assisted === pieces.length ? 'assisted' : 'both',
+    } as const;
+  });
+
+  readonly #currentParams = computed(() => {
+    const params = this.#params();
+    const common = this.#shotSpeed()?.common;
+    return common !== undefined && params['bullet-speed'] === undefined
+      ? { ...params, 'bullet-speed': common }
+      : params;
+  });
+
   readonly #live = computed(() => {
     const applied = this.#lastApplied();
     return (
@@ -215,7 +242,7 @@ export class SceneFacade {
     const tool = this.#chosenTool();
     const selection = this.#selection();
     if (tool === null || selectionProblem(tool, selection.length) !== null) return null;
-    return mapToolToStep(tool, this.#params(), selection, 0);
+    return mapToolToStep(tool, this.#currentParams(), selection, 0);
   });
 
   readonly #preview = computed<StepPreview | null>(() => {
@@ -229,7 +256,9 @@ export class SceneFacade {
   readonly #slots = computed(() =>
     this.#live()
       ? assignmentOf(this.#sample().simulation, this.#selection())
-      : (this.#preview()?.assignment ?? noSlots),
+      : this.#chosenTool()?.faces.transform.kind.startsWith('formation.')
+        ? (this.#preview()?.assignment ?? noSlots)
+        : noSlots,
   );
 
   readonly #objectiveSet = computed(() => this.#sample().frame.objective !== null);
@@ -244,40 +273,70 @@ export class SceneFacade {
     }),
   );
 
-  // The routes the inspector reads: the ones the selected units follow once the tool is on them,
-  // otherwise the ones Apply would plan.
-  readonly #routes = computed(() =>
-    this.#live()
-      ? routesOf(this.#sample().simulation, this.#selection())
-      : (this.#shownPreview()?.routes ?? []),
-  );
-
-  // The search the field shades is the one the inspector reads out, and only while a path tool,
-  // whose inspector holds the switch, is chosen.
-  readonly #search = computed(() => {
+  // A replay can give units routes even while the inspector's Apply button is unarmed.
+  // Both the heading and the field overlay describe the same search.
+  readonly #routes = computed(() => {
     const tool = this.#chosenTool();
     if (tool === null || !isPathTool(tool)) return null;
-    return readRoute(this.#routes())?.route.search ?? null;
+
+    const current = routesOf(this.#sample().simulation, this.#selection());
+    if (this.#playing() || (current.length > 0 && !this.#pathEdited()))
+      return { live: current.length > 0, readings: current };
+
+    return { live: false, readings: this.#shownPreview()?.routes ?? [] };
   });
 
   readonly #inspector = computed(() => {
     const tool = this.#chosenTool();
     if (tool === null) return null;
     const transforms: Partial<Record<TransformKind, () => string>> = this.#labels.transforms;
+    const words: Partial<Record<string, () => string>> = this.#labels.paramWords;
+    const transform = tool.faces.transform;
+    const descriptions = this.#labels.combatDefinitions;
+    const speed = this.#shotSpeed();
+    const pending = this.#pendingStep();
+    let definition = tool.definition;
+    if (transform.kind === 'combat.aim') {
+      definition = transform.params.some(({ name }) => name === 'iterations')
+        ? descriptions.repeat()
+        : descriptions.single();
+    } else if (transform.kind === 'combat.fire' || transform.kind === 'combat.projectile') {
+      definition = descriptions[transform.kind]();
+    }
     return mapInspector({
       tool,
-      params: this.#params(),
+      definition,
+      params: this.#currentParams(),
+      mixedSpeed: speed?.mixed,
+      cueTempo: speed !== null && speed.mode !== 'plain',
       selectionCount: this.#selection().length,
       objectiveSet: this.#objectiveSet(),
       preview: this.#shownPreview(),
-      refusal: this.#preview()?.refusal ?? null,
+      refusal: pending ? refusalOf(this.#sample().simulation, pending) : null,
       slots: this.#slots(),
       slotsLive: this.#live(),
       units: this.#sample().frame.units,
       styles: this.#unitStyles(),
       routes: this.#routes(),
       transformLabel: (kind) => transforms[kind]?.() ?? kind,
+      faceLabel: transform.kind.startsWith('combat.')
+        ? (token) => {
+            const labels: Partial<Record<string, () => string>> = this.#labels.faceWords;
+            return labels[token]?.();
+          }
+        : undefined,
       choiceLabel: (name) => this.#choiceLabel(name),
+      paramWords: (name) => {
+        if (speed && speed.mode !== 'plain') {
+          if (name === 'bullet-speed')
+            return speed.mode === 'assisted' ? this.#labels.tempo() : this.#labels.speedAndTempo();
+          if (name === 'field units per second')
+            return speed.mode === 'assisted'
+              ? this.#labels.tempoUnit()
+              : this.#labels.speedAndTempoUnit();
+        }
+        return words[name]?.();
+      },
     });
   });
 
@@ -321,12 +380,15 @@ export class SceneFacade {
     const showSearch = this.#showSearch();
     return {
       reducedMotion: this.#reducedMotion,
+      inFlight: sample.frame.bullets.length,
+      sparks: sample.frame.impacts.filter((impact) => impact.unitId !== null).length,
+      marks: sample.frame.impacts.filter((impact) => impact.unitId === null).length,
       rail: { status: this.#catalogStatus(), groups: this.#rail() },
       field: mapField(sample.frame.geometry, this.#fieldTool(), (name) =>
         this.#labels.shapeValues[name](),
       ),
       showSearch,
-      search: showSearch ? this.#search() : null,
+      search: showSearch ? (readRoute(this.#routes()?.readings ?? [])?.route.search ?? null) : null,
       noRoute: mapNoRoute(sample.frame, this.#unitStyles()),
       inspector: this.#inspector(),
       formation: mapFormation(sample.metrics, instrumentLabels.unknown),
@@ -516,6 +578,14 @@ export class SceneFacade {
   #select(ids: Iterable<UnitId>) {
     const chosen = new Set(ids);
     const selection = this.#baseDefinition.units.map(({ id }) => id).filter((id) => chosen.has(id));
+    if (!sameUnits(selection, this.#selection())) {
+      this.#pathEdited.set(false);
+      if (this.#params()['bullet-speed'] !== undefined) {
+        const params = { ...this.#params() };
+        delete params['bullet-speed'];
+        this.#params.set(params);
+      }
+    }
     this.#selection.set(selection);
     this.#history.reset();
     this.#history.record(measure(this.#run.value.simulation, selection));
@@ -525,6 +595,24 @@ export class SceneFacade {
   select(id: UnitId, additive = false) {
     if (additive) this.toggle(id);
     else this.#select([id]);
+  }
+
+  /** With shooters selected, a plain click on another glyph applies the marked target. */
+  selectOnField(id: UnitId, additive: boolean) {
+    if (
+      !additive &&
+      this.#chosenTool()?.faces.transform.kind === 'combat.fire' &&
+      this.#selection().length > 0 &&
+      !this.#selection().includes(id)
+    ) {
+      const index = this.#baseDefinition.units.findIndex((unit) => unit.id === id);
+      if (index >= 0 && !this.#run.value.simulation.units[index].down) {
+        this.setParam('target', index + 1);
+        this.equip();
+      }
+      return;
+    }
+    this.select(id, additive);
   }
 
   toggle(id: UnitId) {
@@ -566,10 +654,12 @@ export class SceneFacade {
   // A tool already on these units opens as it was set, since that is what the units are doing.
   #choose(tool: SceneTool, pattern?: number) {
     this.#requestNotice.set(null);
+    this.#pathEdited.set(false);
     this.#chosenId.set(tool.id);
     const applied = this.#lastApplied();
     const params = this.#live() ? applied?.params : undefined;
-    const base = params ?? defaultParams(tool.faces.transform);
+    const base = { ...(params ?? defaultParams(tool.faces.transform)) };
+    delete base['bullet-speed'];
     this.#params.set(pattern === undefined ? base : { ...base, pattern });
   }
 
@@ -591,7 +681,10 @@ export class SceneFacade {
   }
 
   setParam(name: string, value: number) {
+    if (this.#params()[name] === value) return;
     this.#params.update((params) => ({ ...params, [name]: value }));
+    const tool = this.#chosenTool();
+    if (tool && isPathTool(tool)) this.#pathEdited.set(true);
   }
 
   /** A finished change to a tool already on these units reaches them at once. */
@@ -619,12 +712,14 @@ export class SceneFacade {
   equip() {
     const pending = this.#pendingStep();
     if (pending === null) return;
-    if (this.#apply({ ...pending, at: this.#currentFrame() }))
+    if (this.#apply({ ...pending, at: this.#currentFrame() })) {
+      this.#pathEdited.set(false);
       this.#lastApplied.set({
         toolId: pending.toolId,
         selection: pending.selection,
         params: pending.params,
       });
+    }
   }
 
   setObjective(point: Vec2) {
@@ -765,6 +860,7 @@ export class SceneFacade {
   /** Puts the field back to its first frame, with these steps still to come. */
   #rewind(steps: readonly CompositionStep[]) {
     const definition = this.#definition();
+    this.#pathEdited.set(false);
     this.#importFailed.set(false);
     this.#exported.set(null);
     this.#history.reset();

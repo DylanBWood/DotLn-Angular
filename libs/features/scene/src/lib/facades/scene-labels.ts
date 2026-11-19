@@ -4,12 +4,50 @@ import { TransformKind } from '@dotln-angular/models';
 /** Every word the facade chooses between. Each key is written out so the key check can see it. */
 export function sceneLabels() {
   return {
+    tempo: translateSignal('scene.inspector.tempo'),
+    faceWords: {
+      'units-on-terrain': translateSignal('scene.boardWords.terrain'),
+      'shot-streaks': translateSignal('scene.boardWords.streaks'),
+      'hit-sparks': translateSignal('scene.boardWords.sparks'),
+      'streak-speed': translateSignal('scene.boardWords.speed'),
+      'wall-marks': translateSignal('scene.boardWords.marks'),
+      'recorded-pose': translateSignal('scene.boardWords.pose'),
+      shots: translateSignal('scene.boardWords.shots'),
+      hits: translateSignal('scene.boardWords.hits'),
+      accuracy: translateSignal('scene.boardWords.accuracy'),
+      range: translateSignal('scene.boardWords.range'),
+    },
+    tempoUnit: translateSignal('scene.inspector.tempoUnit'),
+    speedAndTempo: translateSignal('scene.inspector.speedAndTempo'),
+    speedAndTempoUnit: translateSignal('scene.inspector.speedAndTempoUnit'),
+    combatDefinitions: {
+      'combat.fire': translateSignal('scene.inspector.fireDefinition'),
+      'combat.projectile': translateSignal('scene.inspector.streakDefinition'),
+      single: translateSignal('scene.inspector.singleDefinition'),
+      repeat: translateSignal('scene.inspector.repeatDefinition'),
+    },
+    paramWords: {
+      'bullet-speed': translateSignal('scene.inspector.shotSpeed'),
+      range: translateSignal('scene.inspector.shotRange'),
+      rate: translateSignal('scene.inspector.shotRate'),
+      'hit-radius': translateSignal('scene.inspector.hitRadius'),
+      'knockout-hits': translateSignal('scene.inspector.knockoutHits'),
+      drag: translateSignal('scene.inspector.drag'),
+      iterations: translateSignal('scene.inspector.iterations'),
+      'field units': translateSignal('scene.inspector.fieldUnits'),
+      'field units per second': translateSignal('scene.inspector.speedUnits'),
+      'shots per second': translateSignal('scene.inspector.rateUnits'),
+      hits: translateSignal('scene.inspector.hitUnits'),
+      cues: translateSignal('scene.inspector.cueUnits'),
+      'per second': translateSignal('scene.inspector.dragUnits'),
+    },
     rail: {
       move: translateSignal('scene.rail.move'),
       ways: translateSignal('scene.rail.ways'),
       group: translateSignal('scene.rail.group'),
       avoid: translateSignal('scene.rail.avoid'),
       form: translateSignal('scene.rail.form'),
+      fight: translateSignal('scene.rail.fight'),
     },
     // The named values a parameter offers: formation patterns and A*'s heuristics.
     choices: {
@@ -30,6 +68,10 @@ export function sceneLabels() {
       pathLength: translateSignal('scene.instruments.pathLength'),
       replans: translateSignal('scene.instruments.replans'),
       blockedUnits: translateSignal('scene.instruments.blockedUnits'),
+      shots: translateSignal('scene.instruments.shots'),
+      hits: translateSignal('scene.instruments.hits'),
+      accuracy: translateSignal('scene.instruments.accuracy'),
+      downUnits: translateSignal('scene.instruments.downUnits'),
     },
     instrumentUnits: {
       cohesionRadius: translateSignal('scene.instruments.distance'),
@@ -40,6 +82,10 @@ export function sceneLabels() {
       pathLength: translateSignal('scene.instruments.distance'),
       replans: translateSignal('scene.instruments.times'),
       blockedUnits: translateSignal('scene.instruments.units'),
+      shots: translateSignal('scene.instruments.shotsUnit'),
+      hits: translateSignal('scene.instruments.hitsUnit'),
+      accuracy: translateSignal('scene.instruments.percent'),
+      downUnits: translateSignal('scene.instruments.units'),
     },
     unknown: translateSignal('scene.instruments.unknown'),
     positions: {
@@ -65,6 +111,7 @@ export function sceneLabels() {
       stalled: translateSignal('scene.units.stalled'),
       formed: translateSignal('scene.units.formed'),
       blocked: translateSignal('scene.units.blocked'),
+      down: translateSignal('scene.units.down'),
     },
     routes: {
       'on-path': translateSignal('scene.units.onPath'),
@@ -97,6 +144,9 @@ export function sceneLabels() {
       [TransformKind.PathSmooth]: translateSignal('scene.inspector.smooth'),
       [TransformKind.PathFollow]: translateSignal('scene.inspector.follow'),
       [TransformKind.PathCost]: translateSignal('scene.inspector.cost'),
+      [TransformKind.CombatFire]: translateSignal('scene.inspector.fire'),
+      [TransformKind.CombatAim]: translateSignal('scene.inspector.aim'),
+      [TransformKind.CombatProjectile]: translateSignal('scene.inspector.projectile'),
     },
     objectiveStep: translateSignal('scene.log.objective'),
   };

@@ -67,6 +67,19 @@ p {
 .costs {
   margin-block-end: var(--dotln-space-3);
 }
+.target {
+  display: grid;
+  gap: var(--dotln-space-1);
+  margin-block-end: var(--dotln-space-2);
+}
+.target select {
+  max-inline-size: 100%;
+  color: var(--dotln-ink);
+  background: var(--dotln-canvas);
+  border: 1px solid var(--dotln-border-strong);
+  padding: var(--dotln-space-1);
+  font: inherit;
+}
 .costs summary {
   cursor: pointer;
   color: var(--dotln-muted);

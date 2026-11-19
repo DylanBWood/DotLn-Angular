@@ -106,6 +106,7 @@ const unit = (x: number, y: number, speed = 0) => ({
   heading: { x: 1, y: 0 },
   radius: 0.5,
   activity: 'idle' as const,
+  hits: 0,
 });
 
 describe('the frame mapper', () => {
@@ -135,6 +136,8 @@ describe('the frame mapper', () => {
       geometry: emptyGeometry,
       routes: [],
       rays: [],
+      bullets: [],
+      impacts: [],
     };
     expect(mapFrameToRows(frame, ['a'])[0]).toMatchObject({ id: 'a', selected: true, route: null });
     expect(mapFrameToRows(frame, [])[0].selected).toBe(false);
@@ -164,6 +167,8 @@ describe('the frame mapper', () => {
       geometry: emptyGeometry,
       routes: [route('a', null, false), route('b', null, true), route('c', 'no-path', false)],
       rays: [],
+      bullets: [],
+      impacts: [],
     };
     expect(mapFrameToRows(frame, []).map((row) => row.route)).toEqual([
       'on-path',
@@ -179,6 +184,7 @@ describe('the frame mapper', () => {
       position: 'north',
       speed: 'still',
       activity: 'idle',
+      hits: 0,
       route: null,
       selected: false,
     };
@@ -326,7 +332,7 @@ describe('the inspector mapper', () => {
     slotsLive: false,
     units: [],
     styles: [{ id: 'a', label: 'executor', role: 'executor' }],
-    routes: [],
+    routes: null,
     transformLabel: () => 'blends',
     choiceLabel: (name: string) => name,
   };
@@ -361,48 +367,51 @@ describe('the inspector mapper', () => {
         selection: { target: 'unit', min: 1, max: 20 },
         transform: { kind: TransformKind.PathFind, params: [param('heuristic')] },
       }),
-      routes: [
-        {
-          id: 'a',
-          length: 12.34,
-          route: {
-            status: 'following',
-            reason: null,
-            waypoints: [
-              { x: 0, y: 0 },
-              { x: 3, y: 4 },
-            ],
-            next: 1,
-            search: {
-              columns: 2,
-              rows: 2,
-              cellSize: 1,
-              expansions: 7,
-              closed: [],
-              open: [],
-              trace: [],
+      routes: {
+        live: true,
+        readings: [
+          {
+            id: 'a',
+            length: 12.34,
+            route: {
+              status: 'following',
+              reason: null,
+              waypoints: [
+                { x: 0, y: 0 },
+                { x: 3, y: 4 },
+              ],
+              next: 1,
+              search: {
+                columns: 2,
+                rows: 2,
+                cellSize: 1,
+                expansions: 7,
+                closed: [],
+                open: [],
+                trace: [],
+              },
+              replans: 0,
+              plannedAt: 0,
             },
-            replans: 0,
-            plannedAt: 0,
           },
-        },
-        {
-          id: 'b',
-          length: null,
-          route: {
-            status: 'blocked',
-            reason: 'no-path',
-            waypoints: [],
-            next: 0,
-            search: null,
-            replans: 1,
-            plannedAt: 0,
+          {
+            id: 'b',
+            length: null,
+            route: {
+              status: 'blocked',
+              reason: 'no-path',
+              waypoints: [],
+              next: 0,
+              search: null,
+              replans: 1,
+              plannedAt: 0,
+            },
           },
-        },
-      ],
+        ],
+      },
     });
     expect(routed.routes).toEqual({
-      live: false,
+      live: true,
       following: 1,
       blocked: 1,
       length: '12.3',
@@ -448,6 +457,7 @@ describe('the inspector mapper', () => {
       velocity: { x: 0, y: 0 },
       heading: { x: 1, y: 0 },
       radius: 0.5,
+      hits: 0,
       activity,
     });
     const view = mapInspector({
@@ -521,6 +531,10 @@ describe('the metric mapper', () => {
     pathLength: null,
     replans: 0,
     blockedUnits: 0,
+    shots: 0,
+    hits: 0,
+    downUnits: 0,
+    accuracy: null,
   };
   const labels = {
     name: (id: InstrumentId) => id,
@@ -536,6 +550,10 @@ describe('the metric mapper', () => {
     pathLength: '',
     replans: '',
     blockedUnits: '',
+    shots: '',
+    hits: '',
+    downUnits: '',
+    accuracy: '',
   };
 
   it('shows each figure in its own precision', () => {
@@ -563,6 +581,17 @@ describe('the metric mapper', () => {
     expect(seriesPoints([0, 10], 100, 20)).toBe('0.0,20.0 100.0,0.0');
     expect(seriesPoints([0, null, 10], 100, 20)).toBe('0.0,20.0 100.0,0.0');
     expect(seriesPoints([null, null], 100, 20)).toBe('');
+  });
+
+  it('puts shots, hits and accuracy together at the start of an active volley', () => {
+    const rows = mapInstruments({ ...metrics, shots: 4, hits: 1, accuracy: 0.25 }, points, labels);
+    expect(rows.slice(0, 4).map(({ id }) => id)).toEqual([
+      'shots',
+      'hits',
+      'accuracy',
+      'downUnits',
+    ]);
+    expect(rows[2].value).toBe('25');
   });
 
   it('draws a flat series along the floor rather than dividing by nothing', () => {
@@ -604,6 +633,10 @@ describe('the metric mapper', () => {
         pathLength: blank,
         replans: { a: [0, 0], b: [0, 0] },
         blockedUnits: { a: [0, 0], b: [0, 0] },
+        shots: { a: [0, 0], b: [0, 0] },
+        hits: blank,
+        accuracy: blank,
+        downUnits: blank,
       },
       firstDivergenceFrame: 250,
     };

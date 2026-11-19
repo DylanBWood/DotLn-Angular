@@ -22,7 +22,7 @@
               shapes: model.field.shapes.length,
             }
     "
-    (selected)="facade.select($event.id, $event.additive)"
+    (selected)="facade.selectOnField($event.id, $event.additive)"
     (marquee)="facade.marquee($event.from, $event.to, $event.additive)"
     (pointAt)="facade.setObjective($event)"
     (sendTo)="facade.sendTo($event)"
@@ -106,6 +106,9 @@
   <div text-slot class="text-layer">
     <scene-unit-list
       [rows]="model.rows"
+      [inFlight]="model.inFlight"
+      [sparks]="model.sparks"
+      [marks]="model.marks"
       [open]="model.textLayerOpen"
       [objective]="model.objective"
       [regions]="model.objectiveRegions"

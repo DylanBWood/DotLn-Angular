@@ -13,7 +13,7 @@ export interface CoachInput {
 
 /** The next thing worth trying, from what the operator has already done. */
 export function coachStep(input: CoachInput): CoachStep | null {
-  if (input.compared) return null;
+  if (input.compared || input.steps.some(({ kind }) => kind.startsWith('combat.'))) return null;
   const equips = input.steps.filter(({ kind }) => kind !== objectiveKind);
   if (equips.length === 0) {
     if (input.selected === 0) return 'select';

@@ -266,8 +266,10 @@ export class SceneCanvas {
     const frames = untracked(this.ghostFrames);
     const first = frames[0]?.frameNo ?? 0;
     // Past the end of its window the ghost stands where it finished.
-    const units = frames[Math.min(frameNo - first, frames.length - 1)]?.units ?? [];
-    return arrows.length === 0 && units.length === 0 ? null : { arrows, units };
+    const offset = frameNo - first;
+    const units = frames[Math.min(offset, frames.length - 1)]?.units ?? [];
+    const bullets = frames[offset]?.bullets ?? [];
+    return arrows.length === 0 && units.length === 0 ? null : { arrows, units, bullets };
   }
 
   #paint() {

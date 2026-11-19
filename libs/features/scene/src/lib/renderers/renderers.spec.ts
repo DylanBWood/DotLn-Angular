@@ -15,6 +15,7 @@ const frame: SceneFrame = {
       heading: { x: 1, y: 0 },
       radius: 0.5,
       activity: 'idle',
+      hits: 2,
     },
   ],
   anchors: [],
@@ -24,6 +25,8 @@ const frame: SceneFrame = {
   geometry: emptyGeometry,
   routes: [],
   rays: [],
+  bullets: [],
+  impacts: [],
 };
 
 it('the text renderer turns a frame into one row per unit, and lets go on dispose', () => {
@@ -35,6 +38,7 @@ it('the text renderer turns a frame into one row per unit, and lets go on dispos
       position: 'north-west',
       speed: 'still',
       activity: 'idle',
+      hits: 2,
       route: null,
       selected: true,
     },

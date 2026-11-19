@@ -21,7 +21,6 @@ import type { SceneUnitStyle } from '../renderers/scene-renderer';
 import { workColour } from './rail-mapper';
 import {
   isCostParam,
-  isPathTool,
   needsObjective,
   paramChoices,
   type SceneTool,
@@ -33,6 +32,9 @@ const readable = (value: string) => value.replace(/[.-]/g, ' ');
 
 export interface InspectorInput {
   readonly tool: SceneTool;
+  readonly definition?: string;
+  readonly mixedSpeed?: boolean;
+  readonly cueTempo?: boolean;
   readonly params: Readonly<Record<string, number>>;
   readonly selectionCount: number;
   readonly objectiveSet: boolean;
@@ -46,22 +48,25 @@ export interface InspectorInput {
   readonly slotsLive: boolean;
   readonly units: readonly UnitFrame[];
   readonly styles: readonly SceneUnitStyle[];
-  /** The selected units' routes: the ones they follow when the tool is on them, else Apply's. */
-  readonly routes: readonly RouteReading[];
+  /** The search displayed on the field, either recorded routes or an Apply preview. */
+  readonly routes: { readonly readings: readonly RouteReading[]; readonly live: boolean } | null;
   readonly transformLabel: (kind: TransformKind) => string;
+  readonly faceLabel?: (token: string) => string | undefined;
   readonly choiceLabel: (name: string) => string;
+  readonly paramWords?: (name: string) => string | undefined;
 }
 
-function mapFaces({ tool, transformLabel }: InspectorInput): InspectorView['faces'] {
+function mapFaces({ tool, transformLabel, faceLabel }: InspectorInput): InspectorView['faces'] {
   const { selection, scene, observable, toyMetric, transform } = tool.faces;
+  const label = (token: string) => faceLabel?.(token) ?? readable(token);
   return {
     minimum: selection.min,
     maximum: selection.max,
     squad: selection.target === 'squad',
     transform: transformLabel(transform.kind),
-    scenes: scene.map(readable).join(', '),
-    observable: observable.map(readable).join(', '),
-    metrics: toyMetric.map(readable).join(', '),
+    scenes: scene.map(label).join(', '),
+    observable: observable.map(label).join(', '),
+    metrics: toyMetric.map(label).join(', '),
   };
 }
 
@@ -112,8 +117,9 @@ export const readRoute = (routes: readonly RouteReading[]): RouteReading | undef
   routes.find(({ route }) => route.search !== null) ?? routes[0];
 
 function mapRoutes(input: InspectorInput): InspectorRoutes | null {
-  const { tool, routes, slotsLive, objectiveSet, styles } = input;
-  if (!isPathTool(tool)) return null;
+  if (!input.routes) return null;
+  const { readings: routes, live } = input.routes;
+  const { objectiveSet, styles } = input;
   const following = routes.filter(({ route }) => route.status === 'following');
   const lengths = following.flatMap(({ length }) => (length === null ? [] : [length]));
   const first = readRoute(routes);
@@ -121,7 +127,7 @@ function mapRoutes(input: InspectorInput): InspectorRoutes | null {
   const ahead =
     first?.route.status === 'following' ? first.route.waypoints[first.route.next] : null;
   return {
-    live: slotsLive,
+    live,
     following: following.length,
     blocked: routes.length - following.length,
     length:
@@ -151,12 +157,13 @@ function mapParam(spec: ParamSpec, input: InspectorInput): InspectorParam {
   const value = input.params[spec.name] ?? spec.default;
   return {
     name: spec.name,
-    label: readable(spec.name),
+    mixed: spec.name === 'bullet-speed' && input.mixedSpeed === true,
+    label: input.paramWords?.(spec.name) ?? readable(spec.name),
     value,
     min: spec.min,
     max: spec.max,
     step: stepSize(spec),
-    unit: readable(spec.unit),
+    unit: input.paramWords?.(spec.unit) ?? readable(spec.unit),
     choices: paramChoices(spec).map((choice) => ({
       value: choice.value,
       label: input.choiceLabel(choice.name),
@@ -171,8 +178,22 @@ export function mapInspector(input: InspectorInput): InspectorView {
   const issue = mapIssue(input);
   return {
     title: tool.title,
+    targets:
+      tool.faces.transform.kind === 'combat.fire'
+        ? {
+            selected: input.params['target'] ?? 0,
+            options: input.units.map((unit, index) => ({
+              value: index + 1,
+              id: unit.id,
+              label: input.styles.find((style) => style.id === unit.id)?.label ?? '',
+              down: unit.activity === 'down',
+            })),
+          }
+        : undefined,
+    shot: input.preview?.shot,
+    cueTempo: input.cueTempo === true,
     colour: workColour(tool),
-    definition: tool.definition,
+    definition: input.definition ?? tool.definition,
     faces: mapFaces(input),
     params: specs.filter((spec) => !isCostParam(spec)).map((spec) => mapParam(spec, input)),
     costs: specs.filter(isCostParam).map((spec) => mapParam(spec, input)),

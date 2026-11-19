@@ -35,9 +35,12 @@ describe('the scene page', () => {
     expect(element.querySelectorAll('scene-unit-list li')).toHaveLength(20);
   });
 
-  it('lists the eight instruments with an honest unknown', async () => {
+  it('shows all twelve instruments and leaves accuracy unknown until a shot', async () => {
     const { element } = await setUp();
-    expect(element.querySelectorAll('[data-metric]')).toHaveLength(8);
+    expect(element.querySelectorAll('[data-metric]')).toHaveLength(12);
+    expect(element.querySelector('[data-metric="accuracy"] .figure')?.textContent).toContain(
+      'unknown',
+    );
     expect(element.querySelector('[data-metric="timeToObjective"] .figure')?.textContent).toContain(
       'unknown',
     );

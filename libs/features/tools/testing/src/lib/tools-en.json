@@ -83,6 +83,29 @@
       "atLeast": "{{min}} or more",
       "between": "{{min}}–{{max}}"
     },
+    "boardWords": {
+      "terrain": "units on terrain",
+      "streaks": "shot streaks",
+      "sparks": "hit sparks",
+      "speed": "streak speed",
+      "marks": "wall marks",
+      "pose": "recorded pose",
+      "shots": "shots",
+      "hits": "hits",
+      "accuracy": "accuracy",
+      "range": "range",
+      "shotSpeed": "shot speed",
+      "rate": "shot rate",
+      "radius": "hit radius",
+      "knockout": "hits to knock out",
+      "drag": "drag",
+      "iterations": "later cues",
+      "unitsPerSecond": "field units per second",
+      "units": "field units",
+      "shotsPerSecond": "shots per second",
+      "perSecond": "per second",
+      "cues": "cues"
+    },
     "domains": {
       "D1": "Planning",
       "D2": "Order lifecycle",
@@ -113,7 +136,10 @@
       "smooth": "cut a route down to the waypoints in sight of each other",
       "follow": "follow a route from waypoint to waypoint",
       "zoom": "change the level of detail",
-      "ring": "connect the levels in a ring"
+      "ring": "connect the levels in a ring",
+      "fire": "sends shots across the field",
+      "projectile": "sets shot speed and drag",
+      "aim": "reads a pose from the board animation"
     },
     "study": {
       "label": "Authored study",

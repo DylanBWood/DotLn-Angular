@@ -6,9 +6,10 @@ import type {
   UnitId,
 } from '@dotln-angular/scene-engine';
 
-/** What is drawn faintly over a frame: a preview's arrows and a compared branch's units. */
+/** What is drawn faintly over a frame: a preview's arrows and a compared branch's units and streaks. */
 export interface SceneGhost {
   readonly arrows: readonly PreviewArrow[];
+  readonly bullets: SceneFrame['bullets'];
   readonly units: readonly UnitFrame[];
 }
 

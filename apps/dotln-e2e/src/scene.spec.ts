@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
 
+import { crossing, importScene, repeatedCue, standingVolley, stepFrames } from './scene-range';
+
 const flock = 'aifg-a:145';
 const arrive = 'aifg-a:112';
 const aStar = 'aifg-a:222';
@@ -147,6 +149,11 @@ test('the rail lists the floor of tools and nothing the engine refuses', async (
     'Path following',
     'Obstacle and wall avoidance',
     'Collision avoidance',
+    'Aiming and shooting',
+    'Projectile trajectory',
+    'The firing solution',
+    'Iterative targeting',
+    'Moving targets',
   ])
     await expect(rail.getByRole('button', { name, exact: true })).toBeVisible();
   const ids = await rail
@@ -493,6 +500,110 @@ test('the scene meets the board’s serious/critical WCAG threshold', async ({ p
   ).toEqual([]);
 });
 
+test('three selected units fire at a clicked glyph and replay their saved composition', async ({
+  page,
+}) => {
+  await arrived(page);
+  for (const id of standingVolley.selection) {
+    const box = page.locator(`[data-unit-id="${id}"] input`);
+    await box.click();
+    await expect(box).toBeChecked();
+  }
+  await tool(page, standingVolley.toolId).click();
+  await clickField(page, 83.8, 35.6);
+  await expect(selected(page)).toHaveCount(3);
+  await expect(page.getByRole('combobox', { name: 'Fire at' })).toHaveValue('9');
+  await expect(page.locator('[data-shot-preview]')).toContainText('Current pose');
+  await stepFrames(page, 100);
+  const target = page.locator('[data-unit-id="unit-09"]');
+  await expect(target).toContainText(/Hits taken [1-9]/);
+  const result = await target.innerText();
+  const hits = await figure(page, 'hits').innerText();
+  const shots = await figure(page, 'shots').innerText();
+  expect(Number(shots)).toBeGreaterThanOrEqual(Number(hits));
+  expect(Number(hits)).toBeGreaterThan(0);
+  await transport(page, 'save').click();
+  await page.reload();
+  await page.locator('[data-composition-id] button').first().click();
+  await stepFrames(page, 100);
+  await expect(target).toHaveText(result.replace(/\s+/g, ' ').trim(), { useInnerText: true });
+  await expect(figure(page, 'hits')).toHaveText(hits);
+});
+
+test('a crossing piece shows the four aim outcomes and the two delayed aims diverge in a kept trial', async ({
+  page,
+}) => {
+  await arrived(page);
+  const marked = page.locator('[data-unit-id="unit-09"]');
+  for (const [aim, drag, hits] of [
+    ['plain', 0, 0],
+    ['single', 0, 1],
+    ['single', 0.3, 0],
+    ['repeat', 0.3, 1],
+  ] as const) {
+    await importScene(page, crossing(aim, drag));
+    await stepFrames(page, 145);
+    await expect(marked.locator('.hit-count')).toHaveCount(hits);
+  }
+  const single = crossing('single', 0.3);
+  await importScene(page, [...single, repeatedCue]);
+  await transport(page, 'compare').click();
+  await expect(page.locator('[data-divergence]')).toContainText('frame 25');
+  const accuracy = page.locator('[data-series="accuracy"]');
+  await expect(accuracy.locator('polyline.before')).toHaveAttribute('points', /\d/);
+  await expect(accuracy.locator('polyline.after')).toHaveAttribute('points', /\d/);
+  await expect(accuracy.locator('.summary')).toHaveText('72% → 90%');
+  await page.locator('[data-trial="keep"] button').click();
+  await expect(page.locator('scene-tool-log')).toContainText('Trials kept: 1');
+});
+
+test('a drawn wall catches the volley and three hits retire a piece on each replay', async ({
+  page,
+}) => {
+  await arrived(page);
+  await importScene(page, [standingVolley]);
+  await drawWall(page, [72, 10], [72, 66]);
+  await stepFrames(page, 105);
+  await expect(figure(page, 'hits')).toHaveText('0');
+  await expect(page.locator('[data-shot-counts]')).toContainText(/Wall and obstacle marks [1-9]/);
+  await expect(page.locator('[data-unit-id="unit-09"] .hit-count')).toHaveCount(0);
+  await importScene(page, [
+    {
+      ...standingVolley,
+      selection: ['unit-08'],
+      params: { ...standingVolley.params, 'bullet-speed': 72, 'knockout-hits': 3, rate: 2 },
+    },
+  ]);
+  for (let replay = 0; replay < 2; replay++) {
+    await transport(page, 'restart').click();
+    await stepFrames(page, 57);
+    const row = page.locator('[data-unit-id="unit-09"]');
+    await expect(row).toContainText('Hits taken 2');
+    await expect(row).not.toContainText('down');
+    await stepFrames(page, 50);
+    await expect(row).toContainText('still · down');
+    await expect(row).toContainText('Hits taken 3');
+    await expect(figure(page, 'downUnits')).toHaveText('1');
+  }
+});
+
+test('the shooting inspector and text layer meet the board’s serious/critical WCAG threshold', async ({
+  page,
+}) => {
+  await arrived(page);
+  await page.locator('[data-unit-id="unit-08"] input').click();
+  await tool(page, standingVolley.toolId).click();
+  await page.getByRole('combobox', { name: 'Fire at' }).selectOption('9');
+  await apply(page).click();
+  await stepFrames(page, 100);
+  const result = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(
+    result.violations.filter(({ impact }) => impact === 'serious' || impact === 'critical'),
+  ).toEqual([]);
+});
+
 for (const [width, height] of [
   [360, 900],
   [768, 900],
@@ -506,7 +617,8 @@ for (const [width, height] of [
     await page.locator('[data-add="wall"]').click();
     await tool(page, aStar).click();
     await expect(page.locator('[data-routes]')).toBeVisible();
-    await tool(page, flock).click();
+    await tool(page, standingVolley.toolId).click();
+    await expect(page.getByRole('combobox', { name: 'Fire at' })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),

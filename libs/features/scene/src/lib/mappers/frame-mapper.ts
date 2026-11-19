@@ -60,6 +60,7 @@ export function mapFrameToRows(
   const routes = new Map(frame.routes.map((route) => [route.id, route]));
   return frame.units.map((unit) => ({
     id: unit.id,
+    hits: unit.hits,
     position: positionBucket(unit.position, frame.field),
     speed: speedBucket(unit),
     activity: unit.activity,
@@ -84,6 +85,7 @@ export function mapRowViews(
   const byId = new Map(styles.map((style) => [style.id, style]));
   return rows.map((row) => ({
     id: row.id,
+    hits: row.hits,
     label: byId.get(row.id)?.label ?? row.id,
     colour: `var(--dotln-role-${byId.get(row.id)?.role ?? 'executor'})`,
     position: words.position(row.position),

@@ -1,5 +1,10 @@
 <details [open]="open()">
   <summary>{{ 'scene.units.title' | t: { count: rows().length } }}</summary>
+  @if (inFlight() || sparks() || marks()) {
+    <p data-shot-counts>
+      {{ 'scene.units.shotCounts' | t: { flight: inFlight(), sparks: sparks(), marks: marks() } }}
+    </p>
+  }
   <ul>
     @for (row of rows(); track row.id) {
       <li [attr.data-unit-id]="row.id">
@@ -27,6 +32,9 @@
                 'scene.units.detail'
                   | t: { position: row.position, speed: row.speed, activity: row.activity }
               }}
+            }
+            @if (row.hits > 0) {
+              <span class="hit-count">{{ 'scene.units.hits' | t: { count: row.hits } }}</span>
             }
           </span>
           <span class="id" translate="no">{{ row.id }}</span>

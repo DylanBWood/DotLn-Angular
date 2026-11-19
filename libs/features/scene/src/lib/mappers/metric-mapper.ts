@@ -7,7 +7,9 @@ import type {
   TrialView,
 } from '../models/scene-view-model';
 
-export const instrumentIds: readonly InstrumentId[] = [
+const fightIds: readonly InstrumentId[] = ['shots', 'hits', 'accuracy', 'downUnits'];
+
+const movementIds: readonly InstrumentId[] = [
   'cohesionRadius',
   'collisions',
   'headingVariance',
@@ -17,6 +19,9 @@ export const instrumentIds: readonly InstrumentId[] = [
   'replans',
   'blockedUnits',
 ];
+
+export const instrumentIds = [...movementIds, ...fightIds];
+const duringVolley = [...fightIds, ...movementIds];
 
 // Route figures say nothing about a trial in which nobody followed a route, so the compare leaves
 // them out of one.
@@ -39,13 +44,18 @@ const decimals: Readonly<Record<InstrumentId, number>> = {
   pathLength: 1,
   replans: 0,
   blockedUnits: 0,
+  shots: 0,
+  hits: 0,
+  accuracy: 0,
+  downUnits: 0,
 };
 
 /** A figure in its own precision; null stays null, never a fabricated zero. */
 const formatNumber = (value: number | null, places = 1) =>
   value === null ? null : value.toFixed(places);
 
-const formatReading = (id: InstrumentId, value: number | null) => formatNumber(value, decimals[id]);
+const formatReading = (id: InstrumentId, value: number | null) =>
+  formatNumber(id === 'accuracy' && value !== null ? value * 100 : value, decimals[id]);
 
 /** Scales a series into a polyline's points; gaps in a series are left out, not invented. */
 export function seriesPoints(
@@ -80,7 +90,8 @@ export function mapInstruments(
   points: Readonly<Record<InstrumentId, string>>,
   labels: InstrumentLabels,
 ): readonly InstrumentView[] {
-  return instrumentIds.map((id) => {
+  const ordered = metrics.shots > 0 || metrics.downUnits > 0 ? duringVolley : instrumentIds;
+  return ordered.map((id) => {
     const reading = formatReading(id, metrics[id]);
     return {
       id,
@@ -111,17 +122,25 @@ export function mapTrial(trial: Trial, labels: InstrumentLabels): TrialView {
       ? null
       : ((trial.firstDivergenceFrame - trial.from) / Math.max(1, trial.frames)) * chartWidth;
   const { pathLength, blockedUnits } = trial.metrics;
+  const shots = trial.metrics.shots;
+  const fired = [...shots.a, ...shots.b].some((value) => (value ?? 0) > 0);
   const routed =
     [...pathLength.a, ...pathLength.b].some((value) => value !== null) ||
     [...blockedUnits.a, ...blockedUnits.b].some((value) => (value ?? 0) > 0);
   return {
     firstDivergence: trial.firstDivergenceFrame,
-    series: instrumentIds.flatMap((id) => {
+    series: (fired ? duringVolley : instrumentIds).flatMap((id) => {
       if (!routed && routeIds.includes(id)) return [];
+      if (!fired && fightIds.includes(id)) return [];
       const { a, b } = trial.metrics[id];
       const known = [...a, ...b].filter((value): value is number => value !== null);
       if (known.length === 0) return [];
       const ceiling = Math.max(...known, 0) || 1;
+      const summary = (value: number | null) => {
+        const reading = formatReading(id, value);
+        if (reading === null) return labels.unknown;
+        return id === 'accuracy' ? reading + labels.unit(id) : reading;
+      };
       return [
         {
           id,
@@ -129,8 +148,8 @@ export function mapTrial(trial: Trial, labels: InstrumentLabels): TrialView {
           before: seriesPoints(a, chartWidth, chartHeight, ceiling),
           after: seriesPoints(b, chartWidth, chartHeight, ceiling),
           marker,
-          summaryBefore: formatReading(id, a.at(-1) ?? null) ?? labels.unknown,
-          summaryAfter: formatReading(id, b.at(-1) ?? null) ?? labels.unknown,
+          summaryBefore: summary(a.at(-1) ?? null),
+          summaryAfter: summary(b.at(-1) ?? null),
         },
       ];
     }),
