@@ -37,6 +37,30 @@ function runFor(state: SimulationState, frames: number) {
 const hashes = (steps: readonly CompositionStep[], frames: number) =>
   runBranch(scene, steps, frames).map((state) => hashFrame(frameOf(state)));
 
+it('replays a crossing piece with one cue and with later cues when drag stretches the streak', () => {
+  const board = createTestScene([
+    createTestUnit('emitter', { position: { x: 15, y: 25 } }),
+    createTestUnit('runner', { position: { x: 65, y: 10 } }),
+  ]);
+  function play(mode: 'plain' | 'cue' | 'repeat', drag: number) {
+    const steps = [
+      createTestStep('objective.set', [], { x: 65, y: 78 }),
+      createTestStep('steer.blend', ['runner'], { 'arrive-weight': 1 }),
+      createTestStep('combat.projectile', ['emitter'], { 'bullet-speed': 36, drag }),
+    ];
+    if (mode !== 'plain')
+      steps.push(
+        createTestStep('combat.aim', ['emitter'], mode === 'repeat' ? { iterations: 4 } : {}),
+      );
+    steps.push(createTestStep('combat.fire', ['emitter'], { target: 2, rate: 0.5 }, 36));
+    return runBranch(board, steps, 130).at(-1)?.units[1].hits;
+  }
+  expect(play('plain', 0)).toBe(0);
+  expect(play('cue', 0)).toBe(1);
+  expect(play('cue', 0.3)).toBe(0);
+  expect(play('repeat', 0.3)).toBe(1);
+});
+
 describe('arrive', () => {
   it('stops one unit inside the target radius', () => {
     const lone = createTestScene([createTestUnit('a', { position: { x: 10, y: 10 } })]);
@@ -574,6 +598,26 @@ describe('field steps', () => {
 });
 
 describe('metrics', () => {
+  it('lets a standing unit pass a retired glyph without contact or crowd steering', () => {
+    const board = createTestScene([
+      createTestUnit('resting', { position: { x: 20, y: 20 } }),
+      createTestUnit('standing', { position: { x: 20.1, y: 20 } }),
+    ]);
+    const equipped = applyStep(
+      createSimulation(board),
+      createTestStep('steer.blend', ['standing'], { 'separation-weight': 2 }),
+    ).state;
+    const during = {
+      ...equipped,
+      units: [{ ...equipped.units[0], down: true }, equipped.units[1]],
+    };
+    expect(measure(equipped).collisions).toBe(1);
+    expect(measure(during).collisions).toBe(0);
+    expect(frameOf(during).collisions).toEqual([]);
+    expect(advance(during).units[1].velocity).toEqual({ x: 0, y: 0 });
+    expect(advance(equipped).units[1].velocity).not.toEqual({ x: 0, y: 0 });
+  });
+
   it('counts an overlap and focuses on the given units', () => {
     const crowd = createTestScene([
       createTestUnit('a', { position: { x: 10, y: 10 } }),

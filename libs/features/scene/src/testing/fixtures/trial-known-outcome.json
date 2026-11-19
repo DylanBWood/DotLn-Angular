@@ -129,6 +129,22 @@
     "blockedUnits": {
       "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "shots": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "hits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    "accuracy": {
+      "a": [null, null, null, null, null, null, null, null, null, null, null],
+      "b": [null, null, null, null, null, null, null, null, null, null, null]
+    },
+    "downUnits": {
+      "a": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "b": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     }
   },
   "firstDivergenceFrame": 61

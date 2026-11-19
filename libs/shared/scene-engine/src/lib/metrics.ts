@@ -24,6 +24,10 @@ export const metricNames: readonly MetricName[] = [
   'pathLength',
   'replans',
   'blockedUnits',
+  'shots',
+  'hits',
+  'accuracy',
+  'downUnits',
 ];
 
 // A focus naming nobody in the scene, as an imported step can, reads as the whole scene.
@@ -58,6 +62,8 @@ export function measure(state: SimulationState, focus: readonly UnitId[] = []): 
   const centre = centroid(units.map((unit) => unit.position));
   const { objective } = state;
   const formation = formationFor(state, focusSet);
+  const shots = units.reduce((total, unit) => total + unit.shots, 0);
+  const hits = units.reduce((total, unit) => total + unit.scored, 0);
   return {
     cohesionRadius: Math.max(...units.map((unit) => distance(unit.position, centre))),
     collisions: collisionCount(state.units, focusSet),
@@ -79,6 +85,10 @@ export function measure(state: SimulationState, focus: readonly UnitId[] = []): 
     pathLength: meanRouteLength(units),
     replans: units.reduce((sum, unit) => sum + (unit.route?.replans ?? 0), 0),
     blockedUnits: units.filter((unit) => unit.route?.status === 'blocked').length,
+    shots,
+    hits,
+    accuracy: shots > 0 ? hits / shots : null,
+    downUnits: units.filter((unit) => unit.down).length,
   };
 }
 

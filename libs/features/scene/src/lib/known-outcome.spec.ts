@@ -11,6 +11,7 @@ import {
 } from '@dotln-angular/scene-engine';
 
 import costTable from '../testing/fixtures/cost-table.json';
+import rangeOutcome from '../testing/fixtures/range-known-outcome.json';
 import trialOutcome from '../testing/fixtures/trial-known-outcome.json';
 import wallsOutcome from '../testing/fixtures/walls-known-outcome.json';
 import { sceneTwenty } from './providers/provide-scene-feature';
@@ -21,6 +22,7 @@ const rounded = (value: number | null) => (value === null ? null : Math.round(va
 // The engine's own spec reads these fixtures too, but they live in this feature, so `nx affected`
 // reaches only this project when one of them changes. This is what holds them to the engine then.
 describe.each([
+  ['range-known-outcome.json', rangeOutcome],
   ['trial-known-outcome.json', trialOutcome],
   ['walls-known-outcome.json', wallsOutcome],
 ])('the committed %s against the engine', (_name, knownOutcome) => {

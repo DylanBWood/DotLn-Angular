@@ -133,7 +133,8 @@ export interface RayHit {
 const perpendicular = (v: Vec2): Vec2 => ({ x: -v.y, y: v.x });
 const wedge = (a: Vec2, b: Vec2) => a.x * b.y - a.y * b.x;
 
-function rayToCircle(origin: Vec2, direction: Vec2, centre: Vec2, size: number) {
+/** Distance to the first contact with a disc along a unit direction. */
+export function rayToCircle(origin: Vec2, direction: Vec2, centre: Vec2, size: number) {
   const offset = subtract(origin, centre);
   const along = dot(offset, direction);
   const outside = dot(offset, offset) - size * size;

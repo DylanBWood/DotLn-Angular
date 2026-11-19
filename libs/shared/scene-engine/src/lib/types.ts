@@ -175,6 +175,45 @@ export interface UnitState {
   /** Consecutive frames spent still while a goal remains unreached. */
   readonly stallFrames: number;
   readonly route: UnitRoute | null;
+  readonly launcher: LauncherSettings;
+  readonly nextShot: number;
+  readonly shots: number;
+  readonly scored: number;
+  readonly hits: number;
+  readonly down: boolean;
+}
+
+/** A selected board piece fires at the objective (zero) or at a one-based roster entry. */
+export interface LauncherSettings {
+  readonly target: number | null;
+  readonly aim: 'plain' | 'cue' | 'repeat';
+  readonly iterations: number;
+  readonly speed: number;
+  readonly range: number;
+  readonly rate: number;
+  readonly radius: number;
+  readonly drag: number;
+  readonly knockoutHits: number;
+}
+
+export interface BulletState {
+  readonly owner: UnitId;
+  readonly position: Vec2;
+  readonly velocity: Vec2;
+  readonly rangeLeft: number;
+  readonly radius: number;
+  readonly drag: number;
+  readonly knockoutHits: number;
+  /** A choreographed streak ends with its clip. An unassisted one runs to its range. */
+  readonly framesLeft: number | null;
+}
+
+export interface Impact {
+  readonly at: number;
+  readonly owner: UnitId;
+  /** A unit id for a spark, or null for a mark on the field geometry. */
+  readonly unitId: UnitId | null;
+  readonly position: Vec2;
 }
 
 export type FormationPattern = 'wedge' | 'line' | 'column';
@@ -200,6 +239,13 @@ export interface FormationState {
   readonly leader: UnitId | null;
 }
 
+/** The scene can seat its remaining members again. Studies with their own layouts only need the pose. */
+export interface SceneFormation extends FormationState {
+  readonly pattern: FormationPattern;
+  readonly spacing: number;
+  readonly slotCosts: Readonly<Record<string, number>>;
+}
+
 export interface ObjectiveState {
   readonly position: Vec2;
   /** The tick the current run toward the objective began. */
@@ -214,11 +260,14 @@ export interface SimulationState {
   readonly tick: number;
   readonly units: readonly UnitState[];
   readonly objective: ObjectiveState | null;
-  readonly formations: readonly FormationState[];
+  readonly formations: readonly SceneFormation[];
   readonly geometry: SceneGeometry;
+  readonly bullets: readonly BulletState[];
+  readonly impacts: readonly Impact[];
 }
 
-export type UnitActivity = 'idle' | 'moving' | 'arrived' | 'stalled' | 'formed' | 'blocked';
+export type UnitActivity =
+  'idle' | 'moving' | 'arrived' | 'stalled' | 'formed' | 'blocked' | 'down';
 
 export interface UnitFrame {
   readonly id: UnitId;
@@ -227,6 +276,7 @@ export interface UnitFrame {
   readonly heading: Vec2;
   readonly radius: number;
   readonly activity: UnitActivity;
+  readonly hits: number;
 }
 
 /** A unit's route as a painter and the text layer read it. */
@@ -261,6 +311,8 @@ export interface SceneFrame {
   readonly geometry: SceneGeometry;
   readonly routes: readonly RouteFrame[];
   readonly rays: readonly RayFrame[];
+  readonly bullets: readonly BulletState[];
+  readonly impacts: readonly Impact[];
 }
 
 export interface SceneMetrics {
@@ -278,6 +330,10 @@ export interface SceneMetrics {
   readonly replans: number;
   /** How many focus units have no route to the objective. */
   readonly blockedUnits: number;
+  readonly shots: number;
+  readonly hits: number;
+  readonly accuracy: number | null;
+  readonly downUnits: number;
 }
 
 export type MetricName = keyof SceneMetrics;
@@ -310,11 +366,23 @@ export interface RouteReading {
 
 /** The first frame's effect of a step, computed without applying it. */
 export interface StepPreview {
+  readonly shot?: ShotPreview;
   readonly arrows: readonly PreviewArrow[];
   readonly assignment: readonly SlotAssignment[];
   /** The routes the step's units would follow, or why they would have none. */
   readonly routes: readonly RouteReading[];
   readonly refusal: StepRefusal | null;
+}
+
+export interface ShotPreview {
+  readonly cue: {
+    readonly poseFrame: number | null;
+    readonly endFrame: number;
+    readonly beyondRange: boolean;
+  } | null;
+  readonly hasTarget: boolean;
+  readonly seconds: number | null;
+  readonly reach: number;
 }
 
 export interface TrialBranch {

@@ -139,10 +139,39 @@ const wallsRun: OutcomeRun = {
   branchB: [...walledIn, sealing],
 };
 
+const rangeShooters = ['unit-03', 'unit-08', 'unit-13'];
+const rangeStep: CompositionStep = {
+  at: 0,
+  toolId: 'aifg-a:161',
+  kind: 'combat.fire',
+  selection: rangeShooters,
+  params: {
+    target: 9,
+    'bullet-speed': 36,
+    rate: 3,
+    range: 100,
+    'hit-radius': 0.4,
+    'knockout-hits': 0,
+  },
+};
+// Switching to the unset objective ends the volley and lets every streak finish on the board.
+const volley = [rangeStep, { ...rangeStep, at: 60, params: { ...rangeStep.params, target: 0 } }];
+const rangeRun: OutcomeRun = {
+  frames: 150,
+  sampleEvery: 10,
+  focus: rangeShooters,
+  branchA: volley,
+  branchB: [
+    fieldStep(0, 'field.wall', { x1: 72, y1: 10, x2: 72, y2: 66, thickness: 1, shape: 1 }),
+    ...volley,
+  ],
+};
+
 // Run once with WRITE_SCENE_FIXTURES=1 to regenerate; the gate only ever reads the bytes.
 if (process.env['WRITE_SCENE_FIXTURES'] === '1') {
   for (const [name, run] of [
     ['trial-known-outcome.json', flockRun],
+    ['range-known-outcome.json', rangeRun],
     ['walls-known-outcome.json', wallsRun],
   ] as const)
     writeFileSync(resolve(fixtures, name), `${JSON.stringify(computeOutcome(run), null, 2)}\n`);
@@ -167,6 +196,36 @@ describe('the known outcome over the twenty', () => {
 
   it('leaves the branch before the equip exactly where it started', () => {
     expect(new Set(known.hashes.a).size).toBe(1);
+  });
+});
+
+describe('the range known outcome', () => {
+  it('replays streaks in both branches and accounts for every shot in the volley', () => {
+    const known: KnownOutcome = readFixture('range-known-outcome.json');
+    expect(computeOutcome(rangeRun)).toEqual(known);
+    expect(computeOutcome(rangeRun).hashes).toEqual(known.hashes);
+    const [clear, wall] = [rangeRun.branchA, rangeRun.branchB].map((steps) =>
+      runBranch(definition, steps, rangeRun.frames),
+    );
+    expect(
+      clear.some(
+        (state) =>
+          state.bullets.length &&
+          hashFrame(frameOf(state)) !== hashFrame({ ...frameOf(state), bullets: [] }),
+      ),
+    ).toBe(true);
+    expect(clear.slice(0, -1).some((state) => state.units[8].hits > 0)).toBe(true);
+    expect(
+      clear
+        .at(-1)
+        ?.units.filter((unit) => rangeShooters.includes(unit.id))
+        .every((unit) => unit.scored > 0),
+    ).toBe(true);
+    const marks = wall.flatMap((state) => state.impacts.filter((mark) => mark.at === state.tick));
+    expect(marks.every((mark) => mark.unitId === null)).toBe(true);
+    expect(marks.length).toBe(known.metrics.shots.b.at(-1));
+    expect(wall.at(-1)?.bullets).toEqual([]);
+    expect(wall.at(-1)?.units[8].hits).toBe(0);
   });
 });
 

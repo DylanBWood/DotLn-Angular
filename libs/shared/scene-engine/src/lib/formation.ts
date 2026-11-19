@@ -1,4 +1,12 @@
-import type { FormationPattern, FormationState, UnitId, UnitState, Vec2 } from './types';
+import { assignSlots } from './slot-assignment';
+import type {
+  FormationPattern,
+  FormationState,
+  SceneFormation,
+  UnitId,
+  UnitState,
+  Vec2,
+} from './types';
 import {
   add,
   alongHeading,
@@ -58,6 +66,66 @@ export function patternSlotRoles(count: number): readonly string[] {
   });
 }
 
+/** Both initial placement and a smaller roster use the formation's original rules. */
+export function rosterSlots(
+  layout: Pick<SceneFormation, 'kind' | 'pattern' | 'spacing' | 'slotCosts'>,
+  members: readonly UnitState[],
+) {
+  const centred = patternSlots(layout.pattern, members.length, layout.spacing);
+  const roles = patternSlotRoles(members.length);
+  if (layout.kind === 'two-level')
+    return { slots: centred, assignment: assignSlots(members, roles, layout.slotCosts) };
+  return {
+    slots: centred.map((slot) => subtract(slot, centred[0])),
+    assignment: members.map((unit, slot) => ({
+      unitId: unit.id,
+      slot,
+      slotRole: roles[slot],
+      cost: 0,
+    })),
+  };
+}
+
+/** Close vacancies from a knockout. A member reassigned by a composition step keeps its old slot vacant. */
+export function reformAfterKnockout(
+  formations: readonly SceneFormation[],
+  units: readonly UnitState[],
+  down: ReadonlySet<UnitId>,
+): readonly SceneFormation[] {
+  return formations.flatMap((formation) => {
+    const lostLeader = formation.leader !== null && down.has(formation.leader);
+    if (!lostLeader && !formation.assignment.some(({ unitId }) => down.has(unitId)))
+      return [formation];
+
+    const remainingIds = new Set(
+      formation.assignment.filter(({ unitId }) => !down.has(unitId)).map(({ unitId }) => unitId),
+    );
+    const remaining = units.filter(({ id }) => remainingIds.has(id));
+    if (remaining.length === 0) return [];
+
+    if (formation.kind === 'two-level')
+      return [{ ...formation, ...rosterSlots(formation, remaining) }];
+
+    // Fixed slots are assigned in row order. A leader previously given a separate order
+    // can still lead the row even though its slot assignment is no longer present.
+    const slots = new Map(formation.assignment.map(({ unitId, slot }) => [unitId, slot]));
+    remaining.sort((a, b) => (slots.get(a.id) ?? 0) - (slots.get(b.id) ?? 0));
+    const previousLeader = !lostLeader && units.find(({ id }) => id === formation.leader);
+    const leader = previousLeader || remaining[0];
+    const row = rosterSlots(formation, [leader, ...remaining.filter(({ id }) => id !== leader.id)]);
+    return [
+      {
+        ...formation,
+        slots: row.slots,
+        assignment: row.assignment.filter(({ unitId }) => remainingIds.has(unitId)),
+        leader: leader.id,
+        anchor: leader.position,
+        heading: leader.heading,
+      },
+    ];
+  });
+}
+
 export const slotPosition = (formation: FormationState, slot: number): Vec2 =>
   add(formation.anchor, alongHeading(formation.slots[slot], formation.heading));
 
@@ -87,7 +155,7 @@ export function placeOf(
  * slots from it, so nothing stands anywhere new but the anchor and the members' mean agree. A
  * fixed formation is measured from its leader and has nothing to move.
  */
-export function recentred(formation: FormationState): FormationState {
+export function recentred(formation: SceneFormation): SceneFormation {
   if (formation.kind === 'fixed' || formation.assignment.length === 0) return formation;
   const held = centroid(formation.assignment.map(({ slot }) => formation.slots[slot]));
   return {
@@ -110,12 +178,12 @@ export const memberMean = (formation: FormationState, units: readonly UnitState[
  * objective, then pulled back toward the members so it can never run away from them. A fixed
  * formation has no anchor of its own: it copies the leader, every twitch included.
  */
-export function advanceFormation(
-  formation: FormationState,
+export function advanceFormation<F extends FormationState>(
+  formation: F,
   units: readonly UnitState[],
   target: Vec2 | null,
   timeStep: number,
-): FormationState {
+): F {
   if (formation.kind === 'fixed') {
     const leader = units.find((unit) => unit.id === formation.leader);
     return leader ? { ...formation, anchor: leader.position, heading: leader.heading } : formation;
