@@ -423,11 +423,58 @@ export interface StatesStudyModel extends StudyModelBase {
   readonly states: StatesModel;
 }
 
+export interface RelationNode extends StudyPoint {
+  readonly id: string;
+  readonly label: string;
+}
+
+export interface RelationEdge {
+  readonly id: string;
+  readonly description: string;
+  readonly from: string;
+  readonly to: string;
+  readonly label: string;
+  readonly path: string;
+  readonly arrow: string;
+}
+
+export type RelationFocus = { readonly node: string } | { readonly relation: string };
+
+export interface RelationFrame extends StudyTick {
+  readonly focus: RelationFocus;
+}
+
+/** An object a reader can inspect before exploring the map, with a prediction they can check. */
+export interface RelationSpecimen<Text = string> {
+  readonly title: Text;
+  readonly source: Text;
+  readonly samples: readonly Text[];
+  readonly reading: Text;
+  readonly question: Text;
+  readonly answer: Text;
+}
+
+export interface RelationsModel {
+  readonly sourceUrl?: string;
+  readonly nodeWidth: number;
+  readonly specimen?: RelationSpecimen;
+  readonly height: number;
+  readonly nodes: readonly RelationNode[];
+  readonly edges: readonly RelationEdge[];
+  readonly frames: readonly RelationFrame[];
+}
+
+export interface RelationsStudyModel extends StudyModelBase {
+  readonly family: 'relations';
+  readonly relations: RelationsModel;
+}
+
 /**
  * The example worked through: every part of a study reads this one run. The family names which
  * drawing the payload is for, and `ticksOf` reads the moments every family shares.
  */
-export type StudyModel = MotionStudyModel | MarblesStudyModel | FlowStudyModel | StatesStudyModel;
+export type StudyModel =
+  MotionStudyModel | MarblesStudyModel | FlowStudyModel | StatesStudyModel | RelationsStudyModel;
 
 /** The moments of the example, whichever family draws them: one tick per step of the scrubber. */
 export function ticksOf(model: StudyModel): readonly StudyTick[] {
@@ -438,6 +485,8 @@ export function ticksOf(model: StudyModel): readonly StudyTick[] {
       return model.flow.frames;
     case 'states':
       return model.states.frames;
+    case 'relations':
+      return model.relations.frames;
     default:
       return model.marbles.frames;
   }

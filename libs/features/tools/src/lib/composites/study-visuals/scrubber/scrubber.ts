@@ -32,12 +32,19 @@ export class StudyScrubber {
   /** Whether that count names frames, as a marble diagram's does, or the steps of a flow. */
   readonly counting = input<'frame' | 'step'>('frame');
   readonly moments = input<readonly StudyMoment[]>([]);
+  readonly restartLabel = input<string | null>(null);
+  readonly markCurrentMoment = input(false);
   /** Null hides the control, as it does for a reader who asked for reduced motion. */
   readonly playing = input<boolean | null>(null);
   readonly stepped = output<number>();
   readonly played = output<boolean>();
   readonly sliderId = `study-time-${++scrubbers}`;
   protected readonly slider = viewChild.required<ElementRef<HTMLInputElement>>('slider');
+
+  restart() {
+    this.stepped.emit(0);
+    this.focus();
+  }
 
   /** Gives the keyboard to the slider and brings the drawing above it into view. */
   focus() {

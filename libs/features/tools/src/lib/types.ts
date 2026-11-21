@@ -11,6 +11,7 @@ import type {
   FlowModel,
   MarblesModel,
   MotionModel,
+  RelationsModel,
   StatesModel,
   StudyComparison,
   StudyInput,
@@ -23,7 +24,8 @@ import type {
 
 export type StudySection = 'mechanism' | 'reactive' | 'limits' | 'elsewhere';
 /** Every disclosure of a study: its explanations and the smaller ones around the drawing. */
-export type StudyDisclosure = StudySection | 'example' | 'numbers' | 'inputs' | 'legend';
+export type StudyDisclosure =
+  StudySection | 'example' | 'prediction' | 'numbers' | 'inputs' | 'legend';
 /** Which drawing of the example shows: movement or its chart, or a flow or its marble diagram. */
 export type StudyVisualView = 'motion' | 'timeline' | 'flow' | 'marbles';
 export type StudyStatus = 'none' | 'loading' | 'failed' | 'ready';
@@ -83,9 +85,20 @@ export interface StatesDrawingView extends StudyDrawingViewBase {
   readonly states: StatesModel;
 }
 
+/** A graph whose selected node or relationship explains one step. */
+export interface RelationsDrawingView extends StudyDrawingViewBase {
+  readonly exampleSource?: StudyReference;
+  readonly family: 'relations';
+  readonly relations: RelationsModel;
+}
+
 /** The drawing at the selected moment; the family says which composite draws it. */
 export type StudyDrawingView =
-  MotionDrawingView | MarblesDrawingView | FlowDrawingView | StatesDrawingView;
+  | MotionDrawingView
+  | MarblesDrawingView
+  | FlowDrawingView
+  | StatesDrawingView
+  | RelationsDrawingView;
 
 /** A mechanism step with the lines of pseudocode it explains. */
 export interface StudyStepView {

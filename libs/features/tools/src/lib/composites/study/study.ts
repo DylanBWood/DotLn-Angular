@@ -18,6 +18,7 @@ import { StudyFlow } from '../study-visuals/flow/flow';
 import { StudyInputs } from '../study-visuals/inputs/inputs';
 import { StudyMarbles } from '../study-visuals/marbles/marbles';
 import { StudyMotion } from '../study-visuals/motion/motion';
+import { StudyRelations } from '../study-visuals/relations/relations';
 import { StudyStates } from '../study-visuals/states/states';
 import { StudyTimeline } from '../study-visuals/timeline/timeline';
 
@@ -39,6 +40,7 @@ import { StudyTimeline } from '../study-visuals/timeline/timeline';
     StudyInputs,
     StudyMarbles,
     StudyMotion,
+    StudyRelations,
     StudyStates,
     StudyTimeline,
   ],
@@ -58,13 +60,21 @@ export class Study {
   protected readonly marbles = viewChild(StudyMarbles);
   protected readonly flow = viewChild(StudyFlow);
   protected readonly states = viewChild(StudyStates);
+  protected readonly relations = viewChild(StudyRelations);
 
   stepped(step: number) {
     this.intent.emit({ kind: 'step', step });
   }
   /** Returns the keyboard to the drawing after a worked step asks to show its moment. */
   showMoment() {
-    (this.motion() ?? this.timeline() ?? this.marbles() ?? this.flow() ?? this.states())?.focus();
+    (
+      this.motion() ??
+      this.timeline() ??
+      this.marbles() ??
+      this.flow() ??
+      this.states() ??
+      this.relations()
+    )?.focus();
   }
   toggled(section: StudyDisclosure, details: HTMLDetailsElement) {
     this.intent.emit({ kind: 'expand', section, open: details.open });

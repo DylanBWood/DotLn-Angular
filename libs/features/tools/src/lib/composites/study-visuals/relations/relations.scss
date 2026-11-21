@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+svg {
+  display: block;
+  max-inline-size: 32rem;
+  inline-size: 100%;
+  margin-inline: auto;
+}
+.edge {
+  color: var(--dotln-muted);
+  path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+  }
+  polygon {
+    fill: currentColor;
+  }
+  &.active {
+    color: var(--dotln-accent);
+    path {
+      stroke-width: 3.5;
+    }
+  }
+}
+.node rect {
+  fill: var(--dotln-surface);
+  stroke: var(--dotln-border-strong);
+  stroke-width: 1.5;
+}
+.node.active rect {
+  fill: var(--dotln-known-bg);
+  stroke: var(--dotln-accent);
+  stroke-width: 3.5;
+}
+.name {
+  display: grid;
+  place-content: center;
+  box-sizing: border-box;
+  padding: 1px 3px;
+  block-size: 100%;
+  color: var(--dotln-ink);
+  font: 600 15px/1.1 var(--dotln-font);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.reading {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  border-inline-start: 3px solid var(--dotln-accent);
+  padding-inline-start: 0.65rem;
+}
+.reading strong {
+  margin-inline-end: 0.4rem;
+}

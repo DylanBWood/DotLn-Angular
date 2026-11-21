@@ -5,18 +5,47 @@
   <p class="intro" translate="no">
     {{ vm.intuition.text }}
   </p>
-  <p translate="no">{{ vm.intuition.situation }}</p>
-  <details
-    #example
-    class="how-to-read"
-    [open]="vm.expanded.includes('example')"
-    (toggle)="toggled('example', example)"
-  >
-    <summary>{{ 'tools.study.exampleDetails' | t }}</summary>
-    <p class="example" translate="no">
-      {{ vm.example.description }}
-    </p>
-  </details>
+  @let drawing = vm.visual;
+  @if (drawing?.family === 'relations') {
+    @if (drawing.relations.specimen; as specimen) {
+      <section class="specimen" translate="no">
+        <h4>{{ specimen.title }}</h4>
+        <p>{{ specimen.source }}</p>
+        @for (sample of specimen.samples; track $index) {
+          <samp>{{ sample }}</samp>
+        }
+        <p>{{ specimen.reading }}</p>
+        <details
+          #prediction
+          [open]="vm.expanded.includes('prediction')"
+          (toggle)="toggled('prediction', prediction)"
+        >
+          <summary>{{ specimen.question }}</summary>
+          <p>{{ specimen.answer }}</p>
+        </details>
+      </section>
+    }
+    <section class="worked-example">
+      <h4>{{ 'tools.study.relations.example' | t }}</h4>
+      <p translate="no">{{ vm.example.description }}</p>
+      @if (drawing.exampleSource; as source) {
+        <a [attr.href]="source.url" translate="no">{{ source.title }}</a>
+      }
+    </section>
+  } @else {
+    <p translate="no">{{ vm.intuition.situation }}</p>
+    <details
+      #example
+      class="how-to-read"
+      [open]="vm.expanded.includes('example')"
+      (toggle)="toggled('example', example)"
+    >
+      <summary>{{ 'tools.study.exampleDetails' | t }}</summary>
+      <p class="example" translate="no">
+        {{ vm.example.description }}
+      </p>
+    </details>
+  }
   @if (vm.visual; as visual) {
     <figure>
       @if (visual.family === 'flow' && visual.marbles) {
@@ -80,13 +109,27 @@
             </p>
             @if (visual.family === 'motion' && visual.view === 'timeline') {
               <p>{{ 'tools.study.chartGuide' | t }}</p>
-            } @else {
+            } @else if (visual.family !== 'relations') {
               <p>{{ visual.caption }}</p>
             }
           </figcaption>
         </details>
       </ng-template>
       @switch (visual.family) {
+        @case ('relations') {
+          <figcaption class="map-instructions" translate="no">{{ visual.caption }}</figcaption>
+          <tools-study-relations
+            [model]="visual.relations"
+            [step]="visual.step"
+            [textEquivalent]="visual.textEquivalent"
+            [moments]="visual.moments"
+            [playing]="visual.playing"
+            (stepped)="stepped($event)"
+            (played)="intent.emit({ kind: 'play', playing: $event })"
+          >
+            <ng-container [ngTemplateOutlet]="caption" />
+          </tools-study-relations>
+        }
         @case ('flow') {
           @if (visual.view === 'marbles' && visual.marbles; as marbles) {
             <tools-study-marbles
@@ -187,6 +230,10 @@
         }
       }
     </figure>
+  }
+  @if (vm.visual?.family === 'relations') {
+    <h4>{{ 'tools.study.relations.analogy' | t }}</h4>
+    <p translate="no">{{ vm.intuition.situation }}</p>
   }
   <p class="choose">{{ 'tools.study.choose' | t }}</p>
   @for (section of sections(); track section) {
