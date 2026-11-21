@@ -2,7 +2,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import ts from 'typescript';
 import { workspaceRoot } from '../source-files.mjs';
-import { atPath, englishMessages, studyMessagePaths } from './study-messages.mjs';
+import {
+  atPath,
+  englishMessages,
+  isWorkMessage,
+  studyMessagePaths,
+  workMessageScope,
+} from './study-messages.mjs';
 
 const messageKey = /^study[A-Z][A-Za-z0-9]*\.[\w:.-]+[\w]$/;
 const visibleFields = new Set([
@@ -22,6 +28,7 @@ const visibleFields = new Set([
   'states',
   'notes',
   'valueMessages',
+  'specimen',
   'errorMessage',
 ]);
 
@@ -110,6 +117,7 @@ export function checkStudyMessages(root = workspaceRoot) {
   const message = englishMessages(root);
   const problems = [];
   const keys = new Set();
+  const modelWorks = new Map();
   const studies = resolve(root, 'libs/shared/catalog/src/studies');
   for (const work of readdirSync(studies, { withFileTypes: true }).filter((entry) =>
     entry.isDirectory(),
@@ -125,15 +133,36 @@ export function checkStudyMessages(root = workspaceRoot) {
         );
         continue;
       }
-      for (const field of studyMessagePaths(record)) keys.add(atPath(record, field));
-      const scope = record.intuition.text.split('.')[0];
+      for (const field of studyMessagePaths(record)) {
+        const key = atPath(record, field);
+        if (!isWorkMessage(record.work, key))
+          problems.push(
+            `${relative(root, path)}: ${field.join('.')} must use a message from ${record.work}`,
+          );
+        keys.add(key);
+      }
+      for (const entry of [record.visual?.model, record.pseudocode.executable?.module]) {
+        if (!entry) continue;
+        const entryPath = resolve(root, entry);
+        const works = modelWorks.get(entryPath) ?? new Set();
+        works.add(record.work);
+        modelWorks.set(entryPath, works);
+      }
+      const scope = workMessageScope(record.work);
       for (const id of [record.id, ...record.nearby.map((entry) => entry.id)])
         keys.add(`${scope}.titles.${id}`);
     }
   }
   for (const path of modelSources(resolve(root, 'libs/features/tools/src/lib/studies'))) {
     const result = presentationProblems(readFileSync(path, 'utf8'), relative(root, path));
-    result.keys.forEach((key) => keys.add(key));
+    for (const key of result.keys) {
+      keys.add(key);
+      for (const work of modelWorks.get(path) ?? [])
+        if (!key.startsWith('studyCommon.') && !isWorkMessage(work, key))
+          problems.push(
+            `${relative(root, path)}: ${key} is outside the message catalogs loaded for ${work}`,
+          );
+    }
     problems.push(...result.problems);
   }
   for (const key of keys)

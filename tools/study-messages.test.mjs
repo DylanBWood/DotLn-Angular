@@ -9,6 +9,7 @@ import { workspaceRoot } from './scripts/source-files.mjs';
 test('the presentation check rejects literal labels, indirect prose, and conditional templates', () => {
   for (const source of [
     "export const frame = { label: 'Courier' };",
+    "export const map = { specimen: { samples: ['An untranslated example'] } };",
     "const name = 'Courier'; export const frame = { label: name };",
     "const name = active ? 'Moving' : 'Still'; export const frame = { label: name };",
     'const frame = { note: `At ${seconds} seconds` };',
@@ -49,5 +50,19 @@ test('message lookup fails closed and current study checks inspect translated pr
   assert.match(
     studyProblems(record, tools, workspaceRoot, changed).join(),
     /mechanism steps against/,
+  );
+});
+
+test('an existing Team Topologies message cannot supply a GEB reading on a fresh route', () => {
+  const read = (name) =>
+    JSON.parse(readFileSync(`libs/shared/catalog/src/studies/${name}.json`, 'utf8'));
+  const levels = read('geb/levels-of-description');
+  const teams = read('tt/collaboration-mode');
+  const key = teams.visual.textEquivalent;
+  const message = englishMessages(workspaceRoot);
+  assert.ok(message(key));
+  assert.throws(
+    () => studyContent({ ...levels, visual: { ...levels.visual, textEquivalent: key } }, message),
+    /missing study message in geb at visual.textEquivalent/,
   );
 });

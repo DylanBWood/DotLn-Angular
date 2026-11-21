@@ -89,7 +89,7 @@ export function studyProblems(study, tools, root = workspaceRoot, message = engl
     if (!existsSync(resolve(root, path.replace(/\.ts$/, '.spec.ts'))))
       problems.push(`${path} has no spec beside it`);
   }
-  problems.push(...rxjsProblems(study, root), ...statesProblems(study));
+  problems.push(...rxjsProblems(study, root), ...modelDrawingProblems(study));
   if (study.authored.state !== 'checked') problems.push('it is a draft, which never ships');
   else if (new Set(study.authored.reviewedBy).size < requiredReviewers)
     problems.push(`it names fewer than ${requiredReviewers} reviewers`);
@@ -112,7 +112,7 @@ const illustrativeMark = /^\/\/ Illustrative: \S/;
  * a stream runs while one that is not says so; and the enterprise work's mechanisms run as
  * TypeScript, so an RxJS reading it gives says it is illustrative.
  */
-const markedWorks = new Set(['rxjs', 'eip', 'poeaa']);
+const markedWorks = new Set(['rxjs', 'eip', 'poeaa', 'geb', 'tt']);
 
 /**
  * The rules of an RxJS reading. An executable reading's code is in the module its spec runs, and
@@ -154,13 +154,16 @@ function rxjsProblems(study, root) {
 }
 
 /**
- * The rule of a states drawing: a study whose model runs draws its register from that same
- * module, so the drawing and the model's spec read one run and cannot disagree.
+ * The rule of a states or relations drawing: a study whose model runs draws its example from
+ * that same module, so the drawing and the model's spec read one run and cannot disagree.
  */
-function statesProblems(study) {
+function modelDrawingProblems(study) {
   const { executable } = study.pseudocode;
-  return study.visual?.family === 'states' && executable && study.visual.model !== executable.module
-    ? ['its states drawing does not read its executable module']
+  const family = study.visual?.family;
+  return (family === 'states' || family === 'relations') &&
+    executable &&
+    study.visual.model !== executable.module
+    ? [`its ${family} drawing does not read its executable module`]
     : [];
 }
 

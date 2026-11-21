@@ -649,29 +649,31 @@ test('the messaging batch is exactly the patterns its order names, and the strea
   assert.ok(messaging.every(({ study }) => study.visual?.family === 'flow'));
 });
 
-test('a states drawing of a model that runs reads that same module', () => {
-  const root = mkdtempSync(join(tmpdir(), 'studies-states-'));
-  try {
-    mkdirSync(join(root, 'libs'));
-    for (const name of ['unit-of-work.model', 'other.model'])
-      for (const suffix of ['.ts', '.spec.ts'])
-        writeFileSync(join(root, `libs/${name}${suffix}`), '');
-    const module = 'libs/unit-of-work.model.ts';
-    const study = {
-      ...checked(),
-      pseudocode: { ...checked().pseudocode, executable: { kind: 'typescript', module } },
-      visual: { family: 'states', model: module, textEquivalent: 'Step {step}: {moves}.' },
-    };
-    assert.deepEqual(studyProblems(study, tools, root), []);
-    const elsewhere = { ...study, visual: { ...study.visual, model: 'libs/other.model.ts' } };
-    assert.match(
-      studyProblems(elsewhere, tools, root).join(),
-      /states drawing does not read its executable module/,
-    );
-  } finally {
-    rmSync(root, { recursive: true });
-  }
-});
+for (const family of ['states', 'relations']) {
+  test(`a ${family} drawing of a model that runs reads that same module`, () => {
+    const root = mkdtempSync(join(tmpdir(), 'studies-states-'));
+    try {
+      mkdirSync(join(root, 'libs'));
+      for (const name of ['unit-of-work.model', 'other.model'])
+        for (const suffix of ['.ts', '.spec.ts'])
+          writeFileSync(join(root, `libs/${name}${suffix}`), '');
+      const module = 'libs/unit-of-work.model.ts';
+      const study = {
+        ...checked(),
+        pseudocode: { ...checked().pseudocode, executable: { kind: 'typescript', module } },
+        visual: { family, model: module, textEquivalent: 'Step {step}: {moves}.' },
+      };
+      assert.deepEqual(studyProblems(study, tools, root), []);
+      const elsewhere = { ...study, visual: { ...study.visual, model: 'libs/other.model.ts' } };
+      assert.match(
+        studyProblems(elsewhere, tools, root).join(),
+        new RegExp(`${family} drawing does not read its executable module`),
+      );
+    } finally {
+      rmSync(root, { recursive: true });
+    }
+  });
+}
 
 test('the enterprise pattern batch is exactly the patterns its order names, and the mechanisms run', () => {
   const patterns = readStudies().filter(({ study }) => study.work === 'poeaa');
@@ -714,6 +716,57 @@ test('the enterprise pattern batch is exactly the patterns its order names, and 
     );
     assert.equal(study.visual?.family, 'states');
     assert.equal(study.visual.model, executable.module);
+  }
+});
+
+test('the levels and teams batches draw the named concepts and run their four mechanisms', () => {
+  const expected = {
+    geb: [
+      'geb2:8',
+      'geb2:9',
+      'geb1:107',
+      'geb1:228',
+      'geb1:53',
+      'geb1:65',
+      'geb2:138',
+      'geb1:51',
+      'geb2:61',
+      'geb2:302',
+    ],
+    tt: [
+      'tt3:8',
+      'tt3:7',
+      'tt3:9',
+      'tt1:92',
+      'tt1:138',
+      'tt1:94',
+      'tt1:151',
+      'tt2:90',
+      'tt3:47',
+      'tt1:215',
+    ],
+  };
+  const mechanisms = new Set(['geb2:9', 'geb1:228', 'geb1:53', 'tt1:92']);
+  const records = readStudies().map(({ study }) => study);
+  for (const [work, ids] of Object.entries(expected)) {
+    const batch = records.filter((study) => study.work === work);
+    assert.deepEqual(batch.map((study) => study.id).sort(), ids.sort());
+    for (const study of batch) {
+      const module = `libs/features/tools/src/lib/studies/${work}/${study.slug}`;
+      assert.equal(study.schema, 'concept-study-v1');
+      assert.equal(study.authored.state, 'checked');
+      assert.equal(study.visual?.family, 'relations');
+      if (mechanisms.has(study.id)) {
+        assert.deepEqual(study.pseudocode.executable, {
+          kind: 'typescript',
+          module: module + '.model.ts',
+        });
+        assert.equal(study.visual.model, study.pseudocode.executable.module);
+      } else {
+        assert.equal(study.pseudocode.executable, null);
+        assert.equal(study.visual.model, module + '.ts');
+      }
+    }
   }
 });
 
