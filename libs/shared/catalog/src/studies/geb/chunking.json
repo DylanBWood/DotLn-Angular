@@ -1,0 +1,114 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb2:9",
+  "work": "geb",
+  "slug": "chunking",
+  "authored": {
+    "by": "studyGeb.chunking.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.chunking.record.authored.reviewedBy.item0",
+      "studyGeb.chunking.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.chunking.record.intuition.text",
+    "situation": "studyGeb.chunking.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.chunking.record.example.name",
+    "description": "studyGeb.chunking.record.example.description",
+    "parameters": {
+      "chunkSize": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.chunking.record.mechanism.steps.step0.title",
+        "text": "studyGeb.chunking.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.chunking.record.mechanism.steps.step1.title",
+        "text": "studyGeb.chunking.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.chunking.record.mechanism.steps.step2.title",
+        "text": "studyGeb.chunking.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.chunking.record.pseudocode.ordinary",
+    "rxjs": "studyGeb.chunking.record.pseudocode.rxjs",
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/geb/chunking.model.ts"
+    }
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/chunking.model.ts",
+    "textEquivalent": "studyGeb.chunking.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.chunking.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/ReactiveX/rxjs/7.8.2/src/internal/operators/bufferCount.ts",
+      "relevance": "studyGeb.chunking.record.implementations.item0.relevance",
+      "explanation": "studyGeb.chunking.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyGeb.chunking.record.implementations.item1.project",
+      "url": "https://psychclassics.yorku.ca/Miller/",
+      "relevance": "studyGeb.chunking.record.implementations.item1.relevance",
+      "explanation": "studyGeb.chunking.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.chunking.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.chunking.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.chunking.record.references.item1.title",
+      "url": "https://github.com/DylanBWood/DotLn#try-it",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.chunking.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.chunking.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/ReactiveX/rxjs/7.8.2/src/internal/operators/bufferCount.ts",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.chunking.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.chunking.record.references.item3.title",
+      "url": "https://psychclassics.yorku.ca/Miller/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.chunking.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb2:8",
+      "why": "studyGeb.chunking.record.nearby.item0.why"
+    },
+    {
+      "id": "geb2:10",
+      "why": "studyGeb.chunking.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:11",
+      "why": "studyGeb.chunking.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.chunking.record.limits.item0",
+    "studyGeb.chunking.record.limits.item1",
+    "studyGeb.chunking.record.limits.item2"
+  ]
+}

@@ -31,6 +31,11 @@ button:disabled {
   color: var(--dotln-muted);
   cursor: default;
 }
+button[aria-current='step'] {
+  border-color: var(--dotln-accent);
+  background: var(--dotln-known-bg);
+  box-shadow: inset 0 -2px var(--dotln-accent);
+}
 button:focus-visible,
 input:focus-visible {
   outline: var(--dotln-focus);

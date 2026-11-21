@@ -229,9 +229,9 @@ it legible at narrow widths and give motion deliberate controls.
 `ConceptStudy`, in `libs/shared/models/src/lib/concept-study.ts`, is one JSON file per study at
 `libs/shared/catalog/src/studies/<work>/<slug>.json`, validated by the closed
 `concept-study-v1.schema.json`. Reader-visible fields contain message keys, resolved from
-`apps/dotln/public/i18n/studyAifg/en.json`, `studyRxjs/en.json`, `studyEip/en.json` or
-`studyPoeaa/en.json`;
-the corresponding work loads on demand, together with the small shared `studyCommon` catalog.
+`apps/dotln/public/i18n/studyAifg/en.json`, `studyRxjs/en.json`, `studyEip/en.json`,
+`studyPoeaa/en.json`, `studyGeb/en.json` or `studyTt/en.json`. The corresponding work loads on
+demand together with the shared `studyCommon` catalog.
 IDs, source URLs, module paths, dates and simulation parameters retain their machine meaning. It carries the authored state, the intuition with a situation it
 serves, the example with its parameters, the mechanism's steps, ordinary pseudocode, an optional
 RxJS reading and executable module, the visual, implementations, references, limits and nearby
@@ -263,6 +263,12 @@ from it, so a regenerated join never touches a study. A new work's chunk also ne
 `studyChunks` in `catalog-loader.ts`.
 
 ### The models
+
+For Gödel, Escher, Bach and Team Topologies, `studies/relations.ts` builds a map from named nodes,
+directed relationships and an ordered list of steps. A drawn study supplies that data in one
+module under `studies/geb/` or `studies/tt/`. Chunking, Gödel numbering, the toy decision procedure
+and the Conway mapping each run a language-free simulation. Their model entries pass the run's
+results to `relationsModel`. A missing endpoint, focus or named moment fails when the model builds.
 
 A model module, `libs/features/tools/src/lib/studies/<subject>/<slug>.model.ts` with a spec beside
 it, exports `model(parameters, translate)`: a pure composition of the simulation and its presentation
@@ -371,7 +377,7 @@ movement example's clock; `xValuesOf` reads them whatever their name, and a char
 over one axis is never taken for one over another.
 
 `study-model.ts` discriminates a model by its family, `motion` with a chart beside it, `marbles`,
-`flow` with its marble diagram beside it when its example runs, or `states`, and the mapper,
+`flow` with its marble diagram beside it when its example runs, `states` or `relations`, and the mapper,
 playback and the study composite read the moments every family shares through `ticksOf`.
 
 A model that throws, or a record naming a model the list lacks, fails that study alone: the reading
@@ -381,7 +387,8 @@ stays open and offers the study again, from the record's own inputs.
 
 A visual family, under `libs/features/tools/src/lib/composites/study-visuals/<family>/`, is one
 composite that takes a declarative model and a step index and draws an SVG with a text equivalent.
-Geometry derives from the model in a pure `*-drawing.ts` module with its own spec; the `states`
+The relations builder lays out labeled nodes and routes directed links in `studies/relations-layout.ts`.
+The other families derive geometry in drawing modules with their own specs. The `states`
 register's is `states/states-register.ts`, beside the family's measures in `states-drawing.ts`, and
 the `flow` and `states` families wrap and place their words through the shared `drawn-text.ts`. `motion` draws the
 positions of bodies, with their vectors, zones, links and marks, over frames in one or two
@@ -434,8 +441,23 @@ are drawn at the size at which they then fit. The
 at 360 pixels and the alternatives. The family's first pair of
 rendered comparisons, this register
 against a state machine of the same model, waits for a dedicated A/B testing pass; until that pass
-decides, the register is the family's drawing. The last name in `visualFamilies`, `relations`,
-lands with the batch that first needs it.
+decides, the register is the family's drawing.
+
+`relations` draws a stack of descriptive levels or a graph in columns. The stack reads from
+the bottom up, with a return arrow outside it for a loop. Two columns can place teams alongside
+the system boundaries they shape. Chunking uses three columns. The five events feed peer groups
+in the middle column, and every group contributes to the same summary. Stepping highlights one node or one directed relationship. The
+sentence below the controls names it and explains what happens there. A reader can jump to a
+named moment or return to the start at the last step.
+
+The worked example and the directions for reading the arrows appear before the map. The selected
+shortcut names its current step. After the map, the separate DotLn analogy explains how the idea
+applies to a public feature or record and where the comparison ends.
+
+An example can introduce a short visible sample before the map. Its author identifies the source,
+prints the sample itself, explains how to read it and poses a question whose answer the reader can
+reveal. The Levels of description study starts with observed test output. The Strange loop study
+uses two original cards before it links to the museum’s image of the lithograph.
 
 Nothing runs by itself. A reader moves through the example by the slider, Step back, Step forward
 and the named moments, or presses Play, which runs from the selected moment at the example's own
@@ -459,7 +481,7 @@ where its author chose, usually at the start, and has no switch.
 idea and the situation, the drawing with its controls, then the explanations in native disclosures,
 with the mechanism, the RxJS reading, the limits and then the implementations with the references,
 then the nearby concepts and a link to the work's next study. Everything a reader may want only
-sometimes is one click away: the example in full, the moment's numbers, the inputs and how to read
+sometimes is one click away: the full example for the earlier families, the moment's numbers, the inputs and how to read
 the drawing. `ToolsFacade` derives one `StudyView` from the record and the model through `mapStudy`,
 and `ReadingView` carries it; the facade is the single source of the main disclosures' open state,
 bound onto the disclosures, so switching between the drawing and the chart keeps them, and every
@@ -503,6 +525,8 @@ gate does.
 | RxJS                                            | twenty  | the operators and subjects the app runs on, each with an executable marble example drawn by `marbles`                                                                                                                                                        |
 | Enterprise Integration Patterns                 | twenty  | the messaging patterns of agents handing records through channels, each a `flow` that steps its messages, the stream patterns drawn from an executable marble example                                                                                        |
 | Patterns of Enterprise Application Architecture | twenty  | the patterns behind the app's own data and state layers: sixteen drawn as a `states` register of one example set in the app, four structural choices described without a drawing, each naming first the app's own file where the pattern or its cousin lives |
+| Gödel, Escher, Bach                             | ten     | descriptive levels, formal systems and self-reference, with executable examples of grouping events, deciding reachability and encoding symbols                                                                                                               |
+| Team Topologies                                 | ten     | team interactions and system boundaries, with a graph mapping that shows how a communication link can be reflected in a system                                                                                                                               |
 
 ### Writing a batch
 

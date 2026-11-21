@@ -1,0 +1,1258 @@
+{
+  "titles": {
+    "tt3:7": "Collaboration mode",
+    "tt3:10": "Defined period for collaboration",
+    "tt3:8": "X-as-a-Service mode",
+    "tt3:9": "Facilitating mode",
+    "tt3:42": "Ongoing collaboration (anti-pattern)",
+    "tt2:90": "Platform as a product",
+    "tt1:308": "Team API",
+    "tt3:47": "Organizational sensing",
+    "tt2:64": "Enabling team",
+    "tt3:15": "Facilitating as gap detection",
+    "tt1:151": "Team-scoped flow",
+    "tt1:152": "Loose coupling",
+    "tt1:153": "High cohesion",
+    "tt1:154": "Clear and appropriate version compatibility",
+    "tt1:138": "Reverse Conway manoeuvre",
+    "tt1:92": "Conway's law (1968)",
+    "tt1:94": "Homomorphic force",
+    "tt1:93": "Real communication paths as the value-creation structure",
+    "tt1:205": "Isomorphic force",
+    "tt1:215": "Seven-to-nine maximum effective team size",
+    "tt1:216": "Two-pizza teams (Amazon)",
+    "tt1:220": "High-trust exception for larger teams",
+    "tt3:133": "Team cognitive load",
+    "tt2:85": "Internal customer",
+    "tt2:88": "Thinnest Viable Platform (TVP)",
+    "tt2:93": "Developer experience as platform quality",
+    "tt3:41": "Interaction modes as sensing",
+    "tt3:73": "Operations as high-fidelity sensory input",
+    "tt3:71": "Responses to a trigger"
+  },
+  "collaboration-mode": {
+    "record": {
+      "authored": {
+        "by": "Study author 06",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "When a decision needs knowledge from two teams, bring their examples and prototypes into the same trial. Both teams help interpret the results and change the design. Give that work a question and a deadline so everyone knows when to return to their own work.",
+        "situation": "In the public DotLn playbook, the refuter independently judges a committed planning pass. A finding on a particular order can lead the planner to change it and record the disposition. The shared feature is a bounded exchange about a proposal. In the preview trial, both teams also change the prototype and agree on its design together."
+      },
+      "example": {
+        "name": "Designing a checkout preview",
+        "description": "Checkout needs a temporary copy of its app to test a branch. Release Platform can create one. Its proposed Preview API is the way Checkout will request that copy and check whether it is ready. The teams give themselves ten working days to agree what the request returns, how a failed build is reported and who cleans up."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Agree on one trial",
+            "text": "Checkout and Release Platform reserve ten working days to answer a practical question. Can a Checkout engineer create a preview, diagnose a build failure, and remove the environment using the published instructions?"
+          },
+          "step1": {
+            "title": "Bring a case and a prototype",
+            "text": "Checkout brings a passing build and one that fails. Release Platform brings a Preview API prototype and its cleanup rules. Together they decide what the two requests should tell the person running them."
+          },
+          "step2": {
+            "title": "Change the design together",
+            "text": "The first prototype returns a URL before it is usable. Both teams agree to return a request ID, expose the URL when the environment is ready, and give a readable error if the build fails."
+          },
+          "step3": {
+            "title": "Try it from a fresh branch",
+            "text": "A Checkout engineer who missed the pairing uses the draft instructions to create and remove a preview and identify the failed build. Release Platform checks that the failed run leaves no resources behind."
+          },
+          "step4": {
+            "title": "End the joint sessions",
+            "text": "Once the trial passes and each team accepts its responsibility, Release Platform publishes and supports the Preview API and Checkout owns its application builds. If the tenth day arrives with an open question, the joint sessions end and the teams record what failed and decide whether a smaller trial is worth starting."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: both teams interpret trial evidence and decide what to own.\ntrial = agree(\"Checkout\", \"Release Platform\", timeboxDays)\nsetGoal(trial, \"create, diagnose and remove a preview from the docs\")\n\ncheckout.share(passingBuild, failedBuild)\nreleasePlatform.share(previewPrototype, cleanupRules)\nagreeOnExpectedResponses(passingBuild, failedBuild)\n\nresult = tryTogether(previewPrototype, passingBuild)\nif result.exposesUrlBeforeReady:\n  agreeToReturnRequestId()\n  exposeUrlOnlyWhenReady()\nagreeOnBuildError()\n\ncleanRun = checkout.tryFromDocs(freshBranch, passingBuild, failedBuild)\ncleanup = releasePlatform.checkResourcesAfterFailure()\n\nif cleanRun.passes and cleanup.passes and bothOwnersAccept():\n  releasePlatform.publishAndSupport(\"Preview API\")\n  checkout.ownApplicationBuilds()\n  endJointSessions()\nelse if trial.daysElapsed >= timeboxDays:\n  endJointSessions()\n  recordOpenQuestionAndDecideOnNewTrial()"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Team Topologies Team API template",
+          "relevance": "A place to record a temporary agreement",
+          "explanation": "This worksheet describes a team's work and its relationships with other teams. It records who is involved in a collaboration, what they hope to learn and how long they expect to work together."
+        },
+        "item1": {
+          "project": "Footasylum",
+          "relevance": "Joint design around a concrete need",
+          "explanation": "In this account, Footasylum's platform and mobile teams worked together on a lightweight backend for the mobile app. The backend could call core services, and the mobile team could use the stock data through the documented interface without learning stock calculations."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies book page",
+          "supports": "Identifies Matthew Skelton and Manuel Pais as the authors of the 2019 first edition and describes its three team interaction patterns."
+        },
+        "item1": {
+          "title": "Team Interaction Modeling with Team Topologies",
+          "supports": "Describes short, purposeful collaboration for discovery and illustrates a possible move to a service relationship once the teams find a suitable boundary."
+        },
+        "item2": {
+          "title": "DotLn playbook, Planning pass",
+          "supports": "The playbook gives each committed planning pass one goal-alignment judgment, with dispositions for findings on particular orders. Changed evidence can warrant another judgment."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "A defined period puts a date on the decision to close joint design or scope a new question."
+        },
+        "item1": {
+          "why": "Once Checkout can work through the Preview API, the teams can keep the capability available through a service relationship."
+        },
+        "item2": {
+          "why": "Facilitating fits a different need where one team helps the other learn a skill it will use independently."
+        },
+        "item3": {
+          "why": "If each routine change still needs both teams in the same room, ongoing collaboration may be covering a gap in ownership or in the interface."
+        }
+      },
+      "limits": {
+        "item0": "A calendar deadline limits the cost of discovery. A failed clean run at the deadline leaves the interface unsettled and calls for a decision about scope or ownership.",
+        "item1": "A successful preview trial covers the kinds of build and failure it exercises. A different application or operating load can reveal a new question worth investigating.",
+        "item2": "DotLn's planning refutation preserves independent judgment. The shared design decisions in the preview trial go beyond that exchange."
+      }
+    },
+    "model": {
+      "nodes": {
+        "checkout": "Checkout",
+        "release-platform": "Release Platform",
+        "preview-api": "Preview API"
+      },
+      "relations": {
+        "share-builds": "brings test builds to",
+        "try-prototype": "tests a prototype with",
+        "try-from-docs": "tests the draft",
+        "publish-api": "publishes and owns the"
+      },
+      "steps": {
+        "scope": "Checkout and Release Platform agree to spend ten working days finding a way to create, diagnose and remove a preview from the docs.",
+        "share": "Checkout shares a passing build and a failed build. Release Platform contributes a prototype and its rules for cleaning up environments.",
+        "revise": "An early URL fails to open. The teams agree to return a request ID first, then a working URL or a build error.",
+        "prove": "Checkout creates and removes a preview from the docs and diagnoses the failed build. Release Platform confirms the failed run leaves no resources.",
+        "close": "A fresh Checkout engineer built, diagnosed and cleaned up a preview from the docs alone. Joint sessions end and Release Platform owns the API. If that test still failed on day ten, this trial would end and the teams would revisit scope or ownership."
+      },
+      "moments": {
+        "scope": "Start the trial",
+        "revise": "Revise the prototype",
+        "prove": "Test from the docs",
+        "close": "Close joint work"
+      },
+      "caption": "Follow the highlighted exchange from joint design to separate ownership of the service and the builds.",
+      "specimen": {
+        "title": "Can the joint sessions end?",
+        "source": "Imagine Checkout needs a running copy of a change to test it. Release Platform can provide one, but the two teams have to agree when a preview is ready and what happens when a build fails. We wrote these trial notes for the example.",
+        "reading": "At first, each team holds a piece the other needs. At the end, an engineer who missed the joint sessions can follow the instructions alone. Release Platform owns and supports the service. Checkout owns its builds.",
+        "question": "Would agreeing on the instructions be enough to end this trial?",
+        "answer": "The teams agreed to test whether another engineer could actually use the instructions. Passing that test gives them evidence that ordinary work can continue independently. If ten working days run out first, they close the trial, record the gap and decide whether to try a smaller question.",
+        "samples": {
+          "item0": "During joint work · Checkout brought a passing and a failing build. Both teams agreed to show the link only when the preview was ready.",
+          "item1": "At handoff · A Checkout engineer who missed the sessions used the instructions to create and remove a preview and diagnose the failed build. Release Platform checked that the failed run left nothing running."
+        }
+      }
+    }
+  },
+  "x-as-a-service-mode": {
+    "record": {
+      "authored": {
+        "by": "Study author 06",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "Imagine you changed the Pay button in an online shop. Before you publish the change, you want to try the button on a private copy of the shop app. That test copy is a preview.",
+        "situation": "An analogy in DotLn is a project updating its copy of the starter kit. DotLn core publishes the kit. Its v1.2.0 release notes explain how the update can preserve files the project owns. The project can follow that published update path on its own, just as Checkout can request a supported preview on its own. The project runs its kit update locally. Release Platform runs the previews for Checkout."
+      },
+      "example": {
+        "name": "Can I try the new Pay button before shoppers see it?",
+        "description": "Three attempts to start the shop app alongside fake payments hit the same one-app limit. The tool assigns each attempt a tracking number, called a request ID. Checkout gives those numbers to Release Platform so both teams can find the attempts and see why the test is stuck. They agree when both apps count as ready and who will remove them after testing. Engineers keep using the service for one-app previews throughout."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Publish the supported path",
+            "text": "Release Platform documents how to submit a commit, follow the request's status, get a preview URL, and reach support. It runs the preview infrastructure and maintains the supported API versions."
+          },
+          "step1": {
+            "title": "Ask for a preview",
+            "text": "Checkout's pipeline sends a commit reference to the Preview API, receives a request ID, and uses it to check status. A bad application build returns an error Checkout can act on."
+          },
+          "step2": {
+            "title": "Use the result and keep working",
+            "text": "A ready preview returns a URL that Checkout can test. Checkout removes the preview when the test ends. The teams keep the arrangement while Checkout can run its routine work independently and Release Platform can meet the support and reliability it promised."
+          },
+          "step3": {
+            "title": "Report repeated friction",
+            "text": "Three branch runs need the payment stub as a second app. Checkout sends the blocked request IDs and the missing requirement through the support channel. Release Platform can use those examples to tell whether the gap is in the service contract or in how it is being used."
+          },
+          "step4": {
+            "title": "Reopen a specific question",
+            "text": "The teams find that the current contract covers just one app. They agree on a short trial to discover what readiness and cleanup mean for two apps. The supported one-app contract keeps serving its routine callers during the trial."
+          },
+          "step5": {
+            "title": "Return the new path to self-service",
+            "text": "Checkout demonstrates that a two-app preview works from the revised instructions. Release Platform owns and supports the new version. Checkout can move its two-app jobs to that version on its own schedule."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: people interpret repeated failures and choose how to improve the service.\ncheckout = team(\"Checkout\")\nreleasePlatform = team(\"Release Platform\")\nreleasePlatform.publish(\"Preview API\", inputs, statuses, supportChannel)\n\nrequestId = checkout.requestPreview(commit)\npreview = checkout.readPreviewStatus(requestId)\nif preview.hasBuildError:\n  checkout.inspectBuild(preview.error)\n\nif preview.isReady:\n  checkout.testCommit(preview.url)\n  checkout.removePreview(requestId)\n\nif blockedBranchRuns(\"payment stub\") >= reviewAfterBlockedRuns:\n  checkout.reportGap(\"payment stub\", blockedRequestIds)\n\nif releasePlatform.confirmsContractGap(\"payment stub\"):\n  tryTwoAppPreviewTogether(checkout, releasePlatform)\n  releasePlatform.keepSupportingOneAppPreviews()\n\nif checkout.canRunTwoAppPreviewFromDocs():\n  releasePlatform.publishSupportedVersion()\n  checkout.adoptOnItsSchedule()"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Trade Me's Thinnest Viable Platform",
+          "relevance": "An internal platform with ongoing owners and users",
+          "explanation": "Trade Me describes how its engineers use platform templates to start services. The platform's owners provide support and update it using developer feedback. Teams can choose another route and carry the production-readiness work themselves."
+        },
+        "item1": {
+          "project": "Team Topologies Team API template",
+          "relevance": "A way to find the owner and the terms of service",
+          "explanation": "The template asks a team to document what it provides, what it owns, how it versions changes, and what other teams can expect from it. Consumers can use that information to find a supported path and the right place to ask for help."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies book page",
+          "supports": "Identifies the authors and describes the first edition's approach to evolving team structures and interaction patterns."
+        },
+        "item1": {
+          "title": "X-as-a-Service, Team Topologies newsletter",
+          "supports": "Describes self-service interfaces, service expectations, documentation and support. It also describes renewed collaboration when an existing service no longer meets a team's needs."
+        },
+        "item2": {
+          "title": "DotLn v1.2.0 release notes",
+          "supports": "Publicly documents the starter update preview's manifest-conflict guidance and how the release handles locally owned files."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "The two-app gap gives Checkout and Release Platform a reason to work closely for a short period."
+        },
+        "item1": {
+          "why": "An internal provider can use developer feedback and support evidence to decide which service improvements to make."
+        },
+        "item2": {
+          "why": "A Team API can tell consumers where to find the supported service interface and how to reach its owners."
+        },
+        "item3": {
+          "why": "The same blocked request across several branches gives both teams a signal that the current boundary may need to change."
+        }
+      },
+      "limits": {
+        "item0": "A service can give a team a documented request and still make it wait for daily approvals. That wait shows where the team still depends on somebody else's schedule.",
+        "item1": "An isolated outage belongs on the provider's support path. Repeated workarounds, missing capabilities or chronic missed service expectations are reasons to revisit the contract or its implementation.",
+        "item2": "When teams have moved on to other workflows, check who still depends on the service and give them time to migrate before retiring it.",
+        "item3": "The DotLn starter is a versioned kit that an instance updates locally, sometimes with manual conflict resolution. The Preview API example also involves a provider running infrastructure for each request."
+      }
+    },
+    "model": {
+      "nodes": {
+        "checkout": "Checkout",
+        "release-platform": "Release Platform",
+        "preview-api": "Preview API"
+      },
+      "relations": {
+        "maintain": "runs the",
+        "request": "requests a preview through the",
+        "respond": "returns a ready URL to",
+        "report": "reports a gap to",
+        "reopen": "tries a revised contract with"
+      },
+      "steps": {
+        "publish": "Release Platform writes the instructions. They tell Checkout what to send, how to get the link to its test copy and where to ask for help.",
+        "call": "Checkout's pipeline sends a commit reference, receives a request ID and uses it to look up the preview's status.",
+        "use": "Checkout tests the commit at the returned URL and removes its preview after testing.",
+        "friction": "Three two-app runs hit the documented one-app limit. Checkout brings their request IDs to Release Platform. Only this unsupported case needs joint design. Routine one-app previews continue through the API.",
+        "discover": "The teams try readiness and cleanup rules for a two-app preview while routine one-app jobs keep using the supported version.",
+        "resume": "Checkout now runs a fresh two-app preview from the revised instructions without Release Platform’s help. Two-app previews can return to routine service use. Release Platform supports the version and Checkout chooses when to adopt it."
+      },
+      "moments": {
+        "publish": "Set expectations",
+        "use": "Use the preview",
+        "friction": "Report the gap",
+        "resume": "Use the revised API"
+      },
+      "caption": "Checkout builds the shop app that contains the Pay page. Release Platform runs the Preview API, the tool that makes a test copy of that app. An arrow from Checkout to the tool shows the engineer asking for a copy. An arrow from Checkout to Release Platform shows the engineer asking its owners about the two-app test. The sentence under the controls tells you what each highlighted arrow means.",
+      "specimen": {
+        "title": "When can Checkout get a test copy on its own?",
+        "source": "An engineer wants to try a change to an online shop’s Pay page before shoppers see it. The Pay page is part of the app that the Checkout team builds. Another team, Release Platform, runs the Preview API. That tool makes a private copy of the whole app. We invented the team names and wrote both requests and replies below.",
+        "samples": {
+          "item0": "Checkout asks, “Can I get a copy of our shop app to check the Pay button?”\nThe tool replies, “Your copy is ready. Open the test link.”",
+          "item1": "Checkout asks, “Can I start our shop app and a fake payments app that will decline my test payment?”\nThe tool replies, “This tool starts only one app per preview.”"
+        },
+        "reading": "Checkout gets the first copy through a tool that Release Platform runs. That is what “as a service” means here. Nobody at Release Platform has to set it up for the engineer. The second request exceeds the one-app limit. Now the teams need to work out how the tool can start both apps together.",
+        "question": "What would let Checkout run the second test alone next time?",
+        "answer": "The teams agree on how two apps should start and stop. Release Platform adds that support and publishes the instructions. Another Checkout engineer follows them, opens the two-app preview, tries the declined payment and removes the preview afterward. Release Platform still runs the tool."
+      }
+    }
+  },
+  "facilitating-mode": {
+    "record": {
+      "authored": {
+        "by": "Study author 07",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "A team can deploy its service and still lack practice undoing a faulty release. In facilitating mode, a second team coaches the service owners through that specific skill. The test of the engagement comes when the coach steps back. Can someone on the owning team recognize the failure, restore a healthy release and verify recovery alone?",
+        "situation": "A DotLn analogy is learning the work-order routine on the starter’s first order. The public kit guide’s First steps section leads a new user through opening the first worktree, checking the order’s status and entering execution. Its Run and close an order section applies the same routine to later orders. One guided pass gives someone a procedure they can repeat."
+      },
+      "example": {
+        "name": "The Returns rollback drill",
+        "description": "The Returns team already owns the Returns API and deploys it regularly. The team wants to learn how to undo a faulty release and confirm that the API has recovered. The Reliability team offers up to two weeks of coaching, ending early if a second Returns engineer can complete a staging drill independently."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Agree on the skill",
+            "text": "Returns asks for help recognizing when its API needs a rollback and verifying recovery afterward. With Reliability, it agrees on a two-week window and an independent staging drill to show the skill has transferred."
+          },
+          "step1": {
+            "title": "Watch a rollback",
+            "text": "Reliability uses a faulty staging release to demonstrate how to connect a jump in failed requests to a deployment, restore the previous healthy release and check that errors subside."
+          },
+          "step2": {
+            "title": "Let Returns drive",
+            "text": "A Returns engineer runs the drill while Reliability coaches. Returns writes down where to find the signals, which release to restore and how to recognize recovery in the Returns runbook."
+          },
+          "step3": {
+            "title": "Try the drill independently",
+            "text": "A second Returns engineer uses the runbook on a fresh staged failure. They restore a healthy release and check that error rates have recovered without prompting from Reliability."
+          },
+          "step4": {
+            "title": "Close the engagement",
+            "text": "Reliability steps away when Returns demonstrates the skill. Returns maintains the runbook and leads future drills. If the two weeks expire first, both teams record what still needs work and decide how to address it."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: people demonstrate and assess the rollback skill.\ncoachingWeeks = 2\nengagement = ReturnsTeam.requestRollbackCoaching(ReliabilityTeam, coachingWeeks)\n\nReliabilityTeam.demonstrate(RollbackDrill)\n\nReturnsTeam.firstEngineer.run(RollbackDrill, withCoach = ReliabilityTeam)\nReturnsTeam.firstEngineer.write(ReturnsRunbook)\n\nresult = ReturnsTeam.secondEngineer.runAlone(RollbackDrill, using = ReturnsRunbook)\nready = result.restoredHealthyRelease and result.confirmedRecovery\n\nif ready by engagement.deadline:\n  ReturnsTeam.maintain(ReturnsRunbook)\n  engagement.close(\"skill demonstrated\")\nelse when engagement.deadlineArrives:\n  engagement.close(\"rollback skill needs more practice\")"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Data science at bol.com",
+          "relevance": "A practitioner’s account of moving a specialist skill into product teams.",
+          "explanation": "Eduardo da Silva describes how bol.com moved from data scientists assigned to projects to product teams hiring and managing their own data scientists. Craft leads continued to develop the discipline across the company and helped new product teams adopt it."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, first edition",
+          "supports": "The authors’ book page identifies the 2019 edition by Matthew Skelton and Manuel Pais and describes its framework of team types and interaction modes."
+        },
+        "item1": {
+          "title": "Team Interaction Modeling with Team Topologies",
+          "supports": "The practice guide describes facilitating as temporary help with capability gaps or impediments and as a typical interaction for an enabling team."
+        },
+        "item2": {
+          "title": "Team Topologies newsletter on facilitating interactions",
+          "supports": "The newsletter recommends explicit exit criteria and reducing involvement as the receiving team gains capability."
+        },
+        "item3": {
+          "title": "DotLn kit guide",
+          "supports": "First steps walks through the starter’s first order. Run and close an order describes the routine shared by the first and later orders."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "An enabling team can move from one capability gap to the next while each receiving team keeps ownership of its product."
+        },
+        "item1": {
+          "why": "Repeated requests for the same coaching can reveal a wider obstacle, such as a deployment interface that makes rollback hard to learn."
+        },
+        "item2": {
+          "why": "Collaboration fits a period of shared discovery when two teams need to work out a practice together."
+        }
+      },
+      "limits": {
+        "item0": "Coaching can teach rollback judgment. Returns also needs deployment access, a healthy release it can restore and monitoring that shows whether the rollback worked.",
+        "item1": "A rehearsal covers the failures it recreates. A rollback that would reverse a database migration or affect several services may require a different recovery plan.",
+        "item2": "The DotLn analogy is about using a guided first pass to learn a repeatable procedure. The kit guide is written instruction, while the drill depends on feedback and judgment from another team."
+      }
+    },
+    "model": {
+      "nodes": {
+        "reliability": "Reliability team",
+        "returns": "Returns team",
+        "drill": "Rollback drill",
+        "runbook": "Returns runbook"
+      },
+      "relations": {
+        "request": "requests coaching from",
+        "teach": "coaches",
+        "practice": "runs",
+        "maintain": "maintains"
+      },
+      "steps": {
+        "agree": "Returns asks for help rolling back its API and sets a two-week coaching window with Reliability.",
+        "demonstrate": "Reliability shows how to spot a faulty release in staging, restore a healthy version and check for recovery.",
+        "practice": "A Returns engineer runs the drill with Reliability coaching and records the checks in the Returns runbook.",
+        "independent": "A second Returns engineer restores the healthy release and verifies recovery using the runbook alone.",
+        "own": "A second Returns engineer verified recovery alone. Coaching ends and Returns owns the runbook. If the two weeks expired first, this engagement would still end. The teams would record what remained to learn."
+      },
+      "moments": {
+        "agree": "Ask for coaching",
+        "practice": "Practice with a coach",
+        "independent": "Run the drill alone",
+        "own": "Close the engagement"
+      },
+      "caption": "Follow who drives the rollback drill. The last step shows who looks after the skill after the coaching ends."
+    }
+  },
+  "team-scoped-flow": {
+    "record": {
+      "authored": {
+        "by": "Study author 07",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "Trace an ordinary change until a customer sees it. If one team can decide what to build, implement it, release it and see how it behaves, the work can keep moving within that team. This takes a scope wide enough to cover the steps of delivery and focused enough for the team to understand what it owns. Shared services can help when a team can use them on its own schedule.",
+        "situation": "A DotLn-Angular analogy is a catalog study with a runnable example. The public catalog architecture guide’s Models section shows how a study’s record points to its model and how the spec loads the record to exercise the same example a reader sees. The change has a path from authored content to runnable evidence within one part of the app."
+      },
+      "example": {
+        "name": "A renewal reminder reaches subscribers",
+        "description": "A subscription business wants to send a renewal email three days before expiry. In one arrangement, Billing owns the renewal rule, Messaging owns the scheduling and email, and Release controls deployment. In another, Renewals owns the rule, job, email and deployment permissions for this change. Both can send through the same Mail gateway."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Set one delivery target",
+            "text": "The change is a reminder that reaches a subscriber three days before their subscription expires. Follow that same change through each way of assigning the work."
+          },
+          "step1": {
+            "title": "Pass it between specialties",
+            "text": "Billing defines the timing rule and sends it to Messaging. Messaging implements the schedule and email together, then queues the release with the team that can deploy it."
+          },
+          "step2": {
+            "title": "Release through the queue",
+            "text": "The Release team deploys the package and confirms that the first reminders go out as expected. Billing and Messaging rely on the release queue to reach subscribers."
+          },
+          "step3": {
+            "title": "Give Renewals the delivery steps",
+            "text": "Give Renewals the rule, job, email and release permissions within the renewal domain. The renewal components can ship together. Renewals tests the outgoing email against the Mail gateway’s published interface and can call that service directly."
+          },
+          "step4": {
+            "title": "Verify the same outcome",
+            "text": "Renewals deploys and checks when the first reminders go out. The same delivery check now fits within the team that made the change, with a self-service dependency on the Mail gateway."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: these routes describe ownership and handoffs for one change.\nleadDays = 3\nreminder = RenewalReminder(leadDays)\n\nBillingTeam.defineRule(reminder)\nBillingTeam.sendRuleTo(MessagingTeam)\nMessagingTeam.prepareScheduleAndEmail(reminder, gateway = MailGateway)\nMessagingTeam.queueDeploymentWith(ReleaseTeam)\n\nReleaseTeam.deploy(reminder)\nReleaseTeam.verifyFirstSends(reminder)\n\nRenewalsTeam.prepareRuleScheduleAndEmail(reminder)\nRenewalsTeam.test(reminder, against = MailGateway.contract)\n\nRenewalsTeam.deploy(reminder)\nRenewalsTeam.verifyFirstSends(reminder)"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Wealth Wizards",
+          "relevance": "An engineering team’s account of refining service ownership around business domains.",
+          "explanation": "The authors describe a period when overlapping ownership forced teams to work in the same services. They mapped system dependencies and realigned existing teams around Advice, Interaction Management and Data Gathering. This gives a reader an example of studying where changes cross boundaries before redrawing them."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, first edition",
+          "supports": "The authors’ book page identifies the 2019 edition by Matthew Skelton and Manuel Pais and describes its framework of team types and interaction modes."
+        },
+        "item1": {
+          "title": "Team Topologies publisher excerpt, chapter 2",
+          "supports": "Pages 21–23 explain how team-scoped flow depends on compatible technical boundaries, including coupling, cohesion, version compatibility and cross-team testing."
+        },
+        "item2": {
+          "title": "DotLn-Angular catalog architecture guide",
+          "supports": "The Studies and Models sections describe how a catalog study’s record names a model, how the app draws the worked example and how model specs load the record to exercise it."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Loose coupling explains how Renewals can call the Mail gateway without waiting for the gateway’s team to change its service."
+        },
+        "item1": {
+          "why": "High cohesion keeps the timing rule, schedule and email together because one reminder change tends to touch all three."
+        },
+        "item2": {
+          "why": "Version compatibility lets the teams ship on separate schedules as the gateway’s interface evolves."
+        },
+        "item3": {
+          "why": "The reverse Conway manoeuvre starts with the architecture you need, then considers the team boundaries that would support it."
+        }
+      },
+      "limits": {
+        "item0": "An ownership boundary can cover all the delivery steps and still be too wide. Adding unrelated products to Renewals would make the team learn and operate more than the reminder requires.",
+        "item1": "If the reminder needs a breaking change to the Mail gateway or a shared data format, the teams must coordinate until they have compatible versions and a way to test the interface.",
+        "item2": "The catalog analogy ends at the software boundary. The catalog guide describes a self-contained reading and its evidence within the app’s shared delivery process."
+      }
+    },
+    "model": {
+      "nodes": {
+        "request": "Renewal reminder",
+        "renewals": "Renewals team",
+        "billing": "Billing team",
+        "mail-gateway": "Mail gateway",
+        "messaging": "Messaging team",
+        "live": "Live reminder",
+        "release": "Release team"
+      },
+      "relations": {
+        "specialist-intake": "starts with",
+        "rule-handoff": "hands off the rule to",
+        "release-handoff": "queues deployment with",
+        "specialist-deploy": "deploys",
+        "renewals-intake": "goes to",
+        "gateway-contract": "tests against",
+        "renewals-deploy": "deploys"
+      },
+      "steps": {
+        "request": "A renewal email should reach subscribers three days before expiry. In the specialist arrangement, Billing defines that rule.",
+        "schedule": "The rule waits for Messaging, which builds the schedule and the email that will be sent through the Mail gateway.",
+        "queue": "Messaging queues its package with Release, the team that can deploy it.",
+        "specialist-live": "Release deploys the reminder and checks that the first emails go out three days before expiry.",
+        "redraw": "Follow the same reminder with Renewals owning the rule, the scheduling job, the email and the deployment.",
+        "service": "Renewals tests against the Mail gateway’s published interface and can send through the service directly.",
+        "renewals-live": "Renewals deploys and checks that the first emails go out three days before expiry."
+      },
+      "moments": {
+        "request": "Start with specialists",
+        "queue": "Wait for Release",
+        "redraw": "Give Renewals the change",
+        "renewals-live": "Check the live reminder"
+      },
+      "caption": "Both arrangements send through the same Mail gateway, including Messaging’s email in the specialist arrangement. The diagram follows the two handoffs where work can queue, from Billing to Messaging and then to Release. Renewals can make and deploy the same change within one team."
+    }
+  },
+  "conways-law": {
+    "record": {
+      "authored": {
+        "by": "Study author 08",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "When two teams design parts that must work together, somebody has to settle what each part expects of the other. The groups that can make those decisions together have a say in which designs are practical. Conway’s law asks you to look for traces of that coordination in the resulting system.",
+        "situation": "Take the Catalog loader as a DotLn-Angular analogy. The public Toolbox catalog architecture guide says that the Tools routes and Scene obtain catalog data through CatalogToken. If different groups owned those consumers and the loader, a change to the contract would give you a concrete place to look for coordination. The guide records software dependencies. Evidence about who actually coordinates would have to come from the people doing the work."
+      },
+      "example": {
+        "name": "Who designs the checkout?",
+        "description": "In a small checkout system, the Stock team owns Inventory, the Checkout team owns Order entry, and the Billing team owns Payment processing. Start with Checkout initiating interface talks with Stock about reservations and with Billing about payment authorization. An arrow on the teams’ side marks who starts the design conversation. The example also allows Billing to start a conversation with Stock, such as when a declined payment must release reserved items."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Pair each team with its component",
+            "text": "Put Stock, Checkout and Billing on the left. Align Inventory, Order entry and Payment processing on the right with the teams that design them. The horizontal arrows carry the ownership correspondence."
+          },
+          "step1": {
+            "title": "Carry across each contact",
+            "text": "Look up the owner’s component at each end of every enabled contact. Checkout’s contact with Stock gives Order entry a dependency on Inventory. Its contact with Billing gives Order entry a dependency on Payment processing. In the sketch, the dependency follows the direction of the initiating team."
+          },
+          "step2": {
+            "title": "Read the resulting component graph",
+            "text": "Follow a component dependency back to its design contact through the two ownership arrows. If a different team initiates contact in the input, the corresponding dependency in the sketch moves with it."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "componentFor = [Stock team → Inventory, Checkout team → Order entry, Billing team → Payment processing]\ncomponents = values(componentFor)\n\ncontacts = []\nif checkoutContactsStock: add Checkout team → Stock team to contacts\nif checkoutContactsBilling: add Checkout team → Billing team to contacts\nif billingContactsStock: add Billing team → Stock team to contacts\ndependencies = [(componentFor[from], componentFor[to]) for each (from, to) in contacts]\n\nreturn (components, dependencies)"
+      },
+      "visual": {
+        "textEquivalent": "Step {step}. {focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "How Do Committees Invent?",
+          "relevance": "The original graph argument",
+          "explanation": "Conway models subsystems and design groups as two graphs. He traces a subsystem to its designers and an interface to the coordination it required. If one group designs several subsystems, several nodes can correspond to that same group."
+        },
+        "item1": {
+          "project": "Martin Fowler’s Conway’s Law",
+          "relevance": "Software architecture and team structure",
+          "explanation": "Fowler describes how organizing developers by presentation, application and database work encourages a layered design. A change to a single feature can then cross several teams."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Melvin E. Conway, How Do Committees Invent? (1968)",
+          "supports": "Conway describes a homomorphism from the system graph to the design organization graph, including the case where multiple subsystems map to one group."
+        },
+        "item1": {
+          "title": "Matthew Skelton and Manuel Pais, Team Topologies (first edition)",
+          "supports": "The authors’ first-edition overview describes team structure and communication paths as things that can evolve as an organization and its technology mature."
+        },
+        "item2": {
+          "title": "DotLn-Angular, Toolbox catalog architecture",
+          "supports": "The Loading and state section describes Tools and Scene accessing catalog data through CatalogToken."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Start from the intended component boundaries and use them to plan who needs to work together."
+        },
+        "item1": {
+          "why": "Look more closely at what a structure-preserving correspondence can retain when several subsystems share a design group."
+        },
+        "item2": {
+          "why": "Find the real conversations and handoffs underlying the communication graph."
+        }
+      },
+      "limits": {
+        "item0": "This example pairs one team with one component and copies every enabled contact. Conway’s argument runs from constructed subsystems back to their design groups and allows one group to design multiple subsystems. The example’s pairing works in both directions because of its one-to-one assumption.",
+        "item1": "The input represents interface-design contacts. Conversations about mentoring, scheduling or support can exist without a software dependency. The direction of an arrow is an assumption about who initiates the work in this example.",
+        "item2": "Changing a contact changes this sketch by construction. Domain requirements, old interfaces, shared data and informal coordination can all shape what gets built. To test a claimed relationship in practice, compare actual coordination with the dependencies in the delivered design."
+      }
+    },
+    "model": {
+      "nodes": {
+        "stock": "Stock team",
+        "checkout": "Checkout team",
+        "billing": "Billing team",
+        "inventory": "Inventory",
+        "orderEntry": "Order entry",
+        "payments": "Payment processing"
+      },
+      "edges": {
+        "owns": "owns",
+        "contacts": "starts design talks with",
+        "depends": "depends on"
+      },
+      "notes": {
+        "owns": "The horizontal arrow pairs one team with the component it designs.",
+        "contacts": "On the right, this contact becomes a dependency from {{from}} to {{to}}.",
+        "depends": "On the left, this dependency corresponds to {{from}} initiating a design conversation with {{to}}.",
+        "review": "The ownership pairs stay in place. Each direct dependency mirrors a design contact drawn on the left.",
+        "isolated": "Only ownership pairs remain. A design contact in the input would give this sketch a dependency on the right."
+      },
+      "moments": {
+        "owners": "Pair the owners",
+        "edges": "Follow a contact",
+        "review": "Read both graphs"
+      },
+      "caption": "Teams on the left own components on the right. This toy gives one component to each team and copies selected design contacts into component dependencies. Conway followed system interfaces back to the groups that designed them. Several components can trace back to one group. Change a design contact under Try another value to test the toy’s assumption.",
+      "inputs": {
+        "checkoutContactsStock": "Checkout starts talks with Stock",
+        "checkoutContactsBilling": "Checkout starts talks with Billing",
+        "billingContactsStock": "Billing starts talks with Stock",
+        "unit": "0 off · 1 on"
+      }
+    }
+  },
+  "reverse-conway-manoeuvre": {
+    "record": {
+      "authored": {
+        "by": "Study author 08",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "Suppose you want to change stock reservations without organizing a joint release with checkout and billing. Ask which team can own that change, what contracts it needs to maintain, and who must work together while those contracts take shape. The reverse Conway manoeuvre uses the desired software boundaries to guide those choices about teams.",
+        "situation": "For a DotLn-Angular analogy, the public Toolbox catalog architecture guide describes a provider boundary that could let an API replace the bundled catalog without changing the reading feature. Imagine using that desired independence to assign an owner for the loader contract and letting the reading maintainers build against it. Test the boundary by substituting a provider while leaving the reading feature’s code in place. The guide documents a seam; the choice about people and responsibilities is hypothetical."
+      },
+      "example": {
+        "name": "A stock reservation change without a joint release",
+        "description": "Checkout writes directly into Inventory’s reservation tables. Checkout and Stock have to agree on a database edit and release it together. The desired interface lets Order entry ask Inventory for a reservation. That goal guides a change in ownership. Stock will decide and deploy the reservation rule, and Checkout will own the call. In the pilot, watch whether Stock can change its rule without a joint release."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Sketch what a routine change should cross",
+            "text": "Give Order entry a reservation interface to Inventory and an authorization interface to Payment processing. The pilot should let Inventory change its reservation rule behind the same public interface."
+          },
+          "step1": {
+            "title": "Give the intended boundaries owners",
+            "text": "The Checkout team owns Order entry, the Stock team owns Inventory and the Billing team owns Payment processing. Checkout and Stock agree on the reservation call and migrate direct writes to it. Checkout and Billing agree on the payment contract."
+          },
+          "step2": {
+            "title": "Try a release across the new boundary",
+            "text": "Make the pilot change in Inventory. Check that checkout still works through the reservation contract and that Stock can deploy the change without requiring releases from Checkout or Billing. If the test still needs cross-team changes, trace the dependency that forced them."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "target = [Order entry → Inventory.reserve, Order entry → Payment processing.authorize]\npilotChanges = 1\n\nassign Order entry to Checkout team, Inventory to Stock team, Payment processing to Billing team\nCheckout team + Stock team: agree Inventory.reserve and migrate direct reservation writes\nCheckout team + Billing team: agree Payment processing.authorize\n\nrepeat pilotChanges times:\n  change one stock reservation rule in Inventory\n  verify checkout through Inventory.reserve\n  check whether Stock can deploy independently\n  investigate any dependency that still forces a joint release"
+      },
+      "visual": {
+        "textEquivalent": "Step {step}. {focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Thoughtworks Technology Radar",
+          "relevance": "An early practitioner treatment",
+          "explanation": "The 2015 entry describes deliberately evolving team organization to encourage a desired architecture. It presents the approach as a trial that can be tested in a suitable project."
+        },
+        "item1": {
+          "project": "Team Topologies case study, From Monolith to Agility",
+          "relevance": "A staged application in financial services",
+          "explanation": "The case account describes teams first collaborating to find what an Application Services platform needed to offer. They shifted to a service relationship as the contracts became clearer. The account describes several changes during the same transformation."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Matthew Skelton and Manuel Pais, Team Topologies (first edition)",
+          "supports": "The authors’ first-edition overview treats organization and team interaction as an adaptive design problem."
+        },
+        "item1": {
+          "title": "Martin Fowler, Conway’s Law",
+          "supports": "Fowler describes the inverse manoeuvre and recommends taking small steps and using feedback when teams and an existing codebase must change together."
+        },
+        "item2": {
+          "title": "DotLn-Angular, Toolbox catalog architecture",
+          "supports": "The Loading and state section says a later API could replace the data provider while the reading feature remains in place."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Read the design-pressure argument that motivates changing how teams work together."
+        },
+        "item1": {
+          "why": "Use a temporary period of close work to learn what the reservation contract needs."
+        },
+        "item2": {
+          "why": "See how a stable contract can let one team consume another team’s capability with fewer handoffs."
+        }
+      },
+      "limits": {
+        "item0": "An ownership change alone leaves direct database writes and build ties in place. The pilot needs working contracts, migration work and release evidence.",
+        "item1": "Teams need the skills and authority to own the proposed change. A boundary can still leave a team overloaded or require coordination for changes that genuinely span domains.",
+        "item2": "The target architecture is a hypothesis. The manoeuvre starts from that choice, and the pilot gives evidence about one reservation change. A broader judgement needs more representative changes."
+      }
+    },
+    "model": {
+      "nodes": {
+        "inventory": "Inventory",
+        "order-entry": "Order entry",
+        "payments": "Payment processing",
+        "stock-team": "Stock team",
+        "checkout-team": "Checkout team",
+        "billing-team": "Billing team"
+      },
+      "relations": {
+        "reserve": "reserves stock through",
+        "authorize": "requests authorization from",
+        "stock-owner": "is owned by",
+        "checkout-owner": "is owned by",
+        "billing-owner": "is owned by",
+        "reservation-contract": "agrees on the reservation contract with",
+        "payment-contract": "agrees on the authorization contract with"
+      },
+      "steps": {
+        "target-reservation": "The proposed interface replaces direct reservation writes. Inventory will own the reservation rule.",
+        "target-payment": "Order entry requests payment authorization through a separate contract.",
+        "assign-stock": "Give the Stock team authority over Inventory’s reservation logic, data and releases.",
+        "assign-checkout": "Give the Checkout team responsibility for the customer’s checkout and for consuming both contracts.",
+        "assign-billing": "Give the Billing team responsibility for payment authorization.",
+        "migrate": "Agree the reservation behavior and move Checkout’s direct writes behind Inventory’s interface.",
+        "agree-payment": "Agree how payment is authorized and what Order entry receives on failure.",
+        "pilot": "Try one reservation-rule change. Can the Stock team deploy Inventory on its own while checkout still works through the same contract?"
+      },
+      "moments": {
+        "target-reservation": "Target interfaces",
+        "assign-stock": "Assign owners",
+        "migrate": "Agree contracts",
+        "pilot": "Pilot a change"
+      },
+      "caption": "The left lane is the target design. The right lane shows teams chosen to own it. The pilot checks whether those choices and the interface migration let Stock deploy a reservation change independently."
+    }
+  },
+  "homomorphic-force": {
+    "record": {
+      "authored": {
+        "by": "Study author 09",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "When changing a feature means talking to another team, the agreement you reach can become an interface the software keeps. Once that interface is in use, changing it can bring the same teams back together. Allan Kelly and Lise Hvatum call this pressure the homomorphic force. The architecture can preserve who needs to coordinate even when one team owns several components. An exact isomorphism would require a reversible one-to-one match of parts and connections.",
+        "situation": "DotLn’s public execution guide (docs/product/07-execution-guide.md) calls for the verifier to file an immutable report with findings that final review can read. As an analogy, a recurring handoff between roles takes a concrete form in the report they exchange. The comparison stops at that explicitly designed workflow contract."
+      },
+      "example": {
+        "name": "A library reminder in the borrower’s language",
+        "description": "Borrowing’s Loan policy supplies the due date to its Reminder job. Both belong to Borrowing. To send the reminder in a preferred language, Reminder job calls the Delivery gateway, which Messaging owns. The teams must agree how to carry the language on that call. Trace the internal due-date link and then the link across that ownership boundary."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Find the people who agree the change",
+            "text": "Borrowing knows the borrower’s preferred language. Messaging knows which templates the Delivery gateway can send. The teams agree on a language field that both sides can use."
+          },
+          "step1": {
+            "title": "Trace component ownership",
+            "text": "Loan policy determines the due date and Reminder job prepares the request. Both belong to Borrowing. The two components show how a team can contain its own software boundaries."
+          },
+          "step2": {
+            "title": "See where the agreement lands",
+            "text": "Reminder job passes the language in its request to Delivery gateway. The software now carries an agreement that took coordination across the two teams."
+          },
+          "step3": {
+            "title": "Follow the next change",
+            "text": "When the library wants a delivery receipt, Messaging and Borrowing agree on what the gateway will return and how Reminder job will handle it. The interface gives the teams a reason to keep using the same communication path."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: trace the influence of a communication path through two changes.\nBorrowing team and Messaging team agree on a reminder language field\n\nborrowingComponents = example.borrowingComponents\nBorrowing team maintains the two components Loan policy and Reminder job\nMessaging team maintains Delivery gateway\n\nLoan policy supplies the due date to Reminder job\nReminder job sends the agreed language field to Delivery gateway\n\nfor the delivery receipt change:\n    Borrowing team and Messaging team agree on the response and its handling"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Kelly and Hvatum’s EuroPLoP focus group",
+          "relevance": "How participants understood a change in communication and architecture",
+          "explanation": "A participant described regional development groups maintaining separate copies of a product. When the groups went back to a shared codebase they introduced video handoffs and worked across the old boundaries. The report and its appendix preserve different readings of whether this broke Conway’s law or changed the conditions under which it operated."
+        },
+        "item1": {
+          "project": "MacCormack, Baldwin and Rusnak’s mirroring study",
+          "relevance": "A way to look for organizational influence in source dependencies",
+          "explanation": "The researchers compared similar software products built under different organizational arrangements. They traced dependencies between source files to estimate how far a change could spread. In their sample that estimate was consistently lower for products from the more loosely coupled organizations."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, IT Revolution first-edition excerpt",
+          "supports": "Page 10 attributes the term to Allan Kelly and relates feasible designs to the communication paths that people actually use."
+        },
+        "item1": {
+          "title": "Team Topologies, first-edition errata",
+          "supports": "The authors correct the chapter 2 use of isomorphic force to homomorphic force."
+        },
+        "item2": {
+          "title": "Mel Conway, How Do Committees Invent?",
+          "supports": "Conway maps subsystems to the groups that designed them. Several subsystems can collapse to one group in that mapping."
+        },
+        "item3": {
+          "title": "Allan Kelly and Lise Hvatum, What do I think about Conway’s Law now?",
+          "supports": "The focus group report names the force, describes how organizational and software structure can reinforce each other, and discusses the regional codebase case."
+        },
+        "item4": {
+          "title": "MacCormack, Baldwin and Rusnak, Exploring the duality between product and organizational architectures",
+          "supports": "The matched-pair study finds lower change propagation costs in the products from more loosely coupled organizations in its sample."
+        },
+        "item5": {
+          "title": "DotLn execution guide, verification and review",
+          "supports": "The public guide assigns the verifier an immutable report and identifies its structured findings as an input to final review."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Conway’s original argument follows design dependencies back to the groups that need to communicate about them."
+        },
+        "item1": {
+          "why": "The authors’ first-edition errata corrects this wording to homomorphic force."
+        },
+        "item2": {
+          "why": "The reverse Conway manoeuvre changes team boundaries and communication to make a desired design easier to build."
+        }
+      },
+      "limits": {
+        "item0": "A reporting chart shows who manages whom. To trace an interface decision, follow the people who actually had to agree on it, including anyone they reached directly outside their reporting lines.",
+        "item1": "An inherited protocol or a vendor interface can set the seam before the current teams exist. The people who maintain it may then organize around the software they inherited.",
+        "item2": "The DotLn analogy concerns a specified handoff between workflow roles. The library drawing traces an interface between fictional application components."
+      }
+    },
+    "model": {
+      "nodes": {
+        "borrowing": "Borrowing team",
+        "messaging": "Messaging team",
+        "loan-policy": "Loan policy",
+        "reminder-job": "Reminder job",
+        "delivery-gateway": "Delivery gateway"
+      },
+      "relations": {
+        "agree": "coordinates with",
+        "owns-policy": "maintains",
+        "owns-job": "maintains",
+        "owns-gateway": "maintains",
+        "due-date": "supplies the due date to",
+        "send-reminder": "sends a reminder request to"
+      },
+      "steps": {
+        "agreement": "Borrowing and Messaging agree how to request a reminder in the borrower’s language.",
+        "ownership": "Borrowing also maintains Loan policy. The team owns two distinct components.",
+        "request": "Reminder job sends the agreed language field in its request to Delivery gateway.",
+        "receipt": "A delivery receipt brings the same teams back together to agree on the response and how Reminder job will handle it."
+      },
+      "moments": {
+        "agreement": "Agree the field",
+        "ownership": "Trace ownership",
+        "request": "Follow the request",
+        "receipt": "Change the interface"
+      },
+      "caption": "The teams are on the left and the components they maintain are on the right. One team can own several components, while a request between components can carry an agreement between teams."
+    }
+  },
+  "effective-team-size": {
+    "record": {
+      "authored": {
+        "by": "Study author 09",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "A new teammate can add a missing skill and give the group more context and decisions to share. Team Topologies suggests about seven to nine as the upper end for many long-lived delivery teams. Use that range to ask where decisions start taking longer, who has enough context to make them, and whether the group can still own its work together.",
+        "situation": "As an analogy, DotLn’s public execution guide (docs/product/07-execution-guide.md) describes an explicit budget for worker launches and reassignments during a dispatch. That budget gives a coordinator a concrete point at which to reconsider adding help. It counts worker uses, including multiple uses of the same worker, over the life of a dispatch. The book’s heuristic concerns people who work together over time."
+      },
+      "example": {
+        "name": "Growing the theatre Reservations team",
+        "description": "Eight people own a theatre’s Seat Holds and Waitlist work. Demand rises, and the theatre has four more people available. It can grow Reservations to twelve or trial two groups of six with a handoff each time a held seat becomes available."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Observe how work gets through now",
+            "text": "Reservations handles seat holds and waitlist offers as one team. Record how long changes wait for an internal decision and which changes touch both areas."
+          },
+          "step1": {
+            "title": "Consider adding four people",
+            "text": "With eight people there are 28 distinct pairs who could need to coordinate directly. With twelve there are 66. The count shows how quickly potential connections grow. It takes observation to find which ones the work actually uses."
+          },
+          "step2": {
+            "title": "Try a boundary in the work",
+            "text": "Give Seat Holds and Waitlist six people each in the split trial. Seat Holds still allocates seats. It sends a SeatReleased notice so Waitlist knows when it can offer a seat."
+          },
+          "step3": {
+            "title": "Decide from the waits",
+            "text": "Run the same local changes and the same seat-release work in both arrangements. Record the time from request to delivery, including decision time and any handoff the arrangement requires. Keep the split if overall delivery improves and both groups can operate their own work."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "// Illustrative: compare possible coordination paths and trial a boundary.\nbaseline = example.baselinePeople\nReservations (8) handles Seat Holds and Waitlist\nrecord decision waits and changes that touch both areas\n\nexpanded = baseline + example.addedPeople\nReservations (12) handles the same work\ncompare possible pairs: baseline × (baseline - 1) / 2, expanded × (expanded - 1) / 2\n\ntrial Seat Holds and Waitlist as two teams of expanded / 2\nSeat Holds sends SeatReleased to Waitlist\n\ncompare request-to-delivery time on the same local and cross-team changes\ninclude the SeatReleased handoff in the measured change time\nkeep the split if overall delivery improves and both teams can operate their work"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Amazon’s two-pizza teams",
+          "relevance": "A company’s approach to sizing teams around ownership",
+          "explanation": "Amazon describes giving a small team responsibility for a service from product decisions through operations. When the service grows, it looks for an area a new team can own end to end. Its account also describes a cost of the approach when separate teams duplicate work."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, IT Revolution first-edition excerpt",
+          "supports": "Chapter 3, page 32 gives seven to nine as a typical upper range for an effective team and discusses exceptions where trust is especially strong."
+        },
+        "item1": {
+          "title": "Team Topologies, first-edition errata",
+          "supports": "The authors clarify that Dunbar’s number refers to about 150 people. The smaller figures in the chapter concern closer trust relationships."
+        },
+        "item2": {
+          "title": "AWS Executive Insights, Powering Innovation and Speed with Amazon’s Two-Pizza Teams",
+          "supports": "Amazon describes small teams with end-to-end service ownership, splitting around an independently owned area, and the risk of duplicated work."
+        },
+        "item3": {
+          "title": "DotLn execution guide, review helper and round reports",
+          "supports": "The public guide describes an adjustable cap and says that a launch and a reassignment each spend a worker use."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Amazon couples a small group with end-to-end ownership of a service."
+        },
+        "item1": {
+          "why": "Long-standing trust can help a larger team keep making decisions together."
+        },
+        "item2": {
+          "why": "A team’s capacity also depends on how much of the system it has to understand to run it."
+        }
+      },
+      "limits": {
+        "item0": "Potential pairs count only how many direct two-person connections are possible. Trust, shared notes and clear responsibility all change how much time the team spends coordinating.",
+        "item1": "A team with strong trust and stable responsibilities may work well past nine. A smaller team can still struggle if it lacks a skill needed for its service or owns more work than it can understand.",
+        "item2": "A split adds a boundary. If everyday changes to waitlist offers keep needing joint decisions about seat allocation, two smaller groups may wait longer than one larger team."
+      }
+    },
+    "model": {
+      "nodes": {
+        "baseline": "Reservations (8)",
+        "expanded": "Reservations (12)",
+        "seat-holds": "Seat Holds",
+        "waitlist": "Waitlist"
+      },
+      "relations": {
+        "grow": "could grow into",
+        "seat-holds-team": "could give six people to",
+        "waitlist-team": "could give six people to",
+        "release-seat": "sends a release notice to"
+      },
+      "steps": {
+        "baseline": "Eight people own both areas. Record how long a change waits for a decision.",
+        "growth": "Four more people raise the number of possible pairs from 28 to 66. Which pairs need to coordinate depends on the work.",
+        "split": "The split trial staffs Seat Holds and Waitlist with six people each. Each group owns a different part of the work.",
+        "handoff": "A released seat crosses the team boundary. Compare the same local and cross-team changes in both trials. Keep the split only if delivery improves after counting the handoff and both teams have the skills they need."
+      },
+      "moments": {
+        "baseline": "Start at eight",
+        "growth": "Consider twelve",
+        "split": "Trial two teams",
+        "handoff": "Judge the handoff"
+      },
+      "caption": "The top row shows two sizes for one Reservations team. The bottom row shows a trial with the same twelve people and a new handoff."
+    }
+  },
+  "platform-as-a-product": {
+    "record": {
+      "authored": {
+        "by": "Study author 10",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "A shared platform should make a recurring job easier for the teams that use it. Give those teams a way to get help and tell the maintainers where they get stuck. The team that owns the platform can then decide what to improve by watching people try to do the job.",
+        "situation": "The public DotLn Enterprise Starter offers an analogy for making a shared tool easier to adopt and maintain. Its docs/OPERATOR.md walks a new user through installing and checking the kit and points them to release guidance when they upgrade."
+      },
+      "example": {
+        "name": "Find the preview link",
+        "description": "Shipping and Returns are the delivery teams. They ask the Preview service for a running copy of a change they can review before merging. The Platform team owns the service. It can spend this sprint making the preview link easier to find or adding support for another kind of app. In the first trial, three of eight users open their preview unaided and five need help. After the link moves to the pull request, seven of eight do it unaided."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Watch people create a preview",
+            "text": "The Platform team watches {attemptsPerPilot} first-time attempts. The service builds every preview. The job ends when someone can open that preview and review the change."
+          },
+          "step1": {
+            "title": "Ask where they got stuck",
+            "text": "In {firstPilotNeededHelp} attempts someone asks the Platform team where to find the URL. Watching Shipping and Returns use the service shows that both teams have to search the build log after a successful build."
+          },
+          "step2": {
+            "title": "Change the roadmap",
+            "text": "The Platform team moves a visible preview link on the pull request ahead of support for a second runtime. It ships the link in the Preview service and updates the quickstart."
+          },
+          "step3": {
+            "title": "Check another first use",
+            "text": "With the link in place, {secondPilotUnaided} of {attemptsPerPilot} fresh attempts reach the preview without asking for help. The Platform team keeps the change and continues to watch repeat use and support requests."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "watch example.parameters.attemptsPerPilot first uses of Preview service by Delivery teams\nrecord whether the preview builds and whether the user can open it\n\nsend the observations from Delivery teams to Platform team\nrecord example.parameters.firstPilotNeededHelp attempts where the user asks for help finding the URL\n\nmove the pull-request link ahead of a second runtime on the Platform team roadmap\npublish the link in Preview service and update the quickstart\n\nwatch example.parameters.attemptsPerPilot fresh attempts with the link on the pull request\nkeep the link after example.parameters.secondPilotUnaided users reach their preview unaided\ncontinue tracking repeat use of Preview service and requests for help"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Trade Me",
+          "relevance": "Trade Me describes an internal route to production that applies common safeguards and gives teams a way to build outside that route.",
+          "explanation": "Trade Me describes how it chose a small first release for a specific developer audience. A dedicated team builds and maintains the platform. Its account describes plans to support users and shape updates from their feedback. Teams that take another route complete the production-readiness checklist themselves."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, first edition",
+          "supports": "The authors’ book page identifies the 2019 work and introduces its adaptive approach to software team design and interactions."
+        },
+        "item1": {
+          "title": "Team Topologies on platform engineering",
+          "supports": "The roadmap section connects ongoing discovery and delivery to the jobs of the product teams that use a platform."
+        },
+        "item2": {
+          "title": "Trade Me’s journey towards a Thinnest Viable Platform",
+          "supports": "Trade Me describes its initial customer selection, its maintained production path, the manual alternative and its plans to gather user feedback through ongoing support."
+        },
+        "item3": {
+          "title": "DotLn Enterprise Starter operator commands",
+          "supports": "The public guide documents initial setup and checks and directs users to release-specific upgrade instructions. This is the evidence for the analogy."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "The Shipping and Returns teams are the internal customers whose work tells the Platform team where value is lost."
+        },
+        "item1": {
+          "why": "A usable preview link is a small change to the shared capability. The thinnest viable platform keeps the scope of that capability tied to a real need."
+        },
+        "item2": {
+          "why": "Opening the preview unaided measures a developer’s experience with the service after the build succeeds."
+        }
+      },
+      "limits": {
+        "item0": "A short onboarding pilot can reveal a reproducible problem. Understanding sustained adoption takes observations after the rollout, including why teams choose other routes.",
+        "item1": "A feature one team needs brings maintenance work for everyone who upgrades the platform. Sometimes that team can keep the feature in its own pipeline with less coordination.",
+        "item2": "The DotLn analogy covers a documented path for adopting and updating a shared tool. Customer research, support outcomes and roadmap choices in the preview example belong to the fictional Platform team."
+      }
+    },
+    "model": {
+      "nodes": {
+        "delivery-teams": "Delivery teams",
+        "preview-service": "Preview service",
+        "platform-team": "Platform team"
+      },
+      "relations": {
+        "use-preview": "request previews from",
+        "report-friction": "ask for help from",
+        "ship-link": "improves the preview link in",
+        "show-link": "shows a pull-request link to"
+      },
+      "steps": {
+        "first-use": "Shipping and Returns need a preview they can open before they can review a change.",
+        "support-signal": "{firstPilotNeededHelp} of {attemptsPerPilot} attempts need help finding a URL the service already generated.",
+        "roadmap-change": "The team puts the link on the pull request before adding a second runtime.",
+        "retest": "{secondPilotUnaided} of {attemptsPerPilot} fresh attempts reach the preview without asking for help."
+      },
+      "moments": {
+        "first-use": "First use",
+        "support-signal": "Support requests",
+        "roadmap-change": "Roadmap change",
+        "retest": "Retest"
+      },
+      "caption": "The build succeeds before the user can do the job. Support requests reveal the gap, and a fresh pilot tests whether the roadmap change helped."
+    }
+  },
+  "organizational-sensing": {
+    "record": {
+      "authored": {
+        "by": "Study author 10",
+        "reviewedBy": {
+          "item0": "Factual critic",
+          "item1": "Reading critic"
+        }
+      },
+      "intuition": {
+        "text": "When work gets stuck, look at what happened to the customer, what the system did and how the teams responded. Together those observations can reveal where the way teams work together needs to change. Watch what happens to the same work after the change.",
+        "situation": "DotLn WO-249 supplies an analogy. Five waivers on four earlier orders pointed to a recurring problem with acceptance criteria. The change assigned a verifier to record a defective criterion with evidence. The final reviewer must concur on that same defect for the work to proceed past it. The recurring evidence prompted a change in who decides."
+      },
+      "example": {
+        "name": "Who responds to a rejected parcel status?",
+        "description": "In this example, the Tracking team owns parcel updates and the Carrier team owns the feed that supplies statuses. When parcel pages show stale updates, the teams bring Customer reports, Decoder logs and Ticket handoffs to an Incident review. The review initially considers adding another alert."
+      },
+      "mechanism": {
+        "steps": {
+          "step0": {
+            "title": "Hear what the customer sees",
+            "text": "Customers report that parcel pages still show an old status when they expect an update. The Tracking team brings the affected parcel IDs to the Incident review."
+          },
+          "step1": {
+            "title": "Check what the system saw",
+            "text": "Decoder logs show that the carrier feed supplied a status the decoder could not read. The Incident review matches the rejects to the affected parcel IDs."
+          },
+          "step2": {
+            "title": "Trace the response between teams",
+            "text": "In each of {reviewCases} matched cases, the existing alert had already opened a ticket. Ticket handoffs show it moved between Tracking and Carrier before anyone took first response. The review makes response ownership the focus of its trial."
+          },
+          "step3": {
+            "title": "Try a clearer responsibility",
+            "text": "The Incident review approves a {trialDays}-day Triage trial. Carrier handles first response to decoder rejects and can inspect the feed directly. Tracking owns the customer-facing update and receives the confirmed status from Carrier."
+          },
+          "step4": {
+            "title": "Bring the results back",
+            "text": "During the {trialDays}-day trial, none of {trialCases} comparable tickets bounce between teams. That result goes back to the Incident review. The team keeps Carrier as first responder and continues watching how long updates stay stale. The RxJS sketch carries one approved trial’s summary back to this review. A later incident starts its own review."
+          }
+        }
+      },
+      "pseudocode": {
+        "ordinary": "collect stale parcel IDs from Customer reports for Incident review\n\nmatch Decoder logs to those parcel IDs and record rejected carrier statuses\n\nadd Ticket handoffs for the same parcels to Incident review\nfind example.parameters.reviewCases cases where an existing alert led to a bounced ticket\n\nask Incident review to approve a Triage trial lasting example.parameters.trialDays days\nassign Carrier team first response to decoder rejects\nhave Tracking team handle customer updates using confirmed statuses\n\nreturn Triage trial observations to Incident review\nafter example.parameters.trialCases comparable tickets with no bounces, keep Carrier team on first response\ncontinue checking time until customer updates recover",
+        "rxjs": "// Illustrative: RxJS carries the evidence. People decide whether to change who responds.\nimport { concatMap, filter, merge, scan, take } from 'rxjs';\nconst { reviewCases, trialDays } = example.parameters;\nconst customerReports$ = readStaleParcelReports$();\n\nconst decoderLogs$ = readCarrierDecoderRejects$();\n\nconst ticketHandoffs$ = readTrackingCarrierHandoffs$();\nconst matchedEvidence$ = merge(customerReports$, decoderLogs$, ticketHandoffs$).pipe(\n  scan(matchSignalsByParcelId, emptyIncidentEvidence())\n);\n\nconst trialResult$ = matchedEvidence$.pipe(\n  filter(evidence => hasBouncedMatches(evidence, reviewCases)),\n  take(1),\n  concatMap(requestIncidentReview$),\n  filter(review => review.approved),\n  concatMap(review => runTriageTrial$(review, trialDays))\n);\n\n// The trial emits a summary when the window ends, including how many cases it saw.\nconst feedback$ = trialResult$.pipe(concatMap(returnToIncidentReview$));\nfeedback$.subscribe(recordTriageDecision);"
+      },
+      "visual": {
+        "textEquivalent": "{focus}. {note}"
+      },
+      "implementations": {
+        "item0": {
+          "project": "Team Topologies interaction modeling",
+          "relevance": "The public guide uses diagrams of actual team interactions to help teams see how work moves and where it waits.",
+          "explanation": "The guide compares snapshots of team relationships and uses symptoms such as slower delivery or unusually long collaboration to revisit a boundary. Its example shows two streams moving from collaboration with a platform team to consuming its service."
+        }
+      },
+      "references": {
+        "item0": {
+          "title": "Team Topologies, first edition",
+          "supports": "The authors’ book page introduces the 2019 work, including using problems between teams as signals for adapting the organization."
+        },
+        "item1": {
+          "title": "Team Interaction Modeling with Team Topologies",
+          "supports": "The guide explicitly describes organizational sensing and gives examples of questions about users, blocked flow and changes to how teams interact."
+        },
+        "item2": {
+          "title": "DotLn WO-249, Criteria judge the product",
+          "supports": "The observed gap lists five core waivers across four orders. The design requires the verifier’s evidence and the final reviewer’s concurrence on the same defect."
+        },
+        "item3": {
+          "title": "RxJS 7.8.2 operator guide",
+          "supports": "The operator index links to the documentation for merge, scan and concatMap used in the illustrative feedback sketch."
+        }
+      },
+      "nearby": {
+        "item0": {
+          "why": "Seeing tickets passed back and forth exposes a gap in how Tracking and Carrier interact."
+        },
+        "item1": {
+          "why": "Decoder rejects reveal what the service actually encountered and help the review match reports to the same parcels."
+        },
+        "item2": {
+          "why": "A trial with a named first responder is one way the review can act on a recurring handoff problem."
+        }
+      },
+      "limits": {
+        "item0": "Several parcel tickets can share one carrier incident. The review needs to distinguish repeat incidents from repeat reports before treating the pattern as widespread.",
+        "item1": "A short trial can face lighter volume or a different mix of rejects. Keeping the routing change is a local decision, and the effect on stale customer updates needs its own observations.",
+        "item2": "The DotLn analogy stops at responsibilities defined for a work-order workflow. The parcel example follows live incident handling between two teams and checks their response after the change."
+      }
+    },
+    "model": {
+      "nodes": {
+        "customer-reports": "Customer reports",
+        "decoder-logs": "Decoder logs",
+        "ticket-handoffs": "Ticket handoffs",
+        "incident-review": "Incident review",
+        "triage-trial": "Triage trial"
+      },
+      "relations": {
+        "report-stale-update": "flag late updates for",
+        "show-rejects": "show rejected statuses to",
+        "show-handoffs": "show repeated transfers to",
+        "start-trial": "starts",
+        "return-findings": "sends follow-up evidence to"
+      },
+      "steps": {
+        "stale-parcels": "Customers tell the Tracking team that their parcel pages still show an old status.",
+        "decoder-rejects": "For those parcel IDs, the decoder logged an unrecognized status from the carrier feed.",
+        "bounced-tickets": "Tickets for {reviewCases} affected parcels bounced between the teams even though an alert already existed.",
+        "first-responder-trial": "For {trialDays} days Carrier takes first response to rejected statuses and Tracking handles customer updates.",
+        "follow-up": "With no bounces in {trialCases} comparable tickets, the review keeps Carrier as first responder."
+      },
+      "moments": {
+        "stale-parcels": "Customer reports",
+        "bounced-tickets": "Matched tickets",
+        "first-responder-trial": "Triage trial",
+        "follow-up": "Follow-up review"
+      },
+      "caption": "The three sources show what the customer saw, what the decoder rejected and where the response stalled. The trial changes which team responds first and brings the results back to the review."
+    }
+  }
+}

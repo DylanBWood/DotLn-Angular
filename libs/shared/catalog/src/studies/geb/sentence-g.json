@@ -1,0 +1,129 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb2:138",
+  "work": "geb",
+  "slug": "sentence-g",
+  "authored": {
+    "by": "studyGeb.sentence-g.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.sentence-g.record.authored.reviewedBy.item0",
+      "studyGeb.sentence-g.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.sentence-g.record.intuition.text",
+    "situation": "studyGeb.sentence-g.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.sentence-g.record.example.name",
+    "description": "studyGeb.sentence-g.record.example.description",
+    "parameters": {
+      "theory": "PA"
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.sentence-g.record.mechanism.steps.step0.title",
+        "text": "studyGeb.sentence-g.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.sentence-g.record.mechanism.steps.step1.title",
+        "text": "studyGeb.sentence-g.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.sentence-g.record.mechanism.steps.step2.title",
+        "text": "studyGeb.sentence-g.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.sentence-g.record.mechanism.steps.step3.title",
+        "text": "studyGeb.sentence-g.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyGeb.sentence-g.record.mechanism.steps.step4.title",
+        "text": "studyGeb.sentence-g.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.sentence-g.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/sentence-g.ts",
+    "textEquivalent": "studyGeb.sentence-g.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.sentence-g.record.implementations.item0.project",
+      "url": "https://isa-afp.org/entries/Incompleteness.html",
+      "relevance": "studyGeb.sentence-g.record.implementations.item0.relevance",
+      "explanation": "studyGeb.sentence-g.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyGeb.sentence-g.record.implementations.item1.project",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/",
+      "relevance": "studyGeb.sentence-g.record.implementations.item1.relevance",
+      "explanation": "studyGeb.sentence-g.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.sentence-g.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.sentence-g.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.sentence-g.record.references.item1.title",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.sentence-g.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.sentence-g.record.references.item2.title",
+      "url": "https://www.uhu.es/francisco.moreno/gii_mac/docs/Godel_paper_1931.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.sentence-g.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.sentence-g.record.references.item3.title",
+      "url": "https://isa-afp.org/entries/Incompleteness.html",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.sentence-g.record.references.item3.supports"
+    },
+    {
+      "title": "studyGeb.sentence-g.record.references.item4.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/main/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.sentence-g.record.references.item4.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb1:228",
+      "why": "studyGeb.sentence-g.record.nearby.item0.why"
+    },
+    {
+      "id": "geb1:107",
+      "why": "studyGeb.sentence-g.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:139",
+      "why": "studyGeb.sentence-g.record.nearby.item2.why"
+    },
+    {
+      "id": "geb1:51",
+      "why": "studyGeb.sentence-g.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.sentence-g.record.limits.item0",
+    "studyGeb.sentence-g.record.limits.item1",
+    "studyGeb.sentence-g.record.limits.item2"
+  ]
+}

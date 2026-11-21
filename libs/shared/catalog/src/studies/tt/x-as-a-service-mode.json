@@ -1,0 +1,122 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt3:8",
+  "work": "tt",
+  "slug": "x-as-a-service-mode",
+  "authored": {
+    "by": "studyTt.x-as-a-service-mode.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.x-as-a-service-mode.record.authored.reviewedBy.item0",
+      "studyTt.x-as-a-service-mode.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.x-as-a-service-mode.record.intuition.text",
+    "situation": "studyTt.x-as-a-service-mode.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.x-as-a-service-mode.record.example.name",
+    "description": "studyTt.x-as-a-service-mode.record.example.description",
+    "parameters": {
+      "reviewAfterBlockedRuns": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step0.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step1.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step2.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step3.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step4.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step4.text"
+      },
+      {
+        "title": "studyTt.x-as-a-service-mode.record.mechanism.steps.step5.title",
+        "text": "studyTt.x-as-a-service-mode.record.mechanism.steps.step5.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.x-as-a-service-mode.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/x-as-a-service-mode.ts",
+    "textEquivalent": "studyTt.x-as-a-service-mode.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.x-as-a-service-mode.record.implementations.item0.project",
+      "url": "https://teamtopologies.com/industry-examples/trade-me-journey-towards-a-thinnest-viable-platform",
+      "relevance": "studyTt.x-as-a-service-mode.record.implementations.item0.relevance",
+      "explanation": "studyTt.x-as-a-service-mode.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyTt.x-as-a-service-mode.record.implementations.item1.project",
+      "url": "https://github.com/TeamTopologies/Team-API-template",
+      "relevance": "studyTt.x-as-a-service-mode.record.implementations.item1.relevance",
+      "explanation": "studyTt.x-as-a-service-mode.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.x-as-a-service-mode.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.x-as-a-service-mode.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.x-as-a-service-mode.record.references.item1.title",
+      "url": "https://teamtopologies.com/news-blogs-newsletters/x-as-a-service",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.x-as-a-service-mode.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.x-as-a-service-mode.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn/releases/tag/v1.2.0",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.x-as-a-service-mode.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt3:7",
+      "why": "studyTt.x-as-a-service-mode.record.nearby.item0.why"
+    },
+    {
+      "id": "tt2:90",
+      "why": "studyTt.x-as-a-service-mode.record.nearby.item1.why"
+    },
+    {
+      "id": "tt1:308",
+      "why": "studyTt.x-as-a-service-mode.record.nearby.item2.why"
+    },
+    {
+      "id": "tt3:47",
+      "why": "studyTt.x-as-a-service-mode.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyTt.x-as-a-service-mode.record.limits.item0",
+    "studyTt.x-as-a-service-mode.record.limits.item1",
+    "studyTt.x-as-a-service-mode.record.limits.item2",
+    "studyTt.x-as-a-service-mode.record.limits.item3"
+  ]
+}

@@ -1,13 +1,7 @@
 import type { ConceptStudy } from '@dotln-angular/models';
 
+import scopes from './study-scopes.json';
 import type { StudyTranslate } from './study-translate';
-
-const scopes = {
-  aifg: 'studyAifg',
-  rxjs: 'studyRxjs',
-  eip: 'studyEip',
-  poeaa: 'studyPoeaa',
-} as const;
 
 /** Only works with a shipped study chunk have a message catalog to load. */
 export function studyScope(work: ConceptStudy['work']): string {

@@ -5,12 +5,15 @@ import { expect, type Page, test } from '@playwright/test';
 
 import type { StudiesSummary } from '@dotln-angular/models';
 
-const studiesSummary: StudiesSummary = JSON.parse(
-  readFileSync(
-    resolve(__dirname, '../../../libs/shared/catalog/src/studies/studies-summary.json'),
-    'utf8',
-  ),
+const readWorkspaceJson = (path: string) =>
+  JSON.parse(readFileSync(resolve(__dirname, '../../..', path), 'utf8'));
+
+const studiesSummary: StudiesSummary = readWorkspaceJson(
+  'libs/shared/catalog/src/studies/studies-summary.json',
 );
+
+const trialParameters = (slug: string): Record<string, number> =>
+  readWorkspaceJson(`libs/shared/catalog/src/studies/tt/${slug}.json`).example.parameters;
 
 const studiedCount = (work: string) =>
   studiesSummary.works.find((entry) => entry.work === work)?.studies.length ?? 0;
@@ -533,6 +536,8 @@ test('the shelf and the home count the studies, and contents and results mark th
   await expect(home('AI for Games')).toContainText('768 concepts');
   await expect(home('AI for Games')).toContainText(`${studiedCount('aifg')} studied`);
   await expect(home('RxJS')).toContainText(`${studiedCount('rxjs')} studied`);
+  await expect(home('Gödel, Escher, Bach')).toContainText(`${studiedCount('geb')} studied`);
+  await expect(home('Team Topologies')).toContainText(`${studiedCount('tt')} studied`);
   expect(scripts.some((url) => url.includes('tools-aifg'))).toBe(false);
   await page.getByRole('link', { name: 'Read the catalog', exact: true }).click();
   const shelf = page.getByRole('navigation', { name: 'The works' });
@@ -1198,6 +1203,164 @@ test('Identity Map steps a lookup that misses and one that hits, and says which 
   await study.locator('tools-study-states .numbers summary').click();
   await expect(study.getByTestId('study-reading')).toContainText('a hit');
 });
+
+test('the two new shelves open their studies and the three interaction modes link teams by name', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog');
+  const shelf = page.getByRole('navigation', { name: 'The works' });
+  const contents = page.locator('.studied-list');
+  for (const [work, title] of [
+    ['geb', 'Gödel, Escher, Bach'],
+    ['tt', 'Team Topologies'],
+  ]) {
+    expect(studiedCount(work)).toBe(10);
+    const chooseWork = shelf.getByRole('button', { name: new RegExp(title) });
+    await expect(chooseWork).toContainText(`${studiedCount(work)} studied`);
+    await chooseWork.click();
+    await expect(contents.getByRole('link')).toHaveCount(studiedCount(work));
+  }
+  for (const mode of ['Collaboration mode', 'X-as-a-Service mode', 'Facilitating mode']) {
+    await contents.getByRole('link', { name: mode, exact: true }).click();
+    await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(mode);
+    await expect(page.locator('tools-study-relations svg')).toHaveAccessibleName(/\S/);
+    await shelf.getByRole('button', { name: /Team Topologies/ }).click();
+  }
+  await contents.getByRole('link', { name: "Conway's law (1968)", exact: true }).click();
+  await page
+    .locator('tools-study .nearby')
+    .getByRole('link', { name: 'Reverse Conway manoeuvre' })
+    .click();
+  await expect(page).toHaveURL(/\/tt1:138$/);
+  await expect(reading(page).getByRole('heading', { level: 2 })).toHaveText(
+    'Reverse Conway manoeuvre',
+  );
+});
+
+test('the preview service explains both requests before the reader encounters the drawing', async ({
+  page,
+}) => {
+  await page.goto('/tools/catalog/tt3:8');
+  const study = page.locator('tools-study');
+  const opening = study.locator('.specimen');
+  const messages = readWorkspaceJson('apps/dotln/public/i18n/studyTt/en.json');
+  const example: { source: string; reading: string; samples: { item0: string; item1: string } } =
+    messages['x-as-a-service-mode'].model.specimen;
+  await expect(opening.getByText(example.source, { exact: true })).toBeVisible();
+  const replies = opening.locator('samp');
+  await expect(replies).toHaveCount(2);
+  await expect(replies).toHaveText([example.samples.item0, example.samples.item1]);
+  await expect(opening.getByText(example.reading, { exact: true })).toBeVisible();
+  await expect(study.locator('.specimen ~ figure tools-study-relations')).toBeVisible();
+});
+
+test('the pilot and triage lessons use their example counts in the rendered explanations', async ({
+  page,
+}) => {
+  const study = page.locator('tools-study');
+  await page.goto('/tools/catalog/tt2:90');
+  await summary(page, 'Follow the mechanism').click();
+  const mechanism = study.locator('.algorithm-guide');
+  const { attemptsPerPilot, firstPilotNeededHelp, secondPilotUnaided } =
+    trialParameters('platform-as-a-product');
+  const steps = mechanism.locator('.code-explanations > li > p');
+  await expect(steps.nth(0)).toContainText(String(attemptsPerPilot));
+  await expect(steps.nth(1)).toContainText(String(firstPilotNeededHelp));
+  await expect(steps.nth(3)).toContainText(`${secondPilotUnaided} of ${attemptsPerPilot}`);
+  await expect(mechanism).not.toContainText(
+    /\{(?:attemptsPerPilot|firstPilotNeededHelp|secondPilotUnaided)\}/,
+  );
+  await page.goto('/tools/catalog/tt3:47');
+  await summary(page, 'Follow the mechanism').click();
+  const { reviewCases, trialDays, trialCases } = trialParameters('organizational-sensing');
+  await expect(steps.nth(2)).toContainText(String(reviewCases));
+  await expect(steps.nth(3)).toContainText(`${trialDays}-day`);
+  await expect(steps.nth(4)).toContainText(String(trialCases));
+  await summary(page, 'Think in streams').click();
+  await expect(study).toContainText('const { reviewCases, trialDays } = example.parameters');
+  await expect(study).not.toContainText(/\{(?:reviewCases|trialCases|trialDays)\}/);
+});
+
+test('Levels of description steps under reduced motion and Strange loop returns to its starting level', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/tools/catalog/geb2:8');
+  const map = page.locator('tools-study-relations');
+  const workedExample = page.locator('tools-study .worked-example');
+  await expect(workedExample).toBeVisible();
+  const specimen = page.locator('tools-study .specimen');
+  await expect(specimen.locator('samp')).toBeVisible();
+  await specimen.locator('summary').click();
+  await expect(specimen.locator('details')).toHaveJSProperty('open', true);
+  await expect(workedExample).toContainText('Imagine a tutorial that links to a setup guide');
+  for (const label of ['Hook refusal', 'Gate row', 'Work order', 'Planning pass']) {
+    await expect(workedExample).toContainText(label);
+  }
+  await expect(page.locator('tools-study .map-instructions')).toContainText(
+    'The bottom arrow joins two records from the same check',
+  );
+  await expect(map.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
+  await expect(map.getByRole('img')).toHaveAccessibleName(/Hook refusal/);
+  await map.getByRole('button', { name: 'Step forward' }).click();
+  await expect(map.getByRole('img')).toHaveAccessibleName(/Gate row/);
+  await expect(map.getByRole('button', { name: 'Gate row', exact: true })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+  await expect(map.getByTestId('study-reading')).toContainText('Gate row');
+  await page.goto('/tools/catalog/geb2:302');
+  const first = map.locator('.node.active .name');
+  await expect(first).toBeVisible();
+  const start = (await first.innerText()).trim();
+  const forward = map.getByRole('button', { name: 'Step forward' });
+  const last = Number(await map.getByRole('slider').getAttribute('max'));
+  expect(last).toBeGreaterThan(1);
+  for (let step = 1; step <= last; step++) {
+    await forward.click();
+    await expect(map.getByRole('slider')).toHaveValue(String(step));
+  }
+  await expect(map.locator('.node.active .name')).toHaveText(start);
+  await expect(map.getByTestId('study-reading')).toContainText(start);
+  const restart = map.getByRole('button', { name: 'Back to the start' });
+  await restart.focus();
+  await restart.press('Enter');
+  await expect(map.getByRole('slider')).toBeFocused();
+  await expect(map.getByRole('slider')).toHaveValue('0');
+});
+
+for (const [width, height] of [
+  [360, 800],
+  [768, 900],
+  [1440, 900],
+  [2080, 1460],
+  [3840, 1620],
+]) {
+  test(`relations drawings, controls and expanded readings fit at ${width} by ${height} and meet the board accessibility threshold`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    for (const id of ['geb2:8', 'tt1:92']) {
+      await page.goto(`/tools/catalog/${id}`);
+      const map = page.locator('tools-study-relations');
+      await map.getByRole('button', { name: 'Step forward' }).click();
+      await summary(page, 'Follow the mechanism').press('Enter');
+      await summary(page, 'Where this breaks down').press('Enter');
+      await expect(page.locator('tools-study .algorithm-guide > pre')).toBeVisible();
+      await expect(page.locator('tools-study .limits')).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      const { violations } = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+        .analyze();
+      expect(
+        violations.filter((issue) => issue.impact === 'serious' || issue.impact === 'critical'),
+      ).toEqual([]);
+    }
+  });
+}
 
 test('the two offline locks open from the contents, each drawn and each saying where it fails', async ({
   page,

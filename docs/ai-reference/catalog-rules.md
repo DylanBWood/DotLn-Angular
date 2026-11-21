@@ -132,9 +132,15 @@
   give its reason.
 - A draft never ships: every committed record is `checked` with at least two reviewers named. A
   batch's critic findings are disposed in its decisions.
+- For a relations drawing, pass the example's nodes, directed relationships and steps to
+  `relationsModel`. The shared builder lays out the graph and resolves each step into a drawing
+  and its text equivalent. Keep a drawn example in one data module. If a mechanism runs, its
+  entry takes the results of a language-free simulation into the builder. Keep `executable` null
+  for an illustrative map. Keep `visual` null when a map adds no explanation, and record the
+  reason for each absent representation in the batch's decisions.
 - Current records use `concept-study-v1`: every authored on-screen text field is a message key.
   Put its English text in the work’s lazy catalog under `apps/dotln/public/i18n/studyAifg/`,
-  `studyRxjs/`, `studyEip/` or `studyPoeaa/`; shared drawing narration belongs in `studyCommon/`.
+  `studyRxjs/`, `studyEip/`, `studyPoeaa/`, `studyGeb/` or `studyTt/`. Shared drawing narration belongs in `studyCommon/`.
   Preserve IDs, URLs, module paths and machine parameters. A change after shipping is a new
   schema version; keep the published `concept-study-v0` immutable.
 - A model’s labels, notes, worked arithmetic and comparisons use parameterized messages.

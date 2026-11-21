@@ -252,6 +252,51 @@
       ]
     },
     {
+      "work": "geb",
+      "studies": [
+        {
+          "id": "geb1:51",
+          "state": "checked"
+        },
+        {
+          "id": "geb1:53",
+          "state": "checked"
+        },
+        {
+          "id": "geb1:65",
+          "state": "checked"
+        },
+        {
+          "id": "geb1:107",
+          "state": "checked"
+        },
+        {
+          "id": "geb1:228",
+          "state": "checked"
+        },
+        {
+          "id": "geb2:8",
+          "state": "checked"
+        },
+        {
+          "id": "geb2:9",
+          "state": "checked"
+        },
+        {
+          "id": "geb2:61",
+          "state": "checked"
+        },
+        {
+          "id": "geb2:138",
+          "state": "checked"
+        },
+        {
+          "id": "geb2:302",
+          "state": "checked"
+        }
+      ]
+    },
+    {
       "work": "poeaa",
       "studies": [
         {
@@ -417,6 +462,51 @@
         },
         {
           "id": "rxc:238",
+          "state": "checked"
+        }
+      ]
+    },
+    {
+      "work": "tt",
+      "studies": [
+        {
+          "id": "tt1:92",
+          "state": "checked"
+        },
+        {
+          "id": "tt1:94",
+          "state": "checked"
+        },
+        {
+          "id": "tt1:138",
+          "state": "checked"
+        },
+        {
+          "id": "tt1:151",
+          "state": "checked"
+        },
+        {
+          "id": "tt1:215",
+          "state": "checked"
+        },
+        {
+          "id": "tt2:90",
+          "state": "checked"
+        },
+        {
+          "id": "tt3:7",
+          "state": "checked"
+        },
+        {
+          "id": "tt3:8",
+          "state": "checked"
+        },
+        {
+          "id": "tt3:9",
+          "state": "checked"
+        },
+        {
+          "id": "tt3:47",
           "state": "checked"
         }
       ]

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import studyScopes from '../../../libs/features/tools/src/lib/studies/study-scopes.json' with { type: 'json' };
 
 /** The authored fields whose v1 values are message keys, never prose or machine inputs. */
 export function studyMessagePaths(study) {
@@ -30,6 +31,15 @@ export function studyMessagePaths(study) {
 
 export const atPath = (object, path) => path.reduce((value, part) => value?.[part], object);
 
+export function workMessageScope(work) {
+  return studyScopes[work];
+}
+
+export function isWorkMessage(work, key) {
+  const scope = workMessageScope(work);
+  return typeof key === 'string' && typeof scope === 'string' && key.startsWith(scope + '.');
+}
+
 /** Each invocation shares parsed catalogs; tests and subsequent checks get fresh file bytes. */
 export function englishMessages(root) {
   const catalogs = new Map();
@@ -58,6 +68,8 @@ export function studyContent(study, message) {
   const content = structuredClone(study);
   for (const path of studyMessagePaths(study)) {
     const key = atPath(study, path);
+    if (!isWorkMessage(study.work, key))
+      throw new Error(`missing study message in ${study.work} at ${path.join('.')}: ${key}`);
     const value = message(key);
     if (value === undefined) throw new Error(`missing study message at ${path.join('.')}: ${key}`);
     atPath(content, path.slice(0, -1))[path.at(-1)] = value;

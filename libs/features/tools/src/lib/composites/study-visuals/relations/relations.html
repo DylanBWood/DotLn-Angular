@@ -1,0 +1,49 @@
+@let nodeWidth = model().nodeWidth;
+<svg
+  [attr.viewBox]="'0 0 ' + canvasWidth + ' ' + model().height"
+  role="img"
+  [attr.aria-label]="textEquivalent()"
+  translate="no"
+>
+  @for (edge of model().edges; track edge.id) {
+    <g class="edge" [class.active]="edge.id === activeEdge()" [attr.data-edge]="edge.id">
+      <title>{{ edge.description }}</title>
+      <path [attr.d]="edge.path" />
+      <polygon [attr.points]="edge.arrow" />
+    </g>
+  }
+  @for (node of model().nodes; track node.id) {
+    <g
+      class="node"
+      [class.active]="node.id === activeNode()"
+      [attr.data-node]="node.id"
+      [attr.transform]="
+        'translate(' + (node.x - nodeWidth / 2) + ' ' + (node.y - nodeHeight / 2) + ')'
+      "
+    >
+      <rect [attr.width]="nodeWidth" [attr.height]="nodeHeight" rx="5" />
+      <foreignObject [attr.width]="nodeWidth" [attr.height]="nodeHeight">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="name">{{ node.label }}</div>
+      </foreignObject>
+    </g>
+  }
+</svg>
+<tools-study-scrubber
+  [step]="step()"
+  [lastStep]="model().frames.length - 1"
+  [frame]="step()"
+  [moments]="moments()"
+  [markCurrentMoment]="true"
+  [restartLabel]="
+    step() === model().frames.length - 1 ? ('tools.study.relations.restart' | t) : null
+  "
+  [playing]="playing()"
+  counting="step"
+  (played)="played.emit($event)"
+  (stepped)="stepped.emit($event)"
+/>
+<p class="reading" data-testid="study-reading" translate="no">
+  <strong>{{ 'tools.study.relations.focus' | t }}</strong>
+  {{ textEquivalent() }}
+</p>
+<ng-content />

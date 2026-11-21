@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb2:302",
+  "work": "geb",
+  "slug": "strange-loop",
+  "authored": {
+    "by": "studyGeb.strange-loop.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.strange-loop.record.authored.reviewedBy.item0",
+      "studyGeb.strange-loop.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.strange-loop.record.intuition.text",
+    "situation": "studyGeb.strange-loop.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.strange-loop.record.example.name",
+    "description": "studyGeb.strange-loop.record.example.description",
+    "parameters": {
+      "levelCount": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.strange-loop.record.mechanism.steps.step0.title",
+        "text": "studyGeb.strange-loop.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.strange-loop.record.mechanism.steps.step1.title",
+        "text": "studyGeb.strange-loop.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.strange-loop.record.mechanism.steps.step2.title",
+        "text": "studyGeb.strange-loop.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.strange-loop.record.mechanism.steps.step3.title",
+        "text": "studyGeb.strange-loop.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyGeb.strange-loop.record.mechanism.steps.step4.title",
+        "text": "studyGeb.strange-loop.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.strange-loop.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/strange-loop.ts",
+    "textEquivalent": "studyGeb.strange-loop.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.strange-loop.record.implementations.item0.project",
+      "url": "https://pub.math.leidenuniv.nl/~smitbde/escherdroste/",
+      "relevance": "studyGeb.strange-loop.record.implementations.item0.relevance",
+      "explanation": "studyGeb.strange-loop.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.strange-loop.record.references.item0.title",
+      "url": "https://www.escherinhetpaleis.nl/en/about-escher/masterpieces/print-gallery",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.strange-loop.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.strange-loop.record.references.item1.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.strange-loop.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.strange-loop.record.references.item2.title",
+      "url": "https://pub.math.leidenuniv.nl/~smitbde/papers/2003-de_smit-lenstra-escher.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.strange-loop.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.strange-loop.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/bc761ad9ce1008c72c647e9b0de63b09117ba822/docs/KIT.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.strange-loop.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb2:8",
+      "why": "studyGeb.strange-loop.record.nearby.item0.why"
+    },
+    {
+      "id": "geb2:303",
+      "why": "studyGeb.strange-loop.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:307",
+      "why": "studyGeb.strange-loop.record.nearby.item2.why"
+    },
+    {
+      "id": "geb2:138",
+      "why": "studyGeb.strange-loop.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.strange-loop.record.limits.item0",
+    "studyGeb.strange-loop.record.limits.item1",
+    "studyGeb.strange-loop.record.limits.item2"
+  ]
+}

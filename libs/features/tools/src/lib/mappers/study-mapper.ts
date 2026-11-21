@@ -75,6 +75,13 @@ function drawingOf(
     };
   }
   if (model.family === 'states') return { ...shared, family: 'states', states: model.states };
+  if (model.family === 'relations')
+    return {
+      ...shared,
+      family: 'relations',
+      relations: model.relations,
+      exampleSource: record.references.find(({ url }) => url === model.relations.sourceUrl),
+    };
   return { ...shared, family: 'marbles', marbles: model.marbles };
 }
 

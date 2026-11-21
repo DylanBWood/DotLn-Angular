@@ -1,0 +1,110 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt1:92",
+  "work": "tt",
+  "slug": "conways-law",
+  "authored": {
+    "by": "studyTt.conways-law.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.conways-law.record.authored.reviewedBy.item0",
+      "studyTt.conways-law.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.conways-law.record.intuition.text",
+    "situation": "studyTt.conways-law.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.conways-law.record.example.name",
+    "description": "studyTt.conways-law.record.example.description",
+    "parameters": {
+      "checkoutContactsStock": 1,
+      "checkoutContactsBilling": 1,
+      "billingContactsStock": 0
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.conways-law.record.mechanism.steps.step0.title",
+        "text": "studyTt.conways-law.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.conways-law.record.mechanism.steps.step1.title",
+        "text": "studyTt.conways-law.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.conways-law.record.mechanism.steps.step2.title",
+        "text": "studyTt.conways-law.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.conways-law.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/tt/conways-law.model.ts"
+    }
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/conways-law.model.ts",
+    "textEquivalent": "studyTt.conways-law.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.conways-law.record.implementations.item0.project",
+      "url": "https://www.melconway.com/Home/Committees_Paper.html",
+      "relevance": "studyTt.conways-law.record.implementations.item0.relevance",
+      "explanation": "studyTt.conways-law.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyTt.conways-law.record.implementations.item1.project",
+      "url": "https://martinfowler.com/bliki/ConwaysLaw.html",
+      "relevance": "studyTt.conways-law.record.implementations.item1.relevance",
+      "explanation": "studyTt.conways-law.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.conways-law.record.references.item0.title",
+      "url": "https://www.melconway.com/Home/Committees_Paper.html",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.conways-law.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.conways-law.record.references.item1.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.conways-law.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.conways-law.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/6eef542987ab2183817baba329a64373cb61b157/docs/dev-reference/architecture/catalog.md#loading-and-state",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.conways-law.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt1:138",
+      "why": "studyTt.conways-law.record.nearby.item0.why"
+    },
+    {
+      "id": "tt1:94",
+      "why": "studyTt.conways-law.record.nearby.item1.why"
+    },
+    {
+      "id": "tt1:93",
+      "why": "studyTt.conways-law.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.conways-law.record.limits.item0",
+    "studyTt.conways-law.record.limits.item1",
+    "studyTt.conways-law.record.limits.item2"
+  ]
+}

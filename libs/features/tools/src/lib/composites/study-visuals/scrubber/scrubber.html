@@ -31,8 +31,16 @@
     {{ 'tools.study.next' | t }}
   </button>
   @for (moment of moments(); track moment.step) {
-    <button type="button" (click)="stepped.emit(moment.step)" translate="no">
+    <button
+      type="button"
+      [attr.aria-current]="markCurrentMoment() && step() === moment.step ? 'step' : null"
+      (click)="stepped.emit(moment.step)"
+      translate="no"
+    >
       {{ moment.label }}
     </button>
+  }
+  @if (restartLabel(); as label) {
+    <button type="button" (click)="restart()" translate="no">{{ label }}</button>
   }
 </div>

@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt1:94",
+  "work": "tt",
+  "slug": "homomorphic-force",
+  "authored": {
+    "by": "studyTt.homomorphic-force.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.homomorphic-force.record.authored.reviewedBy.item0",
+      "studyTt.homomorphic-force.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.homomorphic-force.record.intuition.text",
+    "situation": "studyTt.homomorphic-force.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.homomorphic-force.record.example.name",
+    "description": "studyTt.homomorphic-force.record.example.description",
+    "parameters": {
+      "borrowingComponents": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.homomorphic-force.record.mechanism.steps.step0.title",
+        "text": "studyTt.homomorphic-force.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.homomorphic-force.record.mechanism.steps.step1.title",
+        "text": "studyTt.homomorphic-force.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.homomorphic-force.record.mechanism.steps.step2.title",
+        "text": "studyTt.homomorphic-force.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.homomorphic-force.record.mechanism.steps.step3.title",
+        "text": "studyTt.homomorphic-force.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.homomorphic-force.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/homomorphic-force.ts",
+    "textEquivalent": "studyTt.homomorphic-force.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.homomorphic-force.record.implementations.item0.project",
+      "url": "https://www.allankelly.net/patterns/ConwaysLawFocusGroup.pdf",
+      "relevance": "studyTt.homomorphic-force.record.implementations.item0.relevance",
+      "explanation": "studyTt.homomorphic-force.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyTt.homomorphic-force.record.implementations.item1.project",
+      "url": "https://www.hbs.edu/ris/Publication%20Files/Research%20Policy%2041%20%282012%29%201309%E2%80%93%201324_c5c2350e-013c-4065-a2f9-d95eb32177d5.pdf",
+      "relevance": "studyTt.homomorphic-force.record.implementations.item1.relevance",
+      "explanation": "studyTt.homomorphic-force.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.homomorphic-force.record.references.item0.title",
+      "url": "https://itrevolution.com/wp-content/uploads/2022/06/TTOP_excerpt.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.homomorphic-force.record.references.item1.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.homomorphic-force.record.references.item2.title",
+      "url": "https://www.melconway.com/research/committees.html",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item2.supports"
+    },
+    {
+      "title": "studyTt.homomorphic-force.record.references.item3.title",
+      "url": "https://www.allankelly.net/patterns/ConwaysLawFocusGroup.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item3.supports"
+    },
+    {
+      "title": "studyTt.homomorphic-force.record.references.item4.title",
+      "url": "https://www.hbs.edu/ris/Publication%20Files/Research%20Policy%2041%20%282012%29%201309%E2%80%93%201324_c5c2350e-013c-4065-a2f9-d95eb32177d5.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item4.supports"
+    },
+    {
+      "title": "studyTt.homomorphic-force.record.references.item5.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/bc761ad9ce1008c72c647e9b0de63b09117ba822/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.homomorphic-force.record.references.item5.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt1:92",
+      "why": "studyTt.homomorphic-force.record.nearby.item0.why"
+    },
+    {
+      "id": "tt1:205",
+      "why": "studyTt.homomorphic-force.record.nearby.item1.why"
+    },
+    {
+      "id": "tt1:138",
+      "why": "studyTt.homomorphic-force.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.homomorphic-force.record.limits.item0",
+    "studyTt.homomorphic-force.record.limits.item1",
+    "studyTt.homomorphic-force.record.limits.item2"
+  ]
+}

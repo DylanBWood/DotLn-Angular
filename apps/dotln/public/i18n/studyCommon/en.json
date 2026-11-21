@@ -1,4 +1,11 @@
 {
+  "relations": {
+    "connection": "{{from}} {{relation}} {{to}}",
+    "legend": {
+      "focus": "Heavy outline or arrow · the selected step",
+      "connection": "Thin arrow · another relationship in the map"
+    }
+  },
   "marbles": {
     "caption": "Time runs in frames. A circle is an emission, with its letter; a bar is completion; a cross is an error. A lane that ends in a small hollow ring is where the operator stopped listening to that stream, and what it would have delivered afterwards is not drawn.",
     "opening": "The drawing opens at the end of the run, and an output lane shows only what has been emitted by the selected frame: step back, or press Play where it is offered, to watch each output value arrive from the emission it comes from.",

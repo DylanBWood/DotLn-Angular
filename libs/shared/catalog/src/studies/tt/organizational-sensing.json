@@ -1,0 +1,115 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt3:47",
+  "work": "tt",
+  "slug": "organizational-sensing",
+  "authored": {
+    "by": "studyTt.organizational-sensing.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.organizational-sensing.record.authored.reviewedBy.item0",
+      "studyTt.organizational-sensing.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.organizational-sensing.record.intuition.text",
+    "situation": "studyTt.organizational-sensing.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.organizational-sensing.record.example.name",
+    "description": "studyTt.organizational-sensing.record.example.description",
+    "parameters": {
+      "reviewCases": 3,
+      "trialDays": 14,
+      "trialCases": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.organizational-sensing.record.mechanism.steps.step0.title",
+        "text": "studyTt.organizational-sensing.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.organizational-sensing.record.mechanism.steps.step1.title",
+        "text": "studyTt.organizational-sensing.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.organizational-sensing.record.mechanism.steps.step2.title",
+        "text": "studyTt.organizational-sensing.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.organizational-sensing.record.mechanism.steps.step3.title",
+        "text": "studyTt.organizational-sensing.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyTt.organizational-sensing.record.mechanism.steps.step4.title",
+        "text": "studyTt.organizational-sensing.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.organizational-sensing.record.pseudocode.ordinary",
+    "rxjs": "studyTt.organizational-sensing.record.pseudocode.rxjs",
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/organizational-sensing.ts",
+    "textEquivalent": "studyTt.organizational-sensing.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.organizational-sensing.record.implementations.item0.project",
+      "url": "https://teamtopologies.com/key-concepts-content/team-interaction-modeling-with-team-topologies",
+      "relevance": "studyTt.organizational-sensing.record.implementations.item0.relevance",
+      "explanation": "studyTt.organizational-sensing.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.organizational-sensing.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.organizational-sensing.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.organizational-sensing.record.references.item1.title",
+      "url": "https://teamtopologies.com/key-concepts-content/team-interaction-modeling-with-team-topologies",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.organizational-sensing.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.organizational-sensing.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn/blob/v0.108.0/docs/work-orders/WO-249-criteria-judge-the-product.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.organizational-sensing.record.references.item2.supports"
+    },
+    {
+      "title": "studyTt.organizational-sensing.record.references.item3.title",
+      "url": "https://github.com/ReactiveX/rxjs/blob/7.8.2/docs_app/content/guide/operators.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.organizational-sensing.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt3:41",
+      "why": "studyTt.organizational-sensing.record.nearby.item0.why"
+    },
+    {
+      "id": "tt3:73",
+      "why": "studyTt.organizational-sensing.record.nearby.item1.why"
+    },
+    {
+      "id": "tt3:71",
+      "why": "studyTt.organizational-sensing.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.organizational-sensing.record.limits.item0",
+    "studyTt.organizational-sensing.record.limits.item1",
+    "studyTt.organizational-sensing.record.limits.item2"
+  ]
+}

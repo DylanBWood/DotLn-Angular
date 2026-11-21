@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb2:8",
+  "work": "geb",
+  "slug": "levels-of-description",
+  "authored": {
+    "by": "studyGeb.levels-of-description.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.levels-of-description.record.authored.reviewedBy.item0",
+      "studyGeb.levels-of-description.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.levels-of-description.record.intuition.text",
+    "situation": "studyGeb.levels-of-description.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.levels-of-description.record.example.name",
+    "description": "studyGeb.levels-of-description.record.example.description",
+    "parameters": {
+      "windowMinutes": 45
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.levels-of-description.record.mechanism.steps.step0.title",
+        "text": "studyGeb.levels-of-description.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.levels-of-description.record.mechanism.steps.step1.title",
+        "text": "studyGeb.levels-of-description.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.levels-of-description.record.mechanism.steps.step2.title",
+        "text": "studyGeb.levels-of-description.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.levels-of-description.record.mechanism.steps.step3.title",
+        "text": "studyGeb.levels-of-description.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.levels-of-description.record.pseudocode.ordinary",
+    "rxjs": "studyGeb.levels-of-description.record.pseudocode.rxjs",
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/levels-of-description.ts",
+    "textEquivalent": "studyGeb.levels-of-description.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.levels-of-description.record.implementations.item0.project",
+      "url": "https://developer.chrome.com/docs/devtools/performance/reference/",
+      "relevance": "studyGeb.levels-of-description.record.implementations.item0.relevance",
+      "explanation": "studyGeb.levels-of-description.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyGeb.levels-of-description.record.implementations.item1.project",
+      "url": "https://opentelemetry.io/docs/specs/otel/trace/api/",
+      "relevance": "studyGeb.levels-of-description.record.implementations.item1.relevance",
+      "explanation": "studyGeb.levels-of-description.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.levels-of-description.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.levels-of-description.record.references.item1.title",
+      "url": "https://github.com/DylanBWood/DotLn/blob/main/docs/KIT.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.levels-of-description.record.references.item2.title",
+      "url": "https://developer.chrome.com/docs/devtools/performance/reference/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.levels-of-description.record.references.item3.title",
+      "url": "https://opentelemetry.io/docs/specs/otel/trace/api/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item3.supports"
+    },
+    {
+      "title": "studyGeb.levels-of-description.record.references.item4.title",
+      "url": "https://raw.githubusercontent.com/ReactiveX/rxjs/7.8.2/src/internal/operators/groupBy.ts",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item4.supports"
+    },
+    {
+      "title": "studyGeb.levels-of-description.record.references.item5.title",
+      "url": "https://raw.githubusercontent.com/ReactiveX/rxjs/7.8.2/src/internal/operators/toArray.ts",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.levels-of-description.record.references.item5.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb2:9",
+      "why": "studyGeb.levels-of-description.record.nearby.item0.why"
+    },
+    {
+      "id": "geb2:29",
+      "why": "studyGeb.levels-of-description.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:302",
+      "why": "studyGeb.levels-of-description.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.levels-of-description.record.limits.item0",
+    "studyGeb.levels-of-description.record.limits.item1",
+    "studyGeb.levels-of-description.record.limits.item2"
+  ]
+}
