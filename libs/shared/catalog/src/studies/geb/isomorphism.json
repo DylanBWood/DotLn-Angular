@@ -1,0 +1,105 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb1:65",
+  "work": "geb",
+  "slug": "isomorphism",
+  "authored": {
+    "by": "studyGeb.isomorphism.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.isomorphism.record.authored.reviewedBy.item0",
+      "studyGeb.isomorphism.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.isomorphism.record.intuition.text",
+    "situation": "studyGeb.isomorphism.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.isomorphism.record.example.name",
+    "description": "studyGeb.isomorphism.record.example.description",
+    "parameters": {
+      "leftWord": "L",
+      "rightWord": "R",
+      "probeCode": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.isomorphism.record.mechanism.steps.step0.title",
+        "text": "studyGeb.isomorphism.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.isomorphism.record.mechanism.steps.step1.title",
+        "text": "studyGeb.isomorphism.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.isomorphism.record.mechanism.steps.step2.title",
+        "text": "studyGeb.isomorphism.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.isomorphism.record.mechanism.steps.step3.title",
+        "text": "studyGeb.isomorphism.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.isomorphism.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/isomorphism.ts",
+    "textEquivalent": "studyGeb.isomorphism.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.isomorphism.record.implementations.item0.project",
+      "url": "https://discretemath.org/ads/s-free-monoids-and-languages.html",
+      "relevance": "studyGeb.isomorphism.record.implementations.item0.relevance",
+      "explanation": "studyGeb.isomorphism.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.isomorphism.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.isomorphism.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.isomorphism.record.references.item1.title",
+      "url": "https://discretemath.org/ads/s-free-monoids-and-languages.html",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.isomorphism.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.isomorphism.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn-Angular/6eef542987ab2183817baba329a64373cb61b157/docs/dev-reference/architecture/catalog.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.isomorphism.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb1:228",
+      "why": "studyGeb.isomorphism.record.nearby.item0.why"
+    },
+    {
+      "id": "geb1:64",
+      "why": "studyGeb.isomorphism.record.nearby.item1.why"
+    },
+    {
+      "id": "geb1:231",
+      "why": "studyGeb.isomorphism.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.isomorphism.record.limits.item0",
+    "studyGeb.isomorphism.record.limits.item1",
+    "studyGeb.isomorphism.record.limits.item2"
+  ]
+}

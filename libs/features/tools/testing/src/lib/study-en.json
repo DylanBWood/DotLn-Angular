@@ -15401,6 +15401,13 @@
     }
   },
   "studyCommon": {
+    "relations": {
+      "connection": "{{from}} {{relation}} {{to}}",
+      "legend": {
+        "focus": "Heavy outline or arrow · the selected step",
+        "connection": "Thin arrow · another relationship in the map"
+      }
+    },
     "marbles": {
       "caption": "Time runs in frames. A circle is an emission, with its letter; a bar is completion; a cross is an error. A lane that ends in a small hollow ring is where the operator stopped listening to that stream, and what it would have delivered afterwards is not drawn.",
       "opening": "The drawing opens at the end of the run, and an output lane shows only what has been emitted by the selected frame: step back, or press Play where it is offered, to watch each output value arrive from the emission it comes from.",
@@ -18739,6 +18746,2502 @@
       "poeaa:443": "Plugin",
       "poeaa:448": "Service Stub",
       "poeaa:452": "Record Set"
+    }
+  },
+  "studyGeb": {
+    "titles": {
+      "geb2:8": "Levels of description",
+      "geb2:9": "Chunking",
+      "geb2:29": "Sealed-off levels",
+      "geb2:302": "Strange loop",
+      "geb2:10": "Chunked model vs deterministic model",
+      "geb2:11": "Chess-master perception",
+      "geb1:107": "Consistency",
+      "geb1:114": "Completeness",
+      "geb1:64": "Interpretation",
+      "geb1:108": "Internal consistency versus consistency with the world",
+      "geb1:53": "Decision procedure",
+      "geb1:47": "Theorem tree (bottom-up generation)",
+      "geb1:89": "Recursive set",
+      "geb1:182": "Truth tables as a decision procedure",
+      "geb1:65": "Isomorphism",
+      "geb1:228": "Gödel numbering",
+      "geb1:231": "Typographical rules as arithmetical rules",
+      "geb2:138": "Sentence G",
+      "geb2:139": "Gödel's first incompleteness theorem (for TNT)",
+      "geb1:51": "Jumping out of the system",
+      "geb1:46": "Invariant argument (I-count modulo 3)",
+      "geb2:61": "Active symbols",
+      "geb2:62": "Passive vs active symbols",
+      "geb2:63": "Triggering patterns",
+      "geb2:303": "Tangled hierarchy",
+      "geb2:307": "Print Gallery (Escher)"
+    },
+    "levels-of-description": {
+      "record": {
+        "authored": {
+          "by": "Study author 01",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "Look at one thing and try to answer two different questions about it. The details you need can change even while the thing in front of you stays exactly the same. That is the idea behind levels of description.",
+          "situation": "The public DotLn kit guide describes how a planning pass sequences orders, a gate records a result and a hook can block a write. Our four entries describe one afternoon at different scales. They are separate sources. You have to open the plan to find the reason for doing the guide first. The letters in the check result alone cannot tell you that reason."
+        },
+        "example": {
+          "name": "What can one observation tell you?",
+          "description": "Imagine a tutorial that links to a setup guide. During a 45-minute work session your team revises the guide first. A guard blocks one extra edit while a checker follows the saved guide’s links. Here are four invented entries you could lay side by side after that afternoon. The labels name types of DotLn records.\n\nHook refusal · “Edit blocked.” The guard attached the refusal to the “Guide links” run.\n\nGate row · “Guide links passed.” The checker recorded its verdict for the “Guide revision” assignment. The refusal and the pass share the “Guide links” run.\n\nWork order · “Revise setup steps and check links.” The “Guide revision” assignment belongs to the “Tutorial release” plan. The passing check supplies evidence for the second requirement.\n\nPlanning pass · “Guide first, tutorial next.” The author of the “Tutorial release” plan put the two jobs in that order because tomorrow’s tutorial links to the guide."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Read the hook refusal",
+              "text": "In the 45-minute recording, find the “Edit blocked” entry for the setup guide. It names the Guide links run in which the guard refused that extra write."
+            },
+            "step1": {
+              "title": "Find the gate row",
+              "text": "Read the “Guide links passed” row with the same run identifier. It records the saved guide that was checked. The refusal and the pass answer different questions about that run."
+            },
+            "step2": {
+              "title": "Read the work order",
+              "text": "Follow the row’s work-order identifier to the existing assignment, “Revise setup steps and check links.” Its first requirement needs separate evidence."
+            },
+            "step3": {
+              "title": "Read the planning pass",
+              "text": "Read the planning pass named by that assignment. Its written ordering, “Guide first, tutorial next,” gives you the dependency. Grouping results cannot supply the planner’s reason."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "const events = readEventsFor('Setup guide', example.parameters.windowMinutes);\nconst refusals = events.filter(event => event.kind === 'Edit blocked');\n\nconst gateRows = [];\nfor (const [runId, edits] of Map.groupBy(refusals, edit => edit.gateRunId)) {\n  gateRows.push({ ...readGateRow(runId, 'Guide links'), refusals: edits });\n}\n\nconst orders = [];\nfor (const [orderId, rows] of Map.groupBy(gateRows, row => row.orderId)) {\n  orders.push({ ...readWorkOrder(orderId), evidence: rows });\n}\n\nconst planningPasses = [];\nfor (const [passId, assignments] of Map.groupBy(orders, order => order.passId)) {\n  planningPasses.push({ ...readPlanningPass(passId), assignments });\n}",
+          "rxjs": "// Illustrative: these helpers read a finished recording and its saved records. Each group reads the record named by its key.\nimport { filter, from, groupBy, map, mergeMap, toArray } from 'rxjs';\nconst refusals$ = from(readEventsFor('Setup guide', example.parameters.windowMinutes)).pipe(\n  filter(event => event.kind === 'Edit blocked')\n);\n\nconst gateRows$ = refusals$.pipe(\n  groupBy(edit => edit.gateRunId),\n  mergeMap(run$ => run$.pipe(toArray(), map(refusals =>\n    ({ ...readGateRow(run$.key, 'Guide links'), refusals })\n  )))\n);\n\nconst orders$ = gateRows$.pipe(\n  groupBy(row => row.orderId),\n  mergeMap(order$ => order$.pipe(toArray(), map(evidence =>\n    ({ ...readWorkOrder(order$.key), evidence })\n  )))\n);\n\nconst planningPasses$ = orders$.pipe(\n  groupBy(order => order.passId),\n  mergeMap(pass$ => pass$.pipe(toArray(), map(assignments =>\n    ({ ...readPlanningPass(pass$.key), assignments })\n  )))\n);"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Chrome DevTools Performance panel",
+            "relevance": "Explore several descriptions of the same performance recording.",
+            "explanation": "The Event log puts recorded activities in time order. The Call tree follows the path from a root activity through the calls it caused. The Bottom-up view combines repeated activity so you can see where the most time was spent. Selecting an entry highlights the corresponding activity in the trace."
+          },
+          "item1": {
+            "project": "OpenTelemetry Tracing API",
+            "relevance": "Read an operation as a trace, a span or an event.",
+            "explanation": "A trace's root span typically represents the whole operation and its child spans can represent parts of it. A span can also hold named, timestamped events. For an HTTP request, a child span might time the database query while a span event could mark a brief occurrence during the query."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach, Basic Books",
+            "supports": "The publisher identifies Douglas Hofstadter's book and describes its use of strange loops to explore questions about mind and self."
+          },
+          "item1": {
+            "title": "DotLn Kit Guide",
+            "supports": "The planning section describes drafting orders and their sequence. The sections on gates and stops document results tied to the checked work and explain when a live gate can block a write."
+          },
+          "item2": {
+            "title": "Chrome DevTools Performance features",
+            "supports": "The activities tables give a time-ordered event log, a call tree and a bottom-up view over a recording."
+          },
+          "item3": {
+            "title": "OpenTelemetry Tracing API",
+            "supports": "The Span and Add Events sections specify nested spans and timestamped events within a span."
+          },
+          "item4": {
+            "title": "RxJS groupBy implementation",
+            "supports": "The operator creates one observable per key and completes its groups when the source completes in this use."
+          },
+          "item5": {
+            "title": "RxJS toArray implementation",
+            "supports": "Each group is collected into an array at completion."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "See how grouping events can give a higher-level reader a smaller set of units to inspect."
+          },
+          "item1": {
+            "why": "Ask when a view can rely on its own terms and which lower-level change forces you to open the detail."
+          },
+          "item2": {
+            "why": "Follow a crossing between levels that eventually comes back to the one where it began."
+          }
+        },
+        "limits": {
+          "item0": "A gate row can seal off the hook's detail while you ask whether the checked version passed. If an edit slips through and changes the guide, use the event trail and the gate's recorded revision to find out which version the pass covers.",
+          "item1": "The analogy uses run, order and pass identifiers to join the views. A gate covering several orders may supply evidence to each of them. The order's criterion and the planning pass's reason for adding the guide still live in their written records.",
+          "item2": "The stream example assumes the recording ends. With a live feed, each group needs a closing rule before an array of its events can appear."
+        }
+      },
+      "model": {
+        "nodes": {
+          "hook": "Hook refusal",
+          "gate": "Gate row",
+          "order": "Work order",
+          "pass": "Planning pass"
+        },
+        "relations": {
+          "same-run": "shares a run with",
+          "criterion": "supplies evidence for",
+          "sequence": "belongs to"
+        },
+        "steps": {
+          "refusal": "Did the extra edit get saved? The guard blocked it while the checker was reading the guide. The refusal records that one attempted change.",
+          "result": "Did the links work? The checker followed them in the saved copy and recorded a pass. The blocked edit and the passing check happened during the same run.",
+          "promise": "What did the team agree to deliver? The assignment called for revised setup steps and working links. The passing row answers only the part about links.",
+          "dependency": "Why do the guide first? The tutorial will send readers there tomorrow. The plan records that dependency. To find out what happened to one edit, you must look back down at the refusal."
+        },
+        "moments": {
+          "refusal": "Hook refusal",
+          "result": "Gate row",
+          "promise": "Work order",
+          "dependency": "Planning pass"
+        },
+        "caption": "Read from the bottom up. The bottom arrow joins two records from the same check. The next arrow links that check to the assignment it helps verify. The top arrow leads to the plan that scheduled the work.",
+        "specimen": {
+          "title": "Read one line of test output",
+          "source": "We made a tiny guide for this test. It contains two links, #install and #start, and headings named install and start. We ran the check and the runner printed this line.",
+          "reading": "Look for the small word “ok.” It consists of two characters. Read it as a test verdict and it means the first check passed. The words after the dash came from the name we wrote for the test. They tell you exactly what was checked.",
+          "question": "Would the test still pass if the setup instructions were out of date?",
+          "answer": "Yes. The checker only looked for the two link targets. The same green result can sit beside an outdated paragraph. Now read the assignment below to find out what else the team promised.",
+          "samples": {
+            "item0": "ok 1 - both guide links have a target"
+          }
+        }
+      }
+    },
+    "chunking": {
+      "record": {
+        "authored": {
+          "by": "Study author 01",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A log line can tell you that a write was refused. A short report can tell you how often that happened across the whole check. Chunking starts by giving neighboring details a shared boundary, then lets you carry one small description per group into the report. Choose what each group keeps by asking what the report needs to answer.",
+          "situation": "This is an analogy to DotLn's public README.md demo. After a refused deletion in a fixture repository, it presents a numbered timeline and a line of glyphs derived from the same event log. Our guide check takes a different event list and shows how a short line can keep a refusal visible while the individual events remain available."
+        },
+        "example": {
+          "name": "A guide check in chunks",
+          "description": "The recording has five events in order. The run opens, the guide is read, a write is refused, the links are checked and the gate passes. With the starting width of two, the first pair is open and read. The second pair is refusal and link check. The pass stands alone. The summary still counts five events and one refusal. Set the group size to {chunkSize} or change it under Try another value."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Read the recording",
+              "text": "Start with Run opened, Guide read, Write refused, Links checked and Gate passed, in that order."
+            },
+            "step1": {
+              "title": "Make consecutive chunks",
+              "text": "Start at the first unused event and add events in order up to the limit of {chunkSize}. Keep the final group even when it is short. Save each group's members and count its refused writes."
+            },
+            "step2": {
+              "title": "Summarize the guide check",
+              "text": "Add the groups' event and refusal counts. Report those totals alongside the number of chunks so the whole check can be read at a glance."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "guideEvents = [Run opened, Guide read, Write refused, Links checked, Gate passed]\n\nchunks = []\nfor start in range(0, length(guideEvents), chunkSize):\n    members = slice(guideEvents, start, start + chunkSize)\n    chunks.append(chunk(members, count(members, Write refused)))\n\nguideCheck = sumEventAndRefusalCounts(chunks)\nguideCheck.chunkCount = length(chunks)",
+          "rxjs": "// Illustrative: the same finite log can be grouped as a stream. The drawing uses the TypeScript simulation.\nimport { bufferCount, from, map, reduce } from 'rxjs'\nconst guideEvents$ = from(guideEvents)\n\nconst chunks$ = guideEvents$.pipe(\n  bufferCount(chunkSize),\n  map(makeChunk),\n)\n\nconst guideCheck$ = chunks$.pipe(\n  reduce(addChunkCounts, emptyGuideCheck),\n)"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "RxJS bufferCount",
+            "relevance": "Make chunks of successive emissions.",
+            "explanation": "With only a size argument, bufferCount opens the next group after a full group is emitted. When the source completes it also emits any remaining group. Mapping each emitted list to a chunk with counts makes it possible to build a report from those chunks."
+          },
+          "item1": {
+            "project": "George A. Miller's recoding discussion",
+            "relevance": "Study a grouping that changes what a person has to remember.",
+            "explanation": "Miller describes a demonstration in which binary digits are paired and recoded as base-four digits for a recall task. Each pair has its own code, so the original pair can be recovered. A guide-check count alone can describe many possible event sequences."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach, Basic Books",
+            "supports": "The publisher identifies Douglas Hofstadter's book and describes its use of strange loops to explore questions about mind and self."
+          },
+          "item1": {
+            "title": "DotLn README, Try it",
+            "supports": "The fixture demo reports a refused action and derives a timeline and a compact glyph display from the event log."
+          },
+          "item2": {
+            "title": "RxJS bufferCount implementation",
+            "supports": "It collects consecutive values with a single size argument and emits a remaining buffer on completion."
+          },
+          "item3": {
+            "title": "George A. Miller, The Magical Number Seven, Plus or Minus Two",
+            "supports": "The Recoding section describes the binary-pair recoding example and gives its immediate-memory context."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "See what an event, a group and a summary each let a reader ask about the same work."
+          },
+          "item1": {
+            "why": "Compare a description that keeps the chosen groups with one that follows each lower-level change."
+          },
+          "item2": {
+            "why": "Compare a fixed boundary with the way a chess player recognizes familiar patterns of pieces."
+          }
+        },
+        "limits": {
+          "item0": "The analogy borrows the idea of reading a short projection of a log. The demo has a timeline and a glyph line. The chosen width and refusal counts belong to this guide-check example.",
+          "item1": "The same refusal count can describe many event sequences. Investigating the edit calls for the original event and its context.",
+          "item2": "A fixed width can split related events across chunks or put unrelated neighbors together. The right boundary for a guide check might be the start and end of a phase."
+        }
+      },
+      "model": {
+        "events": {
+          "runOpened": "Run opened",
+          "guideRead": "Guide read",
+          "writeRefused": "Write refused",
+          "linksChecked": "Links checked",
+          "gatePassed": "Gate passed"
+        },
+        "nodes": {
+          "events": "Guide events",
+          "chunk": "Chunk {{chunkNumber}}",
+          "guideCheck": "Guide check"
+        },
+        "edges": {
+          "feeds": "feeds",
+          "contributes": "contributes to"
+        },
+        "notes": {
+          "input": "The recording contains {{events}}.",
+          "chunk": "This chunk holds {{events}}. Its refused writes total {{refusalCount}}.",
+          "tail": "The recording ends before this chunk fills. It holds {{events}}. Its refused writes total {{refusalCount}}.",
+          "summary": "Chunks total {{chunkCount}}, events total {{eventCount}}, and refused writes total {{refusalCount}}."
+        },
+        "moments": {
+          "input": "Event list",
+          "summary": "Guide check summary"
+        },
+        "inputs": {
+          "size": "Chunk size",
+          "events": "events"
+        },
+        "caption": "Read the five events in order. The numbered chunks are groups at the same level. Each supplies an event count and a refusal count to one summary. Changing the width moves the group boundaries."
+      }
+    },
+    "consistency": {
+      "record": {
+        "authored": {
+          "by": "Study author 02",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "Ask a rulebook whether you can book a room. A rulebook that proves both the booking claim and its negation for the same room and slot is inconsistent. In ordinary propositional logic, one assignment that makes every premise true is enough to show that sound rules cannot derive such a pair from those premises.",
+          "situation": "DotLn’s public kit guide says that reusing a complete review pass requires the current code identity and time limits. A change to the limits calls for another run. This is an analogy for matching the subject of two claims before comparing them. Two reports that look incompatible can describe different runs, just as two booking notices can describe different slots."
+        },
+        "example": {
+          "name": "Cedar Room in slot 3",
+          "description": "A clearance for Cedar Room in slot 3 entails that the room is bookable. A hold covering that same room and slot entails that it is not bookable. Start with the clearance alone. It says nothing about the projector."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Read the clearance",
+              "text": "Fix the room and time slot first. The clearance gives one conclusion about Cedar Room in slot 3. You may book it."
+            },
+            "step1": {
+              "title": "Give two possible readings",
+              "text": "One possible schedule has Cedar Room bookable with a working projector. In another, the room is bookable with a broken projector. Each schedule separately satisfies the clearance. The rule leaves the projector question open."
+            },
+            "step2": {
+              "title": "Read the hold",
+              "text": "Apply the hold to precisely the same room and slot. The room is now also declared unavailable under the rules. The clearance remains in force for this comparison."
+            },
+            "step3": {
+              "title": "Compare the booking claims",
+              "text": "Both conclusions concern whether Cedar Room is bookable in slot 3. No assignment can make that claim and its negation true together. The record with both reports is inconsistent."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: follow the claims in one hand-worked room schedule.\nsubject ← Cedar Room in slot 3\nclaims ← Bookable(subject) from the clearance\n\nwitness A ← Bookable(subject) true, ProjectorWorks(Cedar Room) true\nwitness B ← Bookable(subject) true, ProjectorWorks(Cedar Room) false\nboth witnesses satisfy claims\n\nadd ¬Bookable(subject) to claims from the hold\n\ncheck whether one assignment satisfies Bookable(subject) and ¬Bookable(subject)\nreport a contradiction for Cedar Room in slot 3"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Z3",
+            "relevance": "Checks whether a formula has a satisfying assignment.",
+            "explanation": "The Z3 guide works with Boolean formulas and shows how asking whether an expression has an assignment can answer a logic question. The room example uses the same idea by hand when it tries schedules against both booking claims."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach at Basic Books",
+            "supports": "Identifies Douglas R. Hofstadter as the author and describes the book’s alternating chapters and dialogues and its connection to Gödel’s self-reference."
+          },
+          "item1": {
+            "title": "Panu Raatikainen on Gödel’s incompleteness theorems",
+            "supports": "Section 1.1 distinguishes ruling out contradictory derivations from proving or refuting every sentence in a theory’s language."
+          },
+          "item2": {
+            "title": "DotLn kit guide on the checks an order owes",
+            "supports": "Reusing a passing complete review requires the current code identity and the time limits in force."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "The projector question shows a gap in what the rules settle. Syntactic completeness asks whether the rules can derive either each sentence or its negation."
+          },
+          "item1": {
+            "why": "The interpretation says what the two reports assert about the same room and slot. That reading is what makes the claims conflict."
+          },
+          "item2": {
+            "why": "A schedule that fits every recorded claim can still misdescribe the room."
+          }
+        },
+        "limits": {
+          "item0": "A consistent schedule can still be wrong about Cedar Room. Checking the actual projector requires evidence from the room.",
+          "item1": "A few deductions without a contradiction leave consistency open. The clearance-only example has a stronger witness because a whole assignment satisfies all its premises.",
+          "item2": "The DotLn analogy is about matching the conditions of two reports. A recorded run covers particular checks, and the logical claim concerns every conclusion that the rules can derive."
+        }
+      },
+      "model": {
+        "nodes": {
+          "clearance": "Clearance",
+          "bookable": "Bookable",
+          "projector": "Projector status",
+          "unavailable": "Not bookable",
+          "hold": "Hold"
+        },
+        "relations": {
+          "clears": "implies",
+          "open-projector": "leaves open",
+          "bars": "implies",
+          "conflict": "contradicts"
+        },
+        "steps": {
+          "clear": "The clearance makes Cedar Room bookable in slot 3.",
+          "witness": "Cedar Room can be bookable in slot 3 with the projector working or broken.",
+          "hold": "The hold makes Cedar Room unavailable in the same slot.",
+          "compare": "No schedule can make Cedar Room both bookable and unavailable in slot 3."
+        },
+        "moments": {
+          "clear": "Clearance",
+          "witness": "Open question",
+          "hold": "Hold added",
+          "compare": "Contradiction"
+        },
+        "caption": "Follow the clearance to an open projector question, then add the hold and compare the two booking claims."
+      }
+    },
+    "decision-procedure": {
+      "record": {
+        "authored": {
+          "by": "Study author 02",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A derivation settles a yes answer the moment you find it. Giving a dependable no also takes a reason why every possible derivation has been accounted for. A decision procedure always finishes with a correct yes or no about whether the requested claim follows from the rules.",
+          "situation": "The DotLn kit guide describes a manifest check that hashes a finite list of compiled runtime and test files and names any that are changed or missing. This is an analogy for looking through a known set of candidates so the result has a stopping point. A time limit can stop a real check before it has reached a verdict."
+        },
+        "example": {
+          "name": "Lantern relay",
+          "description": "Dock starts lit. Each wire leads from a lit lantern to one it can light. With the extra Bell-to-Cove wire off, the search lights Dock, Steps, Bell and Beacon. Beacon is reachable. Cove has a wire pointing out toward Bell, but you cannot follow it backwards into Cove. Turn on the Bell-to-Cove wire under Try another value to change the second verdict."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Start at Dock",
+              "text": "Mark Dock as lit and put it first in the queue. The wire from Bell to Cove is present when the Bell-to-Cove setting is 1."
+            },
+            "step1": {
+              "title": "Follow each available rule",
+              "text": "For every lantern in the queue, try each outgoing wire and queue each newly lit lantern. The wire from Bell back to Steps reaches a lantern already marked. You keep that mark and leave the queue alone."
+            },
+            "step2": {
+              "title": "Read the verdicts",
+              "text": "Each lantern can enter the queue only once, so every queued lantern eventually has its wires checked. Any derivation from Dock must follow those wires. Once the queue is exhausted, membership in the lit set answers each claim."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "rules ← [Dock → Steps, Steps → Bell, Bell → Steps,\n         Bell → Beacon, Cove → Bell]\nif coveWire is 1, add Bell → Cove to rules\nlit ← set containing Dock\nqueue ← [Dock]\n\nfor each source in queue, including entries added below\n    for each rule source → destination in rules\n        if destination is absent from lit\n            add destination to lit\n            append destination to queue\n\nreturn [Beacon in lit, Cove in lit]"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "DirectedDFS in Algorithms, 4th Edition",
+            "relevance": "Marks every vertex reachable from a source in a directed graph.",
+            "explanation": "Sedgewick and Wayne’s Java implementation follows outgoing edges depth-first and marks a vertex before considering its neighbors. The lantern relay explores with a queue. In both examples, testing a mark after exploration answers reachability."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach at Basic Books",
+            "supports": "Identifies Douglas R. Hofstadter as the author and describes the book’s alternating chapters and dialogues and its connection to Gödel’s self-reference."
+          },
+          "item1": {
+            "title": "Panu Raatikainen on decidable theories",
+            "supports": "Sections 1.3 and 4.2 distinguish generating the members of a set from deciding membership, and define a theory’s decidability in terms of its theorems."
+          },
+          "item2": {
+            "title": "DotLn kit guide on gates",
+            "supports": "The kit-verification task hashes the compiled runtime and test files named in its manifest. The gate reports time exhaustion separately from a check failure."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "A tree of paths can revisit Steps endlessly. The relay finishes by recording each distinct lantern just once."
+          },
+          "item1": {
+            "why": "The lit set is a membership question with a stopping rule for both answers."
+          },
+          "item2": {
+            "why": "A truth table uses a different finite search and gives a verdict after all relevant assignments have been considered."
+          }
+        },
+        "limits": {
+          "item0": "The stop argument relies on the fixed set of lanterns and the rule that each mark is permanent. A system with rules that can keep creating new claims needs its own reason to stop.",
+          "item1": "Even a finite search can be costly. A model with many interacting parts may have a large set of states to check.",
+          "item2": "A no answers the claim under the given wires. An unmodeled source of light could change the real scene. In the DotLn analogy, an interrupted check can leave a file unjudged."
+        }
+      },
+      "model": {
+        "lanterns": {
+          "dock": "Dock",
+          "steps": "Steps",
+          "bell": "Bell",
+          "beacon": "Beacon",
+          "cove": "Cove"
+        },
+        "wire": "can light",
+        "notes": {
+          "seed": "{{lantern}} starts lit. Put it in the queue.",
+          "lights": "The rule from {{from}} to {{to}} adds {{to}} to the queue.",
+          "known": "{{to}} is already lit. The rule from {{from}} adds nothing to the queue.",
+          "yes": "Yes. {{lantern}} is in the lit set after every queued lantern has been checked.",
+          "no": "No. Every queued lantern has been checked and {{lantern}} never entered the lit set."
+        },
+        "moments": {
+          "seed": "Dock lights",
+          "cycle": "Cycle closes",
+          "beacon": "Beacon verdict",
+          "cove": "Cove verdict"
+        },
+        "input": {
+          "label": "Bell-to-Cove wire",
+          "unit": "0 absent, 1 connected"
+        },
+        "caption": "Follow the one-way wires from Dock. Each lit lantern is queued once, then the finished run answers for Beacon and Cove."
+      }
+    },
+    "isomorphism": {
+      "record": {
+        "authored": {
+          "by": "Study author 03",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When two representations are reversible, ask whether they also preserve the operations you care about. If you can join two words and then encode them, or encode the words and then join their codes, an isomorphism makes the two routes agree for every pair. Each word must also have exactly one counterpart in the chosen set of codes, with a unique way back.",
+          "situation": "Consider a catalog export as an analogy. DotLn-Angular’s public Toolbox catalog document says a resolved relation carries the exact ID of its target. When reviewing an export, match entries by ID. Following a link and then looking up the exported target should take you to the same entry as looking up the exported source and then following its link."
+        },
+        "example": {
+          "name": "Join L and R in two representations",
+          "description": "Follow the same pair, L and R, along both paths. Write their digits 1 and 2 together in base three and their value is 1 × 3 + 2 = 5. Encode the letters separately and combine the two codes by shifting and adding, and you also get 5. The last step tests the fixed candidate 3. Open Gödel numbering to run the encoder and try other candidate numbers."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Join the words first",
+              "text": "Put the letters of R after L to get LR. To encode it, read the symbol digits in order as a base-three numeral."
+            },
+            "step1": {
+              "title": "Join the codes first",
+              "text": "Encode L and R separately. Shift the prefix code left one base-three place for each letter in the suffix, then add the suffix code. R takes one place. An empty suffix takes zero places even though its code is written 0. The shift reserves exactly the space that the suffix fills."
+            },
+            "step2": {
+              "title": "Go back to the word",
+              "text": "Read the joined code’s base-three digits in order and turn each into its letter. The letters return as LR. The empty word has code zero. Joining with the empty word changes neither the word nor the code."
+            },
+            "step3": {
+              "title": "Find the image",
+              "text": "The matching set on the code side is called the image. It contains zero and the positive numbers whose base-three digits are all 1 or 2. Each such numeral spells exactly one word. The candidate contains a zero digit in its positive numeral, so it falls outside that set."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: this pair of words gives both routes through the diagram.\njoinedWord = concatenate(leftWord, rightWord)  // L then R gives LR\nfromWords = encode(joinedWord)\n\nleftCode = encode(leftWord)\nrightCode = encode(rightWord)\nplaces = length of rightCode in base three (zero places for the empty word)\nfromCodes = leftCode × 3^places + rightCode\ncheck fromWords = fromCodes\n\nrecovered = decode(fromCodes)\ncheck recovered = joinedWord  // LR\ncheck encode(empty word) = 0\n\nimage = zero and the positive integers with only digits 1 and 2 in base three\ncheck probeCode is outside image  // the candidate has a zero digit"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Applied Discrete Structures",
+            "relevance": "A textbook treatment of the operation of joining words.",
+            "explanation": "Al Doerr and Ken Levasseur show how pairing the letters of two equal-sized alphabets gives a pairing of all their strings. Translating letter by letter preserves the whole string’s order and makes concatenation agree on both sides. Our example also gives the translated digits a place value."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach — Basic Books",
+            "supports": "Identifies Hofstadter’s book and describes its treatment of self-reference across mathematical, musical and visual forms."
+          },
+          "item1": {
+            "title": "Applied Discrete Structures §14.2 — Free Monoids and Languages",
+            "supports": "Defines concatenation, identifies the empty word as its identity and shows how a bijection of alphabets extends to an isomorphism of their strings."
+          },
+          "item2": {
+            "title": "DotLn-Angular — Toolbox catalog, Data and provenance",
+            "supports": "Documents exact target IDs for resolved relations and explains the titles retained as unlinked text."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Run this same encoding and arithmetic join, then decode the result and try a number outside the image."
+          },
+          "item1": {
+            "why": "An interpretation assigns a reading to symbols. In an isomorphism, the specified operations must agree on their corresponding inputs as well."
+          },
+          "item2": {
+            "why": "The arithmetic join is a small example of expressing a rule about written strings as an operation on their numbers."
+          }
+        },
+        "limits": {
+          "item0": "The arithmetic operation here is shift and add. Ordinary addition can produce a number outside the image, and swapping the order of words can change the joined word and its code.",
+          "item1": "The worked pair illustrates the law. The general argument depends on place value for every suffix length and on the digits giving each positive code a unique decoding.",
+          "item2": "The catalog export analogy concerns resolved links. An export that aims to reconstruct full catalog records also needs to preserve unresolved titles, definitions and provenance."
+        }
+      },
+      "model": {
+        "nodes": {
+          "wordPair": "L then R",
+          "codePair": "1 then 2",
+          "word": "LR",
+          "code": "5",
+          "probe": "Candidate 3"
+        },
+        "relations": {
+          "joinWords": "join to form",
+          "encodeWord": "encodes as",
+          "encodePair": "encode as",
+          "joinCodes": "combine to give",
+          "decode": "decodes to"
+        },
+        "steps": {
+          "wordsFirst": "Start with L followed by R. Join the words by putting R after L.",
+          "encodeJoinedWord": "LR gives the digits 12 in base three, which represent 5.",
+          "codesFirst": "Start again with the same pair. This time encode L and R separately.",
+          "combineSeparateCodes": "Shift 1 by one base-three place and add 2. Both routes meet at 5.",
+          "recoverTheWord": "Read the digits 12 from left to right and turn them back into L and R.",
+          "outsideTheImage": "In base three, 3 is written 10. The digit 0 has no letter, so this positive number lies outside the image."
+        },
+        "moments": {
+          "wordsFirst": "Join words first",
+          "codesFirst": "Encode words first",
+          "recoverTheWord": "Decode the result",
+          "outsideTheImage": "Test the image"
+        },
+        "caption": "Words are on the left and their codes on the right. Both routes reach 5. The return arrow and the detached candidate show where decoding works."
+      }
+    },
+    "godel-numbering": {
+      "record": {
+        "authored": {
+          "by": "Study author 03",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A Gödel number gives a piece of written syntax an integer that can be read back. The payoff is that what you do with the writing can now have a counterpart in arithmetic. Here you can join L and R by writing one after the other, or by doing arithmetic on their two codes. In Gödel’s proof, a coding of formal syntax lets arithmetic describe expressions and derivations, including those written in the language of arithmetic itself.",
+          "situation": "DotLn-Angular’s public Toolbox catalog document offers an analogy. A mapped concept’s ID keeps the map slug and the original line number. Given the map, a machine can use that address to find a source row. This exercise goes one step further by storing the letters themselves in an integer and recovering them by division."
+        },
+        "example": {
+          "name": "Encode L followed by R",
+          "description": "We assigned L the digit 1 and R the digit 2. Joining L and R writes 12 in base three, or 1 × 3 + 2 = 5. To read 5 back, divide it by 3. The quotient is 1 and the remainder 2 gives R. Divide 1 by 3. The quotient is 0 and the remainder 1 gives L. Reverse that order to recover LR. The set of numbers the encoder can produce is its image. Try candidate 3 to find why some integers are outside it."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Accumulate the digits",
+              "text": "Start at zero. For each letter, multiply the current code by three and add its digit. Encode L and R separately. Also encode the word LR so you have both routes to compare."
+            },
+            "step1": {
+              "title": "Join the numbers",
+              "text": "Count the base-three places in R’s code. For the empty word, count zero places. Multiply L’s code by that power of three and add R’s code. The result has the same digits, in the same order, as the encoding of LR."
+            },
+            "step2": {
+              "title": "Recover the letters",
+              "text": "Divide the joined code by three and save the remainder. Keep dividing the quotient until it reaches zero. The remainders give the letters rightmost first, so reverse their order to get LR."
+            },
+            "step3": {
+              "title": "Test the candidate",
+              "text": "Zero codes the empty word. A negative number or a positive numeral containing a zero digit falls outside the image. All other base-three numerals use only the digits 1 and 2 and decode to a unique word."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "digit = { L: 1, R: 2 }\nencode(word):\n  code = 0\n  for symbol in word:\n    code = code × 3 + digit[symbol]\n  return code\nleftCode = encode(leftWord)  // L\nrightCode = encode(rightWord)  // R\ncodeFromWords = encode(concatenate(leftWord, rightWord))  // LR\n\nplaces = length of rightCode in base three (0 when rightCode = 0)\ncodeFromNumbers = leftCode × 3^places + rightCode\ncheck codeFromNumbers = codeFromWords\n\ndecode(code):\n  if code < 0: reject\n  letters = []\n  while code > 0:\n    quotient, remainder = divide code by 3\n    if remainder = 0: reject\n    add the letter for remainder to letters\n    code = quotient\n  return reverse(letters)\nrecovered = decode(codeFromNumbers)  // LR\n\ntry decode(probeCode)\n  accepted word → inside the image\n  rejected code → outside the image"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Stanford Encyclopedia of Philosophy",
+            "relevance": "A worked prime-power coding of formal expressions.",
+            "explanation": "Panu Raatikainen gives each primitive symbol a number and uses the powers of successive primes to hold those symbol numbers in order. Factoring a code recovers the exponents. The supplement then shows how checking formula shape and forming a negation can be stated in terms of codes. This study uses base-three place value for its smaller alphabet."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach — Basic Books",
+            "supports": "Identifies Hofstadter’s book and describes how Gödel’s self-referential construction inspired its treatment of strange loops."
+          },
+          "item1": {
+            "title": "Gödel Numbering — Stanford Encyclopedia of Philosophy",
+            "supports": "Works through an effective reversible coding with prime powers and explains which syntactic operations and relations can be expressed arithmetically."
+          },
+          "item2": {
+            "title": "Gödel’s Incompleteness Theorems — Stanford Encyclopedia of Philosophy",
+            "supports": "Explains how numbering represents syntax and proof relations in arithmetic and how diagonalization uses the resulting representation."
+          },
+          "item3": {
+            "title": "DotLn-Angular — Toolbox catalog, Data and provenance",
+            "supports": "Documents the map slug and original line number in a mapped concept’s ID and the separate SHA-256 of the original bytes."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "See why the two routes agree for every pair of words and which set the inverse covers."
+          },
+          "item1": {
+            "why": "Joining codes by shifting and adding gives a concrete example of turning a typographical operation into arithmetic."
+          },
+          "item2": {
+            "why": "The Gödel sentence uses a numbering of formal syntax together with diagonalization to express a claim about its provability."
+          }
+        },
+        "limits": {
+          "item0": "This alphabet has letters and concatenation. To ask whether a word is a well-formed formula or whether a sequence proves it, an arithmetization also needs the formal grammar, the coding of derivations and the proof rules.",
+          "item1": "The image depends on this alphabet and number base. Another assignment of digits changes the code for a given word, and using zero for a letter would require a way to preserve leading zeros.",
+          "item2": "The catalog address needs the source map to recover the row. Its separate SHA-256 checks the source bytes. Recovering a word directly from its number requires the inverse used here."
+        }
+      },
+      "model": {
+        "symbol": {
+          "left": "L",
+          "right": "R"
+        },
+        "emptyWord": "the empty word",
+        "node": {
+          "wordPair": "Words {{ left }} and {{ right }}",
+          "codePair": "Codes {{ left }} and {{ right }}",
+          "word": "word {{ word }}",
+          "code": "code {{ code }}",
+          "probe": "Candidate {{ code }}"
+        },
+        "link": {
+          "joinWords": "join to form",
+          "encodeWord": "encodes as",
+          "encodePair": "encode as",
+          "joinCodes": "combine to give",
+          "decode": "decodes to"
+        },
+        "step": {
+          "encode": "Start each code at zero. Multiply by three and add the digit for each letter in order.",
+          "joinCodes": "The number of base-three places on the right is {{ rightPlaces }}. The join is {{ left }} × {{ multiplier }} + {{ right }} = {{ code }}.",
+          "joinWords": "Write the second word after the first to see the same join on the word side.",
+          "compare": "Encoding the joined word gives {{ codeFromWords }}. Joining the codes gives {{ codeFromNumbers }}.",
+          "decode": "Repeatedly divide {{ code }} by three. Read the remainders in reverse order to recover {{ word }}.",
+          "probeWord": "The candidate decodes to {{ word }} and belongs to the image.",
+          "probeNegative": "Negative numbers are outside the image. The encoder starts at zero and appends positive digits.",
+          "probeZeroDigit": "The numeral {{ ternary }} in base three has a zero digit. Dividing {{ dividend }} by three exposes that remainder, so the candidate is outside the image."
+        },
+        "moment": {
+          "encode": "Encode the words",
+          "join": "Join the codes",
+          "compare": "Compare the routes",
+          "decode": "Decode the result",
+          "probe": "Test a candidate"
+        },
+        "caption": "The left side joins words. The right side makes the same join through arithmetic. Follow the return arrow to recover the joined word, then try the candidate.",
+        "input": {
+          "label": "Candidate number to decode",
+          "unit": "integer"
+        }
+      }
+    },
+    "sentence-g": {
+      "record": {
+        "authored": {
+          "by": "Study author 04",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A proof checker can tell you whether a particular list of lines makes a valid proof. In Peano arithmetic (PA), numbers can represent those lines and the whole proof. That lets PA express a claim about its own proofs. For the sentence G, the claim is that there is no number coding a PA proof of G itself.",
+          "situation": "This is an analogy to DotLn’s public execution guide, which ties a passing review gate row to the code it checked. Say a work order for a link checker asks whether its test suite could pass even when the checker accepts a broken URL. A passing row gives the result for the code the suite ran against. To answer the work order’s question you have to ask what cases the suite can check and what counts as a pass."
+        },
+        "example": {
+          "name": "G in Peano arithmetic",
+          "description": "Hofstadter builds G in his Typographical Number Theory (TNT). Here is an adaptation in Peano arithmetic (PA). Its equality axiom gives a one-line proof of 0 = 0. Call the number encoding that proof p, and the number encoding its last formula n. The proof checker accepts the pair (p, n). Use this same numbering to build G and ask whether PA could prove it."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Encode a PA proof",
+              "text": "Assign each formula and finite sequence of formulas its own code. A proof of 0 = 0 gives one number for the derivation and another for its conclusion. The arithmetic predicate Proof_PA checks whether a proposed pair of numbers encodes a valid PA proof of that conclusion."
+            },
+            "step1": {
+              "title": "Leave one place to fill",
+              "text": "Define diagonalCode(x) by reading x as a formula with one free variable, filling that place with the numeral for x, and numbering the result. Make a formula B(x) saying that there is no PA proof whose conclusion has code diagonalCode(x)."
+            },
+            "step2": {
+              "title": "Plug in B’s own code",
+              "text": "Put the numeral for B’s code into B(x) to get G. By construction, diagonalCode applied to B’s code is the code of G. PA can verify this substitution and prove that G is equivalent to the statement that no code gives a PA proof of G."
+            },
+            "step3": {
+              "title": "Suppose PA proves G",
+              "text": "The proof would supply a specific number, and PA could verify the number and prove that a proof of G exists. By the equivalence, PA would also prove that none exists. A consistent PA cannot prove both claims, so under that assumption PA has no proof of G."
+            },
+            "step4": {
+              "title": "Read G in the natural numbers",
+              "text": "The absence of a PA proof means there is no ordinary natural number that the proof predicate accepts as a proof of G. With the standard encoding, that makes the arithmetic sentence G true in the ordinary natural numbers. The argument used PA’s consistency as a premise about PA."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: the sketch follows the proof about PA using its consistency as a premise.\ntheory = PeanoArithmetic\np = code(a derivation of \"0 = 0\" in theory)\nn = code(\"0 = 0\")\nProof_PA(p, n) holds\n\ndiagonalCode(x) = code(substituteNumeral(formulaWithCode(x), x))\nB(x) means no p satisfies Proof_PA(p, diagonalCode(x))\n\nb = code(B)\nG = substituteNumeral(B, b)\nPA proves G ↔ ¬∃p Proof_PA(p, numeral(code(G)))\n\nassume PA is consistent\nif a PA proof of G has code p:\n    PA proves ∃q Proof_PA(q, numeral(code(G))) using numeral(p)\n    PA proves ¬∃q Proof_PA(q, numeral(code(G))) using G\n    contradiction\n\nconclude there is no PA proof of G\nin the natural numbers, no proof number exists, so G is true there"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Isabelle Archive of Formal Proofs",
+            "relevance": "Inspect a machine-checked incompleteness proof with its own formal theory.",
+            "explanation": "Lawrence Paulson’s development formalizes both incompleteness theorems for a theory of hereditarily finite sets. Its coding works without defining multiplication in that calculus. The archive separates coding, proof predicates and the first theorem into individual theories."
+          },
+          "item1": {
+            "project": "Stanford Encyclopedia of Philosophy",
+            "relevance": "Read which assumptions support each half of the first theorem.",
+            "explanation": "The entry starts from the arithmetic relation between a proof code and a formula code. It explains how the diagonal lemma gives G and treats the two questions of proving G and proving its negation separately."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach, Basic Books",
+            "supports": "The publisher identifies Hofstadter’s book and connects its use of the strange loop to Gödel’s self-referential construction."
+          },
+          "item1": {
+            "title": "Gödel’s Incompleteness Theorems, Stanford Encyclopedia of Philosophy",
+            "supports": "Sections 2.3 to 2.5 explain the proof predicate, the diagonal construction, the consistency assumption and truth in the standard model."
+          },
+          "item2": {
+            "title": "Gödel’s 1931 paper, partial English translation",
+            "supports": "Section 2, Theorem VI (PDF pages 14–16), constructs the sentence by numeric substitution and states the original ω-consistency assumption."
+          },
+          "item3": {
+            "title": "Gödel’s Incompleteness Theorems, Archive of Formal Proofs",
+            "supports": "The abstract and theory list describe the Isabelle development using hereditarily finite sets and give distinct entries for coding, proof predicates and the first theorem."
+          },
+          "item4": {
+            "title": "DotLn execution guide",
+            "supports": "The closeout procedure gives the passing review row standing at the code identity tested and calls for a current row after a source change."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "See how a reversible encoding lets arithmetic represent formulas and proof steps."
+          },
+          "item1": {
+            "why": "Follow the assumption that rules out a theory proving a claim and its negation."
+          },
+          "item2": {
+            "why": "See how one constructed sentence establishes a limit for a wider class of theories."
+          },
+          "item3": {
+            "why": "Compare the move from trying particular proofs to reasoning about the rules that generate them."
+          }
+        },
+        "limits": {
+          "item0": "The argument from consistency excludes a PA proof of this G. Excluding a PA proof of its negation for this construction uses a stronger assumption, such as ω-consistency. That assumption rules out proving an existential claim while refuting every individual natural-number instance.",
+          "item1": "The proof predicate names a particular theory. Add G as an axiom and it has an immediate proof in the extended theory. The old G still concerns proofs in PA.",
+          "item2": "The gate analogy is about the scope of evidence. Engineers can read or extend a finite set of test cases. The arithmetic argument concerns all possible proof codes for a sentence constructed using the theory’s own proof predicate."
+        }
+      },
+      "model": {
+        "nodes": {
+          "pa-proofs": "PA proofs",
+          "proof-codes": "Proof codes",
+          "formula-b": "B(x)",
+          "consistency": "PA consistency",
+          "sentence-g": "G for PA",
+          "natural-numbers": "Natural numbers"
+        },
+        "relations": {
+          "encode": "are represented by",
+          "describe": "expresses a condition on",
+          "substitute": "instantiates to",
+          "rule-out": "rules out a proof of",
+          "interpret": "give a truth value to"
+        },
+        "steps": {
+          "encode-proof": "Check the code of a derivation against the code of its last line, 0 = 0.",
+          "make-template": "B is a sentence template with one empty slot, x. Its claim concerns the sentence obtained by inserting the numeral for x into the template whose code is x. The function diagonalCode names that substitution.",
+          "close-template": "Insert the numeral for B’s own code. The conclusion named in the proof predicate now has the code of G.",
+          "assume-consistency": "A proof of G would let PA prove that such a proof both exists and does not exist.",
+          "read-truth": "If PA is consistent, no natural number codes a PA proof of G. With the standard encoding, G is true in the natural numbers."
+        },
+        "moments": {
+          "encode-proof": "Encode a PA proof",
+          "close-template": "Make G refer back",
+          "assume-consistency": "Test a supposed proof",
+          "read-truth": "Read G as arithmetic"
+        },
+        "caption": "Follow the numeric codes from a PA proof to a sentence about PA’s own proofs. The last two arrows distinguish the absence of a proof in PA from truth in the natural numbers."
+      }
+    },
+    "jumping-out-of-the-system": {
+      "record": {
+        "authored": {
+          "by": "Study author 04",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "In a puzzle you can ask which move comes next, or you can ask what every allowed move has in common. The second question is about the rules themselves. If you find a property that survives every move, you can use it to tell whether a target is out of reach.",
+          "situation": "This is an analogy to the recovery modes in DotLn’s public CLAUDE.md. That file describes analysis: as a pause for diagnosis, even when the repository or harness has failed, and gives analysis: off as the way to leave the mode. Imagine using that pause after a repeated gate failure to examine the gate’s setup. You can then resume the original workflow with a specific diagnosis to test."
+        },
+        "example": {
+          "name": "Can MI reach MU?",
+          "description": "Start with MI in the MIU puzzle and try to reach MU. A sequence of legal rewrites reaches MIU. To find out whether it is possible to finish with MU, count the I symbols and track the remainder after division by 3."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Try a legal path",
+              "text": "Start from MI. Duplicate everything after M to produce MII. Do that again to make MIIII. Replace the last three I symbols with U to get MIU."
+            },
+            "step1": {
+              "title": "Change what you track",
+              "text": "Track the number of I symbols modulo 3, the remainder when you divide by 3. The path MI, MII, MIIII, MIU has remainders 1, 2, 1, 1. Ask whether any legal step could take a nonzero remainder to zero."
+            },
+            "step2": {
+              "title": "Check all the rules",
+              "text": "In the MIU rules, append U only after a word ending in I, or erase an adjacent UU. Either move keeps the I count. Replacing III by U subtracts three. Duplicating the tail (everything after M) doubles the count and swaps remainders 1 and 2. A nonzero remainder stays nonzero under every legal move. This preserved property is the invariant."
+            },
+            "step3": {
+              "title": "Return to MU",
+              "text": "MU contains zero I symbols, so its remainder is zero. That excludes MU from every path starting at MI. The question now has an answer for paths of any length."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: one trial path leads to a written argument about every legal rewrite.\nstart = \"MI\"\ntarget = \"MU\"\nMII = duplicateTail(start)\nMIIII = duplicateTail(MII)\nMIU = replaceTrailingIIIWithU(MIIII)\n\nmodulus = 3\nremainder(s) = count(\"I\", s) mod modulus\nobserve remainders along [start, MII, MIIII, MIU] are [1, 2, 1, 1]\n\nfor r in [1, 2]:\n    show (2 × r) mod modulus is 1 or 2  // duplicate the tail\n    show (r − 3) mod modulus equals r  // replace III with U\n// Appending U and removing UU both leave r unchanged.\nconclude that all strings reached from start have a nonzero remainder\n\nremainder(target) = 0\nconclude that no legal path from start reaches target"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Metamath’s miu.mm",
+            "relevance": "See the puzzle’s legal rewrites encoded as a proof checker’s rules.",
+            "explanation": "The Metamath database introduces MI as an axiom and represents each of the four rewrites as an inference. It ends with a concrete derivation of MUIIU. The Metamath handbook’s Appendix D explains that answering the reachability question for MU takes a separate argument about those rules."
+          },
+          "item1": {
+            "project": "Leslie Lamport’s Proving Safety Properties",
+            "relevance": "See the same structure in a proof about a concurrent algorithm.",
+            "explanation": "Lamport’s notes work through a mutual exclusion example, where two processes must never enter a critical section together. The proof uses an invariant that holds initially and survives every allowed step. That invariant implies mutual exclusion for every state reached by the algorithm."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach, Basic Books",
+            "supports": "The publisher identifies Hofstadter’s book and describes self-reference as a theme that its chapters and dialogues explore."
+          },
+          "item1": {
+            "title": "Metamath MIU database",
+            "supports": "The file records the start string MI, the four legal rewrites and a proof of MUIIU written in Metamath’s proof language."
+          },
+          "item2": {
+            "title": "Metamath handbook, Appendix D",
+            "supports": "The appendix distinguishes an MIU derivation from the question of whether MU has any MIU derivation."
+          },
+          "item3": {
+            "title": "Proving Safety Properties, Leslie Lamport",
+            "supports": "Section 4.2 gives the initial-state and one-step obligations for an invariant proof and applies them to mutual exclusion."
+          },
+          "item4": {
+            "title": "DotLn CLAUDE.md, Start here",
+            "supports": "The public file describes diagnosis mode, continued access despite repository or harness failure, and the command to exit the mode."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "See how the question determines whether to read a trace of individual steps or a description of the whole system."
+          },
+          "item1": {
+            "why": "Read the mathematical property that makes the switch in this puzzle pay off."
+          },
+          "item2": {
+            "why": "Ask what it takes for a method to give a definite answer for every permitted input."
+          },
+          "item3": {
+            "why": "Follow a case where arithmetic can encode the question about its own proofs inside the theory itself."
+          }
+        },
+        "limits": {
+          "item0": "This remainder argument depends on the exact rewrite rules. Add a rule that removes one I and the reachable string MIU can immediately become MU.",
+          "item1": "A target with a nonzero remainder passes this particular check. The argument leaves the path to that target to be found.",
+          "item2": "The DotLn analogy covers the shift to a question about the rules and the return to the original work. A human directs recovery in DotLn. The puzzle’s conclusion follows by checking a fixed set of rewrites."
+        }
+      },
+      "model": {
+        "nodes": {
+          "start": "MI",
+          "trial": "MIU",
+          "target": "MU",
+          "invariant": "Nonzero remainder"
+        },
+        "relations": {
+          "rewrite": "can produce",
+          "inspect": "suggests looking for a",
+          "return": "rules out reaching"
+        },
+        "steps": {
+          "try-rewrites": "Duplicate the tail twice to reach MII and then MIIII. Replace the last three I symbols with U to get MIU.",
+          "count": "Track the count of I symbols modulo 3. The remainders along the trial path are 1, 2, 1 and 1.",
+          "check-rules": "Two rules leave the count alone, one subtracts three, and doubling swaps remainders 1 and 2. Every rule preserves a nonzero remainder.",
+          "rule-out-target": "MU contains zero I symbols. Starting at MI gives remainder 1, so MU is unreachable from MI by these rules."
+        },
+        "moments": {
+          "try-rewrites": "Try a rewrite path",
+          "count": "Count across the path",
+          "check-rules": "Inspect every rule",
+          "rule-out-target": "Return to MU"
+        },
+        "caption": "Read up from the legal path to the property the rules preserve. The final arrow brings that property back to the target MU."
+      }
+    },
+    "active-symbols": {
+      "record": {
+        "authored": {
+          "by": "Study author 05",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When an idea comes to mind, it can change which other ideas are easy to reach. In Hofstadter’s account, the role of an active symbol comes partly from what it brings into consideration. Think about what becomes relevant as soon as you intend to make tea.",
+          "situation": "As a DotLn analogy, the public DotLn kit guide describes how entering resume: next directs a session to the executor’s skill through the generated operating contract. The phrase has that effect because the kit connects it to a procedure."
+        },
+        "example": {
+          "name": "A kettle cues making tea",
+          "description": "Imagine a kettle clicking off. The sound is the cue. The active symbol in this example is the idea of making tea that comes to mind. While it is active, it makes the ideas of a mug and a tea bag easier to recall. The two arrows trace these imagined associations. The mugs on the shelf stay where they are."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Hear the kettle",
+              "text": "A click from the kettle switch supplies the cue."
+            },
+            "step1": {
+              "title": "Think of making tea",
+              "text": "The familiar sound brings making tea to mind."
+            },
+            "step2": {
+              "title": "Think of a mug",
+              "text": "A mug comes to mind as something to hold the tea."
+            },
+            "step3": {
+              "title": "Think of a tea bag",
+              "text": "Another association from the same idea makes a tea bag relevant. The drawing follows each association separately so you can see that they share a source."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: this trace follows assumed associations in one kitchen.\ncue = notice(\"Kettle click\")\nlinksFromTea = [\"Mug\", \"Tea bag\"]\n\nidea = activate(\"Making tea\", cue)\n\nconsider(linksFromTea[0], from = idea)\n\nconsider(linksFromTea[1], from = idea)"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Copycat",
+            "relevance": "Concepts that change which other concepts a program considers.",
+            "explanation": "Copycat tries to transfer a change from one string of letters to another. Activation spreads among concepts in its Slipnet. The activation of opposite can also shorten the link between successor and predecessor, making it easier for the program to substitute one for the other when reading a string."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Gödel, Escher, Bach: An Eternal Golden Braid",
+            "supports": "Basic Books identifies Hofstadter’s book and describes its inquiry into minds and machines."
+          },
+          "item1": {
+            "title": "The Copycat Project: A Model of Mental Fluidity and Analogy-making",
+            "supports": "Hofstadter and Mitchell connect Copycat’s concepts to active symbols and describe the Slipnet’s spreading activation and adjustable link lengths."
+          },
+          "item2": {
+            "title": "DotLn kit guide · First steps",
+            "supports": "The first-order procedure shows the resume: next cue, and the guide explains how the generated operating contract routes resume phrases to role skills."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "A printed word can supply a cue. The activity it sets off in a reader belongs to a different part of the explanation."
+          },
+          "item1": {
+            "why": "Look at the pattern of associations that determines which further concepts become relevant."
+          },
+          "item2": {
+            "why": "Descriptions of neural activity and of someone thinking of a mug answer different questions about the same event."
+          }
+        },
+        "limits": {
+          "item0": "The example isolates a few associations in one kitchen. The same click could suggest a different action to someone who was heating water for another purpose.",
+          "item1": "A model of the brain would need evidence about what neural activity carries each idea, how the associations were learned, and when one idea makes another easier to call up.",
+          "item2": "The DotLn analogy uses an explicit phrase-to-skill mapping. The associations in the kitchen depend on experience and what the person is already doing."
+        }
+      },
+      "model": {
+        "nodes": {
+          "kettle-click": "Kettle click",
+          "making-tea": "Making tea",
+          "mug": "Mug",
+          "tea-bag": "Tea bag"
+        },
+        "relations": {
+          "cue": "suggests",
+          "mug-link": "calls up",
+          "tea-bag-link": "calls up"
+        },
+        "steps": {
+          "hear": "The switch clicks as the kettle turns off.",
+          "think": "The familiar sound brings making tea to mind.",
+          "consider-mug": "A mug is something you could reach for to hold the tea.",
+          "consider-tea-bag": "A tea bag comes to mind from the same idea. Follow both arrows back to Making tea."
+        },
+        "moments": {
+          "hear": "Hear the kettle",
+          "think": "Think of making tea",
+          "consider-tea-bag": "See the second association"
+        },
+        "caption": "The kettle supplies the cue. Making tea is the idea that connects the sound to the mug and the tea bag."
+      }
+    },
+    "strange-loop": {
+      "record": {
+        "authored": {
+          "by": "Study author 05",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A clock revisits the same positions as time passes. A strange loop returns by changing the level at which you read something. In Escher’s Print Gallery, the room that holds a picture turns up inside what that picture depicts.",
+          "situation": "As a DotLn analogy, the public DotLn kit guide describes the harness emitter that generates the role guidance a session reads. Imagine following that guidance on a maintenance order that changes the emitter itself. The instructions produced by the tool govern work on the tool that produces them."
+        },
+        "example": {
+          "name": "Back inside Escher’s Print Gallery",
+          "description": "In M. C. Escher’s lithograph Print Gallery, find the visitor on the left looking at a print. Follow his gaze into its seaport. Trace the quayside buildings around to the gallery where that same visitor is standing. The gallery contains the print, and the city in the print contains the gallery. The map below lets you retrace that route. Escher left a white area in the center. The smaller rotated copy shown by the mathematical reconstruction belongs to that later work."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Begin in the gallery",
+              "text": "Take the visitor’s room as your starting point."
+            },
+            "step1": {
+              "title": "Look at the seaport print",
+              "text": "From the gallery, pick out the print as an object displayed on the wall."
+            },
+            "step2": {
+              "title": "Read the seaport scene",
+              "text": "Follow what the seaport print depicts and look at the buildings along the waterfront."
+            },
+            "step3": {
+              "title": "Recognize the gallery",
+              "text": "One of the buildings in the seaport scene is the same gallery where the print hangs."
+            },
+            "step4": {
+              "title": "Return to the starting point",
+              "text": "Focus on the gallery again. It contains the print at one level and is part of the world depicted by the print at another."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: these steps record how to read the composition.\nstart = Gallery\n\nprint = Seaport print exhibited in start\n\nscene = Seaport scene depicted by print\n\nreturnTo = Gallery as depicted within scene\n\nfocus(Gallery)\nconfirm returnTo represents start"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Escher and the Droste effect",
+            "relevance": "A digital reconstruction of the self-inclusion suggested by Print Gallery.",
+            "explanation": "The Leiden project uses a straightened version of the drawing to study Escher’s distortion and reconstruct the area around the blank center. In the completed image, a smaller, rotated version of the print appears inside itself."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "View the 1956 Print Gallery on the museum website",
+            "supports": "The museum shows the 1956 lithograph and identifies the visitor on the left, the Maltese city in the print and the way its roofs become the roof of the gallery."
+          },
+          "item1": {
+            "title": "Gödel, Escher, Bach: An Eternal Golden Braid",
+            "supports": "Basic Books identifies the strange loop as a central idea of the book and connects it to Gödel’s self-reference."
+          },
+          "item2": {
+            "title": "The Mathematical Structure of Escher’s Print Gallery",
+            "supports": "De Smit and Lenstra describe how the visitor’s gallery appears in the seaport and derive the rotation and scaling of the smaller copy in their idealized image."
+          },
+          "item3": {
+            "title": "DotLn kit guide · Harness and first steps",
+            "supports": "The guide describes how the export generates the Contributor harness and how later sessions use the generated role guidance."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Look at how the same print can be read as an object hanging on a wall and as a scene with streets and buildings."
+          },
+          "item1": {
+            "why": "The depicted world contains the gallery that contains its depiction, which makes the usual direction of containment loop back."
+          },
+          "item2": {
+            "why": "Explore the artwork and the reconstruction that makes its self-inclusion visible at the center."
+          },
+          "item3": {
+            "why": "See another return across levels when a sentence of arithmetic comes to refer to its own provability."
+          }
+        },
+        "limits": {
+          "item0": "Escher left a white patch in the middle of his lithograph. The detailed print-within-the-print at the center comes from the mathematical reconstruction.",
+          "item1": "The arrows establish how the room and the image refer back to each other. Reconstructing the picture itself requires additional geometry for the change of scale and rotation.",
+          "item2": "In the DotLn analogy, people authorize and carry out the change across successive versions. Escher puts the whole return in a single image."
+        }
+      },
+      "model": {
+        "nodes": {
+          "gallery": "Gallery",
+          "seaport-print": "Seaport print",
+          "seaport-scene": "Seaport scene"
+        },
+        "relations": {
+          "exhibits": "exhibits",
+          "depicts": "depicts",
+          "return": "contains"
+        },
+        "steps": {
+          "begin": "Start in the exhibition room where the visitor stands.",
+          "look": "At this level, the seaport print is an object hanging on the wall.",
+          "read": "Look into the picture at the buildings along the waterfront.",
+          "recognize": "The gallery appears among the seaport buildings. The arrow points back to the room where the print hangs.",
+          "back": "You are back at the starting point. The room that holds the picture also appears inside it."
+        },
+        "moments": {
+          "begin": "Start in the gallery",
+          "read": "Enter the scene",
+          "back": "Return to the gallery"
+        },
+        "caption": "Follow the links from a gallery to the print it exhibits, into the world depicted by that print, and back to the same gallery.",
+        "specimen": {
+          "title": "Where does each instruction send you?",
+          "source": "We wrote these two cards for this lesson. Imagine picking up the first card, doing what it says and putting it down. Then read the second.",
+          "reading": "Both cards start the same way. Your eyes pick out the marks, then you read them as an instruction. Look at the last words on each card to decide what to count.",
+          "question": "Which card sends you back to its own ink?",
+          "answer": "The first sends your eyes to the room’s windows. The second sends them back to the letters that carry its own instruction. Its six words contain 25 letters. That return across levels is the loop.",
+          "samples": {
+            "item0": "Count the windows in this room.",
+            "item1": "Count the letters on this card."
+          }
+        }
+      }
+    }
+  },
+  "studyTt": {
+    "titles": {
+      "tt3:7": "Collaboration mode",
+      "tt3:10": "Defined period for collaboration",
+      "tt3:8": "X-as-a-Service mode",
+      "tt3:9": "Facilitating mode",
+      "tt3:42": "Ongoing collaboration (anti-pattern)",
+      "tt2:90": "Platform as a product",
+      "tt1:308": "Team API",
+      "tt3:47": "Organizational sensing",
+      "tt2:64": "Enabling team",
+      "tt3:15": "Facilitating as gap detection",
+      "tt1:151": "Team-scoped flow",
+      "tt1:152": "Loose coupling",
+      "tt1:153": "High cohesion",
+      "tt1:154": "Clear and appropriate version compatibility",
+      "tt1:138": "Reverse Conway manoeuvre",
+      "tt1:92": "Conway's law (1968)",
+      "tt1:94": "Homomorphic force",
+      "tt1:93": "Real communication paths as the value-creation structure",
+      "tt1:205": "Isomorphic force",
+      "tt1:215": "Seven-to-nine maximum effective team size",
+      "tt1:216": "Two-pizza teams (Amazon)",
+      "tt1:220": "High-trust exception for larger teams",
+      "tt3:133": "Team cognitive load",
+      "tt2:85": "Internal customer",
+      "tt2:88": "Thinnest Viable Platform (TVP)",
+      "tt2:93": "Developer experience as platform quality",
+      "tt3:41": "Interaction modes as sensing",
+      "tt3:73": "Operations as high-fidelity sensory input",
+      "tt3:71": "Responses to a trigger"
+    },
+    "collaboration-mode": {
+      "record": {
+        "authored": {
+          "by": "Study author 06",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When a decision needs knowledge from two teams, bring their examples and prototypes into the same trial. Both teams help interpret the results and change the design. Give that work a question and a deadline so everyone knows when to return to their own work.",
+          "situation": "In the public DotLn playbook, the refuter independently judges a committed planning pass. A finding on a particular order can lead the planner to change it and record the disposition. The shared feature is a bounded exchange about a proposal. In the preview trial, both teams also change the prototype and agree on its design together."
+        },
+        "example": {
+          "name": "Designing a checkout preview",
+          "description": "Checkout needs a temporary copy of its app to test a branch. Release Platform can create one. Its proposed Preview API is the way Checkout will request that copy and check whether it is ready. The teams give themselves ten working days to agree what the request returns, how a failed build is reported and who cleans up."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Agree on one trial",
+              "text": "Checkout and Release Platform reserve ten working days to answer a practical question. Can a Checkout engineer create a preview, diagnose a build failure, and remove the environment using the published instructions?"
+            },
+            "step1": {
+              "title": "Bring a case and a prototype",
+              "text": "Checkout brings a passing build and one that fails. Release Platform brings a Preview API prototype and its cleanup rules. Together they decide what the two requests should tell the person running them."
+            },
+            "step2": {
+              "title": "Change the design together",
+              "text": "The first prototype returns a URL before it is usable. Both teams agree to return a request ID, expose the URL when the environment is ready, and give a readable error if the build fails."
+            },
+            "step3": {
+              "title": "Try it from a fresh branch",
+              "text": "A Checkout engineer who missed the pairing uses the draft instructions to create and remove a preview and identify the failed build. Release Platform checks that the failed run leaves no resources behind."
+            },
+            "step4": {
+              "title": "End the joint sessions",
+              "text": "Once the trial passes and each team accepts its responsibility, Release Platform publishes and supports the Preview API and Checkout owns its application builds. If the tenth day arrives with an open question, the joint sessions end and the teams record what failed and decide whether a smaller trial is worth starting."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: both teams interpret trial evidence and decide what to own.\ntrial = agree(\"Checkout\", \"Release Platform\", timeboxDays)\nsetGoal(trial, \"create, diagnose and remove a preview from the docs\")\n\ncheckout.share(passingBuild, failedBuild)\nreleasePlatform.share(previewPrototype, cleanupRules)\nagreeOnExpectedResponses(passingBuild, failedBuild)\n\nresult = tryTogether(previewPrototype, passingBuild)\nif result.exposesUrlBeforeReady:\n  agreeToReturnRequestId()\n  exposeUrlOnlyWhenReady()\nagreeOnBuildError()\n\ncleanRun = checkout.tryFromDocs(freshBranch, passingBuild, failedBuild)\ncleanup = releasePlatform.checkResourcesAfterFailure()\n\nif cleanRun.passes and cleanup.passes and bothOwnersAccept():\n  releasePlatform.publishAndSupport(\"Preview API\")\n  checkout.ownApplicationBuilds()\n  endJointSessions()\nelse if trial.daysElapsed >= timeboxDays:\n  endJointSessions()\n  recordOpenQuestionAndDecideOnNewTrial()"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Team Topologies Team API template",
+            "relevance": "A place to record a temporary agreement",
+            "explanation": "This worksheet describes a team's work and its relationships with other teams. It records who is involved in a collaboration, what they hope to learn and how long they expect to work together."
+          },
+          "item1": {
+            "project": "Footasylum",
+            "relevance": "Joint design around a concrete need",
+            "explanation": "In this account, Footasylum's platform and mobile teams worked together on a lightweight backend for the mobile app. The backend could call core services, and the mobile team could use the stock data through the documented interface without learning stock calculations."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies book page",
+            "supports": "Identifies Matthew Skelton and Manuel Pais as the authors of the 2019 first edition and describes its three team interaction patterns."
+          },
+          "item1": {
+            "title": "Team Interaction Modeling with Team Topologies",
+            "supports": "Describes short, purposeful collaboration for discovery and illustrates a possible move to a service relationship once the teams find a suitable boundary."
+          },
+          "item2": {
+            "title": "DotLn playbook, Planning pass",
+            "supports": "The playbook gives each committed planning pass one goal-alignment judgment, with dispositions for findings on particular orders. Changed evidence can warrant another judgment."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "A defined period puts a date on the decision to close joint design or scope a new question."
+          },
+          "item1": {
+            "why": "Once Checkout can work through the Preview API, the teams can keep the capability available through a service relationship."
+          },
+          "item2": {
+            "why": "Facilitating fits a different need where one team helps the other learn a skill it will use independently."
+          },
+          "item3": {
+            "why": "If each routine change still needs both teams in the same room, ongoing collaboration may be covering a gap in ownership or in the interface."
+          }
+        },
+        "limits": {
+          "item0": "A calendar deadline limits the cost of discovery. A failed clean run at the deadline leaves the interface unsettled and calls for a decision about scope or ownership.",
+          "item1": "A successful preview trial covers the kinds of build and failure it exercises. A different application or operating load can reveal a new question worth investigating.",
+          "item2": "DotLn's planning refutation preserves independent judgment. The shared design decisions in the preview trial go beyond that exchange."
+        }
+      },
+      "model": {
+        "nodes": {
+          "checkout": "Checkout",
+          "release-platform": "Release Platform",
+          "preview-api": "Preview API"
+        },
+        "relations": {
+          "share-builds": "brings test builds to",
+          "try-prototype": "tests a prototype with",
+          "try-from-docs": "tests the draft",
+          "publish-api": "publishes and owns the"
+        },
+        "steps": {
+          "scope": "Checkout and Release Platform agree to spend ten working days finding a way to create, diagnose and remove a preview from the docs.",
+          "share": "Checkout shares a passing build and a failed build. Release Platform contributes a prototype and its rules for cleaning up environments.",
+          "revise": "An early URL fails to open. The teams agree to return a request ID first, then a working URL or a build error.",
+          "prove": "Checkout creates and removes a preview from the docs and diagnoses the failed build. Release Platform confirms the failed run leaves no resources.",
+          "close": "A fresh Checkout engineer built, diagnosed and cleaned up a preview from the docs alone. Joint sessions end and Release Platform owns the API. If that test still failed on day ten, this trial would end and the teams would revisit scope or ownership."
+        },
+        "moments": {
+          "scope": "Start the trial",
+          "revise": "Revise the prototype",
+          "prove": "Test from the docs",
+          "close": "Close joint work"
+        },
+        "caption": "Follow the highlighted exchange from joint design to separate ownership of the service and the builds.",
+        "specimen": {
+          "title": "Can the joint sessions end?",
+          "source": "Imagine Checkout needs a running copy of a change to test it. Release Platform can provide one, but the two teams have to agree when a preview is ready and what happens when a build fails. We wrote these trial notes for the example.",
+          "reading": "At first, each team holds a piece the other needs. At the end, an engineer who missed the joint sessions can follow the instructions alone. Release Platform owns and supports the service. Checkout owns its builds.",
+          "question": "Would agreeing on the instructions be enough to end this trial?",
+          "answer": "The teams agreed to test whether another engineer could actually use the instructions. Passing that test gives them evidence that ordinary work can continue independently. If ten working days run out first, they close the trial, record the gap and decide whether to try a smaller question.",
+          "samples": {
+            "item0": "During joint work · Checkout brought a passing and a failing build. Both teams agreed to show the link only when the preview was ready.",
+            "item1": "At handoff · A Checkout engineer who missed the sessions used the instructions to create and remove a preview and diagnose the failed build. Release Platform checked that the failed run left nothing running."
+          }
+        }
+      }
+    },
+    "x-as-a-service-mode": {
+      "record": {
+        "authored": {
+          "by": "Study author 06",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "Imagine you changed the Pay button in an online shop. Before you publish the change, you want to try the button on a private copy of the shop app. That test copy is a preview.",
+          "situation": "An analogy in DotLn is a project updating its copy of the starter kit. DotLn core publishes the kit. Its v1.2.0 release notes explain how the update can preserve files the project owns. The project can follow that published update path on its own, just as Checkout can request a supported preview on its own. The project runs its kit update locally. Release Platform runs the previews for Checkout."
+        },
+        "example": {
+          "name": "Can I try the new Pay button before shoppers see it?",
+          "description": "Three attempts to start the shop app alongside fake payments hit the same one-app limit. The tool assigns each attempt a tracking number, called a request ID. Checkout gives those numbers to Release Platform so both teams can find the attempts and see why the test is stuck. They agree when both apps count as ready and who will remove them after testing. Engineers keep using the service for one-app previews throughout."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Publish the supported path",
+              "text": "Release Platform documents how to submit a commit, follow the request's status, get a preview URL, and reach support. It runs the preview infrastructure and maintains the supported API versions."
+            },
+            "step1": {
+              "title": "Ask for a preview",
+              "text": "Checkout's pipeline sends a commit reference to the Preview API, receives a request ID, and uses it to check status. A bad application build returns an error Checkout can act on."
+            },
+            "step2": {
+              "title": "Use the result and keep working",
+              "text": "A ready preview returns a URL that Checkout can test. Checkout removes the preview when the test ends. The teams keep the arrangement while Checkout can run its routine work independently and Release Platform can meet the support and reliability it promised."
+            },
+            "step3": {
+              "title": "Report repeated friction",
+              "text": "Three branch runs need the payment stub as a second app. Checkout sends the blocked request IDs and the missing requirement through the support channel. Release Platform can use those examples to tell whether the gap is in the service contract or in how it is being used."
+            },
+            "step4": {
+              "title": "Reopen a specific question",
+              "text": "The teams find that the current contract covers just one app. They agree on a short trial to discover what readiness and cleanup mean for two apps. The supported one-app contract keeps serving its routine callers during the trial."
+            },
+            "step5": {
+              "title": "Return the new path to self-service",
+              "text": "Checkout demonstrates that a two-app preview works from the revised instructions. Release Platform owns and supports the new version. Checkout can move its two-app jobs to that version on its own schedule."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: people interpret repeated failures and choose how to improve the service.\ncheckout = team(\"Checkout\")\nreleasePlatform = team(\"Release Platform\")\nreleasePlatform.publish(\"Preview API\", inputs, statuses, supportChannel)\n\nrequestId = checkout.requestPreview(commit)\npreview = checkout.readPreviewStatus(requestId)\nif preview.hasBuildError:\n  checkout.inspectBuild(preview.error)\n\nif preview.isReady:\n  checkout.testCommit(preview.url)\n  checkout.removePreview(requestId)\n\nif blockedBranchRuns(\"payment stub\") >= reviewAfterBlockedRuns:\n  checkout.reportGap(\"payment stub\", blockedRequestIds)\n\nif releasePlatform.confirmsContractGap(\"payment stub\"):\n  tryTwoAppPreviewTogether(checkout, releasePlatform)\n  releasePlatform.keepSupportingOneAppPreviews()\n\nif checkout.canRunTwoAppPreviewFromDocs():\n  releasePlatform.publishSupportedVersion()\n  checkout.adoptOnItsSchedule()"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Trade Me's Thinnest Viable Platform",
+            "relevance": "An internal platform with ongoing owners and users",
+            "explanation": "Trade Me describes how its engineers use platform templates to start services. The platform's owners provide support and update it using developer feedback. Teams can choose another route and carry the production-readiness work themselves."
+          },
+          "item1": {
+            "project": "Team Topologies Team API template",
+            "relevance": "A way to find the owner and the terms of service",
+            "explanation": "The template asks a team to document what it provides, what it owns, how it versions changes, and what other teams can expect from it. Consumers can use that information to find a supported path and the right place to ask for help."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies book page",
+            "supports": "Identifies the authors and describes the first edition's approach to evolving team structures and interaction patterns."
+          },
+          "item1": {
+            "title": "X-as-a-Service, Team Topologies newsletter",
+            "supports": "Describes self-service interfaces, service expectations, documentation and support. It also describes renewed collaboration when an existing service no longer meets a team's needs."
+          },
+          "item2": {
+            "title": "DotLn v1.2.0 release notes",
+            "supports": "Publicly documents the starter update preview's manifest-conflict guidance and how the release handles locally owned files."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "The two-app gap gives Checkout and Release Platform a reason to work closely for a short period."
+          },
+          "item1": {
+            "why": "An internal provider can use developer feedback and support evidence to decide which service improvements to make."
+          },
+          "item2": {
+            "why": "A Team API can tell consumers where to find the supported service interface and how to reach its owners."
+          },
+          "item3": {
+            "why": "The same blocked request across several branches gives both teams a signal that the current boundary may need to change."
+          }
+        },
+        "limits": {
+          "item0": "A service can give a team a documented request and still make it wait for daily approvals. That wait shows where the team still depends on somebody else's schedule.",
+          "item1": "An isolated outage belongs on the provider's support path. Repeated workarounds, missing capabilities or chronic missed service expectations are reasons to revisit the contract or its implementation.",
+          "item2": "When teams have moved on to other workflows, check who still depends on the service and give them time to migrate before retiring it.",
+          "item3": "The DotLn starter is a versioned kit that an instance updates locally, sometimes with manual conflict resolution. The Preview API example also involves a provider running infrastructure for each request."
+        }
+      },
+      "model": {
+        "nodes": {
+          "checkout": "Checkout",
+          "release-platform": "Release Platform",
+          "preview-api": "Preview API"
+        },
+        "relations": {
+          "maintain": "runs the",
+          "request": "requests a preview through the",
+          "respond": "returns a ready URL to",
+          "report": "reports a gap to",
+          "reopen": "tries a revised contract with"
+        },
+        "steps": {
+          "publish": "Release Platform writes the instructions. They tell Checkout what to send, how to get the link to its test copy and where to ask for help.",
+          "call": "Checkout's pipeline sends a commit reference, receives a request ID and uses it to look up the preview's status.",
+          "use": "Checkout tests the commit at the returned URL and removes its preview after testing.",
+          "friction": "Three two-app runs hit the documented one-app limit. Checkout brings their request IDs to Release Platform. Only this unsupported case needs joint design. Routine one-app previews continue through the API.",
+          "discover": "The teams try readiness and cleanup rules for a two-app preview while routine one-app jobs keep using the supported version.",
+          "resume": "Checkout now runs a fresh two-app preview from the revised instructions without Release Platform’s help. Two-app previews can return to routine service use. Release Platform supports the version and Checkout chooses when to adopt it."
+        },
+        "moments": {
+          "publish": "Set expectations",
+          "use": "Use the preview",
+          "friction": "Report the gap",
+          "resume": "Use the revised API"
+        },
+        "caption": "Checkout builds the shop app that contains the Pay page. Release Platform runs the Preview API, the tool that makes a test copy of that app. An arrow from Checkout to the tool shows the engineer asking for a copy. An arrow from Checkout to Release Platform shows the engineer asking its owners about the two-app test. The sentence under the controls tells you what each highlighted arrow means.",
+        "specimen": {
+          "title": "When can Checkout get a test copy on its own?",
+          "source": "An engineer wants to try a change to an online shop’s Pay page before shoppers see it. The Pay page is part of the app that the Checkout team builds. Another team, Release Platform, runs the Preview API. That tool makes a private copy of the whole app. We invented the team names and wrote both requests and replies below.",
+          "samples": {
+            "item0": "Checkout asks, “Can I get a copy of our shop app to check the Pay button?”\nThe tool replies, “Your copy is ready. Open the test link.”",
+            "item1": "Checkout asks, “Can I start our shop app and a fake payments app that will decline my test payment?”\nThe tool replies, “This tool starts only one app per preview.”"
+          },
+          "reading": "Checkout gets the first copy through a tool that Release Platform runs. That is what “as a service” means here. Nobody at Release Platform has to set it up for the engineer. The second request exceeds the one-app limit. Now the teams need to work out how the tool can start both apps together.",
+          "question": "What would let Checkout run the second test alone next time?",
+          "answer": "The teams agree on how two apps should start and stop. Release Platform adds that support and publishes the instructions. Another Checkout engineer follows them, opens the two-app preview, tries the declined payment and removes the preview afterward. Release Platform still runs the tool."
+        }
+      }
+    },
+    "facilitating-mode": {
+      "record": {
+        "authored": {
+          "by": "Study author 07",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A team can deploy its service and still lack practice undoing a faulty release. In facilitating mode, a second team coaches the service owners through that specific skill. The test of the engagement comes when the coach steps back. Can someone on the owning team recognize the failure, restore a healthy release and verify recovery alone?",
+          "situation": "A DotLn analogy is learning the work-order routine on the starter’s first order. The public kit guide’s First steps section leads a new user through opening the first worktree, checking the order’s status and entering execution. Its Run and close an order section applies the same routine to later orders. One guided pass gives someone a procedure they can repeat."
+        },
+        "example": {
+          "name": "The Returns rollback drill",
+          "description": "The Returns team already owns the Returns API and deploys it regularly. The team wants to learn how to undo a faulty release and confirm that the API has recovered. The Reliability team offers up to two weeks of coaching, ending early if a second Returns engineer can complete a staging drill independently."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Agree on the skill",
+              "text": "Returns asks for help recognizing when its API needs a rollback and verifying recovery afterward. With Reliability, it agrees on a two-week window and an independent staging drill to show the skill has transferred."
+            },
+            "step1": {
+              "title": "Watch a rollback",
+              "text": "Reliability uses a faulty staging release to demonstrate how to connect a jump in failed requests to a deployment, restore the previous healthy release and check that errors subside."
+            },
+            "step2": {
+              "title": "Let Returns drive",
+              "text": "A Returns engineer runs the drill while Reliability coaches. Returns writes down where to find the signals, which release to restore and how to recognize recovery in the Returns runbook."
+            },
+            "step3": {
+              "title": "Try the drill independently",
+              "text": "A second Returns engineer uses the runbook on a fresh staged failure. They restore a healthy release and check that error rates have recovered without prompting from Reliability."
+            },
+            "step4": {
+              "title": "Close the engagement",
+              "text": "Reliability steps away when Returns demonstrates the skill. Returns maintains the runbook and leads future drills. If the two weeks expire first, both teams record what still needs work and decide how to address it."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: people demonstrate and assess the rollback skill.\ncoachingWeeks = 2\nengagement = ReturnsTeam.requestRollbackCoaching(ReliabilityTeam, coachingWeeks)\n\nReliabilityTeam.demonstrate(RollbackDrill)\n\nReturnsTeam.firstEngineer.run(RollbackDrill, withCoach = ReliabilityTeam)\nReturnsTeam.firstEngineer.write(ReturnsRunbook)\n\nresult = ReturnsTeam.secondEngineer.runAlone(RollbackDrill, using = ReturnsRunbook)\nready = result.restoredHealthyRelease and result.confirmedRecovery\n\nif ready by engagement.deadline:\n  ReturnsTeam.maintain(ReturnsRunbook)\n  engagement.close(\"skill demonstrated\")\nelse when engagement.deadlineArrives:\n  engagement.close(\"rollback skill needs more practice\")"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Data science at bol.com",
+            "relevance": "A practitioner’s account of moving a specialist skill into product teams.",
+            "explanation": "Eduardo da Silva describes how bol.com moved from data scientists assigned to projects to product teams hiring and managing their own data scientists. Craft leads continued to develop the discipline across the company and helped new product teams adopt it."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, first edition",
+            "supports": "The authors’ book page identifies the 2019 edition by Matthew Skelton and Manuel Pais and describes its framework of team types and interaction modes."
+          },
+          "item1": {
+            "title": "Team Interaction Modeling with Team Topologies",
+            "supports": "The practice guide describes facilitating as temporary help with capability gaps or impediments and as a typical interaction for an enabling team."
+          },
+          "item2": {
+            "title": "Team Topologies newsletter on facilitating interactions",
+            "supports": "The newsletter recommends explicit exit criteria and reducing involvement as the receiving team gains capability."
+          },
+          "item3": {
+            "title": "DotLn kit guide",
+            "supports": "First steps walks through the starter’s first order. Run and close an order describes the routine shared by the first and later orders."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "An enabling team can move from one capability gap to the next while each receiving team keeps ownership of its product."
+          },
+          "item1": {
+            "why": "Repeated requests for the same coaching can reveal a wider obstacle, such as a deployment interface that makes rollback hard to learn."
+          },
+          "item2": {
+            "why": "Collaboration fits a period of shared discovery when two teams need to work out a practice together."
+          }
+        },
+        "limits": {
+          "item0": "Coaching can teach rollback judgment. Returns also needs deployment access, a healthy release it can restore and monitoring that shows whether the rollback worked.",
+          "item1": "A rehearsal covers the failures it recreates. A rollback that would reverse a database migration or affect several services may require a different recovery plan.",
+          "item2": "The DotLn analogy is about using a guided first pass to learn a repeatable procedure. The kit guide is written instruction, while the drill depends on feedback and judgment from another team."
+        }
+      },
+      "model": {
+        "nodes": {
+          "reliability": "Reliability team",
+          "returns": "Returns team",
+          "drill": "Rollback drill",
+          "runbook": "Returns runbook"
+        },
+        "relations": {
+          "request": "requests coaching from",
+          "teach": "coaches",
+          "practice": "runs",
+          "maintain": "maintains"
+        },
+        "steps": {
+          "agree": "Returns asks for help rolling back its API and sets a two-week coaching window with Reliability.",
+          "demonstrate": "Reliability shows how to spot a faulty release in staging, restore a healthy version and check for recovery.",
+          "practice": "A Returns engineer runs the drill with Reliability coaching and records the checks in the Returns runbook.",
+          "independent": "A second Returns engineer restores the healthy release and verifies recovery using the runbook alone.",
+          "own": "A second Returns engineer verified recovery alone. Coaching ends and Returns owns the runbook. If the two weeks expired first, this engagement would still end. The teams would record what remained to learn."
+        },
+        "moments": {
+          "agree": "Ask for coaching",
+          "practice": "Practice with a coach",
+          "independent": "Run the drill alone",
+          "own": "Close the engagement"
+        },
+        "caption": "Follow who drives the rollback drill. The last step shows who looks after the skill after the coaching ends."
+      }
+    },
+    "team-scoped-flow": {
+      "record": {
+        "authored": {
+          "by": "Study author 07",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "Trace an ordinary change until a customer sees it. If one team can decide what to build, implement it, release it and see how it behaves, the work can keep moving within that team. This takes a scope wide enough to cover the steps of delivery and focused enough for the team to understand what it owns. Shared services can help when a team can use them on its own schedule.",
+          "situation": "A DotLn-Angular analogy is a catalog study with a runnable example. The public catalog architecture guide’s Models section shows how a study’s record points to its model and how the spec loads the record to exercise the same example a reader sees. The change has a path from authored content to runnable evidence within one part of the app."
+        },
+        "example": {
+          "name": "A renewal reminder reaches subscribers",
+          "description": "A subscription business wants to send a renewal email three days before expiry. In one arrangement, Billing owns the renewal rule, Messaging owns the scheduling and email, and Release controls deployment. In another, Renewals owns the rule, job, email and deployment permissions for this change. Both can send through the same Mail gateway."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Set one delivery target",
+              "text": "The change is a reminder that reaches a subscriber three days before their subscription expires. Follow that same change through each way of assigning the work."
+            },
+            "step1": {
+              "title": "Pass it between specialties",
+              "text": "Billing defines the timing rule and sends it to Messaging. Messaging implements the schedule and email together, then queues the release with the team that can deploy it."
+            },
+            "step2": {
+              "title": "Release through the queue",
+              "text": "The Release team deploys the package and confirms that the first reminders go out as expected. Billing and Messaging rely on the release queue to reach subscribers."
+            },
+            "step3": {
+              "title": "Give Renewals the delivery steps",
+              "text": "Give Renewals the rule, job, email and release permissions within the renewal domain. The renewal components can ship together. Renewals tests the outgoing email against the Mail gateway’s published interface and can call that service directly."
+            },
+            "step4": {
+              "title": "Verify the same outcome",
+              "text": "Renewals deploys and checks when the first reminders go out. The same delivery check now fits within the team that made the change, with a self-service dependency on the Mail gateway."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: these routes describe ownership and handoffs for one change.\nleadDays = 3\nreminder = RenewalReminder(leadDays)\n\nBillingTeam.defineRule(reminder)\nBillingTeam.sendRuleTo(MessagingTeam)\nMessagingTeam.prepareScheduleAndEmail(reminder, gateway = MailGateway)\nMessagingTeam.queueDeploymentWith(ReleaseTeam)\n\nReleaseTeam.deploy(reminder)\nReleaseTeam.verifyFirstSends(reminder)\n\nRenewalsTeam.prepareRuleScheduleAndEmail(reminder)\nRenewalsTeam.test(reminder, against = MailGateway.contract)\n\nRenewalsTeam.deploy(reminder)\nRenewalsTeam.verifyFirstSends(reminder)"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Wealth Wizards",
+            "relevance": "An engineering team’s account of refining service ownership around business domains.",
+            "explanation": "The authors describe a period when overlapping ownership forced teams to work in the same services. They mapped system dependencies and realigned existing teams around Advice, Interaction Management and Data Gathering. This gives a reader an example of studying where changes cross boundaries before redrawing them."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, first edition",
+            "supports": "The authors’ book page identifies the 2019 edition by Matthew Skelton and Manuel Pais and describes its framework of team types and interaction modes."
+          },
+          "item1": {
+            "title": "Team Topologies publisher excerpt, chapter 2",
+            "supports": "Pages 21–23 explain how team-scoped flow depends on compatible technical boundaries, including coupling, cohesion, version compatibility and cross-team testing."
+          },
+          "item2": {
+            "title": "DotLn-Angular catalog architecture guide",
+            "supports": "The Studies and Models sections describe how a catalog study’s record names a model, how the app draws the worked example and how model specs load the record to exercise it."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Loose coupling explains how Renewals can call the Mail gateway without waiting for the gateway’s team to change its service."
+          },
+          "item1": {
+            "why": "High cohesion keeps the timing rule, schedule and email together because one reminder change tends to touch all three."
+          },
+          "item2": {
+            "why": "Version compatibility lets the teams ship on separate schedules as the gateway’s interface evolves."
+          },
+          "item3": {
+            "why": "The reverse Conway manoeuvre starts with the architecture you need, then considers the team boundaries that would support it."
+          }
+        },
+        "limits": {
+          "item0": "An ownership boundary can cover all the delivery steps and still be too wide. Adding unrelated products to Renewals would make the team learn and operate more than the reminder requires.",
+          "item1": "If the reminder needs a breaking change to the Mail gateway or a shared data format, the teams must coordinate until they have compatible versions and a way to test the interface.",
+          "item2": "The catalog analogy ends at the software boundary. The catalog guide describes a self-contained reading and its evidence within the app’s shared delivery process."
+        }
+      },
+      "model": {
+        "nodes": {
+          "request": "Renewal reminder",
+          "renewals": "Renewals team",
+          "billing": "Billing team",
+          "mail-gateway": "Mail gateway",
+          "messaging": "Messaging team",
+          "live": "Live reminder",
+          "release": "Release team"
+        },
+        "relations": {
+          "specialist-intake": "starts with",
+          "rule-handoff": "hands off the rule to",
+          "release-handoff": "queues deployment with",
+          "specialist-deploy": "deploys",
+          "renewals-intake": "goes to",
+          "gateway-contract": "tests against",
+          "renewals-deploy": "deploys"
+        },
+        "steps": {
+          "request": "A renewal email should reach subscribers three days before expiry. In the specialist arrangement, Billing defines that rule.",
+          "schedule": "The rule waits for Messaging, which builds the schedule and the email that will be sent through the Mail gateway.",
+          "queue": "Messaging queues its package with Release, the team that can deploy it.",
+          "specialist-live": "Release deploys the reminder and checks that the first emails go out three days before expiry.",
+          "redraw": "Follow the same reminder with Renewals owning the rule, the scheduling job, the email and the deployment.",
+          "service": "Renewals tests against the Mail gateway’s published interface and can send through the service directly.",
+          "renewals-live": "Renewals deploys and checks that the first emails go out three days before expiry."
+        },
+        "moments": {
+          "request": "Start with specialists",
+          "queue": "Wait for Release",
+          "redraw": "Give Renewals the change",
+          "renewals-live": "Check the live reminder"
+        },
+        "caption": "Both arrangements send through the same Mail gateway, including Messaging’s email in the specialist arrangement. The diagram follows the two handoffs where work can queue, from Billing to Messaging and then to Release. Renewals can make and deploy the same change within one team."
+      }
+    },
+    "conways-law": {
+      "record": {
+        "authored": {
+          "by": "Study author 08",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When two teams design parts that must work together, somebody has to settle what each part expects of the other. The groups that can make those decisions together have a say in which designs are practical. Conway’s law asks you to look for traces of that coordination in the resulting system.",
+          "situation": "Take the Catalog loader as a DotLn-Angular analogy. The public Toolbox catalog architecture guide says that the Tools routes and Scene obtain catalog data through CatalogToken. If different groups owned those consumers and the loader, a change to the contract would give you a concrete place to look for coordination. The guide records software dependencies. Evidence about who actually coordinates would have to come from the people doing the work."
+        },
+        "example": {
+          "name": "Who designs the checkout?",
+          "description": "In a small checkout system, the Stock team owns Inventory, the Checkout team owns Order entry, and the Billing team owns Payment processing. Start with Checkout initiating interface talks with Stock about reservations and with Billing about payment authorization. An arrow on the teams’ side marks who starts the design conversation. The example also allows Billing to start a conversation with Stock, such as when a declined payment must release reserved items."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Pair each team with its component",
+              "text": "Put Stock, Checkout and Billing on the left. Align Inventory, Order entry and Payment processing on the right with the teams that design them. The horizontal arrows carry the ownership correspondence."
+            },
+            "step1": {
+              "title": "Carry across each contact",
+              "text": "Look up the owner’s component at each end of every enabled contact. Checkout’s contact with Stock gives Order entry a dependency on Inventory. Its contact with Billing gives Order entry a dependency on Payment processing. In the sketch, the dependency follows the direction of the initiating team."
+            },
+            "step2": {
+              "title": "Read the resulting component graph",
+              "text": "Follow a component dependency back to its design contact through the two ownership arrows. If a different team initiates contact in the input, the corresponding dependency in the sketch moves with it."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "componentFor = [Stock team → Inventory, Checkout team → Order entry, Billing team → Payment processing]\ncomponents = values(componentFor)\n\ncontacts = []\nif checkoutContactsStock: add Checkout team → Stock team to contacts\nif checkoutContactsBilling: add Checkout team → Billing team to contacts\nif billingContactsStock: add Billing team → Stock team to contacts\ndependencies = [(componentFor[from], componentFor[to]) for each (from, to) in contacts]\n\nreturn (components, dependencies)"
+        },
+        "visual": {
+          "textEquivalent": "Step {step}. {focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "How Do Committees Invent?",
+            "relevance": "The original graph argument",
+            "explanation": "Conway models subsystems and design groups as two graphs. He traces a subsystem to its designers and an interface to the coordination it required. If one group designs several subsystems, several nodes can correspond to that same group."
+          },
+          "item1": {
+            "project": "Martin Fowler’s Conway’s Law",
+            "relevance": "Software architecture and team structure",
+            "explanation": "Fowler describes how organizing developers by presentation, application and database work encourages a layered design. A change to a single feature can then cross several teams."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Melvin E. Conway, How Do Committees Invent? (1968)",
+            "supports": "Conway describes a homomorphism from the system graph to the design organization graph, including the case where multiple subsystems map to one group."
+          },
+          "item1": {
+            "title": "Matthew Skelton and Manuel Pais, Team Topologies (first edition)",
+            "supports": "The authors’ first-edition overview describes team structure and communication paths as things that can evolve as an organization and its technology mature."
+          },
+          "item2": {
+            "title": "DotLn-Angular, Toolbox catalog architecture",
+            "supports": "The Loading and state section describes Tools and Scene accessing catalog data through CatalogToken."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Start from the intended component boundaries and use them to plan who needs to work together."
+          },
+          "item1": {
+            "why": "Look more closely at what a structure-preserving correspondence can retain when several subsystems share a design group."
+          },
+          "item2": {
+            "why": "Find the real conversations and handoffs underlying the communication graph."
+          }
+        },
+        "limits": {
+          "item0": "This example pairs one team with one component and copies every enabled contact. Conway’s argument runs from constructed subsystems back to their design groups and allows one group to design multiple subsystems. The example’s pairing works in both directions because of its one-to-one assumption.",
+          "item1": "The input represents interface-design contacts. Conversations about mentoring, scheduling or support can exist without a software dependency. The direction of an arrow is an assumption about who initiates the work in this example.",
+          "item2": "Changing a contact changes this sketch by construction. Domain requirements, old interfaces, shared data and informal coordination can all shape what gets built. To test a claimed relationship in practice, compare actual coordination with the dependencies in the delivered design."
+        }
+      },
+      "model": {
+        "nodes": {
+          "stock": "Stock team",
+          "checkout": "Checkout team",
+          "billing": "Billing team",
+          "inventory": "Inventory",
+          "orderEntry": "Order entry",
+          "payments": "Payment processing"
+        },
+        "edges": {
+          "owns": "owns",
+          "contacts": "starts design talks with",
+          "depends": "depends on"
+        },
+        "notes": {
+          "owns": "The horizontal arrow pairs one team with the component it designs.",
+          "contacts": "On the right, this contact becomes a dependency from {{from}} to {{to}}.",
+          "depends": "On the left, this dependency corresponds to {{from}} initiating a design conversation with {{to}}.",
+          "review": "The ownership pairs stay in place. Each direct dependency mirrors a design contact drawn on the left.",
+          "isolated": "Only ownership pairs remain. A design contact in the input would give this sketch a dependency on the right."
+        },
+        "moments": {
+          "owners": "Pair the owners",
+          "edges": "Follow a contact",
+          "review": "Read both graphs"
+        },
+        "caption": "Teams on the left own components on the right. This toy gives one component to each team and copies selected design contacts into component dependencies. Conway followed system interfaces back to the groups that designed them. Several components can trace back to one group. Change a design contact under Try another value to test the toy’s assumption.",
+        "inputs": {
+          "checkoutContactsStock": "Checkout starts talks with Stock",
+          "checkoutContactsBilling": "Checkout starts talks with Billing",
+          "billingContactsStock": "Billing starts talks with Stock",
+          "unit": "0 off · 1 on"
+        }
+      }
+    },
+    "reverse-conway-manoeuvre": {
+      "record": {
+        "authored": {
+          "by": "Study author 08",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "Suppose you want to change stock reservations without organizing a joint release with checkout and billing. Ask which team can own that change, what contracts it needs to maintain, and who must work together while those contracts take shape. The reverse Conway manoeuvre uses the desired software boundaries to guide those choices about teams.",
+          "situation": "For a DotLn-Angular analogy, the public Toolbox catalog architecture guide describes a provider boundary that could let an API replace the bundled catalog without changing the reading feature. Imagine using that desired independence to assign an owner for the loader contract and letting the reading maintainers build against it. Test the boundary by substituting a provider while leaving the reading feature’s code in place. The guide documents a seam; the choice about people and responsibilities is hypothetical."
+        },
+        "example": {
+          "name": "A stock reservation change without a joint release",
+          "description": "Checkout writes directly into Inventory’s reservation tables. Checkout and Stock have to agree on a database edit and release it together. The desired interface lets Order entry ask Inventory for a reservation. That goal guides a change in ownership. Stock will decide and deploy the reservation rule, and Checkout will own the call. In the pilot, watch whether Stock can change its rule without a joint release."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Sketch what a routine change should cross",
+              "text": "Give Order entry a reservation interface to Inventory and an authorization interface to Payment processing. The pilot should let Inventory change its reservation rule behind the same public interface."
+            },
+            "step1": {
+              "title": "Give the intended boundaries owners",
+              "text": "The Checkout team owns Order entry, the Stock team owns Inventory and the Billing team owns Payment processing. Checkout and Stock agree on the reservation call and migrate direct writes to it. Checkout and Billing agree on the payment contract."
+            },
+            "step2": {
+              "title": "Try a release across the new boundary",
+              "text": "Make the pilot change in Inventory. Check that checkout still works through the reservation contract and that Stock can deploy the change without requiring releases from Checkout or Billing. If the test still needs cross-team changes, trace the dependency that forced them."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "target = [Order entry → Inventory.reserve, Order entry → Payment processing.authorize]\npilotChanges = 1\n\nassign Order entry to Checkout team, Inventory to Stock team, Payment processing to Billing team\nCheckout team + Stock team: agree Inventory.reserve and migrate direct reservation writes\nCheckout team + Billing team: agree Payment processing.authorize\n\nrepeat pilotChanges times:\n  change one stock reservation rule in Inventory\n  verify checkout through Inventory.reserve\n  check whether Stock can deploy independently\n  investigate any dependency that still forces a joint release"
+        },
+        "visual": {
+          "textEquivalent": "Step {step}. {focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Thoughtworks Technology Radar",
+            "relevance": "An early practitioner treatment",
+            "explanation": "The 2015 entry describes deliberately evolving team organization to encourage a desired architecture. It presents the approach as a trial that can be tested in a suitable project."
+          },
+          "item1": {
+            "project": "Team Topologies case study, From Monolith to Agility",
+            "relevance": "A staged application in financial services",
+            "explanation": "The case account describes teams first collaborating to find what an Application Services platform needed to offer. They shifted to a service relationship as the contracts became clearer. The account describes several changes during the same transformation."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Matthew Skelton and Manuel Pais, Team Topologies (first edition)",
+            "supports": "The authors’ first-edition overview treats organization and team interaction as an adaptive design problem."
+          },
+          "item1": {
+            "title": "Martin Fowler, Conway’s Law",
+            "supports": "Fowler describes the inverse manoeuvre and recommends taking small steps and using feedback when teams and an existing codebase must change together."
+          },
+          "item2": {
+            "title": "DotLn-Angular, Toolbox catalog architecture",
+            "supports": "The Loading and state section says a later API could replace the data provider while the reading feature remains in place."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Read the design-pressure argument that motivates changing how teams work together."
+          },
+          "item1": {
+            "why": "Use a temporary period of close work to learn what the reservation contract needs."
+          },
+          "item2": {
+            "why": "See how a stable contract can let one team consume another team’s capability with fewer handoffs."
+          }
+        },
+        "limits": {
+          "item0": "An ownership change alone leaves direct database writes and build ties in place. The pilot needs working contracts, migration work and release evidence.",
+          "item1": "Teams need the skills and authority to own the proposed change. A boundary can still leave a team overloaded or require coordination for changes that genuinely span domains.",
+          "item2": "The target architecture is a hypothesis. The manoeuvre starts from that choice, and the pilot gives evidence about one reservation change. A broader judgement needs more representative changes."
+        }
+      },
+      "model": {
+        "nodes": {
+          "inventory": "Inventory",
+          "order-entry": "Order entry",
+          "payments": "Payment processing",
+          "stock-team": "Stock team",
+          "checkout-team": "Checkout team",
+          "billing-team": "Billing team"
+        },
+        "relations": {
+          "reserve": "reserves stock through",
+          "authorize": "requests authorization from",
+          "stock-owner": "is owned by",
+          "checkout-owner": "is owned by",
+          "billing-owner": "is owned by",
+          "reservation-contract": "agrees on the reservation contract with",
+          "payment-contract": "agrees on the authorization contract with"
+        },
+        "steps": {
+          "target-reservation": "The proposed interface replaces direct reservation writes. Inventory will own the reservation rule.",
+          "target-payment": "Order entry requests payment authorization through a separate contract.",
+          "assign-stock": "Give the Stock team authority over Inventory’s reservation logic, data and releases.",
+          "assign-checkout": "Give the Checkout team responsibility for the customer’s checkout and for consuming both contracts.",
+          "assign-billing": "Give the Billing team responsibility for payment authorization.",
+          "migrate": "Agree the reservation behavior and move Checkout’s direct writes behind Inventory’s interface.",
+          "agree-payment": "Agree how payment is authorized and what Order entry receives on failure.",
+          "pilot": "Try one reservation-rule change. Can the Stock team deploy Inventory on its own while checkout still works through the same contract?"
+        },
+        "moments": {
+          "target-reservation": "Target interfaces",
+          "assign-stock": "Assign owners",
+          "migrate": "Agree contracts",
+          "pilot": "Pilot a change"
+        },
+        "caption": "The left lane is the target design. The right lane shows teams chosen to own it. The pilot checks whether those choices and the interface migration let Stock deploy a reservation change independently."
+      }
+    },
+    "homomorphic-force": {
+      "record": {
+        "authored": {
+          "by": "Study author 09",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When changing a feature means talking to another team, the agreement you reach can become an interface the software keeps. Once that interface is in use, changing it can bring the same teams back together. Allan Kelly and Lise Hvatum call this pressure the homomorphic force. The architecture can preserve who needs to coordinate even when one team owns several components. An exact isomorphism would require a reversible one-to-one match of parts and connections.",
+          "situation": "DotLn’s public execution guide (docs/product/07-execution-guide.md) calls for the verifier to file an immutable report with findings that final review can read. As an analogy, a recurring handoff between roles takes a concrete form in the report they exchange. The comparison stops at that explicitly designed workflow contract."
+        },
+        "example": {
+          "name": "A library reminder in the borrower’s language",
+          "description": "Borrowing’s Loan policy supplies the due date to its Reminder job. Both belong to Borrowing. To send the reminder in a preferred language, Reminder job calls the Delivery gateway, which Messaging owns. The teams must agree how to carry the language on that call. Trace the internal due-date link and then the link across that ownership boundary."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Find the people who agree the change",
+              "text": "Borrowing knows the borrower’s preferred language. Messaging knows which templates the Delivery gateway can send. The teams agree on a language field that both sides can use."
+            },
+            "step1": {
+              "title": "Trace component ownership",
+              "text": "Loan policy determines the due date and Reminder job prepares the request. Both belong to Borrowing. The two components show how a team can contain its own software boundaries."
+            },
+            "step2": {
+              "title": "See where the agreement lands",
+              "text": "Reminder job passes the language in its request to Delivery gateway. The software now carries an agreement that took coordination across the two teams."
+            },
+            "step3": {
+              "title": "Follow the next change",
+              "text": "When the library wants a delivery receipt, Messaging and Borrowing agree on what the gateway will return and how Reminder job will handle it. The interface gives the teams a reason to keep using the same communication path."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: trace the influence of a communication path through two changes.\nBorrowing team and Messaging team agree on a reminder language field\n\nborrowingComponents = example.borrowingComponents\nBorrowing team maintains the two components Loan policy and Reminder job\nMessaging team maintains Delivery gateway\n\nLoan policy supplies the due date to Reminder job\nReminder job sends the agreed language field to Delivery gateway\n\nfor the delivery receipt change:\n    Borrowing team and Messaging team agree on the response and its handling"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Kelly and Hvatum’s EuroPLoP focus group",
+            "relevance": "How participants understood a change in communication and architecture",
+            "explanation": "A participant described regional development groups maintaining separate copies of a product. When the groups went back to a shared codebase they introduced video handoffs and worked across the old boundaries. The report and its appendix preserve different readings of whether this broke Conway’s law or changed the conditions under which it operated."
+          },
+          "item1": {
+            "project": "MacCormack, Baldwin and Rusnak’s mirroring study",
+            "relevance": "A way to look for organizational influence in source dependencies",
+            "explanation": "The researchers compared similar software products built under different organizational arrangements. They traced dependencies between source files to estimate how far a change could spread. In their sample that estimate was consistently lower for products from the more loosely coupled organizations."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, IT Revolution first-edition excerpt",
+            "supports": "Page 10 attributes the term to Allan Kelly and relates feasible designs to the communication paths that people actually use."
+          },
+          "item1": {
+            "title": "Team Topologies, first-edition errata",
+            "supports": "The authors correct the chapter 2 use of isomorphic force to homomorphic force."
+          },
+          "item2": {
+            "title": "Mel Conway, How Do Committees Invent?",
+            "supports": "Conway maps subsystems to the groups that designed them. Several subsystems can collapse to one group in that mapping."
+          },
+          "item3": {
+            "title": "Allan Kelly and Lise Hvatum, What do I think about Conway’s Law now?",
+            "supports": "The focus group report names the force, describes how organizational and software structure can reinforce each other, and discusses the regional codebase case."
+          },
+          "item4": {
+            "title": "MacCormack, Baldwin and Rusnak, Exploring the duality between product and organizational architectures",
+            "supports": "The matched-pair study finds lower change propagation costs in the products from more loosely coupled organizations in its sample."
+          },
+          "item5": {
+            "title": "DotLn execution guide, verification and review",
+            "supports": "The public guide assigns the verifier an immutable report and identifies its structured findings as an input to final review."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Conway’s original argument follows design dependencies back to the groups that need to communicate about them."
+          },
+          "item1": {
+            "why": "The authors’ first-edition errata corrects this wording to homomorphic force."
+          },
+          "item2": {
+            "why": "The reverse Conway manoeuvre changes team boundaries and communication to make a desired design easier to build."
+          }
+        },
+        "limits": {
+          "item0": "A reporting chart shows who manages whom. To trace an interface decision, follow the people who actually had to agree on it, including anyone they reached directly outside their reporting lines.",
+          "item1": "An inherited protocol or a vendor interface can set the seam before the current teams exist. The people who maintain it may then organize around the software they inherited.",
+          "item2": "The DotLn analogy concerns a specified handoff between workflow roles. The library drawing traces an interface between fictional application components."
+        }
+      },
+      "model": {
+        "nodes": {
+          "borrowing": "Borrowing team",
+          "messaging": "Messaging team",
+          "loan-policy": "Loan policy",
+          "reminder-job": "Reminder job",
+          "delivery-gateway": "Delivery gateway"
+        },
+        "relations": {
+          "agree": "coordinates with",
+          "owns-policy": "maintains",
+          "owns-job": "maintains",
+          "owns-gateway": "maintains",
+          "due-date": "supplies the due date to",
+          "send-reminder": "sends a reminder request to"
+        },
+        "steps": {
+          "agreement": "Borrowing and Messaging agree how to request a reminder in the borrower’s language.",
+          "ownership": "Borrowing also maintains Loan policy. The team owns two distinct components.",
+          "request": "Reminder job sends the agreed language field in its request to Delivery gateway.",
+          "receipt": "A delivery receipt brings the same teams back together to agree on the response and how Reminder job will handle it."
+        },
+        "moments": {
+          "agreement": "Agree the field",
+          "ownership": "Trace ownership",
+          "request": "Follow the request",
+          "receipt": "Change the interface"
+        },
+        "caption": "The teams are on the left and the components they maintain are on the right. One team can own several components, while a request between components can carry an agreement between teams."
+      }
+    },
+    "effective-team-size": {
+      "record": {
+        "authored": {
+          "by": "Study author 09",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A new teammate can add a missing skill and give the group more context and decisions to share. Team Topologies suggests about seven to nine as the upper end for many long-lived delivery teams. Use that range to ask where decisions start taking longer, who has enough context to make them, and whether the group can still own its work together.",
+          "situation": "As an analogy, DotLn’s public execution guide (docs/product/07-execution-guide.md) describes an explicit budget for worker launches and reassignments during a dispatch. That budget gives a coordinator a concrete point at which to reconsider adding help. It counts worker uses, including multiple uses of the same worker, over the life of a dispatch. The book’s heuristic concerns people who work together over time."
+        },
+        "example": {
+          "name": "Growing the theatre Reservations team",
+          "description": "Eight people own a theatre’s Seat Holds and Waitlist work. Demand rises, and the theatre has four more people available. It can grow Reservations to twelve or trial two groups of six with a handoff each time a held seat becomes available."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Observe how work gets through now",
+              "text": "Reservations handles seat holds and waitlist offers as one team. Record how long changes wait for an internal decision and which changes touch both areas."
+            },
+            "step1": {
+              "title": "Consider adding four people",
+              "text": "With eight people there are 28 distinct pairs who could need to coordinate directly. With twelve there are 66. The count shows how quickly potential connections grow. It takes observation to find which ones the work actually uses."
+            },
+            "step2": {
+              "title": "Try a boundary in the work",
+              "text": "Give Seat Holds and Waitlist six people each in the split trial. Seat Holds still allocates seats. It sends a SeatReleased notice so Waitlist knows when it can offer a seat."
+            },
+            "step3": {
+              "title": "Decide from the waits",
+              "text": "Run the same local changes and the same seat-release work in both arrangements. Record the time from request to delivery, including decision time and any handoff the arrangement requires. Keep the split if overall delivery improves and both groups can operate their own work."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "// Illustrative: compare possible coordination paths and trial a boundary.\nbaseline = example.baselinePeople\nReservations (8) handles Seat Holds and Waitlist\nrecord decision waits and changes that touch both areas\n\nexpanded = baseline + example.addedPeople\nReservations (12) handles the same work\ncompare possible pairs: baseline × (baseline - 1) / 2, expanded × (expanded - 1) / 2\n\ntrial Seat Holds and Waitlist as two teams of expanded / 2\nSeat Holds sends SeatReleased to Waitlist\n\ncompare request-to-delivery time on the same local and cross-team changes\ninclude the SeatReleased handoff in the measured change time\nkeep the split if overall delivery improves and both teams can operate their work"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Amazon’s two-pizza teams",
+            "relevance": "A company’s approach to sizing teams around ownership",
+            "explanation": "Amazon describes giving a small team responsibility for a service from product decisions through operations. When the service grows, it looks for an area a new team can own end to end. Its account also describes a cost of the approach when separate teams duplicate work."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, IT Revolution first-edition excerpt",
+            "supports": "Chapter 3, page 32 gives seven to nine as a typical upper range for an effective team and discusses exceptions where trust is especially strong."
+          },
+          "item1": {
+            "title": "Team Topologies, first-edition errata",
+            "supports": "The authors clarify that Dunbar’s number refers to about 150 people. The smaller figures in the chapter concern closer trust relationships."
+          },
+          "item2": {
+            "title": "AWS Executive Insights, Powering Innovation and Speed with Amazon’s Two-Pizza Teams",
+            "supports": "Amazon describes small teams with end-to-end service ownership, splitting around an independently owned area, and the risk of duplicated work."
+          },
+          "item3": {
+            "title": "DotLn execution guide, review helper and round reports",
+            "supports": "The public guide describes an adjustable cap and says that a launch and a reassignment each spend a worker use."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Amazon couples a small group with end-to-end ownership of a service."
+          },
+          "item1": {
+            "why": "Long-standing trust can help a larger team keep making decisions together."
+          },
+          "item2": {
+            "why": "A team’s capacity also depends on how much of the system it has to understand to run it."
+          }
+        },
+        "limits": {
+          "item0": "Potential pairs count only how many direct two-person connections are possible. Trust, shared notes and clear responsibility all change how much time the team spends coordinating.",
+          "item1": "A team with strong trust and stable responsibilities may work well past nine. A smaller team can still struggle if it lacks a skill needed for its service or owns more work than it can understand.",
+          "item2": "A split adds a boundary. If everyday changes to waitlist offers keep needing joint decisions about seat allocation, two smaller groups may wait longer than one larger team."
+        }
+      },
+      "model": {
+        "nodes": {
+          "baseline": "Reservations (8)",
+          "expanded": "Reservations (12)",
+          "seat-holds": "Seat Holds",
+          "waitlist": "Waitlist"
+        },
+        "relations": {
+          "grow": "could grow into",
+          "seat-holds-team": "could give six people to",
+          "waitlist-team": "could give six people to",
+          "release-seat": "sends a release notice to"
+        },
+        "steps": {
+          "baseline": "Eight people own both areas. Record how long a change waits for a decision.",
+          "growth": "Four more people raise the number of possible pairs from 28 to 66. Which pairs need to coordinate depends on the work.",
+          "split": "The split trial staffs Seat Holds and Waitlist with six people each. Each group owns a different part of the work.",
+          "handoff": "A released seat crosses the team boundary. Compare the same local and cross-team changes in both trials. Keep the split only if delivery improves after counting the handoff and both teams have the skills they need."
+        },
+        "moments": {
+          "baseline": "Start at eight",
+          "growth": "Consider twelve",
+          "split": "Trial two teams",
+          "handoff": "Judge the handoff"
+        },
+        "caption": "The top row shows two sizes for one Reservations team. The bottom row shows a trial with the same twelve people and a new handoff."
+      }
+    },
+    "platform-as-a-product": {
+      "record": {
+        "authored": {
+          "by": "Study author 10",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "A shared platform should make a recurring job easier for the teams that use it. Give those teams a way to get help and tell the maintainers where they get stuck. The team that owns the platform can then decide what to improve by watching people try to do the job.",
+          "situation": "The public DotLn Enterprise Starter offers an analogy for making a shared tool easier to adopt and maintain. Its docs/OPERATOR.md walks a new user through installing and checking the kit and points them to release guidance when they upgrade."
+        },
+        "example": {
+          "name": "Find the preview link",
+          "description": "Shipping and Returns are the delivery teams. They ask the Preview service for a running copy of a change they can review before merging. The Platform team owns the service. It can spend this sprint making the preview link easier to find or adding support for another kind of app. In the first trial, three of eight users open their preview unaided and five need help. After the link moves to the pull request, seven of eight do it unaided."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Watch people create a preview",
+              "text": "The Platform team watches {attemptsPerPilot} first-time attempts. The service builds every preview. The job ends when someone can open that preview and review the change."
+            },
+            "step1": {
+              "title": "Ask where they got stuck",
+              "text": "In {firstPilotNeededHelp} attempts someone asks the Platform team where to find the URL. Watching Shipping and Returns use the service shows that both teams have to search the build log after a successful build."
+            },
+            "step2": {
+              "title": "Change the roadmap",
+              "text": "The Platform team moves a visible preview link on the pull request ahead of support for a second runtime. It ships the link in the Preview service and updates the quickstart."
+            },
+            "step3": {
+              "title": "Check another first use",
+              "text": "With the link in place, {secondPilotUnaided} of {attemptsPerPilot} fresh attempts reach the preview without asking for help. The Platform team keeps the change and continues to watch repeat use and support requests."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "watch example.parameters.attemptsPerPilot first uses of Preview service by Delivery teams\nrecord whether the preview builds and whether the user can open it\n\nsend the observations from Delivery teams to Platform team\nrecord example.parameters.firstPilotNeededHelp attempts where the user asks for help finding the URL\n\nmove the pull-request link ahead of a second runtime on the Platform team roadmap\npublish the link in Preview service and update the quickstart\n\nwatch example.parameters.attemptsPerPilot fresh attempts with the link on the pull request\nkeep the link after example.parameters.secondPilotUnaided users reach their preview unaided\ncontinue tracking repeat use of Preview service and requests for help"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Trade Me",
+            "relevance": "Trade Me describes an internal route to production that applies common safeguards and gives teams a way to build outside that route.",
+            "explanation": "Trade Me describes how it chose a small first release for a specific developer audience. A dedicated team builds and maintains the platform. Its account describes plans to support users and shape updates from their feedback. Teams that take another route complete the production-readiness checklist themselves."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, first edition",
+            "supports": "The authors’ book page identifies the 2019 work and introduces its adaptive approach to software team design and interactions."
+          },
+          "item1": {
+            "title": "Team Topologies on platform engineering",
+            "supports": "The roadmap section connects ongoing discovery and delivery to the jobs of the product teams that use a platform."
+          },
+          "item2": {
+            "title": "Trade Me’s journey towards a Thinnest Viable Platform",
+            "supports": "Trade Me describes its initial customer selection, its maintained production path, the manual alternative and its plans to gather user feedback through ongoing support."
+          },
+          "item3": {
+            "title": "DotLn Enterprise Starter operator commands",
+            "supports": "The public guide documents initial setup and checks and directs users to release-specific upgrade instructions. This is the evidence for the analogy."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "The Shipping and Returns teams are the internal customers whose work tells the Platform team where value is lost."
+          },
+          "item1": {
+            "why": "A usable preview link is a small change to the shared capability. The thinnest viable platform keeps the scope of that capability tied to a real need."
+          },
+          "item2": {
+            "why": "Opening the preview unaided measures a developer’s experience with the service after the build succeeds."
+          }
+        },
+        "limits": {
+          "item0": "A short onboarding pilot can reveal a reproducible problem. Understanding sustained adoption takes observations after the rollout, including why teams choose other routes.",
+          "item1": "A feature one team needs brings maintenance work for everyone who upgrades the platform. Sometimes that team can keep the feature in its own pipeline with less coordination.",
+          "item2": "The DotLn analogy covers a documented path for adopting and updating a shared tool. Customer research, support outcomes and roadmap choices in the preview example belong to the fictional Platform team."
+        }
+      },
+      "model": {
+        "nodes": {
+          "delivery-teams": "Delivery teams",
+          "preview-service": "Preview service",
+          "platform-team": "Platform team"
+        },
+        "relations": {
+          "use-preview": "request previews from",
+          "report-friction": "ask for help from",
+          "ship-link": "improves the preview link in",
+          "show-link": "shows a pull-request link to"
+        },
+        "steps": {
+          "first-use": "Shipping and Returns need a preview they can open before they can review a change.",
+          "support-signal": "{firstPilotNeededHelp} of {attemptsPerPilot} attempts need help finding a URL the service already generated.",
+          "roadmap-change": "The team puts the link on the pull request before adding a second runtime.",
+          "retest": "{secondPilotUnaided} of {attemptsPerPilot} fresh attempts reach the preview without asking for help."
+        },
+        "moments": {
+          "first-use": "First use",
+          "support-signal": "Support requests",
+          "roadmap-change": "Roadmap change",
+          "retest": "Retest"
+        },
+        "caption": "The build succeeds before the user can do the job. Support requests reveal the gap, and a fresh pilot tests whether the roadmap change helped."
+      }
+    },
+    "organizational-sensing": {
+      "record": {
+        "authored": {
+          "by": "Study author 10",
+          "reviewedBy": {
+            "item0": "Factual critic",
+            "item1": "Reading critic"
+          }
+        },
+        "intuition": {
+          "text": "When work gets stuck, look at what happened to the customer, what the system did and how the teams responded. Together those observations can reveal where the way teams work together needs to change. Watch what happens to the same work after the change.",
+          "situation": "DotLn WO-249 supplies an analogy. Five waivers on four earlier orders pointed to a recurring problem with acceptance criteria. The change assigned a verifier to record a defective criterion with evidence. The final reviewer must concur on that same defect for the work to proceed past it. The recurring evidence prompted a change in who decides."
+        },
+        "example": {
+          "name": "Who responds to a rejected parcel status?",
+          "description": "In this example, the Tracking team owns parcel updates and the Carrier team owns the feed that supplies statuses. When parcel pages show stale updates, the teams bring Customer reports, Decoder logs and Ticket handoffs to an Incident review. The review initially considers adding another alert."
+        },
+        "mechanism": {
+          "steps": {
+            "step0": {
+              "title": "Hear what the customer sees",
+              "text": "Customers report that parcel pages still show an old status when they expect an update. The Tracking team brings the affected parcel IDs to the Incident review."
+            },
+            "step1": {
+              "title": "Check what the system saw",
+              "text": "Decoder logs show that the carrier feed supplied a status the decoder could not read. The Incident review matches the rejects to the affected parcel IDs."
+            },
+            "step2": {
+              "title": "Trace the response between teams",
+              "text": "In each of {reviewCases} matched cases, the existing alert had already opened a ticket. Ticket handoffs show it moved between Tracking and Carrier before anyone took first response. The review makes response ownership the focus of its trial."
+            },
+            "step3": {
+              "title": "Try a clearer responsibility",
+              "text": "The Incident review approves a {trialDays}-day Triage trial. Carrier handles first response to decoder rejects and can inspect the feed directly. Tracking owns the customer-facing update and receives the confirmed status from Carrier."
+            },
+            "step4": {
+              "title": "Bring the results back",
+              "text": "During the {trialDays}-day trial, none of {trialCases} comparable tickets bounce between teams. That result goes back to the Incident review. The team keeps Carrier as first responder and continues watching how long updates stay stale. The RxJS sketch carries one approved trial’s summary back to this review. A later incident starts its own review."
+            }
+          }
+        },
+        "pseudocode": {
+          "ordinary": "collect stale parcel IDs from Customer reports for Incident review\n\nmatch Decoder logs to those parcel IDs and record rejected carrier statuses\n\nadd Ticket handoffs for the same parcels to Incident review\nfind example.parameters.reviewCases cases where an existing alert led to a bounced ticket\n\nask Incident review to approve a Triage trial lasting example.parameters.trialDays days\nassign Carrier team first response to decoder rejects\nhave Tracking team handle customer updates using confirmed statuses\n\nreturn Triage trial observations to Incident review\nafter example.parameters.trialCases comparable tickets with no bounces, keep Carrier team on first response\ncontinue checking time until customer updates recover",
+          "rxjs": "// Illustrative: RxJS carries the evidence. People decide whether to change who responds.\nimport { concatMap, filter, merge, scan, take } from 'rxjs';\nconst { reviewCases, trialDays } = example.parameters;\nconst customerReports$ = readStaleParcelReports$();\n\nconst decoderLogs$ = readCarrierDecoderRejects$();\n\nconst ticketHandoffs$ = readTrackingCarrierHandoffs$();\nconst matchedEvidence$ = merge(customerReports$, decoderLogs$, ticketHandoffs$).pipe(\n  scan(matchSignalsByParcelId, emptyIncidentEvidence())\n);\n\nconst trialResult$ = matchedEvidence$.pipe(\n  filter(evidence => hasBouncedMatches(evidence, reviewCases)),\n  take(1),\n  concatMap(requestIncidentReview$),\n  filter(review => review.approved),\n  concatMap(review => runTriageTrial$(review, trialDays))\n);\n\n// The trial emits a summary when the window ends, including how many cases it saw.\nconst feedback$ = trialResult$.pipe(concatMap(returnToIncidentReview$));\nfeedback$.subscribe(recordTriageDecision);"
+        },
+        "visual": {
+          "textEquivalent": "{focus}. {note}"
+        },
+        "implementations": {
+          "item0": {
+            "project": "Team Topologies interaction modeling",
+            "relevance": "The public guide uses diagrams of actual team interactions to help teams see how work moves and where it waits.",
+            "explanation": "The guide compares snapshots of team relationships and uses symptoms such as slower delivery or unusually long collaboration to revisit a boundary. Its example shows two streams moving from collaboration with a platform team to consuming its service."
+          }
+        },
+        "references": {
+          "item0": {
+            "title": "Team Topologies, first edition",
+            "supports": "The authors’ book page introduces the 2019 work, including using problems between teams as signals for adapting the organization."
+          },
+          "item1": {
+            "title": "Team Interaction Modeling with Team Topologies",
+            "supports": "The guide explicitly describes organizational sensing and gives examples of questions about users, blocked flow and changes to how teams interact."
+          },
+          "item2": {
+            "title": "DotLn WO-249, Criteria judge the product",
+            "supports": "The observed gap lists five core waivers across four orders. The design requires the verifier’s evidence and the final reviewer’s concurrence on the same defect."
+          },
+          "item3": {
+            "title": "RxJS 7.8.2 operator guide",
+            "supports": "The operator index links to the documentation for merge, scan and concatMap used in the illustrative feedback sketch."
+          }
+        },
+        "nearby": {
+          "item0": {
+            "why": "Seeing tickets passed back and forth exposes a gap in how Tracking and Carrier interact."
+          },
+          "item1": {
+            "why": "Decoder rejects reveal what the service actually encountered and help the review match reports to the same parcels."
+          },
+          "item2": {
+            "why": "A trial with a named first responder is one way the review can act on a recurring handoff problem."
+          }
+        },
+        "limits": {
+          "item0": "Several parcel tickets can share one carrier incident. The review needs to distinguish repeat incidents from repeat reports before treating the pattern as widespread.",
+          "item1": "A short trial can face lighter volume or a different mix of rejects. Keeping the routing change is a local decision, and the effect on stale customer updates needs its own observations.",
+          "item2": "The DotLn analogy stops at responsibilities defined for a work-order workflow. The parcel example follows live incident handling between two teams and checks their response after the change."
+        }
+      },
+      "model": {
+        "nodes": {
+          "customer-reports": "Customer reports",
+          "decoder-logs": "Decoder logs",
+          "ticket-handoffs": "Ticket handoffs",
+          "incident-review": "Incident review",
+          "triage-trial": "Triage trial"
+        },
+        "relations": {
+          "report-stale-update": "flag late updates for",
+          "show-rejects": "show rejected statuses to",
+          "show-handoffs": "show repeated transfers to",
+          "start-trial": "starts",
+          "return-findings": "sends follow-up evidence to"
+        },
+        "steps": {
+          "stale-parcels": "Customers tell the Tracking team that their parcel pages still show an old status.",
+          "decoder-rejects": "For those parcel IDs, the decoder logged an unrecognized status from the carrier feed.",
+          "bounced-tickets": "Tickets for {reviewCases} affected parcels bounced between the teams even though an alert already existed.",
+          "first-responder-trial": "For {trialDays} days Carrier takes first response to rejected statuses and Tracking handles customer updates.",
+          "follow-up": "With no bounces in {trialCases} comparable tickets, the review keeps Carrier as first responder."
+        },
+        "moments": {
+          "stale-parcels": "Customer reports",
+          "bounced-tickets": "Matched tickets",
+          "first-responder-trial": "Triage trial",
+          "follow-up": "Follow-up review"
+        },
+        "caption": "The three sources show what the customer saw, what the decoder rejected and where the response stalled. The trial changes which team responds first and brings the results back to the review."
+      }
     }
   }
 }

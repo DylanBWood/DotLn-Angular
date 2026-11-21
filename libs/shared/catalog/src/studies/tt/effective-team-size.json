@@ -1,0 +1,110 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt1:215",
+  "work": "tt",
+  "slug": "effective-team-size",
+  "authored": {
+    "by": "studyTt.effective-team-size.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.effective-team-size.record.authored.reviewedBy.item0",
+      "studyTt.effective-team-size.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.effective-team-size.record.intuition.text",
+    "situation": "studyTt.effective-team-size.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.effective-team-size.record.example.name",
+    "description": "studyTt.effective-team-size.record.example.description",
+    "parameters": {
+      "baselinePeople": 8,
+      "addedPeople": 4
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.effective-team-size.record.mechanism.steps.step0.title",
+        "text": "studyTt.effective-team-size.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.effective-team-size.record.mechanism.steps.step1.title",
+        "text": "studyTt.effective-team-size.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.effective-team-size.record.mechanism.steps.step2.title",
+        "text": "studyTt.effective-team-size.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.effective-team-size.record.mechanism.steps.step3.title",
+        "text": "studyTt.effective-team-size.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.effective-team-size.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/effective-team-size.ts",
+    "textEquivalent": "studyTt.effective-team-size.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.effective-team-size.record.implementations.item0.project",
+      "url": "https://aws.amazon.com/executive-insights/content/amazon-two-pizza-team/",
+      "relevance": "studyTt.effective-team-size.record.implementations.item0.relevance",
+      "explanation": "studyTt.effective-team-size.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.effective-team-size.record.references.item0.title",
+      "url": "https://itrevolution.com/wp-content/uploads/2022/06/TTOP_excerpt.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.effective-team-size.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.effective-team-size.record.references.item1.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.effective-team-size.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.effective-team-size.record.references.item2.title",
+      "url": "https://aws.amazon.com/executive-insights/content/amazon-two-pizza-team/",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.effective-team-size.record.references.item2.supports"
+    },
+    {
+      "title": "studyTt.effective-team-size.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/bc761ad9ce1008c72c647e9b0de63b09117ba822/docs/product/07-execution-guide.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.effective-team-size.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt1:216",
+      "why": "studyTt.effective-team-size.record.nearby.item0.why"
+    },
+    {
+      "id": "tt1:220",
+      "why": "studyTt.effective-team-size.record.nearby.item1.why"
+    },
+    {
+      "id": "tt3:133",
+      "why": "studyTt.effective-team-size.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.effective-team-size.record.limits.item0",
+    "studyTt.effective-team-size.record.limits.item1",
+    "studyTt.effective-team-size.record.limits.item2"
+  ]
+}

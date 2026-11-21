@@ -1,0 +1,105 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt1:138",
+  "work": "tt",
+  "slug": "reverse-conway-manoeuvre",
+  "authored": {
+    "by": "studyTt.reverse-conway-manoeuvre.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.reverse-conway-manoeuvre.record.authored.reviewedBy.item0",
+      "studyTt.reverse-conway-manoeuvre.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.reverse-conway-manoeuvre.record.intuition.text",
+    "situation": "studyTt.reverse-conway-manoeuvre.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.reverse-conway-manoeuvre.record.example.name",
+    "description": "studyTt.reverse-conway-manoeuvre.record.example.description",
+    "parameters": {
+      "pilotChanges": 1
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step0.title",
+        "text": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step1.title",
+        "text": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step2.title",
+        "text": "studyTt.reverse-conway-manoeuvre.record.mechanism.steps.step2.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.reverse-conway-manoeuvre.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/reverse-conway-manoeuvre.ts",
+    "textEquivalent": "studyTt.reverse-conway-manoeuvre.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.reverse-conway-manoeuvre.record.implementations.item0.project",
+      "url": "https://www.thoughtworks.com/radar/techniques/inverse-conway-maneuver",
+      "relevance": "studyTt.reverse-conway-manoeuvre.record.implementations.item0.relevance",
+      "explanation": "studyTt.reverse-conway-manoeuvre.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyTt.reverse-conway-manoeuvre.record.implementations.item1.project",
+      "url": "https://teamtopologies.com/news-blogs-newsletters/2024/7/21/from-monolith-to-agility",
+      "relevance": "studyTt.reverse-conway-manoeuvre.record.implementations.item1.relevance",
+      "explanation": "studyTt.reverse-conway-manoeuvre.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.reverse-conway-manoeuvre.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.reverse-conway-manoeuvre.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.reverse-conway-manoeuvre.record.references.item1.title",
+      "url": "https://martinfowler.com/bliki/ConwaysLaw.html",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.reverse-conway-manoeuvre.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.reverse-conway-manoeuvre.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn-Angular/blob/6eef542987ab2183817baba329a64373cb61b157/docs/dev-reference/architecture/catalog.md#loading-and-state",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.reverse-conway-manoeuvre.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt1:92",
+      "why": "studyTt.reverse-conway-manoeuvre.record.nearby.item0.why"
+    },
+    {
+      "id": "tt3:7",
+      "why": "studyTt.reverse-conway-manoeuvre.record.nearby.item1.why"
+    },
+    {
+      "id": "tt3:8",
+      "why": "studyTt.reverse-conway-manoeuvre.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.reverse-conway-manoeuvre.record.limits.item0",
+    "studyTt.reverse-conway-manoeuvre.record.limits.item1",
+    "studyTt.reverse-conway-manoeuvre.record.limits.item2"
+  ]
+}

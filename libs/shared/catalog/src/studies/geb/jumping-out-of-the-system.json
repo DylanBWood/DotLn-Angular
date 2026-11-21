@@ -1,0 +1,127 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb1:51",
+  "work": "geb",
+  "slug": "jumping-out-of-the-system",
+  "authored": {
+    "by": "studyGeb.jumping-out-of-the-system.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.jumping-out-of-the-system.record.authored.reviewedBy.item0",
+      "studyGeb.jumping-out-of-the-system.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.jumping-out-of-the-system.record.intuition.text",
+    "situation": "studyGeb.jumping-out-of-the-system.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.jumping-out-of-the-system.record.example.name",
+    "description": "studyGeb.jumping-out-of-the-system.record.example.description",
+    "parameters": {
+      "start": "MI",
+      "target": "MU",
+      "modulus": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step0.title",
+        "text": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step1.title",
+        "text": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step2.title",
+        "text": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step3.title",
+        "text": "studyGeb.jumping-out-of-the-system.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.jumping-out-of-the-system.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/jumping-out-of-the-system.ts",
+    "textEquivalent": "studyGeb.jumping-out-of-the-system.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.jumping-out-of-the-system.record.implementations.item0.project",
+      "url": "https://raw.githubusercontent.com/metamath/set.mm/master/miu.mm",
+      "relevance": "studyGeb.jumping-out-of-the-system.record.implementations.item0.relevance",
+      "explanation": "studyGeb.jumping-out-of-the-system.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyGeb.jumping-out-of-the-system.record.implementations.item1.project",
+      "url": "https://lamport.azurewebsites.net/tla/proving-safety.pdf",
+      "relevance": "studyGeb.jumping-out-of-the-system.record.implementations.item1.relevance",
+      "explanation": "studyGeb.jumping-out-of-the-system.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.jumping-out-of-the-system.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.jumping-out-of-the-system.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.jumping-out-of-the-system.record.references.item1.title",
+      "url": "https://raw.githubusercontent.com/metamath/set.mm/master/miu.mm",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.jumping-out-of-the-system.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.jumping-out-of-the-system.record.references.item2.title",
+      "url": "https://us.metamath.org/downloads/metamath.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.jumping-out-of-the-system.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.jumping-out-of-the-system.record.references.item3.title",
+      "url": "https://lamport.azurewebsites.net/tla/proving-safety.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.jumping-out-of-the-system.record.references.item3.supports"
+    },
+    {
+      "title": "studyGeb.jumping-out-of-the-system.record.references.item4.title",
+      "url": "https://github.com/DylanBWood/DotLn/blob/main/CLAUDE.md#start-here",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.jumping-out-of-the-system.record.references.item4.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb2:8",
+      "why": "studyGeb.jumping-out-of-the-system.record.nearby.item0.why"
+    },
+    {
+      "id": "geb1:46",
+      "why": "studyGeb.jumping-out-of-the-system.record.nearby.item1.why"
+    },
+    {
+      "id": "geb1:53",
+      "why": "studyGeb.jumping-out-of-the-system.record.nearby.item2.why"
+    },
+    {
+      "id": "geb2:138",
+      "why": "studyGeb.jumping-out-of-the-system.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.jumping-out-of-the-system.record.limits.item0",
+    "studyGeb.jumping-out-of-the-system.record.limits.item1",
+    "studyGeb.jumping-out-of-the-system.record.limits.item2"
+  ]
+}

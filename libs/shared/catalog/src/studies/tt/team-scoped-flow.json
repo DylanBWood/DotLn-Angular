@@ -1,0 +1,111 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt1:151",
+  "work": "tt",
+  "slug": "team-scoped-flow",
+  "authored": {
+    "by": "studyTt.team-scoped-flow.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.team-scoped-flow.record.authored.reviewedBy.item0",
+      "studyTt.team-scoped-flow.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.team-scoped-flow.record.intuition.text",
+    "situation": "studyTt.team-scoped-flow.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.team-scoped-flow.record.example.name",
+    "description": "studyTt.team-scoped-flow.record.example.description",
+    "parameters": {
+      "leadDays": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.team-scoped-flow.record.mechanism.steps.step0.title",
+        "text": "studyTt.team-scoped-flow.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.team-scoped-flow.record.mechanism.steps.step1.title",
+        "text": "studyTt.team-scoped-flow.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.team-scoped-flow.record.mechanism.steps.step2.title",
+        "text": "studyTt.team-scoped-flow.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.team-scoped-flow.record.mechanism.steps.step3.title",
+        "text": "studyTt.team-scoped-flow.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyTt.team-scoped-flow.record.mechanism.steps.step4.title",
+        "text": "studyTt.team-scoped-flow.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.team-scoped-flow.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/team-scoped-flow.ts",
+    "textEquivalent": "studyTt.team-scoped-flow.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.team-scoped-flow.record.implementations.item0.project",
+      "url": "https://teamtopologies.com/industry-examples/evolving-teams-and-software-at-wealth-wizards-using-team-topologies",
+      "relevance": "studyTt.team-scoped-flow.record.implementations.item0.relevance",
+      "explanation": "studyTt.team-scoped-flow.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.team-scoped-flow.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.team-scoped-flow.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.team-scoped-flow.record.references.item1.title",
+      "url": "https://itrevolution.com/wp-content/uploads/2022/06/TTOP_excerpt.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.team-scoped-flow.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.team-scoped-flow.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn-Angular/6eef542987ab2183817baba329a64373cb61b157/docs/dev-reference/architecture/catalog.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.team-scoped-flow.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt1:152",
+      "why": "studyTt.team-scoped-flow.record.nearby.item0.why"
+    },
+    {
+      "id": "tt1:153",
+      "why": "studyTt.team-scoped-flow.record.nearby.item1.why"
+    },
+    {
+      "id": "tt1:154",
+      "why": "studyTt.team-scoped-flow.record.nearby.item2.why"
+    },
+    {
+      "id": "tt1:138",
+      "why": "studyTt.team-scoped-flow.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyTt.team-scoped-flow.record.limits.item0",
+    "studyTt.team-scoped-flow.record.limits.item1",
+    "studyTt.team-scoped-flow.record.limits.item2"
+  ]
+}

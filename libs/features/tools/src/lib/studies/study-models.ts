@@ -1,8 +1,10 @@
 import type { StudyModelModule } from './study-model';
 
 const eip = 'libs/features/tools/src/lib/studies/eip';
+const geb = 'libs/features/tools/src/lib/studies/geb';
 const movement = 'libs/features/tools/src/lib/studies/movement';
 const poeaa = 'libs/features/tools/src/lib/studies/poeaa';
+const tt = 'libs/features/tools/src/lib/studies/tt';
 const rxjs = 'libs/features/tools/src/lib/studies/rxjs';
 
 // Each drawing's model loads with the study that reads it. The key is the path the record names
@@ -28,6 +30,16 @@ export const studyModels: Readonly<Record<string, () => Promise<StudyModelModule
   [`${eip}/request-reply.ts`]: () => import('./eip/request-reply'),
   [`${eip}/resequencer.ts`]: () => import('./eip/resequencer'),
   [`${eip}/transactional-client.ts`]: () => import('./eip/transactional-client'),
+  [`${geb}/active-symbols.ts`]: () => import('./geb/active-symbols'),
+  [`${geb}/chunking.model.ts`]: () => import('./geb/chunking.model'),
+  [`${geb}/consistency.ts`]: () => import('./geb/consistency'),
+  [`${geb}/decision-procedure.model.ts`]: () => import('./geb/decision-procedure.model'),
+  [`${geb}/godel-numbering.model.ts`]: () => import('./geb/godel-numbering.model'),
+  [`${geb}/isomorphism.ts`]: () => import('./geb/isomorphism'),
+  [`${geb}/jumping-out-of-the-system.ts`]: () => import('./geb/jumping-out-of-the-system'),
+  [`${geb}/levels-of-description.ts`]: () => import('./geb/levels-of-description'),
+  [`${geb}/sentence-g.ts`]: () => import('./geb/sentence-g'),
+  [`${geb}/strange-loop.ts`]: () => import('./geb/strange-loop'),
   [`${movement}/actuator.model.ts`]: () => import('./movement/actuator.model'),
   [`${movement}/align.model.ts`]: () => import('./movement/align.model'),
   [`${movement}/arrive.model.ts`]: () => import('./movement/arrive.model'),
@@ -121,4 +133,14 @@ export const studyModels: Readonly<Record<string, () => Promise<StudyModelModule
   [`${rxjs}/switch-map.ts`]: () => import('./rxjs/switch-map'),
   [`${rxjs}/take-until.ts`]: () => import('./rxjs/take-until'),
   [`${rxjs}/timeout.ts`]: () => import('./rxjs/timeout'),
+  [`${tt}/collaboration-mode.ts`]: () => import('./tt/collaboration-mode'),
+  [`${tt}/conways-law.model.ts`]: () => import('./tt/conways-law.model'),
+  [`${tt}/effective-team-size.ts`]: () => import('./tt/effective-team-size'),
+  [`${tt}/facilitating-mode.ts`]: () => import('./tt/facilitating-mode'),
+  [`${tt}/homomorphic-force.ts`]: () => import('./tt/homomorphic-force'),
+  [`${tt}/organizational-sensing.ts`]: () => import('./tt/organizational-sensing'),
+  [`${tt}/platform-as-a-product.ts`]: () => import('./tt/platform-as-a-product'),
+  [`${tt}/reverse-conway-manoeuvre.ts`]: () => import('./tt/reverse-conway-manoeuvre'),
+  [`${tt}/team-scoped-flow.ts`]: () => import('./tt/team-scoped-flow'),
+  [`${tt}/x-as-a-service-mode.ts`]: () => import('./tt/x-as-a-service-mode'),
 };

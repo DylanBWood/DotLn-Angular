@@ -1,0 +1,103 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb2:61",
+  "work": "geb",
+  "slug": "active-symbols",
+  "authored": {
+    "by": "studyGeb.active-symbols.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.active-symbols.record.authored.reviewedBy.item0",
+      "studyGeb.active-symbols.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.active-symbols.record.intuition.text",
+    "situation": "studyGeb.active-symbols.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.active-symbols.record.example.name",
+    "description": "studyGeb.active-symbols.record.example.description",
+    "parameters": {
+      "linksFromTea": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.active-symbols.record.mechanism.steps.step0.title",
+        "text": "studyGeb.active-symbols.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.active-symbols.record.mechanism.steps.step1.title",
+        "text": "studyGeb.active-symbols.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.active-symbols.record.mechanism.steps.step2.title",
+        "text": "studyGeb.active-symbols.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.active-symbols.record.mechanism.steps.step3.title",
+        "text": "studyGeb.active-symbols.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.active-symbols.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/active-symbols.ts",
+    "textEquivalent": "studyGeb.active-symbols.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.active-symbols.record.implementations.item0.project",
+      "url": "https://melaniemitchell.me/PapersContent/HofstadterMitchellCopycat1995.pdf",
+      "relevance": "studyGeb.active-symbols.record.implementations.item0.relevance",
+      "explanation": "studyGeb.active-symbols.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.active-symbols.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.active-symbols.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.active-symbols.record.references.item1.title",
+      "url": "https://melaniemitchell.me/PapersContent/HofstadterMitchellCopycat1995.pdf",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.active-symbols.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.active-symbols.record.references.item2.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/bc761ad9ce1008c72c647e9b0de63b09117ba822/docs/KIT.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.active-symbols.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb2:62",
+      "why": "studyGeb.active-symbols.record.nearby.item0.why"
+    },
+    {
+      "id": "geb2:63",
+      "why": "studyGeb.active-symbols.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:8",
+      "why": "studyGeb.active-symbols.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.active-symbols.record.limits.item0",
+    "studyGeb.active-symbols.record.limits.item1",
+    "studyGeb.active-symbols.record.limits.item2"
+  ]
+}

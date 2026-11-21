@@ -1,0 +1,113 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt3:9",
+  "work": "tt",
+  "slug": "facilitating-mode",
+  "authored": {
+    "by": "studyTt.facilitating-mode.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.facilitating-mode.record.authored.reviewedBy.item0",
+      "studyTt.facilitating-mode.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.facilitating-mode.record.intuition.text",
+    "situation": "studyTt.facilitating-mode.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.facilitating-mode.record.example.name",
+    "description": "studyTt.facilitating-mode.record.example.description",
+    "parameters": {
+      "coachingWeeks": 2
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.facilitating-mode.record.mechanism.steps.step0.title",
+        "text": "studyTt.facilitating-mode.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.facilitating-mode.record.mechanism.steps.step1.title",
+        "text": "studyTt.facilitating-mode.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.facilitating-mode.record.mechanism.steps.step2.title",
+        "text": "studyTt.facilitating-mode.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.facilitating-mode.record.mechanism.steps.step3.title",
+        "text": "studyTt.facilitating-mode.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyTt.facilitating-mode.record.mechanism.steps.step4.title",
+        "text": "studyTt.facilitating-mode.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.facilitating-mode.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/facilitating-mode.ts",
+    "textEquivalent": "studyTt.facilitating-mode.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.facilitating-mode.record.implementations.item0.project",
+      "url": "https://www.infoq.com/articles/devops-not-enough-scaling-tech-driven-organizations/",
+      "relevance": "studyTt.facilitating-mode.record.implementations.item0.relevance",
+      "explanation": "studyTt.facilitating-mode.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.facilitating-mode.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.facilitating-mode.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.facilitating-mode.record.references.item1.title",
+      "url": "https://teamtopologies.com/key-concepts-content/team-interaction-modeling-with-team-topologies",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.facilitating-mode.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.facilitating-mode.record.references.item2.title",
+      "url": "https://teamtopologies.com/news-blogs-newsletters/maximize-organizational-learning-return-on-investment-with-facilitating-interactions",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.facilitating-mode.record.references.item2.supports"
+    },
+    {
+      "title": "studyTt.facilitating-mode.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn/bc761ad9ce1008c72c647e9b0de63b09117ba822/docs/KIT.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.facilitating-mode.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt2:64",
+      "why": "studyTt.facilitating-mode.record.nearby.item0.why"
+    },
+    {
+      "id": "tt3:15",
+      "why": "studyTt.facilitating-mode.record.nearby.item1.why"
+    },
+    {
+      "id": "tt3:7",
+      "why": "studyTt.facilitating-mode.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.facilitating-mode.record.limits.item0",
+    "studyTt.facilitating-mode.record.limits.item1",
+    "studyTt.facilitating-mode.record.limits.item2"
+  ]
+}

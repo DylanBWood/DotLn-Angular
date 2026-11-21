@@ -1,0 +1,111 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt2:90",
+  "work": "tt",
+  "slug": "platform-as-a-product",
+  "authored": {
+    "by": "studyTt.platform-as-a-product.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.platform-as-a-product.record.authored.reviewedBy.item0",
+      "studyTt.platform-as-a-product.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.platform-as-a-product.record.intuition.text",
+    "situation": "studyTt.platform-as-a-product.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.platform-as-a-product.record.example.name",
+    "description": "studyTt.platform-as-a-product.record.example.description",
+    "parameters": {
+      "attemptsPerPilot": 8,
+      "firstPilotNeededHelp": 5,
+      "secondPilotUnaided": 7
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.platform-as-a-product.record.mechanism.steps.step0.title",
+        "text": "studyTt.platform-as-a-product.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.platform-as-a-product.record.mechanism.steps.step1.title",
+        "text": "studyTt.platform-as-a-product.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.platform-as-a-product.record.mechanism.steps.step2.title",
+        "text": "studyTt.platform-as-a-product.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.platform-as-a-product.record.mechanism.steps.step3.title",
+        "text": "studyTt.platform-as-a-product.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.platform-as-a-product.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/platform-as-a-product.ts",
+    "textEquivalent": "studyTt.platform-as-a-product.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.platform-as-a-product.record.implementations.item0.project",
+      "url": "https://teamtopologies.com/industry-examples/trade-me-journey-towards-a-thinnest-viable-platform",
+      "relevance": "studyTt.platform-as-a-product.record.implementations.item0.relevance",
+      "explanation": "studyTt.platform-as-a-product.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.platform-as-a-product.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.platform-as-a-product.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.platform-as-a-product.record.references.item1.title",
+      "url": "https://teamtopologies.com/platform-engineering",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.platform-as-a-product.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.platform-as-a-product.record.references.item2.title",
+      "url": "https://teamtopologies.com/industry-examples/trade-me-journey-towards-a-thinnest-viable-platform",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.platform-as-a-product.record.references.item2.supports"
+    },
+    {
+      "title": "studyTt.platform-as-a-product.record.references.item3.title",
+      "url": "https://github.com/DylanBWood/DotLn-Enterprise-Starter/blob/main/docs/OPERATOR.md",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.platform-as-a-product.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt2:85",
+      "why": "studyTt.platform-as-a-product.record.nearby.item0.why"
+    },
+    {
+      "id": "tt2:88",
+      "why": "studyTt.platform-as-a-product.record.nearby.item1.why"
+    },
+    {
+      "id": "tt2:93",
+      "why": "studyTt.platform-as-a-product.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyTt.platform-as-a-product.record.limits.item0",
+    "studyTt.platform-as-a-product.record.limits.item1",
+    "studyTt.platform-as-a-product.record.limits.item2"
+  ]
+}

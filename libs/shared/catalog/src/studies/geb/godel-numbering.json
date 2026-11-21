@@ -1,0 +1,114 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb1:228",
+  "work": "geb",
+  "slug": "godel-numbering",
+  "authored": {
+    "by": "studyGeb.godel-numbering.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.godel-numbering.record.authored.reviewedBy.item0",
+      "studyGeb.godel-numbering.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.godel-numbering.record.intuition.text",
+    "situation": "studyGeb.godel-numbering.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.godel-numbering.record.example.name",
+    "description": "studyGeb.godel-numbering.record.example.description",
+    "parameters": {
+      "leftWord": "L",
+      "rightWord": "R",
+      "probeCode": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.godel-numbering.record.mechanism.steps.step0.title",
+        "text": "studyGeb.godel-numbering.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.godel-numbering.record.mechanism.steps.step1.title",
+        "text": "studyGeb.godel-numbering.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.godel-numbering.record.mechanism.steps.step2.title",
+        "text": "studyGeb.godel-numbering.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.godel-numbering.record.mechanism.steps.step3.title",
+        "text": "studyGeb.godel-numbering.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.godel-numbering.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": {
+      "kind": "typescript",
+      "module": "libs/features/tools/src/lib/studies/geb/godel-numbering.model.ts"
+    }
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/godel-numbering.model.ts",
+    "textEquivalent": "studyGeb.godel-numbering.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.godel-numbering.record.implementations.item0.project",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/sup1.html",
+      "relevance": "studyGeb.godel-numbering.record.implementations.item0.relevance",
+      "explanation": "studyGeb.godel-numbering.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.godel-numbering.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.godel-numbering.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.godel-numbering.record.references.item1.title",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/sup1.html",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.godel-numbering.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.godel-numbering.record.references.item2.title",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.godel-numbering.record.references.item2.supports"
+    },
+    {
+      "title": "studyGeb.godel-numbering.record.references.item3.title",
+      "url": "https://raw.githubusercontent.com/DylanBWood/DotLn-Angular/6eef542987ab2183817baba329a64373cb61b157/docs/dev-reference/architecture/catalog.md",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.godel-numbering.record.references.item3.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb1:65",
+      "why": "studyGeb.godel-numbering.record.nearby.item0.why"
+    },
+    {
+      "id": "geb1:231",
+      "why": "studyGeb.godel-numbering.record.nearby.item1.why"
+    },
+    {
+      "id": "geb2:138",
+      "why": "studyGeb.godel-numbering.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.godel-numbering.record.limits.item0",
+    "studyGeb.godel-numbering.record.limits.item1",
+    "studyGeb.godel-numbering.record.limits.item2"
+  ]
+}

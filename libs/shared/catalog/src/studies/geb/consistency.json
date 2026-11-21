@@ -1,0 +1,103 @@
+{
+  "schema": "concept-study-v1",
+  "id": "geb1:107",
+  "work": "geb",
+  "slug": "consistency",
+  "authored": {
+    "by": "studyGeb.consistency.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyGeb.consistency.record.authored.reviewedBy.item0",
+      "studyGeb.consistency.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyGeb.consistency.record.intuition.text",
+    "situation": "studyGeb.consistency.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyGeb.consistency.record.example.name",
+    "description": "studyGeb.consistency.record.example.description",
+    "parameters": {
+      "slot": 3
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyGeb.consistency.record.mechanism.steps.step0.title",
+        "text": "studyGeb.consistency.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyGeb.consistency.record.mechanism.steps.step1.title",
+        "text": "studyGeb.consistency.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyGeb.consistency.record.mechanism.steps.step2.title",
+        "text": "studyGeb.consistency.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyGeb.consistency.record.mechanism.steps.step3.title",
+        "text": "studyGeb.consistency.record.mechanism.steps.step3.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyGeb.consistency.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/geb/consistency.ts",
+    "textEquivalent": "studyGeb.consistency.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyGeb.consistency.record.implementations.item0.project",
+      "url": "https://microsoft.github.io/z3guide/docs/logic/propositional-logic/",
+      "relevance": "studyGeb.consistency.record.implementations.item0.relevance",
+      "explanation": "studyGeb.consistency.record.implementations.item0.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyGeb.consistency.record.references.item0.title",
+      "url": "https://www.hachettebookgroup.com/titles/douglas-r-hofstadter/g%C3%B6del-escher-bach/9780465026562/?lens=basic-books",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.consistency.record.references.item0.supports"
+    },
+    {
+      "title": "studyGeb.consistency.record.references.item1.title",
+      "url": "https://plato.stanford.edu/entries/goedel-incompleteness/",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.consistency.record.references.item1.supports"
+    },
+    {
+      "title": "studyGeb.consistency.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn/blob/main/docs/KIT.md#the-checks-an-order-owes-at-its-closeout",
+      "accessed": "2026-11-19",
+      "supports": "studyGeb.consistency.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "geb1:114",
+      "why": "studyGeb.consistency.record.nearby.item0.why"
+    },
+    {
+      "id": "geb1:64",
+      "why": "studyGeb.consistency.record.nearby.item1.why"
+    },
+    {
+      "id": "geb1:108",
+      "why": "studyGeb.consistency.record.nearby.item2.why"
+    }
+  ],
+  "limits": [
+    "studyGeb.consistency.record.limits.item0",
+    "studyGeb.consistency.record.limits.item1",
+    "studyGeb.consistency.record.limits.item2"
+  ]
+}

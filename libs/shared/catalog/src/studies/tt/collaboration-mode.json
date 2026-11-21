@@ -1,0 +1,117 @@
+{
+  "schema": "concept-study-v1",
+  "id": "tt3:7",
+  "work": "tt",
+  "slug": "collaboration-mode",
+  "authored": {
+    "by": "studyTt.collaboration-mode.record.authored.by",
+    "on": "2026-11-19",
+    "reviewedBy": [
+      "studyTt.collaboration-mode.record.authored.reviewedBy.item0",
+      "studyTt.collaboration-mode.record.authored.reviewedBy.item1"
+    ],
+    "state": "checked"
+  },
+  "intuition": {
+    "text": "studyTt.collaboration-mode.record.intuition.text",
+    "situation": "studyTt.collaboration-mode.record.intuition.situation"
+  },
+  "example": {
+    "name": "studyTt.collaboration-mode.record.example.name",
+    "description": "studyTt.collaboration-mode.record.example.description",
+    "parameters": {
+      "timeboxDays": 10
+    }
+  },
+  "mechanism": {
+    "steps": [
+      {
+        "title": "studyTt.collaboration-mode.record.mechanism.steps.step0.title",
+        "text": "studyTt.collaboration-mode.record.mechanism.steps.step0.text"
+      },
+      {
+        "title": "studyTt.collaboration-mode.record.mechanism.steps.step1.title",
+        "text": "studyTt.collaboration-mode.record.mechanism.steps.step1.text"
+      },
+      {
+        "title": "studyTt.collaboration-mode.record.mechanism.steps.step2.title",
+        "text": "studyTt.collaboration-mode.record.mechanism.steps.step2.text"
+      },
+      {
+        "title": "studyTt.collaboration-mode.record.mechanism.steps.step3.title",
+        "text": "studyTt.collaboration-mode.record.mechanism.steps.step3.text"
+      },
+      {
+        "title": "studyTt.collaboration-mode.record.mechanism.steps.step4.title",
+        "text": "studyTt.collaboration-mode.record.mechanism.steps.step4.text"
+      }
+    ]
+  },
+  "pseudocode": {
+    "ordinary": "studyTt.collaboration-mode.record.pseudocode.ordinary",
+    "rxjs": null,
+    "executable": null
+  },
+  "visual": {
+    "family": "relations",
+    "model": "libs/features/tools/src/lib/studies/tt/collaboration-mode.ts",
+    "textEquivalent": "studyTt.collaboration-mode.record.visual.textEquivalent"
+  },
+  "implementations": [
+    {
+      "project": "studyTt.collaboration-mode.record.implementations.item0.project",
+      "url": "https://github.com/TeamTopologies/Team-API-template",
+      "relevance": "studyTt.collaboration-mode.record.implementations.item0.relevance",
+      "explanation": "studyTt.collaboration-mode.record.implementations.item0.explanation"
+    },
+    {
+      "project": "studyTt.collaboration-mode.record.implementations.item1.project",
+      "url": "https://teamtopologies.com/industry-examples/team-topologies-at-footasylum-platforms-flow-and-wardley-mapping",
+      "relevance": "studyTt.collaboration-mode.record.implementations.item1.relevance",
+      "explanation": "studyTt.collaboration-mode.record.implementations.item1.explanation"
+    }
+  ],
+  "references": [
+    {
+      "title": "studyTt.collaboration-mode.record.references.item0.title",
+      "url": "https://teamtopologies.com/book",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.collaboration-mode.record.references.item0.supports"
+    },
+    {
+      "title": "studyTt.collaboration-mode.record.references.item1.title",
+      "url": "https://teamtopologies.com/key-concepts-content/team-interaction-modeling-with-team-topologies",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.collaboration-mode.record.references.item1.supports"
+    },
+    {
+      "title": "studyTt.collaboration-mode.record.references.item2.title",
+      "url": "https://github.com/DylanBWood/DotLn/blob/v1.2.0/docs/PLAYBOOK.md#planning-pass",
+      "accessed": "2026-11-19",
+      "supports": "studyTt.collaboration-mode.record.references.item2.supports"
+    }
+  ],
+  "nearby": [
+    {
+      "id": "tt3:10",
+      "why": "studyTt.collaboration-mode.record.nearby.item0.why"
+    },
+    {
+      "id": "tt3:8",
+      "why": "studyTt.collaboration-mode.record.nearby.item1.why"
+    },
+    {
+      "id": "tt3:9",
+      "why": "studyTt.collaboration-mode.record.nearby.item2.why"
+    },
+    {
+      "id": "tt3:42",
+      "why": "studyTt.collaboration-mode.record.nearby.item3.why"
+    }
+  ],
+  "limits": [
+    "studyTt.collaboration-mode.record.limits.item0",
+    "studyTt.collaboration-mode.record.limits.item1",
+    "studyTt.collaboration-mode.record.limits.item2"
+  ]
+}
